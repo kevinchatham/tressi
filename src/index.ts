@@ -90,19 +90,20 @@ function printSummary(
           const failed = total - successful;
 
           const endpointTable = new Table({ colWidths: [30, 60] });
-          endpointTable.push(
-            { Endpoint: chalk.cyan(url) },
-            { 'Total Requests': total },
-            { Successful: chalk.green(successful) },
-            { Failed: chalk.red(failed) },
-            { 'Avg Latency (ms)': average(endpointLatencies).toFixed(2) },
-            {
-              'p95 Latency (ms)': percentile(endpointLatencies, 95).toFixed(2),
-            },
-            {
-              'p99 Latency (ms)': percentile(endpointLatencies, 99).toFixed(2),
-            },
-          );
+          endpointTable.push({ Endpoint: chalk.cyan(url) });
+          endpointTable.push({ 'Total Requests': total });
+          endpointTable.push({ Successful: chalk.green(successful) });
+          endpointTable.push({ Failed: chalk.red(failed) });
+          endpointTable.push({
+            'Avg Latency (ms)': average(endpointLatencies).toFixed(2),
+          });
+          endpointTable.push({
+            'p95 Latency (ms)': percentile(endpointLatencies, 95).toFixed(2),
+          });
+          endpointTable.push({
+            'p99 Latency (ms)': percentile(endpointLatencies, 99).toFixed(2),
+          });
+
           // eslint-disable-next-line no-console
           console.log(endpointTable.toString());
         });
