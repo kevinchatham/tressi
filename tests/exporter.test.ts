@@ -44,6 +44,9 @@ const mockResults: RequestResult[] = [
   },
 ];
 
+/**
+ * Test suite for the CSV exporter functionality.
+ */
 describe('exporter', () => {
   let writeFileMock: Mock;
 
@@ -54,6 +57,10 @@ describe('exporter', () => {
     writeFileMock.mockClear();
   });
 
+  /**
+   * It should correctly format the results into a CSV string
+   * and call `fs.writeFile` with the correct path and data.
+   */
   it('should export results to a CSV file', async () => {
     await exportToCsv('results.csv', mockResults);
 
@@ -67,6 +74,10 @@ describe('exporter', () => {
     expect(rows[2]).toBe('"http://localhost:8080/test2",500,456.79,false,"Server Error"');
   });
 
+  /**
+   * It should handle cases where there are no results to export,
+   * creating a CSV file with only a header row.
+   */
   it('should handle an empty results array', async () => {
     await exportToCsv('empty.csv', []);
 
@@ -79,6 +90,10 @@ describe('exporter', () => {
     expect(rows[0]).toBe('url,status,latencyMs,success,error');
   });
 
+  /**
+   * It should catch errors that occur during the file writing process
+   * and log them gracefully without crashing the application.
+   */
   it('should handle errors during file write', async () => {
     const error = new Error('Disk full');
     writeFileMock.mockRejectedValue(error);

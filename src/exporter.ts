@@ -4,6 +4,11 @@ import ora from 'ora';
 
 import { RequestResult } from './stats';
 
+/**
+ * Exports an array of request results to a CSV file.
+ * @param path The file path to save the CSV to.
+ * @param results An array of `RequestResult` objects to export.
+ */
 export async function exportToCsv(path: string, results: RequestResult[]): Promise<void> {
   const writeSpinner = ora(`Writing CSV to ${path}`).start();
   try {

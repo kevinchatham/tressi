@@ -16,17 +16,33 @@ import { TUI } from './ui';
 
 export { defineConfig, TressiConfig, RequestConfig };
 
+/**
+ * Defines the options for a Tressi load test run.
+ */
 export interface RunOptions {
+  /** The configuration for the test. Can be a path to a file, a URL, or a configuration object. */
   config: string | TressiConfig;
+  /** The number of concurrent workers to use. Defaults to 10. For autoscale, this is the max workers. */
   workers?: number;
+  /** The total duration of the test in seconds. Defaults to 10. */
   durationSec?: number;
+  /** The time in seconds to ramp up to the target RPS. Defaults to 0. */
   rampUpTimeSec?: number;
+  /** The target requests per second. If not provided, the test will run at maximum possible speed. */
   rps?: number;
+  /** Whether to enable autoscale mode. Defaults to false. --rps is required for this. */
   autoscale?: boolean;
+  /** The path to save the results to a CSV file. If not provided, no CSV will be saved. */
   csvPath?: string;
+  /** Whether to use the terminal UI. Defaults to true. */
   useUI?: boolean;
 }
 
+/**
+ * Prints a detailed summary of the load test results to the console.
+ * @param results An array of `RequestResult` objects from the test run.
+ * @param options The original `RunOptions` used for the test.
+ */
 function printSummary(results: RequestResult[], options: RunOptions): void {
   const {
     workers = 10,
@@ -227,6 +243,12 @@ function printSummary(results: RequestResult[], options: RunOptions): void {
   }
 }
 
+/**
+ * The main function to execute a Tressi load test.
+ * It loads the configuration, initializes the runner, starts the UI,
+ * and prints a summary upon completion.
+ * @param options The `RunOptions` for the test.
+ */
 export async function runLoadTest(options: RunOptions): Promise<void> {
   const spinner = ora('Loading config...').start();
   let loadedConfig: TressiConfig;

@@ -8,6 +8,10 @@ async function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+/**
+ * The main load test runner. It orchestrates the test execution, manages workers,
+ * and collects results. It extends EventEmitter to provide hooks into its lifecycle.
+ */
 export class Runner extends EventEmitter {
   private options: RunOptions;
   private requests: RequestConfig[];
@@ -25,6 +29,12 @@ export class Runner extends EventEmitter {
   private rampUpInterval?: NodeJS.Timeout;
   private autoscaleInterval?: NodeJS.Timeout;
 
+  /**
+   * Creates a new Runner instance.
+   * @param options The run options.
+   * @param requests An array of request configurations to be used in the test.
+   * @param headers A record of global headers to be sent with each request.
+   */
   constructor(
     options: RunOptions,
     requests: RequestConfig[],
@@ -38,6 +48,10 @@ export class Runner extends EventEmitter {
       options.rampUpTimeSec && options.rps ? 0 : options.rps || 0;
   }
 
+  /**
+   * Records a new request result, updating all relevant statistics.
+   * @param result The `RequestResult` to record.
+   */
   public onResult(result: RequestResult): void {
     this.results.push(result);
     this.latencies.push(result.latencyMs);
@@ -51,38 +65,75 @@ export class Runner extends EventEmitter {
     }
   }
 
+  /**
+   * Gets all the results collected during the test run.
+   * @returns An array of `RequestResult` objects.
+   */
   public getResults(): RequestResult[] {
     return this.results;
   }
 
+  /**
+   * Gets all the latency values collected during the test.
+   * @returns An array of latency numbers in milliseconds.
+   */
   public getLatencies(): number[] {
     return this.latencies;
   }
 
+  /**
+   * Gets a map of status codes and their counts.
+   * @returns A record where keys are status codes and values are their counts.
+   */
   public getStatusCodeMap(): Record<number, number> {
     return this.statusCodeMap;
   }
 
+  /**
+   * Gets the total count of successful requests.
+   * @returns The number of successful requests.
+   */
   public getSuccessfulRequestsCount(): number {
     return this.successfulRequests;
   }
 
+  /**
+   * Gets the total count of failed requests.
+   * @returns The number of failed requests.
+   */
   public getFailedRequestsCount(): number {
     return this.failedRequests;
   }
 
+  /**
+   * Calculates and returns the average latency for all requests.
+   * @returns The average latency in milliseconds.
+   */
   public getAverageLatency(): number {
     return average(this.latencies);
   }
 
+  /**
+   * Gets the timestamp when the test run started.
+   * @returns The start time as a Unix timestamp.
+   */
   public getStartTime(): number {
     return this.startTime;
   }
 
+  /**
+   * Gets the current target requests per minute (RPM).
+   * This value changes during ramp-up.
+   * @returns The current target RPM.
+   */
   public getCurrentRpm(): number {
     return Math.round(this.currentRpm);
   }
 
+  /**
+   * Calculates the actual requests per second (RPS) over the last second.
+   * @returns The current actual RPS.
+   */
   public getCurrentRps(): number {
     const now = Date.now();
     const oneSecondAgo = now - 1000;
@@ -92,6 +143,10 @@ export class Runner extends EventEmitter {
     return recentRequests.length;
   }
 
+  /**
+   * Gets the current number of active workers.
+   * @returns The number of workers.
+   */
   public getWorkerCount(): number {
     if (this.options.autoscale) {
       return this.activeWorkers.length;
@@ -99,6 +154,11 @@ export class Runner extends EventEmitter {
     return this.options.workers ?? 10;
   }
 
+  /**
+   * Starts the load test. This is the main entry point for the runner.
+   * It sets up workers, timers, and ramp-up/autoscaling logic.
+   * @returns A promise that resolves with all the request results when the test is complete.
+   */
   public async run(): Promise<RequestResult[]> {
     this.startTime = Date.now();
 
@@ -207,6 +267,9 @@ export class Runner extends EventEmitter {
     this.emit('stop');
   }
 
+  /**
+   * Cleans up all active timers and intervals.
+   */
   private cleanup(): void {
     if (this.testTimeout) {
       clearTimeout(this.testTimeout);
@@ -222,6 +285,9 @@ export class Runner extends EventEmitter {
     }
   }
 
+  /**
+   * Adds a new worker to the pool. Used by the autoscaler.
+   */
   private addWorker(): void {
     let workerStopped = false;
     const stop = (): void => {
@@ -231,6 +297,9 @@ export class Runner extends EventEmitter {
     this.activeWorkers.push({ promise, stop });
   }
 
+  /**
+   * Removes a worker from the pool and stops it. Used by the autoscaler.
+   */
   private removeWorker(): void {
     const worker = this.activeWorkers.pop();
     if (worker) {
@@ -238,6 +307,11 @@ export class Runner extends EventEmitter {
     }
   }
 
+  /**
+   * The core worker function. It runs in a loop, making requests until stopped.
+   * @param isStopped A function that returns true if the worker should stop.
+   *                  Defaults to checking the main runner's stopped flag.
+   */
   private async runWorker(
     isStopped: () => boolean = () => this.stopped,
   ): Promise<void> {

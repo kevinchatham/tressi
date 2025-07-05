@@ -18,6 +18,9 @@ const runCli = async (args: string[]) => {
   await import('../src/cli');
 };
 
+/**
+ * Test suite for the main CLI functionality.
+ */
 describe('CLI', () => {
   beforeEach(() => {
     vi.resetModules(); // Reset module cache before each test
@@ -34,7 +37,14 @@ describe('CLI', () => {
       : ['node'];
   });
 
+  /**
+   * Test suite for the main command of the CLI.
+   */
   describe('main command', () => {
+    /**
+     * It should correctly parse all the command-line arguments
+     * and call the main `runLoadTest` function with the expected options object.
+     */
     it('should call runLoadTest with the correct options', async () => {
       const { runLoadTest } = await import('../src/index');
       await runCli([
@@ -63,6 +73,10 @@ describe('CLI', () => {
       });
     });
 
+    /**
+     * It should validate that when --autoscale is used, --rps is also provided.
+     * If not, it should print an error and exit with a non-zero status code.
+     */
     it('should exit if --autoscale is used without --rps', async () => {
       const processExitSpy = vi
         .spyOn(process, 'exit')

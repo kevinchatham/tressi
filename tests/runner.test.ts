@@ -32,7 +32,14 @@ const baseRequests: RequestConfig[] = [
   { url: 'http://localhost:8080/test', method: 'GET' },
 ];
 
+/**
+ * Test suite for the main Runner class.
+ */
 describe('Runner', () => {
+  /**
+   * It should be able to run a simple test with one worker for one second
+   * and produce a valid set of results.
+   */
   it('should run a basic test and return results', async () => {
     const options: RunOptions = { ...baseOptions };
     const runner = new Runner(options, baseRequests, {});
@@ -44,6 +51,10 @@ describe('Runner', () => {
     expect(results[0].success).toBe(true);
   });
 
+  /**
+   * It should adhere to the requests-per-second (RPS) limit by ensuring
+   * the number of requests made over a period does not exceed the target.
+   */
   it('should respect the RPS limit', async () => {
     vi.useFakeTimers();
     const options: RunOptions = { ...baseOptions, rps: 10, durationSec: 2 };
@@ -57,6 +68,10 @@ describe('Runner', () => {
     expect(results.length).toBeCloseTo(20, -1);
   });
 
+  /**
+   * It should gradually increase the request rate over the specified ramp-up time,
+   * reaching the target RPS by the end of the ramp-up period.
+   */
   it('should ramp up the request rate', async () => {
     vi.useFakeTimers();
     const options: RunOptions = {
@@ -78,6 +93,10 @@ describe('Runner', () => {
     await runPromise;
   });
 
+  /**
+   * In autoscale mode, it should dynamically add more workers when the
+   * actual RPS is below the target RPS, in order to meet the demand.
+   */
   it('should autoscale workers to meet target RPS', async () => {
     const requests: RequestConfig[] = [
       { url: 'http://localhost:8080/slow', method: 'GET' },
@@ -112,6 +131,10 @@ describe('Runner', () => {
     await runPromise;
   }, 7000);
 
+  /**
+   * It should be possible to prematurely stop a test run by calling the
+   * `stop()` method, which should immediately halt all workers.
+   */
   it('should stop the test run when stop() is called', async () => {
     vi.useFakeTimers();
     const options: RunOptions = { ...baseOptions, durationSec: 10 };

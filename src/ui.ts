@@ -1,12 +1,19 @@
 import blessed from 'blessed';
 import contrib from 'blessed-contrib';
 
+/**
+ * Manages the terminal user interface for Tressi.
+ */
 export class TUI {
   private screen: blessed.Widgets.Screen;
   private latencyChart: contrib.Widgets.LineElement;
   private statusChart: contrib.Widgets.BarElement;
   private statsTable: contrib.Widgets.TableElement;
 
+  /**
+   * Creates a new TUI instance.
+   * @param onExit A callback function to be called when the user exits the UI.
+   */
   constructor(onExit: () => void) {
     this.screen = blessed.screen({ smartCSR: true });
     const grid = new contrib.grid({ rows: 12, cols: 12, screen: this.screen });
@@ -36,6 +43,19 @@ export class TUI {
     });
   }
 
+  /**
+   * Updates the UI with new data from the load test.
+   * @param latencies An array of recent latency values.
+   * @param statusCodeMap A map of status codes to their counts.
+   * @param currentRps The current requests per second.
+   * @param elapsedSec The elapsed time of the test in seconds.
+   * @param totalSec The total duration of the test in seconds.
+   * @param targetRps The target requests per second, if any.
+   * @param successfulRequests The total number of successful requests.
+   * @param failedRequests The total number of failed requests.
+   * @param averageLatency The average latency of all requests.
+   * @param workerCount The current number of active workers.
+   */
   public update(
     latencies: number[],
     statusCodeMap: Record<number, number>,
@@ -87,6 +107,9 @@ export class TUI {
     this.screen.render();
   }
 
+  /**
+   * Destroys the TUI screen, cleaning up resources.
+   */
   public destroy(): void {
     this.screen.destroy();
   }

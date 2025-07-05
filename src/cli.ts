@@ -7,6 +7,9 @@ import path from 'path';
 import pkg from '../package.json';
 import { runLoadTest } from '.';
 
+/**
+ * Template for a TypeScript-based tressi configuration file.
+ */
 const tsConfigTemplate = `import { defineConfig } from 'tressi';
 
 export default defineConfig({
@@ -30,6 +33,9 @@ export default defineConfig({
 });
 `;
 
+/**
+ * Template for a JSON-based tressi configuration file.
+ */
 const jsonConfigTemplate = `{
   "headers": {
     "Content-Type": "application/json; charset=UTF-8"
@@ -52,6 +58,9 @@ const jsonConfigTemplate = `{
 }
 `;
 
+/**
+ * The main commander program instance.
+ */
 const program = new Command();
 
 program
@@ -156,6 +165,10 @@ Examples:
 `,
 );
 
+/**
+ * The main action for the program. This is executed when the user runs `tressi`
+ * with options, but without a specific command like `init`.
+ */
 program.action(async (opts) => {
   // If no config is provided, and no command was run, show help.
   // This handles the case where the user just runs `tressi`.
@@ -190,4 +203,7 @@ program.action(async (opts) => {
   }
 });
 
+/**
+ * Parses the command line arguments and runs the program.
+ */
 program.parseAsync(process.argv);
