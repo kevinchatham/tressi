@@ -50,7 +50,8 @@ jobs:
 
           # npm view returns an empty string and exits with a non-zero code if the version doesn't exist.
           # We redirect stderr to /dev/null to suppress errors and check if the output is empty.
-          NPM_VERSION=$(npm view $PACKAGE_NAME@$PACKAGE_VERSION version 2>/dev/null)
+          # We add `|| true` to prevent the non-zero exit code from failing the step.
+          NPM_VERSION=$(npm view $PACKAGE_NAME@$PACKAGE_VERSION version 2>/dev/null || true)
 
           if [[ -z "$NPM_VERSION" ]]; then
             echo "Version $PACKAGE_VERSION is not published. Proceeding..."
