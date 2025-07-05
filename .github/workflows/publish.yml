@@ -24,8 +24,10 @@ on:
 
 jobs:
   publish:
-    name: Publish to NPM
+    name: 'Publish to NPM & Create Release'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # To push tags and create a release
 
     steps:
       - name: Checkout repository
@@ -42,7 +44,8 @@ jobs:
         run: |
           PACKAGE_NAME=$(node -p "require('./package.json').name")
           PACKAGE_VERSION=$(node -p "require('./package.json').version")
-          
+          echo "version=${PACKAGE_VERSION}" >> $GITHUB_OUTPUT
+
           echo "Checking if version $PACKAGE_VERSION for $PACKAGE_NAME is published..."
 
           # npm view returns an empty string and exits with a non-zero code if the version doesn't exist.
@@ -68,3 +71,22 @@ jobs:
         run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Tag and Push Version
+        if: env.publish == 'true'
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git tag "v${{ steps.check-version.outputs.version }}"
+          git push origin "v${{ steps.check-version.outputs.version }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create GitHub Release
+        if: env.publish == 'true'
+        run: |
+          gh release create "v${{ steps.check-version.outputs.version }}" \
+            --title "Release v${{ steps.check-version.outputs.version }}" \
+            --generate-notes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
