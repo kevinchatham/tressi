@@ -5,6 +5,7 @@ import inquirer from 'inquirer';
 import path from 'path';
 
 import { runLoadTest } from '.';
+import pkg from '../package.json';
 
 const tsConfigTemplate = `import { defineConfig } from 'tressi';
 
@@ -55,7 +56,8 @@ const program = new Command();
 
 program
   .name('tressi')
-  .description('A modern, simple load testing tool for APIs.');
+  .description('A modern, simple load testing tool for APIs.')
+  .version(pkg.version);
 
 program
   .option('-c, --config <path>', 'Path or URL to config file (.ts or .json)')
