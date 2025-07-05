@@ -21,6 +21,9 @@ export class Runner extends EventEmitter {
   private successfulRequests = 0;
   private failedRequests = 0;
   private activeWorkers: { promise: Promise<void>; stop: () => void }[] = [];
+  private testTimeout?: NodeJS.Timeout;
+  private rampUpInterval?: NodeJS.Timeout;
+  private autoscaleInterval?: NodeJS.Timeout;
 
   constructor(
     options: RunOptions,
@@ -109,15 +112,15 @@ export class Runner extends EventEmitter {
 
     // The main timer for the total test duration starts now
     const durationMs = durationSec * 1000;
-    const testTimeout = setTimeout(() => this.stop(), durationMs);
+    this.testTimeout = setTimeout(() => this.stop(), durationMs);
 
     // If ramp-up is enabled, start the governor
     if (rampUpTimeSec > 0) {
-      const rampUpInterval = setInterval(() => {
+      this.rampUpInterval = setInterval(() => {
         const elapsedTimeSec = (Date.now() - this.startTime) / 1000;
 
         if (this.stopped) {
-          clearInterval(rampUpInterval);
+          clearInterval(this.rampUpInterval as NodeJS.Timeout);
           return;
         }
 
@@ -139,9 +142,9 @@ export class Runner extends EventEmitter {
       // Start with one worker
       this.addWorker();
 
-      const autoscaleInterval = setInterval(() => {
+      this.autoscaleInterval = setInterval(() => {
         if (this.stopped) {
-          clearInterval(autoscaleInterval);
+          clearInterval(this.autoscaleInterval as NodeJS.Timeout);
           return;
         }
 
@@ -192,7 +195,7 @@ export class Runner extends EventEmitter {
       await Promise.all(workerPromises);
     }
 
-    clearTimeout(testTimeout);
+    this.cleanup();
     return this.results;
   }
 
@@ -200,7 +203,23 @@ export class Runner extends EventEmitter {
     if (this.stopped) return;
     this.stopped = true;
     this.activeWorkers.forEach((w) => w.stop());
+    this.cleanup();
     this.emit('stop');
+  }
+
+  private cleanup(): void {
+    if (this.testTimeout) {
+      clearTimeout(this.testTimeout);
+      this.testTimeout = undefined;
+    }
+    if (this.rampUpInterval) {
+      clearInterval(this.rampUpInterval);
+      this.rampUpInterval = undefined;
+    }
+    if (this.autoscaleInterval) {
+      clearInterval(this.autoscaleInterval);
+      this.autoscaleInterval = undefined;
+    }
   }
 
   private addWorker(): void {
@@ -254,27 +273,26 @@ export class Runner extends EventEmitter {
         });
       }
 
-      // If a target RPS is set for the test, we need to manage the request rate.
-      if (this.options.rps && this.options.workers) {
-        if (this.currentRpm > 0) {
-          // The current RPS is non-zero, so we calculate a delay to match it.
-          const targetDelayMs =
-            (this.getWorkerCount() * 1000) / this.currentRpm;
+      const { rps } = this.options;
 
-          // Account for the request's own latency to improve accuracy
-          const delayToApply = Math.max(
-            0,
-            targetDelayMs - (Date.now() - start),
-          );
-
-          await sleep(delayToApply);
-        } else {
-          // A target RPM is set, but the current RPM is 0 (start of ramp-up).
-          // We must sleep briefly to prevent a busy-loop that would block the governor.
-          await sleep(50);
-        }
+      // If no RPS is specified, run at max speed but yield to the event loop.
+      if (!rps) {
+        await sleep(0);
+        continue;
       }
-      // If no `options.rpm` is set, the loop proceeds without delay for maximum speed.
+
+      // If RPS is specified, this.currentRpm holds the dynamic target.
+      // At the start of a ramp-up, currentRpm can be 0. We must wait for the governor.
+      if (this.currentRpm === 0) {
+        await sleep(50);
+        continue;
+      }
+
+      const workerCount = this.getWorkerCount();
+      // Note: this.currentRpm is actually the target RPS, the variable is just misnamed.
+      const idealDelay = (1000 * workerCount) / this.currentRpm;
+
+      await sleep(idealDelay);
     }
   }
 }

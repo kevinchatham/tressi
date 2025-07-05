@@ -1,7 +1,6 @@
 {
   "headers": {
-    "Content-Type": "application/json; charset=UTF-8",
-    "X-Powered-By": "tressi"
+    "Content-Type": "application/json; charset=UTF-8"
   },
   "requests": [
     {
@@ -16,27 +15,6 @@
         "body": "bar",
         "userId": 1
       }
-    },
-    {
-      "url": "https://jsonplaceholder.typicode.com/posts/1",
-      "method": "PUT",
-      "payload": {
-        "id": 1,
-        "title": "foo",
-        "body": "bar",
-        "userId": 1
-      }
-    },
-    {
-      "url": "https://jsonplaceholder.typicode.com/posts/1",
-      "method": "PATCH",
-      "payload": {
-        "title": "a new title"
-      }
-    },
-    {
-      "url": "https://jsonplaceholder.typicode.com/posts/1",
-      "method": "DELETE"
     }
   ]
 }

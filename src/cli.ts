@@ -70,7 +70,6 @@ program
   .option(
     '--ramp-up-time <s>',
     'Time in seconds to ramp up to the target RPM',
-    '-rut',
   )
   .option('--rps <n>', 'Target requests per second')
   .option('--autoscale', 'Enable autoscaling of workers')
