@@ -55,7 +55,17 @@ const program = new Command();
 
 program
   .name('tressi')
-  .description('A modern, simple load testing tool for APIs.')
+  .description('A modern, simple load testing tool for APIs.');
+
+program
+  .option('-c, --config <path>', 'Path or URL to config file (.ts or .json)')
+  .option('--concurrency <n>', 'Concurrent workers', '10')
+  .option('--duration <s>', 'Duration in seconds', '10')
+  .option('--rpm <n>', 'Requests per minute limit')
+  .option('--csv <path>', 'CSV output path')
+  .option('--no-ui', 'Disable live charts (enabled by default)');
+
+program
   .command('init')
   .description('Create a boilerplate tressi configuration file')
   .action(async () => {
@@ -108,14 +118,6 @@ program
     }
   });
 
-program
-  .option('-c, --config <path>', 'Path or URL to config file (.ts or .json)')
-  .option('--concurrency <n>', 'Concurrent workers', '10')
-  .option('--duration <s>', 'Duration in seconds', '10')
-  .option('--rpm <n>', 'Requests per minute limit')
-  .option('--csv <path>', 'CSV output path')
-  .option('--no-ui', 'Disable live charts (enabled by default)');
-
 program.addHelpText(
   'after',
   `
@@ -143,40 +145,30 @@ Examples:
 `,
 );
 
-async function main(): Promise<void> {
-  await program.parseAsync(process.argv);
-  const opts = program.opts();
-
-  // Exit if 'init' command was called or no command was called
-  if (program.args.length > 0) {
-    const command = program.commands.find(
-      (cmd) => cmd.name() === program.args[0],
-    );
-    if (command) {
-      // A command was called and handled by its action, so we can exit.
-      return;
-    }
-  }
-
-  if (process.argv.length <= 2) {
-    program.help();
-    process.exit(0);
-  }
-
+program.action(async (opts) => {
+  // If no config is provided, and no command was run, show help.
+  // This handles the case where the user just runs `tressi`.
   if (!opts.config) {
-    // eslint-disable-next-line no-console
-    console.error(chalk.red('Error: --config is required'));
+    program.help();
+    return;
+  }
+
+  try {
+    await runLoadTest({
+      config: opts.config,
+      concurrency: opts.concurrency
+        ? parseInt(opts.concurrency, 10)
+        : undefined,
+      durationSec: opts.duration ? parseInt(opts.duration, 10) : undefined,
+      rpm: opts.rpm ? parseInt(opts.rpm, 10) : undefined,
+      csvPath: opts.csv,
+      useUI: opts.ui,
+    });
+  } catch {
+    // The runLoadTest function handles its own error logging.
+    // We just need to ensure the process exits with an error code.
     process.exit(1);
   }
+});
 
-  runLoadTest({
-    config: opts.config,
-    concurrency: opts.concurrency ? parseInt(opts.concurrency, 10) : undefined,
-    durationSec: opts.duration ? parseInt(opts.duration, 10) : undefined,
-    rpm: opts.rpm ? parseInt(opts.rpm, 10) : undefined,
-    csvPath: opts.csv,
-    useUI: opts.ui,
-  }).catch(() => process.exit(1));
-}
-
-main();
+program.parseAsync(process.argv);
