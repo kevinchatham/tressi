@@ -18,24 +18,35 @@ export { defineConfig, TressiConfig, RequestConfig };
 
 export interface RunOptions {
   config: string | TressiConfig;
-  concurrency?: number;
+  workers?: number;
   durationSec?: number;
   rampUpTimeSec?: number;
   rps?: number;
+  autoscale?: boolean;
   csvPath?: string;
   useUI?: boolean;
 }
 
 function printSummary(results: RequestResult[], options: RunOptions): void {
-  const { concurrency = 10, durationSec = 10, rps, rampUpTimeSec } = options;
+  const {
+    workers = 10,
+    durationSec = 10,
+    rps,
+    rampUpTimeSec,
+    autoscale,
+  } = options;
 
   const totalRequests = results.length;
 
   const configTable = new Table({ colWidths: [30, 20] });
   configTable.push(
-    { Concurrency: concurrency },
+    { Workers: autoscale ? `Up to ${workers}` : workers },
     { Duration: `${durationSec}s` },
   );
+
+  if (autoscale) {
+    configTable.push({ Autoscale: 'Enabled' });
+  }
 
   if (rps) {
     configTable.push({ 'Target RPS': rps });
@@ -62,18 +73,30 @@ function printSummary(results: RequestResult[], options: RunOptions): void {
   if (rps) {
     const avgLatencyMs = average(latencies);
     const maxRpsPerWorker = 1000 / avgLatencyMs;
-    const maxPossibleRps = maxRpsPerWorker * concurrency;
+    const maxPossibleRps = maxRpsPerWorker * workers;
 
     if (rps > maxPossibleRps) {
       const suggestedWorkers = Math.ceil(rps / maxRpsPerWorker);
+      let warningMessage: string;
+
+      if (autoscale) {
+        warningMessage =
+          `\n⚠️  Warning: Target of ${rps} RPS may be unreachable.` +
+          `\n   The autoscaler hit the maximum of ${workers} workers.` +
+          `\n   With an average latency of ~${Math.ceil(
+            avgLatencyMs,
+          )}ms, the theoretical max is only ~${Math.floor(maxPossibleRps)} RPS.` +
+          `\n   To meet the target, try increasing the --workers limit to at least ${suggestedWorkers}.`;
+      } else {
+        warningMessage =
+          `\n⚠️  Warning: Target of ${rps} RPS may be unreachable with ${workers} workers.` +
+          `\n   With an average latency of ~${Math.ceil(
+            avgLatencyMs,
+          )}ms, the theoretical max is only ~${Math.floor(maxPossibleRps)} RPS.` +
+          `\n   To meet the target, try increasing workers to at least ${suggestedWorkers}.`;
+      }
       // eslint-disable-next-line no-console
-      console.log(
-        chalk.yellow(
-          `\n⚠️  Warning: Target of ${rps} RPS may be unreachable with a concurrency of ${concurrency}.` +
-            `\n   With an average latency of ~${Math.ceil(avgLatencyMs)}ms, the theoretical max is only ~${Math.floor(maxPossibleRps)} RPS.` +
-            `\n   To meet the target, try increasing concurrency to at least ${suggestedWorkers}.`,
-        ),
-      );
+      console.log(chalk.yellow(warningMessage));
     }
   }
 
@@ -251,6 +274,7 @@ export async function runLoadTest(options: RunOptions): Promise<void> {
         runner.getSuccessfulRequestsCount(),
         runner.getFailedRequestsCount(),
         runner.getAverageLatency(),
+        runner.getWorkerCount(),
       );
     }, 500);
 

@@ -61,7 +61,11 @@ program
 
 program
   .option('-c, --config <path>', 'Path or URL to config file (.ts or .json)')
-  .option('--concurrency <n>', 'Concurrent workers', '10')
+  .option(
+    '--workers <n>',
+    'Number of concurrent workers, or max workers if autoscale is enabled',
+    '10',
+  )
   .option('--duration <s>', 'Duration in seconds', '10')
   .option(
     '--ramp-up-time <s>',
@@ -69,6 +73,7 @@ program
     '-rut',
   )
   .option('--rps <n>', 'Target requests per second')
+  .option('--autoscale', 'Enable autoscaling of workers')
   .option('--csv <path>', 'CSV output path')
   .option('--no-ui', 'Disable live charts (enabled by default)');
 
@@ -142,7 +147,7 @@ Examples:
   $ tressi --config ./tressi.config.ts --no-ui
   
   # Run a load test with a config file and set the concurrency to 20
-  $ tressi --config ./tressi.config.ts --concurrency 20
+  $ tressi --config ./tressi.config.ts --workers 20
   
   # Run a load test with a config file and set the duration to 30 seconds
   $ tressi --config ./tressi.config.ts --duration 30
@@ -160,17 +165,22 @@ program.action(async (opts) => {
     return;
   }
 
+  if (opts.autoscale && !opts.rps) {
+    // eslint-disable-next-line no-console
+    console.error('Error: --rps is required when --autoscale is enabled.');
+    process.exit(1);
+  }
+
   try {
     await runLoadTest({
       config: opts.config,
-      concurrency: opts.concurrency
-        ? parseInt(opts.concurrency, 10)
-        : undefined,
+      workers: opts.workers ? parseInt(opts.workers, 10) : undefined,
       durationSec: opts.duration ? parseInt(opts.duration, 10) : undefined,
       rampUpTimeSec: opts.rampUpTime
         ? parseInt(opts.rampUpTime, 10)
         : undefined,
       rps: opts.rps ? parseInt(opts.rps, 10) : undefined,
+      autoscale: opts.autoscale,
       csvPath: opts.csv,
       useUI: opts.ui,
     });

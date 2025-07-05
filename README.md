@@ -7,7 +7,8 @@
 ## 🚀 Features
 
 - 📝 **Declarative Config** — Define tests in TypeScript or JSON with full type safety.
-- 👥 **Concurrent Workers** — Simulate realistic multi-user load with ease.
+- ⚡️ **Autoscaling** - Automatically adjust the number of workers to meet a target RPS.
+- 👥 **Concurrent Workers** — Simulate realistic multi-user load with ease via workers.
 - ⏱️ **Rate Limiting** — Control RPS for accurate throttling scenarios.
 - 📊 **Interactive Terminal UI** — View live RPS, latency stats, and status codes.
 - 📁 **CSV Export** — Export all results for offline analysis.
@@ -102,7 +103,15 @@ Or use `.json` instead for maximum portability:
 3. **Run the test**
 
 ```bash
-npx tressi --config tressi.config.ts --concurrency 10 --duration 30
+npx tressi --config tressi.config.ts --workers 10 --duration 30
+```
+
+### ⚡️ Autoscaling Example
+
+When autoscaling is enabled, `--workers` is treated as `--max-workers`. `tressi` will dynamically adjust the number of workers to meet the desired `--rps` target.
+
+```bash
+npx tressi --config tressi.config.ts --autoscale --workers 50 --rps 1000 --duration 60
 ```
 
 ### 📚 CLI Commands
@@ -113,15 +122,16 @@ npx tressi --config tressi.config.ts --concurrency 10 --duration 30
 
 ### ⚙️ CLI Options
 
-| Option               | Alias  | Description                                         | Default |
-| -------------------- | ------ | --------------------------------------------------- | ------- |
-| `--config <path>`    | `-c`   | Path or URL to config file (.ts or .json)           |         |
-| `--concurrency <n>`  |        | Number of concurrent workers                        | `10`    |
-| `--duration s`       |        | Duration of the test in seconds                     | `10`    |
-| `--rps <n>`          |        | Target requests per second (ramps up to this value) |         |
-| `--ramp-up-time <s>` | `-rut` | Time in seconds to ramp up to the target RPS        |         |
-| `--csv <path>`       |        | Save results as CSV                                 |         |
-| `--no-ui`            |        | Disable the interactive terminal UI                 | `false` |
+| Option               | Alias  | Description                                                           | Default |
+| -------------------- | ------ | --------------------------------------------------------------------- | ------- |
+| `--config <path>`    | `-c`   | Path or URL to config file (.ts or .json)                             |         |
+| `--workers <n>`      |        | Number of concurrent workers, or max workers if autoscale is enabled. | `10`    |
+| `--duration s`       |        | Duration of the test in seconds                                       | `10`    |
+| `--rps <n>`          |        | Target requests per second (ramps up to this value)                   |         |
+| `--ramp-up-time <s>` | `-rut` | Time in seconds to ramp up to the target RPS                          |         |
+| `--autoscale`        |        | Enable autoscaling of workers (requires --rps)                        | `false` |
+| `--csv <path>`       |        | Save results as CSV                                                   |         |
+| `--no-ui`            |        | Disable the interactive terminal UI                                   | `false` |
 
 ### 🧬 Programmatic Usage
 
@@ -132,10 +142,11 @@ await runLoadTest({
   config: {
     requests: [{ url: 'https://api.example.com/health', method: 'GET' }],
   },
-  concurrency: 5,
+  workers: 5,
   durationSec: 10,
   rps: 100, // Target 100 requests/second
   rampUpTimeSec: 10, // Ramp up to 100 RPS over 10 seconds
+  autoscale: true,
   useUI: false,
 });
 ```

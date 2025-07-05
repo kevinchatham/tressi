@@ -46,6 +46,7 @@ export class TUI {
     successfulRequests: number,
     failedRequests: number,
     averageLatency: number,
+    workerCount: number,
   ): void {
     const times = latencies.slice(-30);
     this.latencyChart.setData([
@@ -75,6 +76,7 @@ export class TUI {
       ['Success / Fail', `${successfulRequests} / ${failedRequests}`],
       ['Avg Latency (ms)', Math.round(averageLatency)],
       ['Time', `${elapsedSec.toFixed(0)}s / ${totalSec}s`],
+      ['Workers', workerCount],
     ];
 
     this.statsTable.setData({

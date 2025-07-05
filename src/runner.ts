@@ -20,6 +20,7 @@ export class Runner extends EventEmitter {
   private currentRpm: number;
   private successfulRequests = 0;
   private failedRequests = 0;
+  private activeWorkers: { promise: Promise<void>; stop: () => void }[] = [];
 
   constructor(
     options: RunOptions,
@@ -88,14 +89,22 @@ export class Runner extends EventEmitter {
     return recentRequests.length;
   }
 
+  public getWorkerCount(): number {
+    if (this.options.autoscale) {
+      return this.activeWorkers.length;
+    }
+    return this.options.workers ?? 10;
+  }
+
   public async run(): Promise<RequestResult[]> {
     this.startTime = Date.now();
 
     const {
-      concurrency = 10,
+      workers = 10,
       durationSec = 10,
       rampUpTimeSec = 0,
       rps = 0,
+      autoscale = false,
     } = this.options;
 
     // The main timer for the total test duration starts now
@@ -120,14 +129,68 @@ export class Runner extends EventEmitter {
         } else {
           // If no target RPS, ramp up to a theoretical max (e.g., 1k RPS per worker)
           // This creates a steady increase with no upper bound.
-          const arbitraryMaxRps = (this.options.concurrency || 10) * 1000;
+          const arbitraryMaxRps = (this.options.workers || 10) * 1000;
           this.currentRpm = Math.round(arbitraryMaxRps * rampUpProgress);
         }
       }, 1000); // Update every second
     }
 
-    const workers = Array.from({ length: concurrency }, () => this.runWorker());
-    await Promise.all(workers);
+    if (autoscale) {
+      // Start with one worker
+      this.addWorker();
+
+      const autoscaleInterval = setInterval(() => {
+        if (this.stopped) {
+          clearInterval(autoscaleInterval);
+          return;
+        }
+
+        const currentRps = this.getCurrentRps();
+        const currentWorkers = this.activeWorkers.length;
+
+        if (currentWorkers === 0) {
+          this.addWorker();
+          return;
+        }
+
+        const targetRps = this.options.rps;
+        if (!targetRps) return;
+
+        const scaleUpThreshold = targetRps * 0.9;
+        const scaleDownThreshold = targetRps * 1.1;
+
+        if (currentRps < scaleUpThreshold && currentWorkers < workers) {
+          const rpsDeficit = targetRps - currentRps;
+          const avgRpsPerWorker =
+            currentWorkers > 0 ? currentRps / currentWorkers : 10;
+          const workersNeeded = rpsDeficit / avgRpsPerWorker;
+          let workersToAdd = Math.ceil(workersNeeded * 0.25);
+          workersToAdd = Math.max(1, workersToAdd);
+          workersToAdd = Math.min(workersToAdd, workers - currentWorkers);
+
+          for (let i = 0; i < workersToAdd; i++) {
+            this.addWorker();
+          }
+        } else if (currentRps > scaleDownThreshold && currentWorkers > 1) {
+          const rpsSurplus = currentRps - targetRps;
+          const avgRpsPerWorker = currentRps / currentWorkers;
+          const workersToCut = rpsSurplus / avgRpsPerWorker;
+          let workersToRemove = Math.ceil(workersToCut * 0.25);
+          workersToRemove = Math.max(1, workersToRemove);
+          workersToRemove = Math.min(workersToRemove, currentWorkers - 1);
+
+          for (let i = 0; i < workersToRemove; i++) {
+            this.removeWorker();
+          }
+        }
+      }, 2000); // Check every 2 seconds
+      await Promise.all(this.activeWorkers.map((w) => w.promise));
+    } else {
+      const workerPromises = Array.from({ length: workers }, () =>
+        this.runWorker(),
+      );
+      await Promise.all(workerPromises);
+    }
 
     clearTimeout(testTimeout);
     return this.results;
@@ -136,11 +199,30 @@ export class Runner extends EventEmitter {
   public stop(): void {
     if (this.stopped) return;
     this.stopped = true;
+    this.activeWorkers.forEach((w) => w.stop());
     this.emit('stop');
   }
 
-  private async runWorker(): Promise<void> {
-    while (!this.stopped) {
+  private addWorker(): void {
+    let workerStopped = false;
+    const stop = (): void => {
+      workerStopped = true;
+    };
+    const promise = this.runWorker(() => workerStopped);
+    this.activeWorkers.push({ promise, stop });
+  }
+
+  private removeWorker(): void {
+    const worker = this.activeWorkers.pop();
+    if (worker) {
+      worker.stop();
+    }
+  }
+
+  private async runWorker(
+    isStopped: () => boolean = () => this.stopped,
+  ): Promise<void> {
+    while (!isStopped()) {
       const req =
         this.requests[Math.floor(Math.random() * this.requests.length)];
       const start = Date.now();
@@ -173,11 +255,11 @@ export class Runner extends EventEmitter {
       }
 
       // If a target RPS is set for the test, we need to manage the request rate.
-      if (this.options.rps && this.options.concurrency) {
+      if (this.options.rps && this.options.workers) {
         if (this.currentRpm > 0) {
           // The current RPS is non-zero, so we calculate a delay to match it.
           const targetDelayMs =
-            (this.options.concurrency * 1000) / this.currentRpm;
+            (this.getWorkerCount() * 1000) / this.currentRpm;
 
           // Account for the request's own latency to improve accuracy
           const delayToApply = Math.max(
