@@ -21,12 +21,12 @@ export interface RunOptions {
   concurrency?: number;
   durationSec?: number;
   rampUpTimeSec?: number;
-  rpm?: number;
+  rps?: number;
   csvPath?: string;
   useUI?: boolean;
 }
 
-function printSummary(results: RequestResult[]): void {
+function printSummary(results: RequestResult[], durationSec: number): void {
   const table = new Table({
     head: ['Stat', 'Value'],
     colWidths: [20, 20],
@@ -37,6 +37,7 @@ function printSummary(results: RequestResult[]): void {
   const latencies = results.map((r) => r.latencyMs);
 
   table.push(
+    ['Duration', `${durationSec}s`],
     ['Total Requests', totalRequests],
     [chalk.green('Successful'), successCount],
     [chalk.red('Failed'), totalRequests - successCount],
@@ -162,20 +163,45 @@ export async function runLoadTest(options: RunOptions): Promise<void> {
     tui = new TUI(() => runner.stop());
   }
 
-  const runner = new Runner(options, requests, headers, tui);
+  const runner = new Runner(options, requests, headers);
 
-  // If we have a TUI, we need to handle its destruction
+  // If we have a TUI, we need to handle its destruction and polling
   if (tui) {
+    const tuiInterval = setInterval(() => {
+      const currentResults = runner.getResults();
+      const latencies = currentResults.map((r) => r.latencyMs);
+      const statusCodes = currentResults.reduce(
+        (acc, r) => {
+          acc[r.status] = (acc[r.status] || 0) + 1;
+          return acc;
+        },
+        {} as Record<number, number>,
+      );
+
+      const startTime = runner.getStartTime();
+      const elapsedSec = startTime > 0 ? (Date.now() - startTime) / 1000 : 0;
+      const totalSec = options.durationSec || 10;
+
+      tui.update(
+        latencies,
+        statusCodes,
+        runner.getCurrentRpm(),
+        elapsedSec,
+        totalSec,
+      );
+    }, 500);
+
     runner.on('stop', () => {
+      clearInterval(tuiInterval);
       tui?.destroy();
     });
   }
 
-  await runner.run();
+  const results = await runner.run();
 
-  printSummary(runner.getResults());
+  printSummary(results, options.durationSec || 10);
 
   if (options.csvPath) {
-    await exportToCsv(options.csvPath, runner.getResults());
+    await exportToCsv(options.csvPath, results);
   }
 }

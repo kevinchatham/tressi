@@ -8,10 +8,10 @@
 
 - 📝 **Declarative Config** — Define tests in TypeScript or JSON with full type safety.
 - 👥 **Concurrent Workers** — Simulate realistic multi-user load with ease.
-- ⏱️ **Rate Limiting** — Control RPM for accurate throttling scenarios.
-- 📊 **Interactive Terminal UI** — View live latency stats and status codes.
-- 📁 **CSV Export** — Export all results for offline analysis or dashboards.
-- 🧩 **Programmatic API** — Import into your own scripts and automate everything.
+- ⏱️ **Rate Limiting** — Control RPS for accurate throttling scenarios.
+- 📊 **Interactive Terminal UI** — View live RPS, latency stats, and status codes.
+- 📁 **CSV Export** — Export all results for offline analysis.
+- 🧩 **Programmatic API** — Import and use in your own scripts.
 
 ## 📦 Installation
 
@@ -118,8 +118,8 @@ npx tressi --config tressi.config.ts --concurrency 10 --duration 30
 | `--config <path>`    | `-c`   | Path or URL to config file (.ts or .json)           |         |
 | `--concurrency <n>`  |        | Number of concurrent workers                        | `10`    |
 | `--duration s`       |        | Duration of the test in seconds                     | `10`    |
-| `--rpm <n>`          |        | Target requests per minute (ramps up to this value) |         |
-| `--ramp-up-time <s>` | `-rut` | Time in seconds to ramp up to the target RPM        |         |
+| `--rps <n>`          |        | Target requests per second (ramps up to this value) |         |
+| `--ramp-up-time <s>` | `-rut` | Time in seconds to ramp up to the target RPS        |         |
 | `--csv <path>`       |        | Save results as CSV                                 |         |
 | `--no-ui`            |        | Disable the interactive terminal UI                 | `false` |
 
@@ -134,58 +134,12 @@ await runLoadTest({
   },
   concurrency: 5,
   durationSec: 10,
-  rpm: 600, // Target 600 requests/minute
-  rampUpTimeSec: 10, // Ramp up to 600 RPM over 10 seconds
+  rps: 100, // Target 100 requests/second
+  rampUpTimeSec: 10, // Ramp up to 100 RPS over 10 seconds
   useUI: false,
 });
 ```
 
 ## ⚙️ Configuration Reference
 
-Your `tressi.config.ts` or `.json` file powers the entire test run.
-
-### Root Config Options
-
-| Key        | Type                                | Description                       |
-| ---------- | ----------------------------------- | --------------------------------- |
-| `headers`  | `Record<string, string>` (optional) | Global headers for all requests   |
-| `requests` | `Request[]`                         | Array of HTTP request definitions |
-
-### Request Object Fields
-
-| Field     | Type     | Required | Description                     |     |             |
-| --------- | -------- | -------- | ------------------------------- | --- | ----------- |
-| `url`     | `string` | ✅       | The target endpoint URL         |     |             |
-| `method`  | \`"GET"  | "POST"   | ...\`                           | ✅  | HTTP method |
-| `payload` | `object` | ❌       | JSON body (for POST, PUT, etc.) |     |             |
-
-### 🌐 Remote Config Support
-
-You can also fetch your test config from a remote URL:
-
-```bash
-npx tressi --config https://example.com/my-test-config.json
-```
-
-Perfect for **CI/CD pipelines**, **shared test suites**, and **centralized performance monitoring**.
-
-## 👩‍💻 Development
-
-Clone and build the project:
-
-```bash
-git clone https://github.com/kevinchatham/tressi.git
-cd tressi
-npm install
-```
-
-### 🔧 Scripts
-
-- `npm run dev` — Run CLI in dev mode (via `tsx`)
-- `npm run build` — Build the project with `tsup`
-- `npm run lint` — Lint and auto-fix
-- `npm run format` — Format codebase with Prettier
-
-## 📄 License
-
-Licensed under the [MIT License](LICENSE)
+Your `

@@ -5,6 +5,7 @@ export class TUI {
   private screen: blessed.Widgets.Screen;
   private latencyChart: contrib.Widgets.LineElement;
   private statusChart: contrib.Widgets.BarElement;
+  private statsTable: contrib.Widgets.TableElement;
 
   constructor(onExit: () => void) {
     this.screen = blessed.screen({ smartCSR: true });
@@ -16,10 +17,16 @@ export class TUI {
       maxY: 1000,
     });
 
-    this.statusChart = grid.set(6, 0, 6, 12, contrib.bar, {
+    this.statsTable = grid.set(6, 0, 6, 6, contrib.table, {
+      label: 'Live Stats',
+      interactive: false,
+      columnWidth: [15, 10],
+    });
+
+    this.statusChart = grid.set(6, 6, 6, 6, contrib.bar, {
       label: 'Status Codes',
       barWidth: 6,
-      barSpacing: 4,
+      barSpacing: 2,
       xOffset: 0,
       maxHeight: 100,
     });
@@ -29,7 +36,13 @@ export class TUI {
     });
   }
 
-  public updateCharts(latencies: number[], statusCodeMap: Record<number, number>): void {
+  public update(
+    latencies: number[],
+    statusCodeMap: Record<number, number>,
+    currentRpm: number,
+    elapsedSec: number,
+    totalSec: number,
+  ): void {
     const times = latencies.slice(-30);
     this.latencyChart.setData([
       {
@@ -47,10 +60,18 @@ export class TUI {
       data: counts,
     });
 
+    this.statsTable.setData({
+      headers: ['Stat', 'Value'],
+      data: [
+        ['RPS', currentRpm.toString()],
+        ['Time', `${elapsedSec.toFixed(0)}s / ${totalSec}s`],
+      ],
+    });
+
     this.screen.render();
   }
 
   public destroy(): void {
     this.screen.destroy();
   }
-} 
+}

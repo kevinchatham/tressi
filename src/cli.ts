@@ -4,8 +4,8 @@ import { promises as fs } from 'fs';
 import inquirer from 'inquirer';
 import path from 'path';
 
-import { runLoadTest } from '.';
 import pkg from '../package.json';
+import { runLoadTest } from '.';
 
 const tsConfigTemplate = `import { defineConfig } from 'tressi';
 
@@ -68,7 +68,7 @@ program
     'Time in seconds to ramp up to the target RPM',
     '-rut',
   )
-  .option('--rpm <n>', 'Requests per minute limit')
+  .option('--rps <n>', 'Target requests per second')
   .option('--csv <path>', 'CSV output path')
   .option('--no-ui', 'Disable live charts (enabled by default)');
 
@@ -170,7 +170,7 @@ program.action(async (opts) => {
       rampUpTimeSec: opts.rampUpTime
         ? parseInt(opts.rampUpTime, 10)
         : undefined,
-      rpm: opts.rpm ? parseInt(opts.rpm, 10) : undefined,
+      rps: opts.rps ? parseInt(opts.rps, 10) : undefined,
       csvPath: opts.csv,
       useUI: opts.ui,
     });

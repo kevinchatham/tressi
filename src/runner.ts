@@ -1,21 +1,11 @@
 import { EventEmitter } from 'events';
-import { RequestConfig, TressiConfig } from './config';
+
+import { RequestConfig } from './config';
 import { RunOptions } from './index';
 import { RequestResult } from './stats';
-import { TUI } from './ui';
 
 async function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-export interface LoadTestOptions {
-  config: string | TressiConfig;
-  headersPath?: string;
-  concurrency?: number;
-  durationSec?: number;
-  rpm?: number;
-  csvPath?: string;
-  useUI?: boolean;
 }
 
 export class Runner extends EventEmitter {
@@ -23,7 +13,6 @@ export class Runner extends EventEmitter {
   private requests: RequestConfig[];
   private headers: Record<string, string>;
   private results: RequestResult[] = [];
-  private tui?: TUI;
   private stopped = false;
   private startTime: number = 0;
   private currentRpm: number;
@@ -32,15 +21,13 @@ export class Runner extends EventEmitter {
     options: RunOptions,
     requests: RequestConfig[],
     headers: Record<string, string>,
-    tui?: TUI,
   ) {
     super();
     this.options = options;
     this.requests = requests;
     this.headers = headers;
-    this.tui = tui;
     this.currentRpm =
-      options.rampUpTimeSec && options.rpm ? 0 : options.rpm || 0;
+      options.rampUpTimeSec && options.rps ? 0 : options.rps || 0;
   }
 
   public onResult(result: RequestResult): void {
@@ -51,6 +38,14 @@ export class Runner extends EventEmitter {
     return this.results;
   }
 
+  public getStartTime(): number {
+    return this.startTime;
+  }
+
+  public getCurrentRpm(): number {
+    return Math.round(this.currentRpm);
+  }
+
   public async run(): Promise<RequestResult[]> {
     this.startTime = Date.now();
 
@@ -58,7 +53,7 @@ export class Runner extends EventEmitter {
       concurrency = 10,
       durationSec = 10,
       rampUpTimeSec = 0,
-      rpm = 0,
+      rps = 0,
     } = this.options;
 
     // The main timer for the total test duration starts now
@@ -66,17 +61,25 @@ export class Runner extends EventEmitter {
     const testTimeout = setTimeout(() => this.stop(), durationMs);
 
     // If ramp-up is enabled, start the governor
-    if (rampUpTimeSec > 0 && rpm > 0) {
+    if (rampUpTimeSec > 0) {
       const rampUpInterval = setInterval(() => {
         const elapsedTimeSec = (Date.now() - this.startTime) / 1000;
 
-        if (this.stopped || elapsedTimeSec >= rampUpTimeSec) {
-          this.currentRpm = rpm; // Lock to the final RPM
+        if (this.stopped) {
           clearInterval(rampUpInterval);
+          return;
+        }
+
+        const rampUpProgress = Math.min(elapsedTimeSec / rampUpTimeSec, 1);
+
+        if (rps > 0) {
+          // If a target RPS is set, ramp up to that value
+          this.currentRpm = Math.round(rps * rampUpProgress);
         } else {
-          // Linearly increase the RPM
-          const rampUpProgress = elapsedTimeSec / rampUpTimeSec;
-          this.currentRpm = Math.round(rpm * rampUpProgress);
+          // If no target RPS, ramp up to a theoretical max (e.g., 1k RPS per worker)
+          // This creates a steady increase with no upper bound.
+          const arbitraryMaxRps = (this.options.concurrency || 10) * 1000;
+          this.currentRpm = Math.round(arbitraryMaxRps * rampUpProgress);
         }
       }, 1000); // Update every second
     }
@@ -107,44 +110,45 @@ export class Runner extends EventEmitter {
           body: req.payload ? JSON.stringify(req.payload) : undefined,
         });
 
+        const latencyMs = Date.now() - start;
         this.onResult({
           url: req.url,
           status: res.status,
-          latencyMs: Date.now() - start,
+          latencyMs,
           success: res.ok,
         });
       } catch (err) {
+        const latencyMs = Date.now() - start;
         this.onResult({
           url: req.url,
           status: 0,
-          latencyMs: Date.now() - start,
+          latencyMs,
           success: false,
           error: (err as Error).message,
         });
       }
 
-      this.updateTui();
+      // If a target RPS is set for the test, we need to manage the request rate.
+      if (this.options.rps && this.options.concurrency) {
+        if (this.currentRpm > 0) {
+          // The current RPS is non-zero, so we calculate a delay to match it.
+          const targetDelayMs =
+            (this.options.concurrency * 1000) / this.currentRpm;
 
-      if (this.currentRpm > 0 && this.options.concurrency) {
-        const totalRequestsPerSecond = this.currentRpm / 60;
-        const delayPerWorkerMs =
-          (this.options.concurrency * 1000) / totalRequestsPerSecond;
-        await sleep(delayPerWorkerMs);
+          // Account for the request's own latency to improve accuracy
+          const delayToApply = Math.max(
+            0,
+            targetDelayMs - (Date.now() - start),
+          );
+
+          await sleep(delayToApply);
+        } else {
+          // A target RPM is set, but the current RPM is 0 (start of ramp-up).
+          // We must sleep briefly to prevent a busy-loop that would block the governor.
+          await sleep(50);
+        }
       }
+      // If no `options.rpm` is set, the loop proceeds without delay for maximum speed.
     }
-  }
-
-  private updateTui(): void {
-    if (!this.tui) return;
-
-    const latencies = this.results.map((r) => r.latencyMs);
-    const statusCodes = this.results.reduce(
-      (acc, r) => {
-        acc[r.status] = (acc[r.status] || 0) + 1;
-        return acc;
-      },
-      {} as Record<number, number>,
-    );
-    this.tui.updateCharts(latencies, statusCodes);
   }
 }
