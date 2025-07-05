@@ -1,10 +1,14 @@
 import fetch from 'node-fetch';
+import jiti from 'jiti';
 import path from 'path';
 import { z } from 'zod';
 
 const RequestConfigSchema = z.object({
   url: z.string().url(),
-  payload: z.record(z.string(), z.unknown()).or(z.array(z.unknown())).optional(),
+  payload: z
+    .record(z.string(), z.unknown())
+    .or(z.array(z.unknown()))
+    .optional(),
   method: z.enum(['GET', 'POST', 'PUT', 'PATCH', 'DELETE']).optional(),
 });
 
@@ -20,7 +24,9 @@ export function defineConfig(config: TressiConfig): TressiConfig {
   return config;
 }
 
-export async function loadConfig(configInput: string | TressiConfig): Promise<TressiConfig> {
+export async function loadConfig(
+  configInput: string | TressiConfig,
+): Promise<TressiConfig> {
   if (typeof configInput === 'object') {
     return TressiConfigSchema.parse(configInput);
   }
@@ -32,8 +38,9 @@ export async function loadConfig(configInput: string | TressiConfig): Promise<Tr
     rawContent = await res.json();
   } else {
     const absolutePath = path.resolve(configInput);
-    const module = await import(absolutePath);
-    rawContent = module.default;
+    const _jiti = jiti(__filename);
+    const module = _jiti(absolutePath);
+    rawContent = module.default || module;
   }
   return TressiConfigSchema.parse(rawContent);
-} 
+}
