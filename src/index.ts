@@ -3,9 +3,14 @@ import Table from 'cli-table3';
 import ora from 'ora';
 import { z } from 'zod';
 
-import { defineConfig, loadConfig, RequestConfig,TressiConfig } from './config';
+import {
+  defineConfig,
+  loadConfig,
+  RequestConfig,
+  TressiConfig,
+} from './config';
 import { exportToCsv } from './exporter';
-import { LoadTestOptions,Runner } from './runner';
+import { LoadTestOptions, Runner } from './runner';
 import { average, percentile, RequestResult } from './stats';
 import { TUI } from './ui';
 
@@ -14,7 +19,7 @@ export { defineConfig, TressiConfig, RequestConfig };
 function printSummary(
   results: RequestResult[],
   latencies: number[],
-  statusCodeMap: Record<number, number>
+  statusCodeMap: Record<number, number>,
 ): void {
   const table = new Table({
     head: ['Stat', 'Value'],
@@ -32,11 +37,11 @@ function printSummary(
     ['Min Latency (ms)', Math.min(...latencies).toFixed(2)],
     ['Max Latency (ms)', Math.max(...latencies).toFixed(2)],
     ['p95 Latency (ms)', percentile(latencies, 95).toFixed(2)],
-    ['p99 Latency (ms)', percentile(latencies, 99).toFixed(2)]
+    ['p99 Latency (ms)', percentile(latencies, 99).toFixed(2)],
   );
 
   // eslint-disable-next-line no-console
-  console.log('\n' + chalk.bold('Test Summary'));
+  console.log('\n' + chalk.bold('Global Test Summary'));
   // eslint-disable-next-line no-console
   console.log(table.toString());
 
@@ -51,8 +56,8 @@ function printSummary(
       const color = code.startsWith('2')
         ? chalk.green
         : code.startsWith('5')
-        ? chalk.red
-        : chalk.yellow;
+          ? chalk.red
+          : chalk.yellow;
       statusTable.push([color(code), count]);
     });
 
@@ -60,6 +65,49 @@ function printSummary(
   console.log(chalk.bold('\nResponses by Status Code:'));
   // eslint-disable-next-line no-console
   console.log(statusTable.toString());
+
+  if (results.length > 0) {
+    const resultsByUrl: Record<string, RequestResult[]> = results.reduce(
+      (acc, r) => {
+        if (!acc[r.url]) {
+          acc[r.url] = [];
+        }
+        acc[r.url].push(r);
+        return acc;
+      },
+      {} as Record<string, RequestResult[]>,
+    );
+
+    if (Object.keys(resultsByUrl).length > 1) {
+      // eslint-disable-next-line no-console
+      console.log('\n' + chalk.bold('Summary by Endpoint'));
+      Object.entries(resultsByUrl)
+        .sort(([urlA], [urlB]) => urlA.localeCompare(urlB))
+        .forEach(([url, endpointResults]) => {
+          const endpointLatencies = endpointResults.map((r) => r.latencyMs);
+          const total = endpointResults.length;
+          const successful = endpointResults.filter((r) => r.success).length;
+          const failed = total - successful;
+
+          const endpointTable = new Table({ colWidths: [30, 60] });
+          endpointTable.push(
+            { Endpoint: chalk.cyan(url) },
+            { 'Total Requests': total },
+            { Successful: chalk.green(successful) },
+            { Failed: chalk.red(failed) },
+            { 'Avg Latency (ms)': average(endpointLatencies).toFixed(2) },
+            {
+              'p95 Latency (ms)': percentile(endpointLatencies, 95).toFixed(2),
+            },
+            {
+              'p99 Latency (ms)': percentile(endpointLatencies, 99).toFixed(2),
+            },
+          );
+          // eslint-disable-next-line no-console
+          console.log(endpointTable.toString());
+        });
+    }
+  }
 
   const errors = results.filter((r) => r.error).slice(0, 5);
   if (errors.length > 0) {

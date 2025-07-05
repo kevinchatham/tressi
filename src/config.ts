@@ -1,4 +1,3 @@
-import fetch from 'node-fetch';
 import jiti from 'jiti';
 import path from 'path';
 import { z } from 'zod';
