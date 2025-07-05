@@ -282,6 +282,29 @@ export async function runLoadTest(options: RunOptions): Promise<void> {
       clearInterval(tuiInterval);
       tui?.destroy();
     });
+  } else {
+    // If we're not using the TUI, we should still provide some basic feedback
+    const noUiSpinner = ora('Test starting...').start();
+    const noUiInterval = setInterval(() => {
+      const startTime = runner.getStartTime();
+      const elapsedSec = startTime > 0 ? (Date.now() - startTime) / 1000 : 0;
+      const totalSec = options.durationSec || 10;
+
+      const rps = runner.getCurrentRps();
+      const successful = runner.getSuccessfulRequestsCount();
+      const failed = runner.getFailedRequestsCount();
+      const workers = runner.getWorkerCount();
+      const avgLatency = runner.getAverageLatency();
+
+      const rpsDisplay = options.rps ? `${rps}/${options.rps}` : `${rps}`;
+
+      noUiSpinner.text = `[${elapsedSec.toFixed(0)}s/${totalSec}s] RPS: ${rpsDisplay} | Workers: ${workers} | Success: ${successful} | Fail: ${failed} | Avg Latency: ${avgLatency.toFixed(0)}ms`;
+    }, 1000);
+
+    runner.on('stop', () => {
+      clearInterval(noUiInterval);
+      noUiSpinner.succeed('Test finished. Generating summary...');
+    });
   }
 
   const results = await runner.run();

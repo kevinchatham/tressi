@@ -100,25 +100,63 @@ Or use `.json` instead for maximum portability:
 }
 ```
 
-3. **Run the test**
-
-```bash
-npx tressi --config tressi.config.ts --workers 10 --duration 30
-```
-
-### ⚡️ Autoscaling Example
-
-When autoscaling is enabled, `--workers` is treated as `--max-workers`. `tressi` will dynamically adjust the number of workers to meet the desired `--rps` target.
-
-```bash
-npx tressi --config tressi.config.ts --autoscale --workers 50 --rps 1000 --duration 60
-```
-
 ### 📚 CLI Commands
 
 | Command | Description                       |
 | ------- | --------------------------------- |
 | `init`  | Create a new `tressi` config file |
+
+### 🧪 Test Scenarios
+
+`tressi` can be configured to simulate a variety of load testing scenarios. Here are a few examples:
+
+#### Basic Load Test
+
+A straightforward test with a fixed number of workers and a target RPS.
+
+```bash
+npx tressi --config tressi.config.ts --workers 10 --duration 30 --rps 200
+```
+
+#### Ramp-up Test
+
+Gradually increases the load over a set period to see how your service handles a steady increase in traffic.
+
+```bash
+npx tressi --config tressi.config.ts --workers 20 --duration 60 --rps 500 --ramp-up-time 30
+```
+
+#### Spike Test
+
+A short, intense burst of traffic to test your system's ability to handle sudden surges.
+
+```bash
+npx tressi --config tressi.config.ts --workers 100 --duration 10
+```
+
+#### Soak Test
+
+A long-duration, low-intensity test to check for performance degradation or memory leaks over time.
+
+```bash
+npx tressi --config tressi.config.ts --workers 5 --duration 300 --rps 50
+```
+
+#### Autoscaling Test
+
+Dynamically adjusts the number of workers to meet a target RPS, up to a specified maximum.
+
+```bash
+npx tressi --config tressi.config.ts --autoscale --workers 50 --rps 1000 --duration 60
+```
+
+#### CI/CD Test
+
+Runs without the interactive UI and exports the results to a CSV file, ideal for automated environments.
+
+```bash
+npx tressi --config tressi.config.ts --workers 20 --duration 30 --rps 300 --no-ui --csv ./results.csv
+```
 
 ### ⚙️ CLI Options
 
