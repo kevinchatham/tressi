@@ -24,9 +24,13 @@ export interface RequestResult {
  */
 export function percentile(data: number[], p: number): number {
   if (data.length === 0) return 0;
-  const sorted = [...data].sort((a, b) => a - b);
-  const index = Math.floor((p / 100) * (sorted.length -1));
-  return sorted[index];
+  // Ensure the data is sorted
+  const sorted =
+    data.length === 1 ? [...data] : [...data].sort((a, b) => a - b);
+  const index = Math.floor((p / 100) * sorted.length);
+
+  // If the calculated index is out of bounds, return the last element
+  return sorted[Math.min(index, sorted.length - 1)];
 }
 
 /**

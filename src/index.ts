@@ -9,9 +9,10 @@ import {
   RequestConfig,
   TressiConfig,
 } from './config';
-import { exportToCsv } from './exporter';
+import { exportResults } from './exporter';
 import { Runner } from './runner';
-import { average, percentile, RequestResult } from './stats';
+import { average, RequestResult } from './stats';
+import { generateSummary } from './summarizer';
 import { TUI } from './ui';
 
 export { defineConfig, TressiConfig, RequestConfig };
@@ -52,7 +53,8 @@ function printSummary(results: RequestResult[], options: RunOptions): void {
     autoscale,
   } = options;
 
-  const totalRequests = results.length;
+  const summary = generateSummary(results, options);
+  const { global: globalSummary, endpoints: endpointSummaries } = summary;
 
   const configTable = new Table({ colWidths: [30, 20] });
   configTable.push(
@@ -83,73 +85,74 @@ function printSummary(results: RequestResult[], options: RunOptions): void {
     colWidths: [30, 20],
   });
 
-  const successCount = results.filter((r) => r.success).length;
-  const latencies = results.map((r) => r.latencyMs);
+  const latencies = results.map((r) => r.latencyMs); // Keep for warning message logic
 
   if (rps) {
     const avgLatencyMs = average(latencies);
-    const maxRpsPerWorker = 1000 / avgLatencyMs;
-    const maxPossibleRps = maxRpsPerWorker * workers;
+    if (avgLatencyMs > 0) {
+      const maxRpsPerWorker = 1000 / avgLatencyMs;
+      const maxPossibleRps = maxRpsPerWorker * workers;
 
-    if (rps > maxPossibleRps) {
-      const suggestedWorkers = Math.ceil(rps / maxRpsPerWorker);
-      let warningMessage: string;
+      if (rps > maxPossibleRps) {
+        const suggestedWorkers = Math.ceil(rps / maxRpsPerWorker);
+        let warningMessage: string;
 
-      if (autoscale) {
-        warningMessage =
-          `\n⚠️  Warning: Target of ${rps} RPS may be unreachable.` +
-          `\n   The autoscaler hit the maximum of ${workers} workers.` +
-          `\n   With an average latency of ~${Math.ceil(
-            avgLatencyMs,
-          )}ms, the theoretical max is only ~${Math.floor(maxPossibleRps)} RPS.` +
-          `\n   To meet the target, try increasing the --workers limit to at least ${suggestedWorkers}.`;
-      } else {
-        warningMessage =
-          `\n⚠️  Warning: Target of ${rps} RPS may be unreachable with ${workers} workers.` +
-          `\n   With an average latency of ~${Math.ceil(
-            avgLatencyMs,
-          )}ms, the theoretical max is only ~${Math.floor(maxPossibleRps)} RPS.` +
-          `\n   To meet the target, try increasing workers to at least ${suggestedWorkers}.`;
+        if (autoscale) {
+          warningMessage =
+            `\n⚠️  Warning: Target of ${rps} RPS may be unreachable.` +
+            `\n   The autoscaler hit the maximum of ${workers} workers.` +
+            `\n   With an average latency of ~${Math.ceil(
+              avgLatencyMs,
+            )}ms, the theoretical max is only ~${Math.floor(
+              maxPossibleRps,
+            )} RPS.` +
+            `\n   To meet the target, try increasing the --workers limit to at least ${suggestedWorkers}.`;
+        } else {
+          warningMessage =
+            `\n⚠️  Warning: Target of ${rps} RPS may be unreachable with ${workers} workers.` +
+            `\n   With an average latency of ~${Math.ceil(
+              avgLatencyMs,
+            )}ms, the theoretical max is only ~${Math.floor(
+              maxPossibleRps,
+            )} RPS.` +
+            `\n   To meet the target, try increasing workers to at least ${suggestedWorkers}.`;
+        }
+        // eslint-disable-next-line no-console
+        console.log(chalk.yellow(warningMessage));
       }
-      // eslint-disable-next-line no-console
-      console.log(chalk.yellow(warningMessage));
     }
   }
 
-  const actualRps = totalRequests / durationSec;
-  const actualRpm = actualRps * 60;
-
   table.push(
     ['Duration', `${durationSec}s`],
-    ['Total Requests', totalRequests],
+    ['Total Requests', globalSummary.totalRequests],
   );
 
-  if (rps) {
-    const rampUpRequests = rampUpTimeSec ? (rps / 2) * rampUpTimeSec : 0;
-    const steadyStateDuration = rampUpTimeSec
-      ? durationSec - rampUpTimeSec
-      : durationSec;
-    const steadyStateRequests = rps * steadyStateDuration;
-    const theoreticalMax = Math.round(rampUpRequests + steadyStateRequests);
-
+  if (rps && globalSummary.theoreticalMaxRps) {
     table.push(
-      ['RPS (Actual/Target)', `${Math.ceil(actualRps)} / ${rps}`],
-      ['RPM (Actual/Target)', `${Math.ceil(actualRpm)} / ${rps * 60}`],
-      ['Theoretical Max Reqs', theoreticalMax],
-      ['Achieved %', `${Math.ceil((totalRequests / theoreticalMax) * 100)}%`],
+      ['RPS (Actual/Target)', `${Math.ceil(globalSummary.actualRps)} / ${rps}`],
+      [
+        'RPM (Actual/Target)',
+        `${Math.ceil(globalSummary.actualRps * 60)} / ${rps * 60}`,
+      ],
+      ['Theoretical Max Reqs', globalSummary.theoreticalMaxRps],
+      ['Achieved %', `${globalSummary.achievedPercentage}%`],
     );
   } else {
-    table.push(['RPS', Math.ceil(actualRps)], ['RPM', Math.ceil(actualRpm)]);
+    table.push(
+      ['RPS', Math.ceil(globalSummary.actualRps)],
+      ['RPM', Math.ceil(globalSummary.actualRps * 60)],
+    );
   }
 
   table.push(
-    [chalk.green('Successful'), successCount],
-    [chalk.red('Failed'), totalRequests - successCount],
-    ['Avg Latency (ms)', Math.ceil(average(latencies))],
-    ['Min Latency (ms)', Math.ceil(Math.min(...latencies))],
-    ['Max Latency (ms)', Math.ceil(Math.max(...latencies))],
-    ['p95 Latency (ms)', Math.ceil(percentile(latencies, 95))],
-    ['p99 Latency (ms)', Math.ceil(percentile(latencies, 99))],
+    [chalk.green('Successful'), globalSummary.successfulRequests],
+    [chalk.red('Failed'), globalSummary.failedRequests],
+    ['Avg Latency (ms)', Math.ceil(globalSummary.avgLatencyMs)],
+    ['Min Latency (ms)', Math.ceil(globalSummary.minLatencyMs)],
+    ['Max Latency (ms)', Math.ceil(globalSummary.maxLatencyMs)],
+    ['p95 Latency (ms)', Math.ceil(globalSummary.p95LatencyMs)],
+    ['p99 Latency (ms)', Math.ceil(globalSummary.p99LatencyMs)],
   );
 
   // eslint-disable-next-line no-console
@@ -188,48 +191,37 @@ function printSummary(results: RequestResult[], options: RunOptions): void {
     console.log(statusTable.toString());
   }
 
-  if (results.length > 0) {
-    const resultsByUrl: Record<string, RequestResult[]> = results.reduce(
-      (acc, r) => {
-        if (!acc[r.url]) {
-          acc[r.url] = [];
-        }
-        acc[r.url].push(r);
-        return acc;
-      },
-      {} as Record<string, RequestResult[]>,
-    );
+  if (endpointSummaries.length > 1) {
+    // eslint-disable-next-line no-console
+    console.log('\n' + chalk.bold('Summary by Endpoint'));
+    endpointSummaries.forEach((endpointSummary) => {
+      const {
+        url,
+        totalRequests,
+        successfulRequests,
+        failedRequests,
+        avgLatencyMs,
+        p95LatencyMs,
+        p99LatencyMs,
+      } = endpointSummary;
+      const endpointTable = new Table({ colWidths: [30, 60] });
+      endpointTable.push({ Endpoint: chalk.cyan(url) });
+      endpointTable.push({ 'Total Requests': totalRequests });
+      endpointTable.push({ Successful: chalk.green(successfulRequests) });
+      endpointTable.push({ Failed: chalk.red(failedRequests) });
+      endpointTable.push({
+        'Avg Latency (ms)': Math.ceil(avgLatencyMs),
+      });
+      endpointTable.push({
+        'p95 Latency (ms)': Math.ceil(p95LatencyMs),
+      });
+      endpointTable.push({
+        'p99 Latency (ms)': Math.ceil(p99LatencyMs),
+      });
 
-    if (Object.keys(resultsByUrl).length > 1) {
       // eslint-disable-next-line no-console
-      console.log('\n' + chalk.bold('Summary by Endpoint'));
-      Object.entries(resultsByUrl)
-        .sort(([urlA], [urlB]) => urlA.localeCompare(urlB))
-        .forEach(([url, endpointResults]) => {
-          const endpointLatencies = endpointResults.map((r) => r.latencyMs);
-          const total = endpointResults.length;
-          const successful = endpointResults.filter((r) => r.success).length;
-          const failed = total - successful;
-
-          const endpointTable = new Table({ colWidths: [30, 60] });
-          endpointTable.push({ Endpoint: chalk.cyan(url) });
-          endpointTable.push({ 'Total Requests': total });
-          endpointTable.push({ Successful: chalk.green(successful) });
-          endpointTable.push({ Failed: chalk.red(failed) });
-          endpointTable.push({
-            'Avg Latency (ms)': Math.ceil(average(endpointLatencies)),
-          });
-          endpointTable.push({
-            'p95 Latency (ms)': Math.ceil(percentile(endpointLatencies, 95)),
-          });
-          endpointTable.push({
-            'p99 Latency (ms)': Math.ceil(percentile(endpointLatencies, 99)),
-          });
-
-          // eslint-disable-next-line no-console
-          console.log(endpointTable.toString());
-        });
-    }
+      console.log(endpointTable.toString());
+    });
   }
 
   const errors = results.filter((r) => r.error).slice(0, 5);
@@ -334,6 +326,12 @@ export async function runLoadTest(options: RunOptions): Promise<void> {
   printSummary(results, options);
 
   if (options.csvPath) {
-    await exportToCsv(options.csvPath, results);
+    const summary = generateSummary(results, options);
+    await exportResults(
+      options.csvPath,
+      results,
+      summary.global,
+      summary.endpoints,
+    );
   }
 }
