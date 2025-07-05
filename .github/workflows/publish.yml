@@ -1,0 +1,70 @@
+# ============================================
+# 📦 Tressi NPM Publisher
+# --------------------------------------------
+# This workflow publishes the Tressi package to NPM.
+#
+# 🧠 Behavior:
+# - Triggered manually via workflow_dispatch.
+# - Checks if the version in package.json has already been published.
+# - If the version is new, it builds and publishes the package.
+#
+# 📌 Requirements:
+# - Secrets: NPM_TOKEN
+#
+# 🔒 Safe to run multiple times — only publishes new versions.
+# ============================================
+
+name: Publish to NPM
+
+description: >
+  Publishes the package to the NPM registry if a new version is detected.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  publish:
+    name: Publish to NPM
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22 # Use the same version as the bump workflow
+          registry-url: 'https://registry.npmjs.org/'
+
+      - name: Check if package version is already published
+        id: check-version
+        run: |
+          PACKAGE_NAME=$(node -p "require('./package.json').name")
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          
+          echo "Checking if version $PACKAGE_VERSION for $PACKAGE_NAME is published..."
+
+          # npm view returns an empty string and exits with a non-zero code if the version doesn't exist.
+          # We redirect stderr to /dev/null to suppress errors and check if the output is empty.
+          NPM_VERSION=$(npm view $PACKAGE_NAME@$PACKAGE_VERSION version 2>/dev/null)
+
+          if [[ -z "$NPM_VERSION" ]]; then
+            echo "Version $PACKAGE_VERSION is not published. Proceeding..."
+            echo "publish=true" >> $GITHUB_ENV
+          else
+            echo "Version $PACKAGE_VERSION is already published. Skipping."
+            echo "publish=false" >> $GITHUB_ENV
+          fi
+
+      - name: Install dependencies and build
+        if: env.publish == 'true'
+        run: |
+          npm ci
+          npm run build
+
+      - name: Publish to NPM
+        if: env.publish == 'true'
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

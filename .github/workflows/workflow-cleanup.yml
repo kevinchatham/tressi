@@ -1,0 +1,87 @@
+# ============================================
+# 🧹 GitHub Workflow Cleanup
+# --------------------------------------------
+# This workflow deletes old workflow runs.
+#
+# 🔁 Triggered in two ways:
+# - 🗓 Scheduled every Sunday at midnight UTC
+# - 🧑‍💻 Manually via workflow_dispatch
+#
+# ⚙️ Behavior:
+# - If `older_than_days` is provided:
+#     → Deletes *all* runs older than that many days
+# - If `older_than_days` is NOT provided:
+#     → Deletes *only failed* runs regardless of age
+#
+# Uses GH CLI with token-based auth (stored as `GH_TOKEN`)
+# Only affects runs with `status=completed` (not in-progress)
+# ============================================
+
+name: Workflow Cleanup
+
+on:
+  workflow_dispatch:
+    inputs:
+      older_than_days:
+        description: 'Delete ANY run older than this many days (optional)'
+        required: false
+        type: number
+  schedule:
+    - cron: '0 0 * * 0' # Every Sunday at midnight UTC
+
+jobs:
+  cleanup:
+    name: Cleanup Workflow Runs
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Delete matching runs
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          REPO="${{ github.repository }}"
+          INPUT_DAYS="${{ github.event.inputs.older_than_days }}"
+          echo "🔍 Evaluating workflow runs for cleanup"
+
+          if [[ -n "$INPUT_DAYS" ]]; then
+            CUTOFF_DATE=$(date -u -d "$INPUT_DAYS days ago" +%s)
+            echo "🧹 Deleting ALL runs older than $INPUT_DAYS days"
+            FILTER_BY_DATE=true
+            RUN_FILTER='.'
+          else
+            echo "🧹 Deleting all FAILED runs (no age filter)"
+            FILTER_BY_DATE=false
+            RUN_FILTER='select(.conclusion == "failure")'
+          fi
+
+          # Fetch and parse runs (ID + created_at)
+          RUNS=$(gh api -H "Authorization: token $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "/repos/$REPO/actions/runs?per_page=100&status=completed" \
+            --jq ".workflow_runs[] | $RUN_FILTER | [.id, .created_at] | @tsv")
+
+          if [[ -z "$RUNS" ]]; then
+            echo "✅ No matching runs found."
+            exit 0
+          fi
+
+          echo "$RUNS" | while IFS=$'\t' read -r RUN_ID CREATED_AT; do
+            CREATED_EPOCH=$(date -d "$CREATED_AT" +%s)
+
+            if [[ "$FILTER_BY_DATE" == true && "$CREATED_EPOCH" -gt "$CUTOFF_DATE" ]]; then
+              echo "⏩ Skipping run $RUN_ID (too recent)"
+            else
+              echo "🧹 Deleting run $RUN_ID (created $CREATED_AT)..."
+              RESPONSE=$(gh api -X DELETE \
+                -H "Authorization: token $GH_TOKEN" \
+                "/repos/$REPO/actions/runs/$RUN_ID" 2>&1)
+
+              if [[ $? -ne 0 ]]; then
+                echo "⚠️ Failed to delete run $RUN_ID — $RESPONSE"
+              else
+                echo "✅ Deleted run $RUN_ID"
+              fi
+            fi
+          done
+
+          echo "🏁 Cleanup complete."

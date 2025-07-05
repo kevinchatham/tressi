@@ -1,0 +1,94 @@
+# ============================================
+# 📦 Tressi Version Bumper
+# --------------------------------------------
+# This workflow bumps the project version and creates a pull request for it.
+#
+# 🧠 Behavior:
+# - Triggered manually via workflow_dispatch.
+# - Bumps the version in package.json based on input (major, minor, patch).
+# - Automatically creates a new branch and a pull request with the changes.
+#
+# 📌 Requirements:
+# - Secrets: GH_TOKEN (a PAT with pull request write permissions).
+#
+# ✅ Creates a pull request for review, so no direct commits to the base branch.
+# ============================================
+
+name: Bump Version
+
+description: >
+  Bumps the project version and creates a PR with the changes.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'The version type to bump.'
+        required: true
+        type: choice
+        options:
+          - 'patch'
+          - 'minor'
+          - 'major'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  bump-version:
+    name: Bump Version
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # A Personal Access Token is used to ensure subsequent workflows are triggered.
+          token: ${{ secrets.GH_TOKEN }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Set up Git identity
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+
+      - name: Bump version and create PR
+        run: |
+          VERSION_TYPE="${{ github.event.inputs.version }}"
+          
+          # Get the current version before bumping
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          echo "Current version: v$CURRENT_VERSION"
+
+          # Use npm to handle the version bump. This updates package.json and package-lock.json.
+          # The --no-git-tag-version flag prevents npm from creating a git commit and tag.
+          npm version $VERSION_TYPE --no-git-tag-version
+
+          # Get the new version after bumping
+          NEW_VERSION=$(node -p "require('./package.json').version")
+          echo "New version: v$NEW_VERSION"
+          
+          # Create a new branch
+          BRANCH_NAME="bump/version-to-v$NEW_VERSION"
+          git checkout -b "$BRANCH_NAME"
+          
+          # Add changes to git
+          git add package.json package-lock.json
+          
+          # Commit and push
+          git commit -m "🔼 Bump version to v$NEW_VERSION"
+          git push -u origin "$BRANCH_NAME"
+          
+          # Create a Pull Request using the gh CLI
+          gh pr create \
+            --title "🔼 Bump version to v$NEW_VERSION" \
+            --body "This PR bumps the package version from v$CURRENT_VERSION to **v$NEW_VERSION** ($VERSION_TYPE update)." \
+            --base "${{ github.ref_name }}" \
+            --head "$BRANCH_NAME"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
