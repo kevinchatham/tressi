@@ -10,17 +10,23 @@ import {
   TressiConfig,
 } from './config';
 import { exportToCsv } from './exporter';
-import { LoadTestOptions, Runner } from './runner';
+import { Runner } from './runner';
 import { average, percentile, RequestResult } from './stats';
 import { TUI } from './ui';
 
 export { defineConfig, TressiConfig, RequestConfig };
 
-function printSummary(
-  results: RequestResult[],
-  latencies: number[],
-  statusCodeMap: Record<number, number>,
-): void {
+export interface RunOptions {
+  config: string | TressiConfig;
+  concurrency?: number;
+  durationSec?: number;
+  rampUpTimeSec?: number;
+  rpm?: number;
+  csvPath?: string;
+  useUI?: boolean;
+}
+
+function printSummary(results: RequestResult[]): void {
   const table = new Table({
     head: ['Stat', 'Value'],
     colWidths: [20, 20],
@@ -28,6 +34,7 @@ function printSummary(
 
   const totalRequests = results.length;
   const successCount = results.filter((r) => r.success).length;
+  const latencies = results.map((r) => r.latencyMs);
 
   table.push(
     ['Total Requests', totalRequests],
@@ -44,6 +51,14 @@ function printSummary(
   console.log('\n' + chalk.bold('Global Test Summary'));
   // eslint-disable-next-line no-console
   console.log(table.toString());
+
+  const statusCodeMap: Record<number, number> = results.reduce(
+    (acc, r) => {
+      acc[r.status] = (acc[r.status] || 0) + 1;
+      return acc;
+    },
+    {} as Record<number, number>,
+  );
 
   const statusTable = new Table({
     head: ['Status Code', 'Count'],
@@ -121,7 +136,7 @@ function printSummary(
   }
 }
 
-export async function runLoadTest(options: LoadTestOptions): Promise<void> {
+export async function runLoadTest(options: RunOptions): Promise<void> {
   const spinner = ora('Loading config...').start();
   let loadedConfig: TressiConfig;
   try {
@@ -138,26 +153,29 @@ export async function runLoadTest(options: LoadTestOptions): Promise<void> {
     throw err;
   }
 
-  const { useUI, csvPath } = options;
   const requests = loadedConfig.requests;
   const headers = loadedConfig.headers || {};
 
-  const runner = new Runner(options, requests, headers);
-
   let tui: TUI | undefined;
-  if (useUI) {
-    tui = new TUI(() => {
-      runner.aborted = true;
+  // Instantiate TUI first, so we can pass it to the runner
+  if (options.useUI) {
+    tui = new TUI(() => runner.stop());
+  }
+
+  const runner = new Runner(options, requests, headers, tui);
+
+  // If we have a TUI, we need to handle its destruction
+  if (tui) {
+    runner.on('stop', () => {
+      tui?.destroy();
     });
   }
 
-  await runner.run(tui);
+  await runner.run();
 
-  tui?.destroy();
+  printSummary(runner.getResults());
 
-  printSummary(runner.results, runner.latencies, runner.statusCodeMap);
-
-  if (csvPath) {
-    await exportToCsv(csvPath, runner.results);
+  if (options.csvPath) {
+    await exportToCsv(options.csvPath, runner.getResults());
   }
 }

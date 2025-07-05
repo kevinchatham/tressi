@@ -113,14 +113,15 @@ npx tressi --config tressi.config.ts --concurrency 10 --duration 30
 
 ### ⚙️ CLI Options
 
-| Option              | Alias | Description                               | Default |
-| ------------------- | ----- | ----------------------------------------- | ------- |
-| `--config <path>`   | `-c`  | Path or URL to config file (.ts or .json) |         |
-| `--concurrency <n>` |       | Number of concurrent workers              | `10`    |
-| `--duration <s>`    |       | Duration of the test in seconds           | `10`    |
-| `--rpm <n>`         |       | Requests per minute limit for all workers |         |
-| `--csv <path>`      |       | Save results as CSV                       |         |
-| `--no-ui`           |       | Disable the interactive terminal UI       | `false` |
+| Option               | Alias  | Description                                         | Default |
+| -------------------- | ------ | --------------------------------------------------- | ------- |
+| `--config <path>`    | `-c`   | Path or URL to config file (.ts or .json)           |         |
+| `--concurrency <n>`  |        | Number of concurrent workers                        | `10`    |
+| `--duration s`       |        | Duration of the test in seconds                     | `10`    |
+| `--rpm <n>`          |        | Target requests per minute (ramps up to this value) |         |
+| `--ramp-up-time <s>` | `-rut` | Time in seconds to ramp up to the target RPM        |         |
+| `--csv <path>`       |        | Save results as CSV                                 |         |
+| `--no-ui`            |        | Disable the interactive terminal UI                 | `false` |
 
 ### 🧬 Programmatic Usage
 
@@ -133,6 +134,8 @@ await runLoadTest({
   },
   concurrency: 5,
   durationSec: 10,
+  rpm: 600, // Target 600 requests/minute
+  rampUpTimeSec: 10, // Ramp up to 600 RPM over 10 seconds
   useUI: false,
 });
 ```

@@ -63,6 +63,11 @@ program
   .option('-c, --config <path>', 'Path or URL to config file (.ts or .json)')
   .option('--concurrency <n>', 'Concurrent workers', '10')
   .option('--duration <s>', 'Duration in seconds', '10')
+  .option(
+    '--ramp-up-time <s>',
+    'Time in seconds to ramp up to the target RPM',
+    '-rut',
+  )
   .option('--rpm <n>', 'Requests per minute limit')
   .option('--csv <path>', 'CSV output path')
   .option('--no-ui', 'Disable live charts (enabled by default)');
@@ -162,6 +167,9 @@ program.action(async (opts) => {
         ? parseInt(opts.concurrency, 10)
         : undefined,
       durationSec: opts.duration ? parseInt(opts.duration, 10) : undefined,
+      rampUpTimeSec: opts.rampUpTime
+        ? parseInt(opts.rampUpTime, 10)
+        : undefined,
       rpm: opts.rpm ? parseInt(opts.rpm, 10) : undefined,
       csvPath: opts.csv,
       useUI: opts.ui,

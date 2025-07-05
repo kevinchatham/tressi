@@ -1,9 +1,11 @@
+import { EventEmitter } from 'events';
 import { RequestConfig, TressiConfig } from './config';
+import { RunOptions } from './index';
 import { RequestResult } from './stats';
 import { TUI } from './ui';
 
 async function sleep(ms: number): Promise<void> {
-  return new Promise((res) => setTimeout(res, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 export interface LoadTestOptions {
@@ -16,73 +18,133 @@ export interface LoadTestOptions {
   useUI?: boolean;
 }
 
-export class Runner {
-  public latencies: number[] = [];
-  public results: RequestResult[] = [];
-  public statusCodeMap: Record<number, number> = {};
-  public aborted = false;
+export class Runner extends EventEmitter {
+  private options: RunOptions;
+  private requests: RequestConfig[];
+  private headers: Record<string, string>;
+  private results: RequestResult[] = [];
+  private tui?: TUI;
+  private stopped = false;
+  private startTime: number = 0;
+  private currentRpm: number;
 
   constructor(
-    private options: LoadTestOptions,
-    private requests: RequestConfig[],
-    private headers: Record<string, string>,
-  ) {}
-
-  public async run(tui?: TUI): Promise<void> {
-    const { concurrency, durationSec, rpm } = this.options;
-    const rateLimitMsPerWorker = rpm
-      ? Math.floor((60_000 / rpm) * concurrency!)
-      : undefined;
-
-    const updateUI = tui
-      ? (): void => {
-          tui.updateCharts(this.latencies, this.statusCodeMap);
-        }
-      : undefined;
-
-    const end = Date.now() + durationSec! * 1000;
-
-    await Promise.all(
-      Array.from({ length: concurrency! }, () =>
-        this.runWorker(end, rateLimitMsPerWorker, updateUI),
-      ),
-    );
+    options: RunOptions,
+    requests: RequestConfig[],
+    headers: Record<string, string>,
+    tui?: TUI,
+  ) {
+    super();
+    this.options = options;
+    this.requests = requests;
+    this.headers = headers;
+    this.tui = tui;
+    this.currentRpm =
+      options.rampUpTimeSec && options.rpm ? 0 : options.rpm || 0;
   }
 
-  private async runWorker(
-    endTime: number,
-    rateLimitPerWorkerMs?: number,
-    uiUpdater?: () => void,
-  ): Promise<void> {
-    while (Date.now() < endTime && !this.aborted) {
+  public onResult(result: RequestResult): void {
+    this.results.push(result);
+  }
+
+  public getResults(): RequestResult[] {
+    return this.results;
+  }
+
+  public async run(): Promise<RequestResult[]> {
+    this.startTime = Date.now();
+
+    const {
+      concurrency = 10,
+      durationSec = 10,
+      rampUpTimeSec = 0,
+      rpm = 0,
+    } = this.options;
+
+    // The main timer for the total test duration starts now
+    const durationMs = durationSec * 1000;
+    const testTimeout = setTimeout(() => this.stop(), durationMs);
+
+    // If ramp-up is enabled, start the governor
+    if (rampUpTimeSec > 0 && rpm > 0) {
+      const rampUpInterval = setInterval(() => {
+        const elapsedTimeSec = (Date.now() - this.startTime) / 1000;
+
+        if (this.stopped || elapsedTimeSec >= rampUpTimeSec) {
+          this.currentRpm = rpm; // Lock to the final RPM
+          clearInterval(rampUpInterval);
+        } else {
+          // Linearly increase the RPM
+          const rampUpProgress = elapsedTimeSec / rampUpTimeSec;
+          this.currentRpm = Math.round(rpm * rampUpProgress);
+        }
+      }, 1000); // Update every second
+    }
+
+    const workers = Array.from({ length: concurrency }, () => this.runWorker());
+    await Promise.all(workers);
+
+    clearTimeout(testTimeout);
+    return this.results;
+  }
+
+  public stop(): void {
+    if (this.stopped) return;
+    this.stopped = true;
+    this.emit('stop');
+  }
+
+  private async runWorker(): Promise<void> {
+    while (!this.stopped) {
       const req =
         this.requests[Math.floor(Math.random() * this.requests.length)];
       const start = Date.now();
 
-      const res = await fetch(req.url, {
-        method: req.method,
-        headers: this.headers,
-        body: JSON.stringify(req.payload),
-      });
+      try {
+        const res = await fetch(req.url, {
+          method: req.method || 'GET',
+          headers: this.headers,
+          body: req.payload ? JSON.stringify(req.payload) : undefined,
+        });
 
-      const latency = Date.now() - start;
-      const success = res.status >= 200 && res.status < 300;
-      this.latencies.push(latency);
-      this.statusCodeMap[res.status] =
-        (this.statusCodeMap[res.status] || 0) + 1;
+        this.onResult({
+          url: req.url,
+          status: res.status,
+          latencyMs: Date.now() - start,
+          success: res.ok,
+        });
+      } catch (err) {
+        this.onResult({
+          url: req.url,
+          status: 0,
+          latencyMs: Date.now() - start,
+          success: false,
+          error: (err as Error).message,
+        });
+      }
 
-      this.results.push({
-        url: req.url,
-        status: res.status,
-        latencyMs: latency,
-        success,
-      });
+      this.updateTui();
 
-      uiUpdater?.();
-
-      if (rateLimitPerWorkerMs) {
-        await sleep(rateLimitPerWorkerMs);
+      if (this.currentRpm > 0 && this.options.concurrency) {
+        const totalRequestsPerSecond = this.currentRpm / 60;
+        const delayPerWorkerMs =
+          (this.options.concurrency * 1000) / totalRequestsPerSecond;
+        await sleep(delayPerWorkerMs);
       }
     }
+  }
+
+  private updateTui(): void {
+    if (!this.tui) return;
+
+    const latencies = this.results.map((r) => r.latencyMs);
+    const statusCodes = this.results.reduce(
+      (acc, r) => {
+        acc[r.status] = (acc[r.status] || 0) + 1;
+        return acc;
+      },
+      {} as Record<number, number>,
+    );
+    this.tui.updateCharts(latencies, statusCodes);
   }
 }
