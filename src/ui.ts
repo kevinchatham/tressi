@@ -25,9 +25,9 @@ export class TUI {
 
     this.statusChart = grid.set(6, 6, 6, 6, contrib.bar, {
       label: 'Status Codes',
-      barWidth: 6,
-      barSpacing: 2,
-      xOffset: 0,
+      barWidth: 5,
+      barSpacing: 1,
+      xOffset: 1,
       maxHeight: 100,
     });
 
@@ -56,7 +56,9 @@ export class TUI {
       },
     ]);
 
-    const codes = Object.keys(statusCodeMap);
+    const codes = Object.keys(statusCodeMap).sort(
+      (a, b) => Number(a) - Number(b),
+    );
     const counts = codes.map((code) => statusCodeMap[+code] || 0);
 
     this.statusChart.setData({
