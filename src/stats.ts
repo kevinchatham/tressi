@@ -4,6 +4,7 @@ export interface RequestResult {
   latencyMs: number;
   success: boolean;
   error?: string;
+  timestamp: number;
 }
 
 export function percentile(data: number[], p: number): number {
@@ -15,4 +16,4 @@ export function percentile(data: number[], p: number): number {
 
 export function average(data: number[]): number {
   return data.length ? data.reduce((a, b) => a + b, 0) / data.length : 0;
-} 
+}

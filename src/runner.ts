@@ -2,7 +2,7 @@ import { EventEmitter } from 'events';
 
 import { RequestConfig } from './config';
 import { RunOptions } from './index';
-import { RequestResult } from './stats';
+import { average, RequestResult } from './stats';
 
 async function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -13,9 +13,13 @@ export class Runner extends EventEmitter {
   private requests: RequestConfig[];
   private headers: Record<string, string>;
   private results: RequestResult[] = [];
+  private latencies: number[] = [];
+  private statusCodeMap: Record<number, number> = {};
   private stopped = false;
   private startTime: number = 0;
   private currentRpm: number;
+  private successfulRequests = 0;
+  private failedRequests = 0;
 
   constructor(
     options: RunOptions,
@@ -32,10 +36,39 @@ export class Runner extends EventEmitter {
 
   public onResult(result: RequestResult): void {
     this.results.push(result);
+    this.latencies.push(result.latencyMs);
+    this.statusCodeMap[result.status] =
+      (this.statusCodeMap[result.status] || 0) + 1;
+
+    if (result.success) {
+      this.successfulRequests++;
+    } else {
+      this.failedRequests++;
+    }
   }
 
   public getResults(): RequestResult[] {
     return this.results;
+  }
+
+  public getLatencies(): number[] {
+    return this.latencies;
+  }
+
+  public getStatusCodeMap(): Record<number, number> {
+    return this.statusCodeMap;
+  }
+
+  public getSuccessfulRequestsCount(): number {
+    return this.successfulRequests;
+  }
+
+  public getFailedRequestsCount(): number {
+    return this.failedRequests;
+  }
+
+  public getAverageLatency(): number {
+    return average(this.latencies);
   }
 
   public getStartTime(): number {
@@ -44,6 +77,15 @@ export class Runner extends EventEmitter {
 
   public getCurrentRpm(): number {
     return Math.round(this.currentRpm);
+  }
+
+  public getCurrentRps(): number {
+    const now = Date.now();
+    const oneSecondAgo = now - 1000;
+    const recentRequests = this.results.filter(
+      (r) => r.timestamp >= oneSecondAgo,
+    );
+    return recentRequests.length;
   }
 
   public async run(): Promise<RequestResult[]> {
@@ -116,6 +158,7 @@ export class Runner extends EventEmitter {
           status: res.status,
           latencyMs,
           success: res.ok,
+          timestamp: Date.now(),
         });
       } catch (err) {
         const latencyMs = Date.now() - start;
@@ -125,6 +168,7 @@ export class Runner extends EventEmitter {
           latencyMs,
           success: false,
           error: (err as Error).message,
+          timestamp: Date.now(),
         });
       }
 

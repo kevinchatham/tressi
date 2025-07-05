@@ -26,26 +26,91 @@ export interface RunOptions {
   useUI?: boolean;
 }
 
-function printSummary(results: RequestResult[], durationSec: number): void {
-  const table = new Table({
-    head: ['Stat', 'Value'],
-    colWidths: [20, 20],
-  });
+function printSummary(results: RequestResult[], options: RunOptions): void {
+  const { concurrency = 10, durationSec = 10, rps, rampUpTimeSec } = options;
 
   const totalRequests = results.length;
+
+  const configTable = new Table({ colWidths: [30, 20] });
+  configTable.push(
+    { Concurrency: concurrency },
+    { Duration: `${durationSec}s` },
+  );
+
+  if (rps) {
+    configTable.push({ 'Target RPS': rps });
+    configTable.push({ 'Target RPM': rps * 60 });
+  }
+
+  if (rampUpTimeSec) {
+    configTable.push({ 'Ramp-up Time': `${rampUpTimeSec}s` });
+  }
+
+  // eslint-disable-next-line no-console
+  console.log('\n' + chalk.bold('Run Configuration'));
+  // eslint-disable-next-line no-console
+  console.log(configTable.toString());
+
+  const table = new Table({
+    head: ['Stat', 'Value'],
+    colWidths: [30, 20],
+  });
+
   const successCount = results.filter((r) => r.success).length;
   const latencies = results.map((r) => r.latencyMs);
+
+  if (rps) {
+    const avgLatencyMs = average(latencies);
+    const maxRpsPerWorker = 1000 / avgLatencyMs;
+    const maxPossibleRps = maxRpsPerWorker * concurrency;
+
+    if (rps > maxPossibleRps) {
+      const suggestedWorkers = Math.ceil(rps / maxRpsPerWorker);
+      // eslint-disable-next-line no-console
+      console.log(
+        chalk.yellow(
+          `\n⚠️  Warning: Target of ${rps} RPS may be unreachable with a concurrency of ${concurrency}.` +
+            `\n   With an average latency of ~${Math.ceil(avgLatencyMs)}ms, the theoretical max is only ~${Math.floor(maxPossibleRps)} RPS.` +
+            `\n   To meet the target, try increasing concurrency to at least ${suggestedWorkers}.`,
+        ),
+      );
+    }
+  }
+
+  const actualRps = totalRequests / durationSec;
+  const actualRpm = actualRps * 60;
 
   table.push(
     ['Duration', `${durationSec}s`],
     ['Total Requests', totalRequests],
+  );
+
+  if (rps) {
+    const rampUpRequests = rampUpTimeSec ? (rps / 2) * rampUpTimeSec : 0;
+    const steadyStateDuration = rampUpTimeSec
+      ? durationSec - rampUpTimeSec
+      : durationSec;
+    const steadyStateRequests = rps * steadyStateDuration;
+    const theoreticalMax = Math.round(rampUpRequests + steadyStateRequests);
+
+    table.push(
+      ['RPS (Actual/Target)', `${Math.ceil(actualRps)} / ${rps}`],
+      ['RPM (Actual/Target)', `${Math.ceil(actualRpm)} / ${rps * 60}`],
+      ['Theoretical Max Reqs', theoreticalMax],
+      ['Achieved %', `${Math.ceil((totalRequests / theoreticalMax) * 100)}%`],
+    );
+  } else {
+    table.push(['RPS', Math.ceil(actualRps)], ['RPM', Math.ceil(actualRpm)]);
+  }
+
+  table.push(
     [chalk.green('Successful'), successCount],
     [chalk.red('Failed'), totalRequests - successCount],
-    ['Avg Latency (ms)', average(latencies).toFixed(2)],
-    ['Min Latency (ms)', Math.min(...latencies).toFixed(2)],
-    ['Max Latency (ms)', Math.max(...latencies).toFixed(2)],
-    ['p95 Latency (ms)', percentile(latencies, 95).toFixed(2)],
-    ['p99 Latency (ms)', percentile(latencies, 99).toFixed(2)],
+    ['Avg Latency (ms)', Math.ceil(average(latencies))],
+    ['Min Latency (ms)', Math.ceil(Math.min(...latencies))],
+    ['Max Latency (ms)', Math.ceil(Math.max(...latencies))],
+    ['p95 Latency (ms)', Math.ceil(percentile(latencies, 95))],
+    ['p99 Latency (ms)', Math.ceil(percentile(latencies, 99))],
   );
 
   // eslint-disable-next-line no-console
@@ -77,10 +142,12 @@ function printSummary(results: RequestResult[], durationSec: number): void {
       statusTable.push([color(code), count]);
     });
 
-  // eslint-disable-next-line no-console
-  console.log(chalk.bold('\nResponses by Status Code:'));
-  // eslint-disable-next-line no-console
-  console.log(statusTable.toString());
+  if (statusTable.length > 0) {
+    // eslint-disable-next-line no-console
+    console.log(chalk.bold('\nResponses by Status Code:'));
+    // eslint-disable-next-line no-console
+    console.log(statusTable.toString());
+  }
 
   if (results.length > 0) {
     const resultsByUrl: Record<string, RequestResult[]> = results.reduce(
@@ -111,13 +178,13 @@ function printSummary(results: RequestResult[], durationSec: number): void {
           endpointTable.push({ Successful: chalk.green(successful) });
           endpointTable.push({ Failed: chalk.red(failed) });
           endpointTable.push({
-            'Avg Latency (ms)': average(endpointLatencies).toFixed(2),
+            'Avg Latency (ms)': Math.ceil(average(endpointLatencies)),
           });
           endpointTable.push({
-            'p95 Latency (ms)': percentile(endpointLatencies, 95).toFixed(2),
+            'p95 Latency (ms)': Math.ceil(percentile(endpointLatencies, 95)),
           });
           endpointTable.push({
-            'p99 Latency (ms)': percentile(endpointLatencies, 99).toFixed(2),
+            'p99 Latency (ms)': Math.ceil(percentile(endpointLatencies, 99)),
           });
 
           // eslint-disable-next-line no-console
@@ -168,16 +235,8 @@ export async function runLoadTest(options: RunOptions): Promise<void> {
   // If we have a TUI, we need to handle its destruction and polling
   if (tui) {
     const tuiInterval = setInterval(() => {
-      const currentResults = runner.getResults();
-      const latencies = currentResults.map((r) => r.latencyMs);
-      const statusCodes = currentResults.reduce(
-        (acc, r) => {
-          acc[r.status] = (acc[r.status] || 0) + 1;
-          return acc;
-        },
-        {} as Record<number, number>,
-      );
-
+      const latencies = runner.getLatencies();
+      const statusCodes = runner.getStatusCodeMap();
       const startTime = runner.getStartTime();
       const elapsedSec = startTime > 0 ? (Date.now() - startTime) / 1000 : 0;
       const totalSec = options.durationSec || 10;
@@ -185,9 +244,13 @@ export async function runLoadTest(options: RunOptions): Promise<void> {
       tui.update(
         latencies,
         statusCodes,
-        runner.getCurrentRpm(),
+        runner.getCurrentRps(),
         elapsedSec,
         totalSec,
+        options.rps,
+        runner.getSuccessfulRequestsCount(),
+        runner.getFailedRequestsCount(),
+        runner.getAverageLatency(),
       );
     }, 500);
 
@@ -199,7 +262,7 @@ export async function runLoadTest(options: RunOptions): Promise<void> {
 
   const results = await runner.run();
 
-  printSummary(results, options.durationSec || 10);
+  printSummary(results, options);
 
   if (options.csvPath) {
     await exportToCsv(options.csvPath, results);

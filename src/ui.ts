@@ -20,7 +20,7 @@ export class TUI {
     this.statsTable = grid.set(6, 0, 6, 6, contrib.table, {
       label: 'Live Stats',
       interactive: false,
-      columnWidth: [15, 10],
+      columnWidth: [25, 20],
     });
 
     this.statusChart = grid.set(6, 6, 6, 6, contrib.bar, {
@@ -39,9 +39,13 @@ export class TUI {
   public update(
     latencies: number[],
     statusCodeMap: Record<number, number>,
-    currentRpm: number,
+    currentRps: number,
     elapsedSec: number,
     totalSec: number,
+    targetRps: number | undefined,
+    successfulRequests: number,
+    failedRequests: number,
+    averageLatency: number,
   ): void {
     const times = latencies.slice(-30);
     this.latencyChart.setData([
@@ -60,12 +64,20 @@ export class TUI {
       data: counts,
     });
 
+    const rpsStat = targetRps
+      ? `${currentRps} / ${targetRps}`
+      : currentRps.toString();
+
+    const data: (string | number)[][] = [
+      ['RPS (Actual/Target)', rpsStat],
+      ['Success / Fail', `${successfulRequests} / ${failedRequests}`],
+      ['Avg Latency (ms)', Math.round(averageLatency)],
+      ['Time', `${elapsedSec.toFixed(0)}s / ${totalSec}s`],
+    ];
+
     this.statsTable.setData({
       headers: ['Stat', 'Value'],
-      data: [
-        ['RPS', currentRpm.toString()],
-        ['Time', `${elapsedSec.toFixed(0)}s / ${totalSec}s`],
-      ],
+      data: data.map((row) => row.map((cell) => cell.toString())),
     });
 
     this.screen.render();
