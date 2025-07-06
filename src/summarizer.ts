@@ -216,7 +216,7 @@ export function generateMarkdownReport(
       0,
     )} / ${options.rps * 60} |\n`;
     md += `| Theoretical Max Req/s | ${g.theoreticalMaxRps.toFixed(0)} |\n`;
-    md += `| Achieved % | ${g.achievedPercentage}% |\n`;
+    md += `| Achieved % | ${g.achievedPercentage.toFixed(0)}% |\n`;
   } else {
     md += `| Req/s | ${g.actualRps.toFixed(0)} |\n`;
     md += `| Req/m | ${(g.actualRps * 60).toFixed(0)} |\n`;

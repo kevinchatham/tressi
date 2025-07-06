@@ -144,8 +144,8 @@ function printSummary(
         'Req/m (Actual/Target)',
         `${Math.ceil(globalSummary.actualRps * 60)} / ${rps * 60}`,
       ],
-      ['Theoretical Max Req/s', globalSummary.theoreticalMaxRps],
-      ['Achieved %', `${globalSummary.achievedPercentage}%`],
+      ['Theoretical Max Req/s', globalSummary.theoreticalMaxRps.toFixed(0)],
+      ['Achieved %', `${globalSummary.achievedPercentage.toFixed(0)}%`],
     );
   } else {
     table.push(
