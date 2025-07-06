@@ -41,6 +41,16 @@ export class TUI {
     this.screen.key(['escape', 'q', 'C-c'], () => {
       onExit();
     });
+
+    blessed.text({
+      parent: this.screen,
+      bottom: 0,
+      left: 'center',
+      content: ' q / esc / ctrl+c to quit ',
+      style: {
+        fg: 'white',
+      },
+    });
   }
 
   /**

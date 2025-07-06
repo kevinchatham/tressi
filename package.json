@@ -25,7 +25,7 @@
     "pretest:spike": "npm run schema:generate",
     "schema:generate": "tsx scripts/generate-schema.ts",
     "start": "npm run build && node dist/cli.js",
-    "test:dev": "tsx src/cli.ts --ramp-up-time 1 --duration 5",
+    "test:dev": "tsx src/cli.ts --ramp-up-time 1 --rps 1000 --workers 1 --duration 60",
     "test:autoscale": "tsx src/cli.ts --autoscale --workers 50 --rps 1000 --duration 60",
     "test:basic": "tsx src/cli.ts --workers 10 --duration 30 --rps 200",
     "test:ci": "tsx src/cli.ts --workers 20 --duration 30 --rps 300 --no-ui --export",
