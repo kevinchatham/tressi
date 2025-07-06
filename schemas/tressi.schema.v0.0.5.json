@@ -41,8 +41,11 @@
                   "POST",
                   "PUT",
                   "PATCH",
-                  "DELETE"
-                ]
+                  "DELETE",
+                  "HEAD",
+                  "OPTIONS"
+                ],
+                "default": "GET"
               }
             },
             "required": [

@@ -13,8 +13,13 @@ const RequestConfigSchema = z.object({
     .record(z.string(), z.unknown())
     .or(z.array(z.unknown()))
     .optional(),
-  /** The HTTP method to use for the request. */
-  method: z.enum(['GET', 'POST', 'PUT', 'PATCH', 'DELETE']).optional(),
+  /** The HTTP method to use for the request. Defaults to GET. */
+  method: z
+    .preprocess(
+      (val) => (typeof val === 'string' ? val.toUpperCase() : val),
+      z.enum(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS']),
+    )
+    .default('GET'),
 });
 
 /**

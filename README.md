@@ -132,16 +132,16 @@ npx tressi --config tressi.config.json --workers 20 --duration 30 --rps 300 --no
 
 ### ⚙️ CLI Options
 
-| Option               | Alias | Description                                                           | Default |
-| -------------------- | ----- | --------------------------------------------------------------------- | ------- |
-| `--config [path]`    | `-c`  | Path or URL to JSON config file. Defaults to `./tressi.config.json`.  |         |
-| `--workers <n>`      |       | Number of concurrent workers, or max workers if autoscale is enabled. | `10`    |
-| `--duration <s>`     |       | Duration of the test in seconds                                       | `10`    |
-| `--rps <n>`          |       | Target requests per second (ramps up to this value)                   |         |
-| `--ramp-up-time <s>` |       | Time in seconds to ramp up to the target RPS                          |         |
-| `--autoscale`        |       | Enable autoscaling of workers (requires --rps)                        | `false` |
-| `--export [path]`    |       | Export a comprehensive report (Markdown, XLSX, CSVs) to a directory.  |         |
-| `--no-ui`            |       | Disable the interactive terminal UI                                   | `false` |
+| Option             | Alias | Description                                                           | Default |
+| ------------------ | ----- | --------------------------------------------------------------------- | ------- |
+| `--config [path]`  | `-c`  | Path or URL to JSON config file. Defaults to `./tressi.config.json`.  |         |
+| `--workers <n>`    |       | Number of concurrent workers, or max workers if autoscale is enabled. | `10`    |
+| `--duration `      |       | Duration of the test in seconds                                       | `10`    |
+| `--rps <n>`        |       | Target requests per second (ramps up to this value)                   |         |
+| `--ramp-up-time  ` |       | Time in seconds to ramp up to the target RPS                          |         |
+| `--autoscale`      |       | Enable autoscaling of workers (requires --rps)                        | `false` |
+| `--export [path]`  |       | Export a comprehensive report (Markdown, XLSX, CSVs) to a directory.  |         |
+| `--no-ui`          |       | Disable the interactive terminal UI                                   | `false` |
 
 ### 🧬 Programmatic Usage
 
@@ -168,7 +168,7 @@ Your `tressi.config.json` file is a standard JSON file with the following root p
 - `headers`: An object containing headers to be sent with each request.
 - `requests`: An array of request objects, each with the following properties:
   - `url`: The URL to send the request to.
-  - `method`: The HTTP method to use (GET, POST, PUT, DELETE, etc.).
+  - `method`: The HTTP method. It is case-insensitive, defaults to `GET`, and supports `GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `HEAD`, and `OPTIONS`.
   - `payload`: (Optional) The data to send with the request.
 
 The `--export` flag will generate a unique, timestamped directory containing a comprehensive set of data files:

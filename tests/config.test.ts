@@ -1,6 +1,6 @@
 import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
-import { afterAll,afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 import { loadConfig, TressiConfig } from '../src/config';
 
@@ -62,8 +62,8 @@ describe('config', () => {
      * object does not match the TressiConfigSchema.
      */
     it('should throw ZodError for an invalid config object', async () => {
-        const invalidConfig = { requests: [{ url: 'invalid-url' }] };
-        await expect(loadConfig(invalidConfig)).rejects.toThrow();
+      const invalidConfig = { requests: [{ url: 'invalid-url' }] };
+      await expect(loadConfig(invalidConfig)).rejects.toThrow();
     });
   });
-}); 
+});
