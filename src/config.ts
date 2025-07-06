@@ -20,7 +20,7 @@ const RequestConfigSchema = z.object({
 /**
  * Zod schema for the main Tressi configuration.
  */
-const TressiConfigSchema = z.object({
+export const TressiConfigSchema = z.object({
   /** Global headers to be sent with every request. */
   headers: z.record(z.string(), z.string()).optional(),
   /** An array of request configurations. */

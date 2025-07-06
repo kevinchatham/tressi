@@ -1,4 +1,4 @@
-import { defineConfig } from 'tressi';
+import { defineConfig } from './src/index';
 
 export default defineConfig({
   // Common headers for all requests can be defined here

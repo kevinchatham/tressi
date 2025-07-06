@@ -37,9 +37,7 @@ export default defineConfig({
  * Template for a JSON-based tressi configuration file.
  */
 const jsonConfigTemplate = `{
-  "headers": {
-    "Content-Type": "application/json; charset=UTF-8"
-  },
+  "$schema": "https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v${pkg.version}.json",
   "requests": [
     {
       "url": "https://jsonplaceholder.typicode.com/posts/1",
@@ -49,9 +47,7 @@ const jsonConfigTemplate = `{
       "url": "https://jsonplaceholder.typicode.com/posts",
       "method": "POST",
       "payload": {
-        "title": "foo",
-        "body": "bar",
-        "userId": 1
+        "name": "Tressi Post"
       }
     }
   ]

@@ -12,8 +12,9 @@
   "scripts": {
     "test": "vitest run",
     "test:ui": "vitest --ui",
-    "build": "tsup",
-    "dev": "tsx src/cli.ts --config tressi.config.json --duration 15 --no-ui",
+    "build": "npm run schema:generate && tsup",
+    "schema:generate": "tsx scripts/generate-schema.ts",
+    "dev": "tsx src/cli.ts --config tressi.config.ts --duration 5 --no-ui",
     "test:basic": "tsx src/cli.ts --config tressi.config.json --workers 10 --duration 30 --rps 200",
     "test:ramp": "tsx src/cli.ts --config tressi.config.json --workers 20 --duration 60 --rps 500 --ramp-up-time 30",
     "test:spike": "tsx src/cli.ts --config tressi.config.json --workers 100 --duration 10",
@@ -58,6 +59,7 @@
     "tsx": "^4.20.3",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.1.0",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "zod-to-json-schema": "^3.24.6"
   }
 }

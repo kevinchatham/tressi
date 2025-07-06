@@ -83,23 +83,21 @@ export default defineConfig({
 });
 ```
 
-Or use `.json` instead for maximum portability:
+Or use `.json` instead for maximum portability. The `init` command will automatically add a `$schema` property to your `tressi.config.json` file, which enables autocompletion and validation in many popular code editors.
 
 ```json
 {
-  "headers": {
-    "Content-Type": "application/json",
-    "X-Powered-By": "tressi"
-  },
+  "$schema": "https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.5.json",
   "requests": [
-    { "url": "https://jsonplaceholder.typicode.com/posts/1", "method": "GET" },
+    {
+      "url": "https://jsonplaceholder.typicode.com/posts/1",
+      "method": "GET"
+    },
     {
       "url": "https://jsonplaceholder.typicode.com/posts",
       "method": "POST",
       "payload": {
-        "title": "tressi_test",
-        "body": "This is a test post from tressi.",
-        "userId": 1
+        "name": "Tressi Post"
       }
     }
   ]
