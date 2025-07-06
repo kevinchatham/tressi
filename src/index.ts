@@ -260,19 +260,13 @@ export async function runLoadTest(options: RunOptions): Promise<void> {
     throw err;
   }
 
-  const requests = loadedConfig.requests;
-  const headers = loadedConfig.headers || {};
+  const config = await loadConfig(options.config);
 
-  let tui: TUI | undefined;
-  // Instantiate TUI first, so we can pass it to the runner
-  if (options.useUI) {
-    tui = new TUI(() => runner.stop());
-  }
-
-  const runner = new Runner(options, requests, headers);
+  const runner = new Runner(options, config.requests, config.headers || {});
 
   // If we have a TUI, we need to handle its destruction and polling
-  if (tui) {
+  if (options.useUI) {
+    const tui = new TUI(() => runner.stop());
     const tuiInterval = setInterval(() => {
       const latencies = runner.getLatencies();
       const statusCodes = runner.getStatusCodeMap();
@@ -340,10 +334,16 @@ export async function runLoadTest(options: RunOptions): Promise<void> {
       await fs.mkdir(reportDir, { recursive: true });
 
       const summary = generateSummary(results, options);
-      const markdownReport = generateMarkdownReport(summary, options, results, {
-        exportName: baseExportName,
-        runDate,
-      });
+      const markdownReport = generateMarkdownReport(
+        summary,
+        options,
+        results,
+        config,
+        {
+          exportName: baseExportName,
+          runDate,
+        },
+      );
       await fs.writeFile(path.join(reportDir, 'report.md'), markdownReport);
 
       await exportDataFiles(summary, results, reportDir);

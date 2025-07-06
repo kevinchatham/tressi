@@ -1,4 +1,5 @@
 import { RunOptions } from '.';
+import { TressiConfig } from './config';
 import { average, percentile, RequestResult } from './stats';
 
 export interface ReportMetadata {
@@ -129,6 +130,7 @@ export function generateMarkdownReport(
   summary: Summary,
   options: RunOptions,
   results: RequestResult[],
+  config: TressiConfig,
   metadata?: ReportMetadata,
 ): string {
   const { global: g, endpoints: e } = summary;
@@ -143,6 +145,44 @@ export function generateMarkdownReport(
   if (metadata?.runDate) {
     md += `**Test Time:** ${metadata.runDate.toLocaleString()}\n\n`;
   }
+
+  // Analysis & Warnings
+  const warnings: string[] = [];
+  if (rps && g.achievedPercentage && g.achievedPercentage < 80) {
+    warnings.push(
+      `**Target RPS Unreachable**: The target of ${rps} RPS was not met. The test achieved ~${g.actualRps.toFixed(
+        0,
+      )} RPS (${
+        g.achievedPercentage
+      }% of the target). Consider increasing workers or optimizing the service.`,
+    );
+  }
+  for (const endpoint of e) {
+    const failureRate =
+      (endpoint.failedRequests / endpoint.totalRequests) * 100;
+    if (failureRate > 10) {
+      warnings.push(
+        `**High Failure Rate**: The endpoint \`${endpoint.url}\` had a failure rate of ${failureRate.toFixed(
+          1,
+        )}%. This may indicate a problem under load.`,
+      );
+    }
+  }
+
+  if (warnings.length > 0) {
+    md += `## Analysis & Warnings ⚠️\n\n`;
+    for (const warning of warnings) {
+      md += `* ${warning}\n`;
+    }
+    md += `\n`;
+  }
+
+  md += `<details>\n`;
+  md += `<summary>View Full Test Configuration</summary>\n\n`;
+  md += '```json\n';
+  md += `${JSON.stringify(config, null, 2)}\n`;
+  md += '```\n\n';
+  md += `</details>\n\n`;
 
   // Run Configuration
   md += `## Run Configuration\n\n`;

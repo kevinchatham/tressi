@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { RunOptions } from '../src';
+import { TressiConfig } from '../src/config';
 import { RequestResult } from '../src/stats';
 import { generateMarkdownReport, generateSummary } from '../src/summarizer';
 
@@ -40,6 +41,10 @@ const mockOptions: RunOptions = {
   config: { requests: [] },
   durationSec: 10,
   rps: 1, // 10 requests total theoretical
+};
+
+const mockConfig: TressiConfig = {
+  requests: [{ url: 'http://a.com', method: 'GET' }],
 };
 
 /**
@@ -104,6 +109,7 @@ describe('summarizer', () => {
       summary,
       mockOptions,
       mockResults,
+      mockConfig,
       metadata,
     );
 
@@ -111,6 +117,10 @@ describe('summarizer', () => {
     expect(markdown).toContain(`**Export Name:** ${metadata.exportName}`);
     expect(markdown).toContain(
       `**Test Time:** ${metadata.runDate.toLocaleString()}`,
+    );
+    expect(markdown).toContain('## Analysis & Warnings ⚠️');
+    expect(markdown).toContain(
+      '<summary>View Full Test Configuration</summary>',
     );
     expect(markdown).toContain('## Run Configuration');
     expect(markdown).toContain('## Global Summary');
