@@ -5,19 +5,14 @@ import ora from 'ora';
 import path from 'path';
 import { z } from 'zod';
 
-import {
-  defineConfig,
-  loadConfig,
-  RequestConfig,
-  TressiConfig,
-} from './config';
+import { loadConfig, RequestConfig, TressiConfig } from './config';
 import { exportDataFiles } from './exporter';
 import { Runner } from './runner';
 import { average, RequestResult } from './stats';
 import { generateMarkdownReport, generateSummary } from './summarizer';
 import { TUI } from './ui';
 
-export { defineConfig, TressiConfig, RequestConfig };
+export { TressiConfig, RequestConfig };
 
 /**
  * Defines the options for a Tressi load test run.
@@ -260,9 +255,11 @@ export async function runLoadTest(options: RunOptions): Promise<void> {
     throw err;
   }
 
-  const config = await loadConfig(options.config);
-
-  const runner = new Runner(options, config.requests, config.headers || {});
+  const runner = new Runner(
+    options,
+    loadedConfig.requests,
+    loadedConfig.headers || {},
+  );
 
   // If we have a TUI, we need to handle its destruction and polling
   if (options.useUI) {
@@ -338,7 +335,7 @@ export async function runLoadTest(options: RunOptions): Promise<void> {
         summary,
         options,
         results,
-        config,
+        loadedConfig,
         {
           exportName: baseExportName,
           runDate,

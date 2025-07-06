@@ -8,11 +8,11 @@
   </a>
 </p>
 
-`tressi` is a **lightweight, declarative load testing tool** built for modern developers. Define your HTTP workflows in a simple config file and unleash them with blazing concurrency, live terminal metrics, and full CSV exports. Use it as a CLI or embed it into your own tooling.
+`tressi` is a **lightweight, declarative load testing tool** built for modern developers. Define your HTTP workflows in a simple JSON config file and unleash them with blazing concurrency, live terminal metrics, and full CSV exports. Use it as a CLI or embed it into your own tooling.
 
 ## 🚀 Features
 
-- 📝 **Declarative Config** — Define tests in TypeScript or JSON with full type safety.
+- 📝 **Declarative JSON Config** — Define tests in a simple JSON file with full autocompletion and validation.
 - ⚡️ **Autoscaling** - Automatically adjust the number of workers to meet a target RPS.
 - 👥 **Concurrent Workers** — Simulate realistic multi-user load with ease via workers.
 - ⏱️ **Rate Limiting** — Control RPS for accurate throttling scenarios.
@@ -58,57 +58,25 @@ npm install -g tressi
 npx tressi init
 ```
 
-2. **Edit your config (TypeScript example)**
+2. **Run the test**
 
-```ts
-import { defineConfig } from 'tressi';
+If you have a `tressi.config.json` file in your current directory, you can simply run:
 
-export default defineConfig({
-  headers: {
-    'Content-Type': 'application/json',
-    'X-Powered-By': 'tressi',
-  },
-  requests: [
-    { url: 'https://jsonplaceholder.typicode.com/posts/1', method: 'GET' },
-    {
-      url: 'https://jsonplaceholder.typicode.com/posts',
-      method: 'POST',
-      payload: {
-        title: 'tressi_test',
-        body: 'This is a test post from tressi.',
-        userId: 1,
-      },
-    },
-  ],
-});
+```bash
+npx tressi
 ```
 
-Or use `.json` instead for maximum portability. The `init` command will automatically add a `$schema` property to your `tressi.config.json` file, which enables autocompletion and validation in many popular code editors.
+Or, you can explicitly provide a path to a config file:
 
-```json
-{
-  "$schema": "https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.5.json",
-  "requests": [
-    {
-      "url": "https://jsonplaceholder.typicode.com/posts/1",
-      "method": "GET"
-    },
-    {
-      "url": "https://jsonplaceholder.typicode.com/posts",
-      "method": "POST",
-      "payload": {
-        "name": "Tressi Post"
-      }
-    }
-  ]
-}
+```bash
+npx tressi --config ./path/to/your/tressi.config.json
 ```
 
 ### 📚 CLI Commands
 
-| Command | Description                       |
-| ------- | --------------------------------- |
-| `init`  | Create a new `tressi` config file |
+| Command | Description                        |
+| ------- | ---------------------------------- |
+| `init`  | Create a `tressi.config.json` file |
 
 ### 🧪 Test Scenarios
 
@@ -116,10 +84,10 @@ Or use `.json` instead for maximum portability. The `init` command will automati
 
 #### Basic Load Test
 
-A straightforward test with a fixed number of workers and a target RPS.
+A straightforward test with a fixed number of workers and a target RPS. This command assumes a `tressi.config.json` file exists in the current directory.
 
 ```bash
-npx tressi --config tressi.config.ts --workers 10 --duration 30 --rps 200
+npx tressi --workers 10 --duration 30 --rps 200
 ```
 
 #### Ramp-up Test
@@ -127,7 +95,7 @@ npx tressi --config tressi.config.ts --workers 10 --duration 30 --rps 200
 Gradually increases the load over a set period to see how your service handles a steady increase in traffic.
 
 ```bash
-npx tressi --config tressi.config.ts --workers 20 --duration 60 --rps 500 --ramp-up-time 30
+npx tressi --config tressi.config.json --workers 20 --duration 60 --rps 500 --ramp-up-time 30
 ```
 
 #### Spike Test
@@ -135,7 +103,7 @@ npx tressi --config tressi.config.ts --workers 20 --duration 60 --rps 500 --ramp
 A short, intense burst of traffic to test your system's ability to handle sudden surges.
 
 ```bash
-npx tressi --config tressi.config.ts --workers 100 --duration 10
+npx tressi --config tressi.config.json --workers 100 --duration 10
 ```
 
 #### Soak Test
@@ -143,7 +111,7 @@ npx tressi --config tressi.config.ts --workers 100 --duration 10
 A long-duration, low-intensity test to check for performance degradation or memory leaks over time.
 
 ```bash
-npx tressi --config tressi.config.ts --workers 5 --duration 300 --rps 50
+npx tressi --config tressi.config.json --workers 5 --duration 300 --rps 50
 ```
 
 #### Autoscaling Test
@@ -151,7 +119,7 @@ npx tressi --config tressi.config.ts --workers 5 --duration 300 --rps 50
 Dynamically adjusts the number of workers to meet a target RPS, up to a specified maximum.
 
 ```bash
-npx tressi --config tressi.config.ts --autoscale --workers 50 --rps 1000 --duration 60
+npx tressi --config tressi.config.json --autoscale --workers 50 --rps 1000 --duration 60
 ```
 
 #### CI/CD Test
@@ -159,21 +127,21 @@ npx tressi --config tressi.config.ts --autoscale --workers 50 --rps 1000 --durat
 Runs without the interactive UI and exports a complete report (Markdown, XLSX, and CSVs) to a timestamped directory, ideal for automated environments.
 
 ```bash
-npx tressi --config tressi.config.ts --workers 20 --duration 30 --rps 300 --no-ui --export
+npx tressi --config tressi.config.json --workers 20 --duration 30 --rps 300 --no-ui --export
 ```
 
 ### ⚙️ CLI Options
 
-| Option             | Alias  | Description                                                           | Default |
-| ------------------ | ------ | --------------------------------------------------------------------- | ------- |
-| `--config <path>`  | `-c`   | Path or URL to config file (.ts or .json)                             |         |
-| `--workers <n>`    |        | Number of concurrent workers, or max workers if autoscale is enabled. | `10`    |
-| `--duration s`     |        | Duration of the test in seconds                                       | `10`    |
-| `--rps <n>`        |        | Target requests per second (ramps up to this value)                   |         |
-| `--ramp-up-time  ` | `-rut` | Time in seconds to ramp up to the target RPS                          |         |
-| `--autoscale`      |        | Enable autoscaling of workers (requires --rps)                        | `false` |
-| `--export [path]`  |        | Export a comprehensive report (Markdown, XLSX, CSVs) to a directory.  |         |
-| `--no-ui`          |        | Disable the interactive terminal UI                                   | `false` |
+| Option               | Alias | Description                                                           | Default |
+| -------------------- | ----- | --------------------------------------------------------------------- | ------- |
+| `--config [path]`    | `-c`  | Path or URL to JSON config file. Defaults to `./tressi.config.json`.  |         |
+| `--workers <n>`      |       | Number of concurrent workers, or max workers if autoscale is enabled. | `10`    |
+| `--duration <s>`     |       | Duration of the test in seconds                                       | `10`    |
+| `--rps <n>`          |       | Target requests per second (ramps up to this value)                   |         |
+| `--ramp-up-time <s>` |       | Time in seconds to ramp up to the target RPS                          |         |
+| `--autoscale`        |       | Enable autoscaling of workers (requires --rps)                        | `false` |
+| `--export [path]`    |       | Export a comprehensive report (Markdown, XLSX, CSVs) to a directory.  |         |
+| `--no-ui`            |       | Disable the interactive terminal UI                                   | `false` |
 
 ### 🧬 Programmatic Usage
 
@@ -195,7 +163,7 @@ await runLoadTest({
 
 ## ⚙️ Configuration Reference
 
-Your `tressi` config file can be written in TypeScript or JSON. The following options are available:
+Your `tressi.config.json` file is a standard JSON file with the following root properties:
 
 - `headers`: An object containing headers to be sent with each request.
 - `requests`: An array of request objects, each with the following properties:
@@ -212,7 +180,7 @@ The `--export` flag will generate a unique, timestamped directory containing a c
 You can also provide a path to the `--export` flag to customize the name of the output directory:
 
 ```bash
-npx tressi --config tressi.config.ts --workers 20 --duration 30 --rps 300 --no-ui --export my-test-results
+npx tressi --config tressi.config.json --workers 20 --duration 30 --rps 300 --no-ui --export my-test-results
 ```
 
 This will create a directory named `my-test-results` in the current working directory.

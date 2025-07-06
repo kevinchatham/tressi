@@ -1,4 +1,4 @@
-import jiti from 'jiti';
+import { promises as fs } from 'fs';
 import path from 'path';
 import { z } from 'zod';
 
@@ -21,6 +21,8 @@ const RequestConfigSchema = z.object({
  * Zod schema for the main Tressi configuration.
  */
 export const TressiConfigSchema = z.object({
+  /** A URL to the JSON schema for this configuration file. */
+  $schema: z.string().optional(),
   /** Global headers to be sent with every request. */
   headers: z.record(z.string(), z.string()).optional(),
   /** An array of request configurations. */
@@ -36,15 +38,6 @@ export type TressiConfig = z.infer<typeof TressiConfigSchema>;
  * Type representing a single request configuration.
  */
 export type RequestConfig = z.infer<typeof RequestConfigSchema>;
-
-/**
- * A helper function for defining a Tressi configuration with type-checking.
- * @param config The Tressi configuration object.
- * @returns The validated Tressi configuration object.
- */
-export function defineConfig(config: TressiConfig): TressiConfig {
-  return config;
-}
 
 /**
  * Loads and validates a Tressi configuration from a file, URL, or direct object.
@@ -65,9 +58,8 @@ export async function loadConfig(
     rawContent = await res.json();
   } else {
     const absolutePath = path.resolve(configInput);
-    const _jiti = jiti(__filename);
-    const module = _jiti(absolutePath);
-    rawContent = module.default || module;
+    const fileContent = await fs.readFile(absolutePath, 'utf-8');
+    rawContent = JSON.parse(fileContent);
   }
   return TressiConfigSchema.parse(rawContent);
 }

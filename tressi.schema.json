@@ -4,6 +4,9 @@
     "TressiConfigSchema": {
       "type": "object",
       "properties": {
+        "$schema": {
+          "type": "string"
+        },
         "headers": {
           "type": "object",
           "additionalProperties": {
