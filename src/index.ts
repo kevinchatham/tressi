@@ -12,7 +12,7 @@ import { average, RequestResult } from './stats';
 import { generateMarkdownReport, generateSummary } from './summarizer';
 import { TUI } from './ui';
 
-export { TressiConfig, RequestConfig };
+export { RequestConfig, TressiConfig };
 
 /**
  * Defines the options for a Tressi load test run.

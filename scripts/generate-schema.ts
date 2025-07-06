@@ -1,8 +1,9 @@
 import fs from 'fs';
 import path from 'path';
 import { zodToJsonSchema } from 'zod-to-json-schema';
-import { TressiConfigSchema } from '../src/config';
+
 import pkg from '../package.json';
+import { TressiConfigSchema } from '../src/config';
 
 const schema = zodToJsonSchema(TressiConfigSchema, 'TressiConfigSchema');
 
