@@ -29,6 +29,7 @@ export interface GlobalSummary {
   actualRps: number;
   theoreticalMaxRps: number;
   achievedPercentage: number;
+  duration: number;
 }
 
 export interface TestSummary {
@@ -45,6 +46,7 @@ export interface TestSummary {
 export function generateSummary(
   results: RequestResult[],
   options: RunOptions,
+  actualDurationSec?: number,
 ): TestSummary {
   if (results.length === 0) {
     // Return a default summary if no results are available.
@@ -61,6 +63,7 @@ export function generateSummary(
         actualRps: 0,
         theoreticalMaxRps: 0,
         achievedPercentage: 0,
+        duration: 0,
       },
       endpoints: [],
     };
@@ -69,7 +72,9 @@ export function generateSummary(
   const { durationSec = 10, rps } = options;
   const totalRequests = results.length;
   const allLatencies = results.map((r) => r.latencyMs);
-  const actualRps = totalRequests / durationSec;
+  const effectiveDuration = actualDurationSec ?? durationSec;
+  const actualRps =
+    effectiveDuration > 0 ? totalRequests / effectiveDuration : 0;
   const avgLatency = average(allLatencies);
   const theoreticalMaxRps = rps
     ? Math.min(
@@ -120,6 +125,7 @@ export function generateSummary(
       actualRps,
       theoreticalMaxRps,
       achievedPercentage,
+      duration: effectiveDuration,
     },
     endpoints: endpointSummaries,
   };

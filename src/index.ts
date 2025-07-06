@@ -52,6 +52,7 @@ function printSummary(
   options: RunOptions,
   summary: TestSummary,
 ): void {
+  const { global: globalSummary, endpoints: endpointSummaries } = summary;
   const {
     workers = 10,
     durationSec = 10,
@@ -59,8 +60,6 @@ function printSummary(
     rampUpTimeSec,
     autoscale,
   } = options;
-
-  const { global: globalSummary, endpoints: endpointSummaries } = summary;
 
   const configTable = new Table({ colWidths: [30, 20] });
   configTable.push(
@@ -85,11 +84,6 @@ function printSummary(
   console.log('\n' + chalk.bold('Run Configuration'));
   // eslint-disable-next-line no-console
   console.log(configTable.toString());
-
-  const table = new Table({
-    head: ['Stat', 'Value'],
-    colWidths: [30, 20],
-  });
 
   const latencies = results.map((r) => r.latencyMs); // Keep for warning message logic
 
@@ -129,13 +123,18 @@ function printSummary(
     }
   }
 
-  table.push(
-    ['Duration', `${durationSec}s`],
+  const summaryTable = new Table({
+    head: ['Stat', 'Value'],
+    colWidths: [30, 20],
+  });
+
+  summaryTable.push(
+    ['Duration', `${Math.ceil(globalSummary.duration)}s`],
     ['Total Requests', globalSummary.totalRequests],
   );
 
   if (rps && globalSummary.theoreticalMaxRps) {
-    table.push(
+    summaryTable.push(
       [
         'Req/s (Actual/Target)',
         `${Math.ceil(globalSummary.actualRps)} / ${rps}`,
@@ -148,13 +147,13 @@ function printSummary(
       ['Achieved %', `${globalSummary.achievedPercentage.toFixed(0)}%`],
     );
   } else {
-    table.push(
+    summaryTable.push(
       ['Req/s', Math.ceil(globalSummary.actualRps)],
       ['Req/m', Math.ceil(globalSummary.actualRps * 60)],
     );
   }
 
-  table.push(
+  summaryTable.push(
     [chalk.green('Successful'), globalSummary.successfulRequests],
     [chalk.red('Failed'), globalSummary.failedRequests],
     ['Avg Latency (ms)', Math.ceil(globalSummary.avgLatencyMs)],
@@ -167,7 +166,7 @@ function printSummary(
   // eslint-disable-next-line no-console
   console.log('\n' + chalk.bold('Global Test Summary'));
   // eslint-disable-next-line no-console
-  console.log(table.toString());
+  console.log(summaryTable.toString());
 
   const statusCodeMap: Record<number, number> = results.reduce(
     (acc, r) => {
@@ -341,7 +340,9 @@ export async function runLoadTest(options: RunOptions): Promise<TestSummary> {
   }
 
   const results = await runner.run();
-  const summary = generateSummary(results, options);
+  const startTime = runner.getStartTime();
+  const actualDurationSec = startTime > 0 ? (Date.now() - startTime) / 1000 : 0;
+  const summary = generateSummary(results, options, actualDurationSec);
 
   if (options.exportPath) {
     const exportSpinner = ora({
