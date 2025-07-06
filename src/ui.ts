@@ -9,6 +9,7 @@ export class TUI {
   private latencyChart: contrib.Widgets.LineElement;
   private statusChart: contrib.Widgets.BarElement;
   private statsTable: contrib.Widgets.TableElement;
+  private latencyDistributionTable: contrib.Widgets.TableElement;
 
   /**
    * Creates a new TUI instance.
@@ -18,10 +19,17 @@ export class TUI {
     this.screen = blessed.screen({ smartCSR: true });
     const grid = new contrib.grid({ rows: 12, cols: 12, screen: this.screen });
 
-    this.latencyChart = grid.set(0, 0, 6, 12, contrib.line, {
+    this.latencyChart = grid.set(0, 0, 6, 6, contrib.line, {
       label: 'Latency (ms)',
       showLegend: false,
       maxY: 1000,
+    });
+
+    this.latencyDistributionTable = grid.set(0, 6, 6, 6, contrib.table, {
+      label: 'Latency Distribution (ms)',
+      interactive: false,
+      columnSpacing: 1,
+      columnWidth: [12, 10, 10, 11, 20],
     });
 
     this.statsTable = grid.set(6, 0, 6, 6, contrib.table, {
@@ -87,6 +95,18 @@ export class TUI {
       },
     ]);
 
+    const latencyDistribution = this.getLatencyDistribution(latencies);
+    this.latencyDistributionTable.setData({
+      headers: ['Range (ms)', 'Count', '% Total', 'Cumulative', 'Chart'],
+      data: latencyDistribution.map((b) => [
+        b.range,
+        b.count,
+        b.percent,
+        b.cumulative,
+        b.chart,
+      ]),
+    });
+
     const codes = Object.keys(statusCodeMap).sort(
       (a, b) => Number(a) - Number(b),
     );
@@ -122,5 +142,73 @@ export class TUI {
    */
   public destroy(): void {
     this.screen.destroy();
+  }
+  private getLatencyDistribution(
+    latencies: number[],
+    bucketCount = 6,
+  ): {
+    range: string;
+    count: string;
+    percent: string;
+    cumulative: string;
+    chart: string;
+  }[] {
+    if (latencies.length === 0) {
+      return [];
+    }
+
+    const totalCount = latencies.length;
+    const minLatency = Math.min(...latencies);
+    const maxLatency = Math.max(...latencies);
+    const range = maxLatency - minLatency;
+    const bucketSize = Math.ceil(range / bucketCount) || 1;
+
+    const buckets = Array.from({ length: bucketCount }, (_, i) => {
+      const lowerBound = Math.floor(minLatency + i * bucketSize);
+      const upperBound = Math.floor(minLatency + (i + 1) * bucketSize - 1);
+      return {
+        range: `${lowerBound}-${upperBound}`,
+        count: 0,
+        lowerBound,
+        upperBound,
+      };
+    });
+
+    // Make the last bucket catch all remaining values
+    buckets[buckets.length - 1].upperBound = Infinity;
+    buckets[buckets.length - 1].range =
+      `${buckets[buckets.length - 1].lowerBound}+`;
+
+    for (const latency of latencies) {
+      const targetBucket = buckets.find(
+        (b) => latency >= b.lowerBound && latency <= b.upperBound,
+      );
+      if (targetBucket) {
+        targetBucket.count++;
+      }
+    }
+
+    const maxCount = Math.max(...buckets.map((b) => b.count));
+    let cumulativeCount = 0;
+
+    return buckets.map((bucket) => {
+      const percentOfTotal =
+        totalCount > 0 ? (bucket.count / totalCount) * 100 : 0;
+      cumulativeCount += bucket.count;
+      const cumulativePercent =
+        totalCount > 0 ? (cumulativeCount / totalCount) * 100 : 0;
+
+      const chartBarCount =
+        maxCount > 0 ? Math.round((bucket.count / maxCount) * 15) : 0;
+      const chart = '█'.repeat(chartBarCount);
+
+      return {
+        range: bucket.range,
+        count: bucket.count.toString(),
+        percent: `${percentOfTotal.toFixed(1)}%`,
+        cumulative: `${cumulativePercent.toFixed(1)}%`,
+        chart,
+      };
+    });
   }
 }
