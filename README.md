@@ -1,6 +1,6 @@
 <p align="center">
   <br/>
-  <img src="./tressi.png" alt="tressi-logo" width="150px" height="150px"/>
+  <img src="./tressi-logo.png" alt="tressi-logo" width="150px" height="150px"/>
   <br/><br/>
   <em><b>Tressi</b> is a lightweight, declarative load testing tool built for modern developers.</em>
   <br/><br/>
