@@ -9,7 +9,7 @@ import { getLatencyDistribution } from './distribution';
 import { loadConfig, RequestConfig, TressiConfig } from './config';
 import { exportDataFiles } from './exporter';
 import { Runner } from './runner';
-import { average, RequestResult } from './stats';
+import { average, percentile, RequestResult } from './stats';
 import {
   generateMarkdownReport,
   generateSummary,
@@ -177,8 +177,8 @@ function printSummary(
 
   if (latencyDistribution.length > 0) {
     const distributionTable = new Table({
-      head: ['Range (ms)', 'Count', '% Total', 'Cumulative', 'Chart'],
-      colWidths: [15, 10, 10, 12, 20],
+      head: ['Range (ms)', 'Count', '% Total', 'Cumulative'],
+      colWidths: [15, 10, 10, 12],
     });
 
     latencyDistribution.forEach((bucket) => {
@@ -187,7 +187,6 @@ function printSummary(
         bucket.count,
         bucket.percent,
         bucket.cumulative,
-        bucket.chart,
       ]);
     });
 
@@ -352,18 +351,30 @@ export async function runLoadTest(options: RunOptions): Promise<TestSummary> {
       const failed = runner.getFailedRequestsCount();
       const workers = runner.getWorkerCount();
       const avgLatency = runner.getAverageLatency();
+      const latencies = runner.getLatencies();
+      const p95 = percentile(latencies, 0.95);
+      const p99 = percentile(latencies, 0.99);
 
       const rpsDisplay = options.rps ? `${rps}/${options.rps}` : `${rps}`;
+      const successDisplay = chalk.green(successful);
+      const failDisplay = failed > 0 ? chalk.red(failed) : chalk.gray(0);
 
-      noUiSpinner.text = `[${elapsedSec.toFixed(0)}s/${totalSec}s] Req/s: ${
+      noUiSpinner.text = `[${elapsedSec.toFixed(0)}s/${totalSec}s] RPS: ${
         rpsDisplay
-      } | Workers: ${workers} | Success: ${successful} | Fail: ${failed} | Avg Latency: ${avgLatency.toFixed(
+      } | W: ${workers} | OK/Fail: ${successDisplay}/${failDisplay} | Avg: ${avgLatency.toFixed(
         0,
-      )}ms`;
+      )}ms | p95: ${p95.toFixed(0)}ms | p99: ${p99.toFixed(0)}ms`;
     }, 1000);
+
+    // Handle graceful shutdown on Ctrl+C
+    const handleNoUiExit = (): void => {
+      runner.stop();
+    };
+    process.on('SIGINT', handleNoUiExit);
 
     runner.on('stop', () => {
       clearInterval(noUiInterval);
+      process.removeListener('SIGINT', handleNoUiExit);
       noUiSpinner.succeed('Test finished. Generating summary...');
     });
   }

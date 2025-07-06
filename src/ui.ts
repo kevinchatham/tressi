@@ -1,6 +1,7 @@
 import blessed from 'blessed';
 import contrib from 'blessed-contrib';
 import { getLatencyDistribution } from './distribution';
+import { average } from './stats';
 
 /**
  * Manages the terminal user interface for Tressi.
@@ -8,9 +9,18 @@ import { getLatencyDistribution } from './distribution';
 export class TUI {
   private screen: blessed.Widgets.Screen;
   private latencyChart: contrib.Widgets.LineElement;
-  private statusChart: contrib.Widgets.BarElement;
+  private responseCodeChart: contrib.Widgets.LineElement;
+  private responseCodeLegend: blessed.Widgets.BoxElement;
   private statsTable: contrib.Widgets.TableElement;
   private latencyDistributionTable: contrib.Widgets.TableElement;
+
+  private lastStatusCodeMap: Record<number, number> = {};
+  private successData: number[] = [];
+  private redirectData: number[] = [];
+  private clientErrorData: number[] = [];
+  private serverErrorData: number[] = [];
+  private lastLatencyCount = 0;
+  private avgLatencyData: number[] = [];
 
   /**
    * Creates a new TUI instance.
@@ -21,16 +31,25 @@ export class TUI {
     const grid = new contrib.grid({ rows: 12, cols: 12, screen: this.screen });
 
     this.latencyChart = grid.set(0, 0, 6, 6, contrib.line, {
-      label: 'Latency (ms)',
+      label: 'Avg Latency (ms)',
       showLegend: false,
       maxY: 1000,
+      valign: 'bottom',
     });
 
-    this.latencyDistributionTable = grid.set(0, 6, 6, 6, contrib.table, {
-      label: 'Latency Distribution (ms)',
-      interactive: false,
-      columnSpacing: 1,
-      columnWidth: [12, 10, 10, 11, 20],
+    this.responseCodeChart = grid.set(0, 6, 6, 5, contrib.line, {
+      label: 'Response Codes Over Time',
+      showLegend: false,
+      valign: 'bottom',
+    });
+
+    this.responseCodeLegend = grid.set(0, 11, 6, 1, blessed.box, {
+      content:
+        `{green-fg}■ 2xx{/}\n` +
+        `{yellow-fg}■ 3xx{/}\n` +
+        `{red-fg}■ 4xx{/}\n` +
+        `{magenta-fg}■ 5xx{/}`,
+      tags: true,
     });
 
     this.statsTable = grid.set(6, 0, 6, 6, contrib.table, {
@@ -39,12 +58,11 @@ export class TUI {
       columnWidth: [25, 20],
     });
 
-    this.statusChart = grid.set(6, 6, 6, 6, contrib.bar, {
-      label: 'Status Codes',
-      barWidth: 5,
-      barSpacing: 1,
-      xOffset: 1,
-      maxHeight: 100,
+    this.latencyDistributionTable = grid.set(6, 6, 6, 6, contrib.table, {
+      label: 'Latency Distribution (ms)',
+      interactive: false,
+      columnSpacing: 1,
+      columnWidth: [15, 10, 15, 15],
     });
 
     this.screen.key(['escape', 'q', 'C-c'], () => {
@@ -87,36 +105,125 @@ export class TUI {
     averageLatency: number,
     workerCount: number,
   ): void {
-    const times = latencies.slice(-30);
-    this.latencyChart.setData([
-      {
-        title: 'Latency',
-        x: times.map((_, i) => `${i}`),
-        y: times.map((x) => Math.round(x)),
-      },
-    ]);
+    // Calculate average latency for the latest interval
+    const newLatencies = latencies.slice(this.lastLatencyCount);
+    this.lastLatencyCount = latencies.length;
+    const avgLatencyForInterval = average(newLatencies);
+
+    const maxDataPoints = 30; // Same as response codes
+    this.avgLatencyData.push(avgLatencyForInterval);
+    if (this.avgLatencyData.length > maxDataPoints) {
+      this.avgLatencyData.shift();
+    }
 
     const latencyDistribution = getLatencyDistribution(latencies);
     this.latencyDistributionTable.setData({
-      headers: ['Range (ms)', 'Count', '% Total', 'Cumulative', 'Chart'],
+      headers: ['Range', 'Count', '% Total', 'Cumulative'],
       data: latencyDistribution.map((b) => [
         b.range,
         b.count,
         b.percent,
         b.cumulative,
-        b.chart,
       ]),
     });
 
-    const codes = Object.keys(statusCodeMap).sort(
-      (a, b) => Number(a) - Number(b),
-    );
-    const counts = codes.map((code) => statusCodeMap[+code] || 0);
+    // If this is the first data point, initialize the history
+    if (Object.keys(this.lastStatusCodeMap).length === 0) {
+      this.lastStatusCodeMap = { ...statusCodeMap };
+    }
 
-    this.statusChart.setData({
-      titles: codes,
-      data: counts,
+    // Calculate the delta of status codes since the last update
+    const successDelta =
+      this.getDeltaForCodeRange(statusCodeMap, 200, 299) -
+      this.getDeltaForCodeRange(this.lastStatusCodeMap, 200, 299);
+    const redirectDelta =
+      this.getDeltaForCodeRange(statusCodeMap, 300, 399) -
+      this.getDeltaForCodeRange(this.lastStatusCodeMap, 300, 399);
+    const clientErrorDelta =
+      this.getDeltaForCodeRange(statusCodeMap, 400, 499) -
+      this.getDeltaForCodeRange(this.lastStatusCodeMap, 400, 499);
+    const serverErrorDelta =
+      this.getDeltaForCodeRange(statusCodeMap, 500, 599) -
+      this.getDeltaForCodeRange(this.lastStatusCodeMap, 500, 599);
+
+    this.lastStatusCodeMap = { ...statusCodeMap };
+
+    // Add new data points and trim old ones
+    const dataPointsCount = this.successData.length;
+    this.successData.push(successDelta);
+    this.redirectData.push(redirectDelta);
+    this.clientErrorData.push(clientErrorDelta);
+    this.serverErrorData.push(serverErrorDelta);
+
+    if (this.successData.length > maxDataPoints) {
+      this.successData.shift();
+      this.redirectData.shift();
+      this.clientErrorData.shift();
+      this.serverErrorData.shift();
+    }
+
+    const x_labels = Array.from({ length: dataPointsCount }, (_, i) => {
+      const timeAgoSec = (dataPointsCount - 1 - i) * 0.5;
+      const timeSec = elapsedSec - timeAgoSec;
+      return timeSec < 0 ? `0s` : `${Math.round(timeSec)}s`;
     });
+
+    this.latencyChart.setData([
+      {
+        title: 'Latency',
+        x: x_labels,
+        y: this.avgLatencyData.map((x) => Math.round(x)),
+      },
+    ]);
+
+    const series = [];
+    if (this.successData.some((v) => v > 0)) {
+      series.push({
+        title: '2xx',
+        x: x_labels,
+        y: this.successData,
+        style: { line: 'green' },
+      });
+    }
+    if (this.redirectData.some((v) => v > 0)) {
+      series.push({
+        title: '3xx',
+        x: x_labels,
+        y: this.redirectData,
+        style: { line: 'yellow' },
+      });
+    }
+    if (this.clientErrorData.some((v) => v > 0)) {
+      series.push({
+        title: '4xx',
+        x: x_labels,
+        y: this.clientErrorData,
+        style: { line: 'red' },
+      });
+    }
+    if (this.serverErrorData.some((v) => v > 0)) {
+      series.push({
+        title: '5xx',
+        x: x_labels,
+        y: this.serverErrorData,
+        style: { line: 'magenta' },
+      });
+    }
+
+    // blessed-contrib's line chart crashes if it's given an empty array of series.
+    // If no data is available, we pass a single, empty series to clear the chart
+    // without causing a crash.
+    if (series.length === 0) {
+      this.responseCodeChart.setData([
+        {
+          title: '',
+          x: [],
+          y: [],
+        },
+      ]);
+    } else {
+      this.responseCodeChart.setData(series);
+    }
 
     const rpsStat = targetReqPerSec
       ? `${currentReqPerSec} / ${targetReqPerSec}`
@@ -143,5 +250,18 @@ export class TUI {
    */
   public destroy(): void {
     this.screen.destroy();
+  }
+
+  private getDeltaForCodeRange(
+    map: Record<number, number>,
+    min: number,
+    max: number,
+  ): number {
+    return Object.entries(map)
+      .filter(([code]) => {
+        const n = Number(code);
+        return n >= min && n <= max;
+      })
+      .reduce((sum, [, count]) => sum + count, 0);
   }
 }

@@ -1,3 +1,5 @@
+import chalk from 'chalk';
+
 /**
  * Calculates the latency distribution for a given set of latencies.
  * @param latencies An array of latency values.
@@ -13,7 +15,6 @@ export function getLatencyDistribution(
   count: string;
   percent: string;
   cumulative: string;
-  chart: string;
 }[] {
   if (latencies.length === 0) {
     return [];
@@ -50,7 +51,6 @@ export function getLatencyDistribution(
     }
   }
 
-  const maxCount = Math.max(...buckets.map((b) => b.count));
   let cumulativeCount = 0;
 
   return buckets.map((bucket) => {
@@ -60,16 +60,52 @@ export function getLatencyDistribution(
     const cumulativePercent =
       totalCount > 0 ? (cumulativeCount / totalCount) * 100 : 0;
 
-    const chartBarCount =
-      maxCount > 0 ? Math.round((bucket.count / maxCount) * 15) : 0;
-    const chart = '█'.repeat(chartBarCount);
-
     return {
       range: bucket.range,
       count: bucket.count.toString(),
       percent: `${percentOfTotal.toFixed(1)}%`,
       cumulative: `${cumulativePercent.toFixed(1)}%`,
-      chart,
     };
   });
+}
+export function getStatusCodeDistribution(
+  statusCodeMap: Record<number, number>,
+): { code: string; count: string; percent: string; chart: string }[] {
+  const totalCount = Object.values(statusCodeMap).reduce(
+    (sum, count) => sum + count,
+    0,
+  );
+
+  if (totalCount === 0) {
+    return [];
+  }
+
+  const maxCount = Math.max(...Object.values(statusCodeMap));
+
+  return Object.entries(statusCodeMap)
+    .sort((a, b) => Number(a[0]) - Number(b[0]))
+    .map(([code, count]) => {
+      const percent = (count / totalCount) * 100;
+      const chartBarCount =
+        maxCount > 0 ? Math.round((count / maxCount) * 15) : 0;
+
+      const numericCode = Number(code);
+      let chartColor = chalk.green;
+      if (numericCode >= 500) {
+        chartColor = chalk.red;
+      } else if (numericCode >= 400) {
+        chartColor = chalk.red;
+      } else if (numericCode >= 300) {
+        chartColor = chalk.yellow;
+      }
+
+      const chart = chartColor('█'.repeat(chartBarCount));
+
+      return {
+        code,
+        count: count.toString(),
+        percent: `${percent.toFixed(1)}%`,
+        chart,
+      };
+    });
 }

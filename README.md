@@ -185,6 +185,37 @@ async function myCustomScript() {
 myCustomScript();
 ```
 
+## 📊 Live Terminal UI
+
+When you run `tressi` (without the `--no-ui` flag), it displays a live dashboard with four key sections:
+
+<p align="center">
+  <img src="./tressi-ui.png" alt="Tressi UI" width="90%"/>
+</p>
+
+### How to Interpret the Dashboard
+
+1.  **Avg Latency (ms) (Top-Left)**
+    - **What it is:** A line chart showing the average latency (in milliseconds) over a rolling time window. Each point on the graph represents the average latency of all requests that completed within that time slice.
+    - **What to look for:** A steady, low line is ideal. Sudden spikes or a consistently rising trend can indicate performance bottlenecks under load.
+
+2.  **Response Codes Over Time (Top-Right)**
+    - **What it is:** A line chart that tracks the count of different response code categories (2xx, 3xx, 4xx, 5xx) over the course of the test. The x-axis shows the elapsed time in seconds.
+    - **What to look for:** The appearance of red (4xx/5xx) lines, which signals that errors started occurring at a specific point in time during the test.
+
+3.  **Live Stats (Bottom-Left)**
+    - **What it is:** A table of key performance indicators (KPIs) for the entire test run so far.
+    - **Key Stats:**
+      - `Time`: Elapsed time versus the total test duration.
+      - `Workers`: The current number of active concurrent workers.
+      - `Req/s`: The actual requests per second versus your target.
+      - `Success / Fail`: Total count of successful versus failed requests.
+      - `Avg Latency`: The average latency across all requests.
+
+4.  **Latency Distribution (Bottom-Right)**
+    - **What it is:** A histogram that groups all completed requests into latency buckets (e.g., 17-42ms, 43-68ms).
+    - **What to look for:** This shows you where the majority of your response times are concentrated. An ideal result is a tight grouping in the lowest buckets. A wide spread indicates inconsistent performance.
+
 ## ⚙️ Configuration Reference
 
 The `tressi init` command will generate a `tressi.config.json` file with a `$schema` property. This property points to a JSON Schema file that provides autocompletion and validation in supported editors (like VS Code), making it easier to write valid configurations.
