@@ -328,22 +328,22 @@ export async function runLoadTest(options: RunOptions): Promise<void> {
   if (options.exportPath) {
     const exportSpinner = ora('Exporting results...').start();
     try {
-      let reportDir: string;
-      if (typeof options.exportPath === 'string') {
-        reportDir = path.resolve(
-          process.cwd(),
-          `${options.exportPath}-${new Date().toISOString()}`,
-        );
-      } else {
-        reportDir = path.resolve(
-          process.cwd(),
-          `tressi-report-${new Date().toISOString()}`,
-        );
-      }
+      const baseExportName =
+        typeof options.exportPath === 'string'
+          ? options.exportPath
+          : 'tressi-report';
+      const runDate = new Date();
+      const reportDir = path.resolve(
+        process.cwd(),
+        `${baseExportName}-${runDate.toISOString()}`,
+      );
       await fs.mkdir(reportDir, { recursive: true });
 
       const summary = generateSummary(results, options);
-      const markdownReport = generateMarkdownReport(summary);
+      const markdownReport = generateMarkdownReport(summary, options, results, {
+        exportName: baseExportName,
+        runDate,
+      });
       await fs.writeFile(path.join(reportDir, 'report.md'), markdownReport);
 
       await exportDataFiles(summary, results, reportDir);

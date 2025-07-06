@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { RunOptions } from '../src';
 import { RequestResult } from '../src/stats';
-import { generateSummary } from '../src/summarizer';
+import { generateMarkdownReport, generateSummary } from '../src/summarizer';
 
 const mockResults: RequestResult[] = [
   {
@@ -89,5 +89,41 @@ describe('summarizer', () => {
     expect(summaryB?.failedRequests).toBe(1);
     expect(summaryB?.avgLatencyMs).toBe(350);
     expect(summaryB?.p95LatencyMs).toBe(500);
+  });
+
+  /**
+   * It should generate a Markdown report containing all summary sections.
+   */
+  it('should generate a comprehensive Markdown report', () => {
+    const summary = generateSummary(mockResults, mockOptions);
+    const metadata = {
+      exportName: 'my-test-report',
+      runDate: new Date(),
+    };
+    const markdown = generateMarkdownReport(
+      summary,
+      mockOptions,
+      mockResults,
+      metadata,
+    );
+
+    expect(markdown).toContain(`# Tressi Load Test Report`);
+    expect(markdown).toContain(`**Export Name:** ${metadata.exportName}`);
+    expect(markdown).toContain(
+      `**Test Time:** ${metadata.runDate.toLocaleString()}`,
+    );
+    expect(markdown).toContain('## Run Configuration');
+    expect(markdown).toContain('## Global Summary');
+    expect(markdown).toContain('| RPS (Actual/Target)');
+    expect(markdown).toContain('| Achieved %');
+    expect(markdown).toContain('## Latency Distribution');
+    expect(markdown).toContain('| Range | Count | Chart |');
+    expect(markdown).toContain('## Error Summary');
+    expect(markdown).toContain('## Responses by Status Code');
+    expect(markdown).toContain('## Endpoint Summary');
+    expect(markdown).toContain('| 200 | 3 |');
+    expect(markdown).toContain('| 500 | 1 |');
+    expect(markdown).toContain('| http://a.com | 2 |');
+    expect(markdown).toContain('| http://b.com | 2 |');
   });
 });
