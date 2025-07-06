@@ -57,10 +57,10 @@ export class TUI {
    * Updates the UI with new data from the load test.
    * @param latencies An array of recent latency values.
    * @param statusCodeMap A map of status codes to their counts.
-   * @param currentRps The current requests per second.
+   * @param currentReqPerSec The current requests per second.
    * @param elapsedSec The elapsed time of the test in seconds.
    * @param totalSec The total duration of the test in seconds.
-   * @param targetRps The target requests per second, if any.
+   * @param targetReqPerSec The target requests per second, if any.
    * @param successfulRequests The total number of successful requests.
    * @param failedRequests The total number of failed requests.
    * @param averageLatency The average latency of all requests.
@@ -69,10 +69,10 @@ export class TUI {
   public update(
     latencies: number[],
     statusCodeMap: Record<number, number>,
-    currentRps: number,
+    currentReqPerSec: number,
     elapsedSec: number,
     totalSec: number,
-    targetRps: number | undefined,
+    targetReqPerSec: number | undefined,
     successfulRequests: number,
     failedRequests: number,
     averageLatency: number,
@@ -97,12 +97,12 @@ export class TUI {
       data: counts,
     });
 
-    const rpsStat = targetRps
-      ? `${currentRps} / ${targetRps}`
-      : currentRps.toString();
+    const rpsStat = targetReqPerSec
+      ? `${currentReqPerSec} / ${targetReqPerSec}`
+      : currentReqPerSec.toString();
 
     const data: (string | number)[][] = [
-      ['RPS (Actual/Target)', rpsStat],
+      ['Req/s (Actual/Target)', rpsStat],
       ['Success / Fail', `${successfulRequests} / ${failedRequests}`],
       ['Avg Latency (ms)', Math.round(averageLatency)],
       ['Time', `${elapsedSec.toFixed(0)}s / ${totalSec}s`],

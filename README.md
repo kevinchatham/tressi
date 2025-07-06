@@ -13,12 +13,12 @@
 ## 🚀 Features
 
 - 📝 **Declarative JSON Config** — Define tests in a simple JSON file with full autocompletion and validation.
-- ⚡️ **Autoscaling** - Automatically adjust the number of workers to meet a target RPS.
+- ⚡️ **Autoscaling** - Automatically adjust the number of workers to meet a target Req/s.
 - 👥 **Concurrent Workers** — Simulate realistic multi-user load with ease via workers.
-- ⏱️ **Rate Limiting** — Control RPS for accurate throttling scenarios.
-- 📊 **Interactive Terminal UI** — View live RPS, latency stats, and status codes.
-- 📁 **Comprehensive Reporting** — Export a full report with Markdown, XLSX, and CSV files.
-- 🧩 **Programmatic API** — Import and use in your own scripts.
+- ⏱️ **Rate Limiting** — Control Req/s for accurate throttling scenarios.
+- 📊 **Interactive Terminal UI** — View live Req/s, latency stats, and status codes.
+- 📁 **Comprehensive Reporting** — Export results to Markdown, JSON, and CSV for analysis.
+- ⚙️ **Typed Configuration** - Uses Zod for robust configuration validation.
 
 ## 📦 Installation
 
@@ -84,15 +84,15 @@ npx tressi --config ./path/to/your/tressi.config.json
 
 #### Basic Load Test
 
-A straightforward test with a fixed number of workers and a target RPS. This command assumes a `tressi.config.json` file exists in the current directory.
+A straightforward test with a fixed number of workers and a target Req/s. This command assumes a `tressi.config.json` file exists in the current directory.
 
 ```bash
 npx tressi --workers 10 --duration 30 --rps 200
 ```
 
-#### Ramp-up Test
+#### Ramp-up Load Test
 
-Gradually increases the load over a set period to see how your service handles a steady increase in traffic.
+Gradually increases the load to a target Req/s over a specified duration. This is useful for understanding how your system behaves as traffic increases.
 
 ```bash
 npx tressi --config tressi.config.json --workers 20 --duration 60 --rps 500 --ramp-up-time 30
@@ -106,25 +106,25 @@ A short, intense burst of traffic to test your system's ability to handle sudden
 npx tressi --config tressi.config.json --workers 100 --duration 10
 ```
 
-#### Soak Test
+#### Soak Test (Endurance Test)
 
-A long-duration, low-intensity test to check for performance degradation or memory leaks over time.
+A long-running test to check for performance degradation, memory leaks, or other issues over an extended period.
 
 ```bash
 npx tressi --config tressi.config.json --workers 5 --duration 300 --rps 50
 ```
 
-#### Autoscaling Test
+#### Autoscaling Load Test
 
-Dynamically adjusts the number of workers to meet a target RPS, up to a specified maximum.
+Dynamically adjusts the number of workers to meet a target Req/s, up to a specified maximum.
 
 ```bash
 npx tressi --config tressi.config.json --autoscale --workers 50 --rps 1000 --duration 60
 ```
 
-#### CI/CD Test
+#### Headless & Export Test
 
-Runs without the interactive UI and exports a complete report (Markdown, XLSX, and CSVs) to a timestamped directory, ideal for automated environments.
+Runs a test without the UI and exports the results to a specified directory.
 
 ```bash
 npx tressi --config tressi.config.json --workers 20 --duration 30 --rps 300 --no-ui --export
@@ -132,16 +132,16 @@ npx tressi --config tressi.config.json --workers 20 --duration 30 --rps 300 --no
 
 ### ⚙️ CLI Options
 
-| Option               | Alias | Description                                                           | Default |
-| :------------------- | :---- | :-------------------------------------------------------------------- | :------ |
-| `--config [path]`    | `-c`  | Path or URL to JSON config file. Defaults to `./tressi.config.json`.  |         |
-| `--workers <n>`      |       | Number of concurrent workers, or max workers if autoscale is enabled. | `10`    |
-| `--duration <s>`     |       | Duration of the test in seconds                                       | `10`    |
-| `--rps <n>`          |       | Target requests per second (ramps up to this value)                   |         |
-| `--ramp-up-time <s>` |       | Time in seconds to ramp up to the target RPS                          |         |
-| `--autoscale`        |       | Enable autoscaling of workers (requires --rps)                        | `false` |
-| `--export [path]`    |       | Export a comprehensive report (Markdown, XLSX, CSVs) to a directory.  |         |
-| `--no-ui`            |       | Disable the interactive terminal UI                                   | `false` |
+| Option             | Alias | Description                                                           | Default |
+| ------------------ | ----- | --------------------------------------------------------------------- | ------- |
+| `--config <path>`  | `-c`  | Path to the configuration file (e.g., `tressi.config.json`)           |         |
+| `--workers <n>`    | `-w`  | Number of concurrent workers (for autoscale, this is the max workers) | `10`    |
+| `--duration `      | `-d`  | Total test duration in seconds                                        | `10`    |
+| `--rps <n>`        |       | Target requests per second (ramps up to this value)                   |         |
+| `--ramp-up-time  ` |       | Time in seconds to ramp up to the target Req/s                        |         |
+| `--autoscale`      |       | Enable autoscaling of workers (requires --rps)                        | `false` |
+| `--export [path]`  | `-e`  | Export results to JSON, CSV, and Markdown                             | `false` |
+| `--no-ui`          |       | Disable the interactive terminal UI                                   | `false` |
 
 ### 🧬 Programmatic Usage
 

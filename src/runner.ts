@@ -21,7 +21,7 @@ export class Runner extends EventEmitter {
   private statusCodeMap: Record<number, number> = {};
   private stopped = false;
   private startTime: number = 0;
-  private currentRpm: number;
+  private currentTargetRps: number;
   private successfulRequests = 0;
   private failedRequests = 0;
   private activeWorkers: { promise: Promise<void>; stop: () => void }[] = [];
@@ -44,7 +44,7 @@ export class Runner extends EventEmitter {
     this.options = options;
     this.requests = requests;
     this.headers = headers;
-    this.currentRpm =
+    this.currentTargetRps =
       options.rampUpTimeSec && options.rps ? 0 : options.rps || 0;
   }
 
@@ -122,17 +122,17 @@ export class Runner extends EventEmitter {
   }
 
   /**
-   * Gets the current target requests per minute (RPM).
+   * Gets the current target requests per second (Req/s).
    * This value changes during ramp-up.
-   * @returns The current target RPM.
+   * @returns The current target Req/s.
    */
-  public getCurrentRpm(): number {
-    return Math.round(this.currentRpm);
+  public getCurrentTargetRps(): number {
+    return Math.round(this.currentTargetRps);
   }
 
   /**
-   * Calculates the actual requests per second (RPS) over the last second.
-   * @returns The current actual RPS.
+   * Calculates the actual requests per second (Req/s) over the last second.
+   * @returns The current actual Req/s.
    */
   public getCurrentRps(): number {
     const now = Date.now();
@@ -188,12 +188,12 @@ export class Runner extends EventEmitter {
 
         if (rps > 0) {
           // If a target RPS is set, ramp up to that value
-          this.currentRpm = Math.round(rps * rampUpProgress);
+          this.currentTargetRps = Math.round(rps * rampUpProgress);
         } else {
-          // If no target RPS, ramp up to a theoretical max (e.g., 1k RPS per worker)
+          // If no target RPS, ramp up to a theoretical max (e.g., 1k Req/s per worker)
           // This creates a steady increase with no upper bound.
           const arbitraryMaxRps = (this.options.workers || 10) * 1000;
-          this.currentRpm = Math.round(arbitraryMaxRps * rampUpProgress);
+          this.currentTargetRps = Math.round(arbitraryMaxRps * rampUpProgress);
         }
       }, 1000); // Update every second
     }
@@ -351,22 +351,25 @@ export class Runner extends EventEmitter {
 
       // If no RPS is specified, run at max speed but yield to the event loop.
       if (!rps) {
-        await sleep(0);
-        continue;
+        await sleep(0); // Yield to event loop
+        return;
       }
 
-      // If RPS is specified, this.currentRpm holds the dynamic target.
-      // At the start of a ramp-up, currentRpm can be 0. We must wait for the governor.
-      if (this.currentRpm === 0) {
-        await sleep(50);
-        continue;
+      // If RPS is specified, this.currentTargetRps holds the dynamic target.
+      // We calculate the delay needed to match the target RPS.
+      const now = Date.now();
+      const oneSecondAgo = now - 1000;
+      const recentRequests = this.results.filter(
+        (r) => r.timestamp >= oneSecondAgo,
+      ).length;
+
+      const targetRpsForSlice = this.currentTargetRps / (1000 / 100); // Target for this 100ms slice
+      const actualRpsForSlice = recentRequests / ((now - oneSecondAgo) / 100); // Actual for this 100ms slice
+
+      if (actualRpsForSlice > targetRpsForSlice) {
+        const delay = (actualRpsForSlice - targetRpsForSlice) * 100;
+        await sleep(delay);
       }
-
-      const workerCount = this.getWorkerCount();
-      // Note: this.currentRpm is actually the target RPS, the variable is just misnamed.
-      const idealDelay = (1000 * workerCount) / this.currentRpm;
-
-      await sleep(idealDelay);
     }
   }
 }

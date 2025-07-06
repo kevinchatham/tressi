@@ -73,8 +73,8 @@ function printSummary(
   }
 
   if (rps) {
-    configTable.push({ 'Target RPS': rps });
-    configTable.push({ 'Target RPM': rps * 60 });
+    configTable.push({ 'Target Req/s': rps });
+    configTable.push({ 'Target Req/m': rps * 60 });
   }
 
   if (rampUpTimeSec) {
@@ -105,22 +105,22 @@ function printSummary(
 
         if (autoscale) {
           warningMessage =
-            `\n⚠️  Warning: Target of ${rps} RPS may be unreachable.` +
+            `\n⚠️  Warning: Target of ${rps} Req/s may be unreachable.` +
             `\n   The autoscaler hit the maximum of ${workers} workers.` +
             `\n   With an average latency of ~${Math.ceil(
               avgLatencyMs,
             )}ms, the theoretical max is only ~${Math.floor(
               maxPossibleRps,
-            )} RPS.` +
+            )} Req/s.` +
             `\n   To meet the target, try increasing the --workers limit to at least ${suggestedWorkers}.`;
         } else {
           warningMessage =
-            `\n⚠️  Warning: Target of ${rps} RPS may be unreachable with ${workers} workers.` +
+            `\n⚠️  Warning: Target of ${rps} Req/s may be unreachable with ${workers} workers.` +
             `\n   With an average latency of ~${Math.ceil(
               avgLatencyMs,
             )}ms, the theoretical max is only ~${Math.floor(
               maxPossibleRps,
-            )} RPS.` +
+            )} Req/s.` +
             `\n   To meet the target, try increasing workers to at least ${suggestedWorkers}.`;
         }
         // eslint-disable-next-line no-console
@@ -136,18 +136,21 @@ function printSummary(
 
   if (rps && globalSummary.theoreticalMaxRps) {
     table.push(
-      ['RPS (Actual/Target)', `${Math.ceil(globalSummary.actualRps)} / ${rps}`],
       [
-        'RPM (Actual/Target)',
+        'Req/s (Actual/Target)',
+        `${Math.ceil(globalSummary.actualRps)} / ${rps}`,
+      ],
+      [
+        'Req/m (Actual/Target)',
         `${Math.ceil(globalSummary.actualRps * 60)} / ${rps * 60}`,
       ],
-      ['Theoretical Max Reqs', globalSummary.theoreticalMaxRps],
+      ['Theoretical Max Req/s', globalSummary.theoreticalMaxRps],
       ['Achieved %', `${globalSummary.achievedPercentage}%`],
     );
   } else {
     table.push(
-      ['RPS', Math.ceil(globalSummary.actualRps)],
-      ['RPM', Math.ceil(globalSummary.actualRps * 60)],
+      ['Req/s', Math.ceil(globalSummary.actualRps)],
+      ['Req/m', Math.ceil(globalSummary.actualRps * 60)],
     );
   }
 
@@ -324,7 +327,7 @@ export async function runLoadTest(options: RunOptions): Promise<TestSummary> {
 
       const rpsDisplay = options.rps ? `${rps}/${options.rps}` : `${rps}`;
 
-      noUiSpinner.text = `[${elapsedSec.toFixed(0)}s/${totalSec}s] RPS: ${
+      noUiSpinner.text = `[${elapsedSec.toFixed(0)}s/${totalSec}s] Req/s: ${
         rpsDisplay
       } | Workers: ${workers} | Success: ${successful} | Fail: ${failed} | Avg Latency: ${avgLatency.toFixed(
         0,

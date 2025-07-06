@@ -203,27 +203,26 @@ export function generateMarkdownReport(
 
   // Global Summary
   md += `## Global Summary\n\n`;
-  md += `| Metric | Value |\n`;
-  md += `|---|---|\n`;
+  md += `| Stat | Value |\n| --- | --- |\n`;
   md += `| Total Requests | ${g.totalRequests} |\n`;
-
-  if (rps && g.theoreticalMaxRps) {
-    md += `| RPS (Actual/Target) | ${g.actualRps.toFixed(0)} / ${rps} |\n`;
-    md += `| RPM (Actual/Target) | ${(g.actualRps * 60).toFixed(
-      0,
-    )} / ${rps * 60} |\n`;
-    md += `| Theoretical Max Reqs | ${g.theoreticalMaxRps} |\n`;
-    md += `| Achieved % | ${g.achievedPercentage}% |\n`;
-  } else {
-    md += `| RPS | ${g.actualRps.toFixed(0)} |\n`;
-    md += `| RPM | ${(g.actualRps * 60).toFixed(0)} |\n`;
-  }
-
   md += `| Successful | ${g.successfulRequests} |\n`;
   md += `| Failed | ${g.failedRequests} |\n`;
+
+  if (options.rps && g.theoreticalMaxRps) {
+    md += `| Req/s (Actual/Target) | ${g.actualRps.toFixed(0)} / ${
+      options.rps
+    } |\n`;
+    md += `| Req/m (Actual/Target) | ${(g.actualRps * 60).toFixed(
+      0,
+    )} / ${options.rps * 60} |\n`;
+    md += `| Theoretical Max Req/s | ${g.theoreticalMaxRps.toFixed(0)} |\n`;
+    md += `| Achieved % | ${g.achievedPercentage}% |\n`;
+  } else {
+    md += `| Req/s | ${g.actualRps.toFixed(0)} |\n`;
+    md += `| Req/m | ${(g.actualRps * 60).toFixed(0)} |\n`;
+  }
+
   md += `| Avg Latency (ms) | ${g.avgLatencyMs.toFixed(0)} |\n`;
-  md += `| Min Latency (ms) | ${g.minLatencyMs.toFixed(0)} |\n`;
-  md += `| Max Latency (ms) | ${g.maxLatencyMs.toFixed(0)} |\n`;
   md += `| p95 Latency (ms) | ${g.p95LatencyMs.toFixed(0)} |\n`;
   md += `| p99 Latency (ms) | ${g.p99LatencyMs.toFixed(0)} |\n\n`;
 
