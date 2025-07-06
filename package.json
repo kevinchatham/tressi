@@ -1,6 +1,6 @@
 {
   "name": "tressi",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "",
   "license": "MIT",
   "author": "kevinchatham",
@@ -10,11 +10,19 @@
     "tressi": "dist/cli.js"
   },
   "scripts": {
+    "test": "vitest run",
+    "test:ui": "vitest --ui",
     "build": "tsup",
-    "dev": "tsx src/cli.ts --config tressi.config.ts --concurrency 2 --duration 5",
+    "dev": "tsx src/cli.ts --config tressi.config.json --duration 15 --no-ui",
+    "test:basic": "tsx src/cli.ts --config tressi.config.json --workers 10 --duration 30 --rps 200",
+    "test:ramp": "tsx src/cli.ts --config tressi.config.json --workers 20 --duration 60 --rps 500 --ramp-up-time 30",
+    "test:spike": "tsx src/cli.ts --config tressi.config.json --workers 100 --duration 10",
+    "test:soak": "tsx src/cli.ts --config tressi.config.json --workers 5 --duration 300 --rps 50",
+    "test:autoscale": "tsx src/cli.ts --config tressi.config.json --autoscale --workers 50 --rps 1000 --duration 60",
+    "test:ci": "tsx src/cli.ts --config tressi.config.json --workers 20 --duration 30 --rps 300 --no-ui --export",
     "format": "prettier --write . --config .prettierrc --ignore-path .prettierignore",
     "lint:inspect": "eslint --inspect-config",
-    "lint:watch": "chokidar \"**/*.ts\" -c \"npm run lint\"",
+    "lint:watch": "chokidar \"**/*.ts\" -c \"npm run lint\" --ignore \"**/node_modules/**\"",
     "lint": "eslint --fix --format unix --config ./eslint.config.mjs .",
     "start": "npm run build && node dist/cli.js",
     "typecheck": "tsc --noEmit"
@@ -25,27 +33,31 @@
     "chalk": "^5.4.1",
     "cli-table3": "^0.6.5",
     "commander": "^14.0.0",
+    "handlebars": "^4.7.8",
     "inquirer": "^12.7.0",
     "jiti": "^2.4.2",
-    "node-fetch": "^3.3.2",
     "ora": "^8.2.0",
+    "xlsx": "^0.18.5",
     "zod": "^3.25.74"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.1.0",
     "@types/blessed": "^0.1.25",
+    "@types/handlebars": "^4.0.40",
     "@types/inquirer": "^9.0.8",
     "@types/node": "^24.0.10",
-    "@types/node-fetch": "^2.6.12",
     "@typescript-eslint/eslint-plugin": "^8.4.0",
     "@typescript-eslint/parser": "^8.4.0",
+    "@vitest/ui": "^3.2.4",
     "chokidar-cli": "^3.0.0",
     "eslint-formatter-unix": "^8.40.0",
     "eslint-plugin-simple-import-sort": "^12.1.1",
+    "msw": "^2.10.3",
     "prettier": "^3.5.3",
     "tsup": "^8.5.0",
     "tsx": "^4.20.3",
     "typescript": "^5.8.3",
-    "typescript-eslint": "^8.1.0"
+    "typescript-eslint": "^8.1.0",
+    "vitest": "^3.2.4"
   }
 }

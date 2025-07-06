@@ -4,9 +4,12 @@ import { promises as fs } from 'fs';
 import inquirer from 'inquirer';
 import path from 'path';
 
-import { runLoadTest } from '.';
 import pkg from '../package.json';
+import { runLoadTest } from '.';
 
+/**
+ * Template for a TypeScript-based tressi configuration file.
+ */
 const tsConfigTemplate = `import { defineConfig } from 'tressi';
 
 export default defineConfig({
@@ -30,6 +33,9 @@ export default defineConfig({
 });
 `;
 
+/**
+ * Template for a JSON-based tressi configuration file.
+ */
 const jsonConfigTemplate = `{
   "headers": {
     "Content-Type": "application/json; charset=UTF-8"
@@ -52,6 +58,9 @@ const jsonConfigTemplate = `{
 }
 `;
 
+/**
+ * The main commander program instance.
+ */
 const program = new Command();
 
 program
@@ -61,10 +70,19 @@ program
 
 program
   .option('-c, --config <path>', 'Path or URL to config file (.ts or .json)')
-  .option('--concurrency <n>', 'Concurrent workers', '10')
+  .option(
+    '--workers <n>',
+    'Number of concurrent workers, or max workers if autoscale is enabled',
+    '10',
+  )
   .option('--duration <s>', 'Duration in seconds', '10')
-  .option('--rpm <n>', 'Requests per minute limit')
-  .option('--csv <path>', 'CSV output path')
+  .option('--ramp-up-time <s>', 'Time in seconds to ramp up to the target RPM')
+  .option('--rps <n>', 'Target requests per second')
+  .option('--autoscale', 'Enable autoscaling of workers')
+  .option(
+    '--export [path]',
+    'Export a complete report to a specified directory',
+  )
   .option('--no-ui', 'Disable live charts (enabled by default)');
 
 program
@@ -130,14 +148,17 @@ Examples:
   # Run a load test with a config file
   $ tressi --config ./tressi.config.ts
 
-  # Run a load test with a config file and save results to a CSV file
-  $ tressi --config ./tressi.config.ts --csv ./results.csv
+  # Export a complete report to a timestamped directory
+  $ tressi --config ./tressi.config.ts --export
+
+  # Export a report to a custom-named, timestamped directory
+  $ tressi --config ./tressi.config.ts --export ./my-report
   
   # Run a load test with a config file and disable the interactive terminal UI
   $ tressi --config ./tressi.config.ts --no-ui
   
   # Run a load test with a config file and set the concurrency to 20
-  $ tressi --config ./tressi.config.ts --concurrency 20
+  $ tressi --config ./tressi.config.ts --workers 20
   
   # Run a load test with a config file and set the duration to 30 seconds
   $ tressi --config ./tressi.config.ts --duration 30
@@ -147,6 +168,10 @@ Examples:
 `,
 );
 
+/**
+ * The main action for the program. This is executed when the user runs `tressi`
+ * with options, but without a specific command like `init`.
+ */
 program.action(async (opts) => {
   // If no config is provided, and no command was run, show help.
   // This handles the case where the user just runs `tressi`.
@@ -155,15 +180,23 @@ program.action(async (opts) => {
     return;
   }
 
+  if (opts.autoscale && !opts.rps) {
+    // eslint-disable-next-line no-console
+    console.error('Error: --rps is required when --autoscale is enabled.');
+    process.exit(1);
+  }
+
   try {
     await runLoadTest({
       config: opts.config,
-      concurrency: opts.concurrency
-        ? parseInt(opts.concurrency, 10)
-        : undefined,
+      workers: opts.workers ? parseInt(opts.workers, 10) : undefined,
       durationSec: opts.duration ? parseInt(opts.duration, 10) : undefined,
-      rpm: opts.rpm ? parseInt(opts.rpm, 10) : undefined,
-      csvPath: opts.csv,
+      rampUpTimeSec: opts.rampUpTime
+        ? parseInt(opts.rampUpTime, 10)
+        : undefined,
+      rps: opts.rps ? parseInt(opts.rps, 10) : undefined,
+      autoscale: opts.autoscale,
+      exportPath: opts.export,
       useUI: opts.ui,
     });
   } catch {
@@ -173,4 +206,7 @@ program.action(async (opts) => {
   }
 });
 
+/**
+ * Parses the command line arguments and runs the program.
+ */
 program.parseAsync(process.argv);

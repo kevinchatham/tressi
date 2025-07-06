@@ -1,10 +1,10 @@
-import { defineConfig } from './src/index';
+import { defineConfig } from 'tressi';
 
 export default defineConfig({
-  headers: {
-    'Content-Type': 'application/json',
-    'X-Powered-By': 'tressi',
-  },
+  // Common headers for all requests can be defined here
+  // headers: {
+  //   'Authorization': `Bearer ${process.env.API_TOKEN}`,
+  // },
   requests: [
     {
       url: 'https://jsonplaceholder.typicode.com/posts/1',
@@ -14,20 +14,8 @@ export default defineConfig({
       url: 'https://jsonplaceholder.typicode.com/posts',
       method: 'POST',
       payload: {
-        title: 'tressi_test',
-        body: 'This is a test post from tressi.',
-        userId: 1,
-      },
-    },
-    {
-      url: 'https://jsonplaceholder.typicode.com/posts/1',
-      method: 'PUT',
-      payload: {
-        id: 1,
-        title: 'tressi_update',
-        body: 'This is an updated post from tressi.',
-        userId: 1,
+        name: 'Tressi Post',
       },
     },
   ],
-}); 
+});

@@ -4,6 +4,18 @@ import tsLint from 'typescript-eslint';
 
 export default [
   {
+    // https://eslint.org/docs/latest/use/configure/ignore
+    // only ignore node_modules in the same directory as the configuration file
+    // so you have toS add `**/` pattern to include nested directories (for example if you use pnpm workspace)
+    ignores: [
+      'node_modules/',
+      '**/.angular/',
+      '**/node_modules/',
+      '**/dist/',
+      '**/wwwroot/',
+    ],
+  },
+  {
     files: ['**/*.ts'],
   },
   {
@@ -23,17 +35,5 @@ export default [
       eqeqeq: ['error', 'smart'],
       'simple-import-sort/imports': ['warn'],
     },
-  },
-  {
-    // https://eslint.org/docs/latest/use/configure/ignore
-    // only ignore node_modules in the same directory as the configuration file
-    // so you have toS add `**/` pattern to include nested directories (for example if you use pnpm workspace)
-    ignores: [
-      'node_modules/',
-      '**/.angular/',
-      '**/node_modules/',
-      '**/dist/',
-      '**/wwwroot/',
-    ],
   },
 ];
