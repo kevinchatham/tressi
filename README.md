@@ -1,6 +1,15 @@
-# ⚡ Tressi
-
-> Stress less, test more.
+<p align="center">
+  <br/>
+  <img src="./tressi.png" alt="tressi-logo" width="150px" height="150px"/>
+  <br/><br/>
+  <em><b>Tressi</b> is a lightweight, declarative load testing tool built for modern developers.</em>
+  <br/><br/>
+  <em>Stress less, test more.</em>
+  <br/><br/>
+  <a href="./LICENSE">
+    <img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT License"/>
+  </a>
+</p>
 
 `tressi` is a **lightweight, declarative load testing tool** built for modern developers. Define your HTTP workflows in a simple config file and unleash them with blazing concurrency, live terminal metrics, and full CSV exports. Use it as a CLI or embed it into your own tooling.
 
