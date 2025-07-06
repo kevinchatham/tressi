@@ -185,6 +185,7 @@ export function generateMarkdownReport(
 
   if (warnings.length > 0) {
     md += `## Analysis & Warnings ⚠️\n\n`;
+    md += `> *This section highlights potential performance issues or configuration problems detected during the test.*\n\n`;
     for (const warning of warnings) {
       md += `* ${warning}\n`;
     }
@@ -200,15 +201,17 @@ export function generateMarkdownReport(
 
   // Run Configuration
   md += `## Run Configuration\n\n`;
-  md += `| Option | Setting |\n`;
-  md += `|---|---|\n`;
-  md += `| Workers | ${autoscale ? `Up to ${workers}` : workers} |\n`;
-  md += `| Duration | ${durationSec}s |\n`;
-  if (rps) md += `| Target RPS | ${rps} |\n`;
-  if (autoscale) md += `| Autoscale | Enabled |\n\n`;
+  md += `> *This table shows the main parameters used for the load test run.*\n\n`;
+  md += `| Option | Setting | Argument |\n`;
+  md += `|---|---|---|\n`;
+  md += `| Workers | ${autoscale ? `Up to ${workers}` : workers} | \`--workers\` |\n`;
+  md += `| Duration | ${durationSec}s | \`--duration\` |\n`;
+  if (rps) md += `| Target Req/s | ${rps} | \`--rps\` |\n`;
+  if (autoscale) md += `| Autoscale | Enabled | \`--autoscale\` |\n\n`;
 
   // Global Summary
   md += `## Global Summary\n\n`;
+  md += `> *A high-level overview of the entire test performance across all endpoints.*\n\n`;
   md += `| Stat | Value |\n| --- | --- |\n`;
   md += `| Duration | ${g.duration.toFixed(0)}s |\n`;
   md += `| Total Requests | ${g.totalRequests} |\n`;
@@ -229,9 +232,9 @@ export function generateMarkdownReport(
     md += `| Req/m | ${(g.actualRps * 60).toFixed(0)} |\n`;
   }
 
-  md += `| Avg Latency (ms) | ${g.avgLatencyMs.toFixed(0)} |\n`;
-  md += `| p95 Latency (ms) | ${g.p95LatencyMs.toFixed(0)} |\n`;
-  md += `| p99 Latency (ms) | ${g.p99LatencyMs.toFixed(0)} |\n\n`;
+  md += `| Avg Latency | ${g.avgLatencyMs.toFixed(0)}ms |\n`;
+  md += `| p95 Latency | ${g.p95LatencyMs.toFixed(0)}ms |\n`;
+  md += `| p99 Latency | ${g.p99LatencyMs.toFixed(0)}ms |\n\n`;
 
   // Latency Distribution
   const latencies = results.map((r) => r.latencyMs);
@@ -267,18 +270,30 @@ export function generateMarkdownReport(
     }
 
     md += `## Latency Distribution\n\n`;
-    md += `| Range | Count | Chart |\n`;
-    md += `|---|---|---|\n`;
+    md += `> *This table shows how request latencies were distributed. **% of Total** is the percentage of requests that fell into that specific time range. **Cumulative %** is the running total, showing the percentage of requests at or below that latency.*\n\n`;
+    md += `| Range (ms) | Count | % of Total | Cumulative % | Chart |\n`;
+    md += `|---|---|---|---|---|\n`;
 
     const maxCount = Math.max(...buckets);
+    const totalCount = latencies.length;
+    let cumulativeCount = 0;
+    const BAR_WIDTH = 20;
+
     for (let i = 0; i < labels.length; i++) {
       const count = buckets[i];
       if (count === 0) continue;
 
-      const barLength = maxCount > 0 ? Math.round((count / maxCount) * 20) : 0;
+      cumulativeCount += count;
+      const percentage = (count / totalCount) * 100;
+      const cumulativePercentage = (cumulativeCount / totalCount) * 100;
+
+      const barLength =
+        maxCount > 0 ? Math.round((count / maxCount) * BAR_WIDTH) : 0;
       const bar = '█'.repeat(barLength);
-      const percentage = ((count / latencies.length) * 100).toFixed(1);
-      md += `| ${labels[i]} | ${count} | \`${bar}\` (${percentage}%) |\n`;
+
+      md += `| ${labels[i]} | ${count} | ${percentage.toFixed(
+        1,
+      )}% | ${cumulativePercentage.toFixed(1)}% | \`${bar}\` |\n`;
     }
     md += `\n`;
   }
@@ -296,6 +311,7 @@ export function generateMarkdownReport(
     );
 
     md += `## Error Summary\n\n`;
+    md += `> *This section summarizes any errors that occurred during the test, grouped by message.*\n\n`;
     md += `| Count | Error Message |\n`;
     md += `|---|---|\n`;
     for (const [error, count] of Object.entries(errorMap).sort(
@@ -317,6 +333,7 @@ export function generateMarkdownReport(
 
   if (Object.keys(statusCodeMap).length > 0) {
     md += `## Responses by Status Code\n\n`;
+    md += `> *A breakdown of all responses by their HTTP status code.*\n\n`;
     md += `| Status Code | Count |\n`;
     md += `|---|---|\n`;
     for (const [code, count] of Object.entries(statusCodeMap).sort((a, b) =>
@@ -329,7 +346,8 @@ export function generateMarkdownReport(
 
   // Endpoint Summary
   if (e.length > 0) {
-    md += `## Endpoint Summary (latencies in ms)\n\n`;
+    md += `## Endpoint Summary\n\n`;
+    md += `> *A detailed performance breakdown for each individual API endpoint.*\n\n`;
     md += `| URL | Total | Success | Failed | Avg | P95 | P99 |\n`;
     md += `|---|---|---|---|---|---|---|\n`;
     for (const endpoint of e) {
@@ -337,9 +355,9 @@ export function generateMarkdownReport(
         endpoint.successfulRequests
       } | ${endpoint.failedRequests} | ${endpoint.avgLatencyMs.toFixed(
         0,
-      )} | ${endpoint.p95LatencyMs.toFixed(0)} | ${endpoint.p99LatencyMs.toFixed(
+      )}ms | ${endpoint.p95LatencyMs.toFixed(0)}ms | ${endpoint.p99LatencyMs.toFixed(
         0,
-      )} |\n`;
+      )}ms |\n`;
     }
   }
 

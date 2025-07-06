@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterAll,beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { RunOptions } from '../src';
 import { TressiConfig } from '../src/config';
@@ -51,6 +51,15 @@ const mockConfig: TressiConfig = {
  * Test suite for the summary generation logic.
  */
 describe('summarizer', () => {
+  beforeAll(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2023-01-01T09:00:00.000Z'));
+  });
+
+  afterAll(() => {
+    vi.useRealTimers();
+  });
+
   /**
    * It should correctly calculate all global statistics for a given set of results.
    */
@@ -113,27 +122,6 @@ describe('summarizer', () => {
       metadata,
     );
 
-    expect(markdown).toContain(`# Tressi Load Test Report`);
-    expect(markdown).toContain(`**Export Name:** ${metadata.exportName}`);
-    expect(markdown).toContain(
-      `**Test Time:** ${metadata.runDate.toLocaleString()}`,
-    );
-    expect(markdown).toContain('## Analysis & Warnings ⚠️');
-    expect(markdown).toContain(
-      '<summary>View Full Test Configuration</summary>',
-    );
-    expect(markdown).toContain('## Run Configuration');
-    expect(markdown).toContain('## Global Summary');
-    expect(markdown).toContain('| Req/s (Actual/Target)');
-    expect(markdown).toContain('| Achieved %');
-    expect(markdown).toContain('## Latency Distribution');
-    expect(markdown).toContain('| Range | Count | Chart |');
-    expect(markdown).toContain('## Error Summary');
-    expect(markdown).toContain('## Responses by Status Code');
-    expect(markdown).toContain('## Endpoint Summary');
-    expect(markdown).toContain('| 200 | 3 |');
-    expect(markdown).toContain('| 500 | 1 |');
-    expect(markdown).toContain('| http://a.com | 2 |');
-    expect(markdown).toContain('| http://b.com | 2 |');
+    expect(markdown).toMatchSnapshot();
   });
 });
