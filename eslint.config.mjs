@@ -10,9 +10,6 @@ export default [
     ignores: ['node_modules/', '**/node_modules/', '**/dist/'],
   },
   {
-    files: ['**/*.ts'],
-  },
-  {
     languageOptions: {
       globals: { ...globals.node },
     },
@@ -20,6 +17,7 @@ export default [
   // rules
   ...tsLint.configs.recommended,
   {
+    files: ['**/*.ts'],
     plugins: {
       'simple-import-sort': pluginSimpleImportSort,
     },
@@ -28,6 +26,12 @@ export default [
       '@typescript-eslint/explicit-function-return-type': 'error',
       eqeqeq: ['error', 'smart'],
       'simple-import-sort/imports': ['warn'],
+    },
+  },
+  {
+    files: ['scripts/generate-schema.ts'],
+    rules: {
+      'no-console': 'off',
     },
   },
 ];
