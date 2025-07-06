@@ -8,7 +8,7 @@
   </a>
 </p>
 
-`tressi` is a **lightweight, declarative load testing tool** built for modern developers. Define your HTTP workflows in a simple JSON config file and unleash them with blazing concurrency, live terminal metrics, and full CSV exports. Use it as a CLI or embed it into your own tooling.
+`tressi` is a **lightweight, declarative load testing tool** built for modern developers. Define your HTTP workflows in a simple JSON config file and unleash them with blazing concurrency, live terminal metrics, and full data exports. Use it as a CLI or embed it into your own tooling.
 
 ## 🚀 Features
 
@@ -17,7 +17,7 @@
 - 👥 **Concurrent Workers** — Simulate realistic multi-user load with ease via workers.
 - ⏱️ **Rate Limiting** — Control Req/s for accurate throttling scenarios.
 - 📊 **Interactive Terminal UI** — View live Req/s, latency stats, and status codes.
-- 📁 **Comprehensive Reporting** — Export results to Markdown, JSON, and CSV for analysis.
+- 📁 **Comprehensive Reporting** — Export results to Markdown, XLSX, and CSV for analysis.
 - ⚙️ **Typed Configuration** - Uses Zod for robust configuration validation.
 
 ## 📦 Installation
@@ -132,20 +132,20 @@ npx tressi --config tressi.config.json --workers 20 --duration 30 --rps 300 --no
 
 ### ⚙️ CLI Options
 
-| Option             | Alias | Description                                                           | Default |
-| ------------------ | ----- | --------------------------------------------------------------------- | ------- |
-| `--config <path>`  | `-c`  | Path to the configuration file (e.g., `tressi.config.json`)           |         |
-| `--workers <n>`    | `-w`  | Number of concurrent workers (for autoscale, this is the max workers) | `10`    |
-| `--duration `      | `-d`  | Total test duration in seconds                                        | `10`    |
-| `--rps <n>`        |       | Target requests per second (ramps up to this value)                   |         |
-| `--ramp-up-time  ` |       | Time in seconds to ramp up to the target Req/s                        |         |
-| `--autoscale`      |       | Enable autoscaling of workers (requires --rps)                        | `false` |
-| `--export [path]`  | `-e`  | Export results to JSON, CSV, and Markdown                             | `false` |
-| `--no-ui`          |       | Disable the interactive terminal UI (can improve performance)         | `false` |
+| Option               | Alias | Description                                                           | Default |
+| -------------------- | ----- | --------------------------------------------------------------------- | ------- |
+| `--config <path>`    | `-c`  | Path to the configuration file (e.g., `tressi.config.json`)           |         |
+| `--workers <n>`      |       | Number of concurrent workers (for autoscale, this is the max workers) | `10`    |
+| `--duration <s>`     |       | Total test duration in seconds                                        | `10`    |
+| `--rps <n>`          |       | Target requests per second (ramps up to this value)                   |         |
+| `--ramp-up-time <s>` |       | Time in seconds to ramp up to the target Req/s                        |         |
+| `--autoscale`        |       | Enable autoscaling of workers (requires --rps)                        | `false` |
+| `--export [path]`    |       | Export results to Markdown, XLSX, and CSVs                            | `false` |
+| `--no-ui`            |       | Disable the interactive terminal UI (can improve performance)         | `false` |
 
 ### 🧬 Programmatic Usage
 
-`tressi` can be used as a library to run load tests from your own Node.js scripts. The `runLoadTest` function returns a `Promise` that resolves with a `TestSummary` object containing detailed results.
+`tressi` can be used as a library to run load tests from your own Node.js scripts. The `runLoadTest` function accepts an `options` object and returns a `Promise` that resolves with a `TestSummary` object containing detailed results.
 
 ```ts
 import { runLoadTest, TestSummary } from 'tressi';
@@ -154,7 +154,7 @@ async function myCustomScript() {
   console.log('Starting custom load test...');
 
   const summary: TestSummary = await runLoadTest({
-    // Suppress all console output from tressi
+    // Suppress all console output from tressi. Defaults to false.
     silent: true,
     // Define the test configuration directly
     config: {
@@ -228,16 +228,18 @@ Your `tressi.config.json` file is a standard JSON file with the following root p
   - `method`: The HTTP method. It is case-insensitive, defaults to `GET`, and supports `GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `HEAD`, and `OPTIONS`.
   - `payload`: (Optional) The data to send with the request.
 
+## 📁 Exporting Results
+
 The `--export` flag will generate a unique, timestamped directory containing a comprehensive set of data files:
 
 - **📝 `report.md`**: A clean, readable Markdown summary of the test results.
 - **📊 `report.xlsx`**: A multi-sheet Excel file with the global summary, per-endpoint summary, and raw request log.
 - **📈 `results.csv`**: A raw log of all requests made during the test.
 
-You can also provide a path to the `--export` flag to customize the name of the output directory:
+You can also provide a path to the `--export` flag to customize the base name of the output directory:
 
 ```bash
 npx tressi --config tressi.config.json --workers 20 --duration 30 --rps 300 --no-ui --export my-test-results
 ```
 
-This will create a directory named `my-test-results` in the current working directory.
+This will create a uniquely named, timestamped directory, such as `my-test-results-2025-07-06T10:00:00.000Z`.
