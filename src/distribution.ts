@@ -10,11 +10,13 @@ import chalk from 'chalk';
 export function getLatencyDistribution(
   latencies: number[],
   bucketCount = 6,
+  chartWidth?: number,
 ): {
   range: string;
   count: string;
   percent: string;
   cumulative: string;
+  chart: string;
 }[] {
   if (latencies.length === 0) {
     return [];
@@ -52,6 +54,7 @@ export function getLatencyDistribution(
   }
 
   let cumulativeCount = 0;
+  const maxCount = Math.max(...buckets.map((b) => b.count));
 
   return buckets.map((bucket) => {
     const percentOfTotal =
@@ -60,11 +63,19 @@ export function getLatencyDistribution(
     const cumulativePercent =
       totalCount > 0 ? (cumulativeCount / totalCount) * 100 : 0;
 
+    let chart = '';
+    if (chartWidth) {
+      const barLength =
+        maxCount > 0 ? Math.round((bucket.count / maxCount) * chartWidth) : 0;
+      chart = '█'.repeat(barLength);
+    }
+
     return {
       range: bucket.range,
       count: bucket.count.toString(),
       percent: `${percentOfTotal.toFixed(1)}%`,
       cumulative: `${cumulativePercent.toFixed(1)}%`,
+      chart,
     };
   });
 }

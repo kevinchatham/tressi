@@ -1,4 +1,5 @@
 import { TressiConfig } from './config';
+import { getLatencyDistribution } from './distribution';
 import { RunOptions } from './index';
 import { average, percentile, RequestResult } from './stats';
 
@@ -239,61 +240,16 @@ export function generateMarkdownReport(
   // Latency Distribution
   const latencies = results.map((r) => r.latencyMs);
   if (latencies.length > 0) {
-    const min = g.minLatencyMs;
-    const max = g.maxLatencyMs;
-    const numBuckets = 8;
-    const range = max - min;
-
-    const buckets = new Array(numBuckets).fill(0);
-    const labels: string[] = [];
-
-    if (range === 0) {
-      // If all latencies are the same, create a single bucket
-      labels.push(`${min}ms`);
-      buckets[0] = latencies.length;
-    } else {
-      const bucketSize = Math.ceil(range / numBuckets);
-      for (let i = 0; i < numBuckets; i++) {
-        const lower = Math.floor(min + i * bucketSize);
-        const upper = Math.floor(min + (i + 1) * bucketSize - 1);
-        labels.push(`${lower}-${upper}ms`);
-      }
-
-      for (const latency of latencies) {
-        if (latency === max) {
-          buckets[numBuckets - 1]++;
-        } else {
-          const bucketIndex = Math.floor((latency - min) / bucketSize);
-          buckets[bucketIndex]++;
-        }
-      }
-    }
+    const distribution = getLatencyDistribution(latencies, 8, 20);
 
     md += `## Latency Distribution\n\n`;
     md += `> *This table shows how request latencies were distributed. **% of Total** is the percentage of requests that fell into that specific time range. **Cumulative %** is the running total, showing the percentage of requests at or below that latency.*\n\n`;
     md += `| Range (ms) | Count | % of Total | Cumulative % | Chart |\n`;
     md += `|---|---|---|---|---|\n`;
 
-    const maxCount = Math.max(...buckets);
-    const totalCount = latencies.length;
-    let cumulativeCount = 0;
-    const BAR_WIDTH = 20;
-
-    for (let i = 0; i < labels.length; i++) {
-      const count = buckets[i];
-      if (count === 0) continue;
-
-      cumulativeCount += count;
-      const percentage = (count / totalCount) * 100;
-      const cumulativePercentage = (cumulativeCount / totalCount) * 100;
-
-      const barLength =
-        maxCount > 0 ? Math.round((count / maxCount) * BAR_WIDTH) : 0;
-      const bar = '█'.repeat(barLength);
-
-      md += `| ${labels[i]} | ${count} | ${percentage.toFixed(
-        1,
-      )}% | ${cumulativePercentage.toFixed(1)}% | \`${bar}\` |\n`;
+    for (const bucket of distribution) {
+      if (bucket.count === '0') continue;
+      md += `| ${bucket.range}ms | ${bucket.count} | ${bucket.percent} | ${bucket.cumulative} | \`${bucket.chart}\` |\n`;
     }
     md += `\n`;
   }
