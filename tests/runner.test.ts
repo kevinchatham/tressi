@@ -117,4 +117,47 @@ describe('Runner', () => {
 
     expect(duration).toBeLessThan(2000);
   });
+
+  /**
+   * It should gradually increase the target RPS over the specified ramp-up duration.
+   */
+  it('should ramp up the request rate over time', async () => {
+    vi.useFakeTimers();
+
+    const options: RunOptions = {
+      ...baseOptions,
+      durationSec: 10,
+      rps: 100,
+      rampUpTimeSec: 5, // Ramp up to 100 Req/s over 5 seconds
+    };
+    const runner = new Runner(options, baseRequests, {});
+
+    const runPromise = runner.run();
+
+    // At 0s, RPS should be 0
+    expect(runner.getCurrentTargetRps()).toBe(0);
+
+    // At 1s, should be 20 Req/s (1/5th of the way)
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(runner.getCurrentTargetRps()).toBe(20);
+
+    // At 3s, should be 60 Req/s (3/5th of the way)
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(runner.getCurrentTargetRps()).toBe(60);
+
+    // At 5s (end of ramp-up), should be at the target of 100 Req/s
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(runner.getCurrentTargetRps()).toBe(100);
+
+    // After ramp-up, it should stay at the target
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(runner.getCurrentTargetRps()).toBe(100);
+
+    // Stop the runner and wait for it to finish
+    runner.stop();
+    await vi.runAllTimersAsync();
+    await runPromise;
+
+    vi.useRealTimers();
+  });
 });
