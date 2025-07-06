@@ -61,23 +61,27 @@ function printSummary(
     autoscale,
   } = options;
 
-  const configTable = new Table({ colWidths: [30, 20] });
-  configTable.push(
-    { Workers: autoscale ? `Up to ${workers}` : workers },
-    { Duration: `${durationSec}s` },
-  );
+  const configTable = new Table({
+    head: ['Option', 'Setting', 'Argument'],
+    colWidths: [20, 15, 20],
+  });
+  configTable.push([
+    'Workers',
+    autoscale ? `Up to ${workers}` : workers,
+    '--workers',
+  ]);
+  configTable.push(['Duration', `${durationSec}s`, '--duration']);
 
   if (autoscale) {
-    configTable.push({ Autoscale: 'Enabled' });
+    configTable.push(['Autoscale', 'Enabled', '--autoscale']);
   }
 
   if (rps) {
-    configTable.push({ 'Target Req/s': rps });
-    configTable.push({ 'Target Req/m': rps * 60 });
+    configTable.push(['Target Req/s', rps, '--rps']);
   }
 
   if (rampUpTimeSec) {
-    configTable.push({ 'Ramp-up Time': `${rampUpTimeSec}s` });
+    configTable.push(['Ramp-up Time', `${rampUpTimeSec}s`, '--ramp-up-time']);
   }
 
   // eslint-disable-next-line no-console
@@ -131,6 +135,8 @@ function printSummary(
   summaryTable.push(
     ['Duration', `${Math.ceil(globalSummary.duration)}s`],
     ['Total Requests', globalSummary.totalRequests],
+    [chalk.green('Successful'), globalSummary.successfulRequests],
+    [chalk.red('Failed'), globalSummary.failedRequests],
   );
 
   if (rps && globalSummary.theoreticalMaxRps) {
@@ -154,13 +160,9 @@ function printSummary(
   }
 
   summaryTable.push(
-    [chalk.green('Successful'), globalSummary.successfulRequests],
-    [chalk.red('Failed'), globalSummary.failedRequests],
-    ['Avg Latency (ms)', Math.ceil(globalSummary.avgLatencyMs)],
-    ['Min Latency (ms)', Math.ceil(globalSummary.minLatencyMs)],
-    ['Max Latency (ms)', Math.ceil(globalSummary.maxLatencyMs)],
-    ['p95 Latency (ms)', Math.ceil(globalSummary.p95LatencyMs)],
-    ['p99 Latency (ms)', Math.ceil(globalSummary.p99LatencyMs)],
+    ['Avg Latency', `${Math.ceil(globalSummary.avgLatencyMs)}ms`],
+    ['p95 Latency', `${Math.ceil(globalSummary.p95LatencyMs)}ms`],
+    ['p99 Latency', `${Math.ceil(globalSummary.p99LatencyMs)}ms`],
   );
 
   // eslint-disable-next-line no-console
@@ -218,13 +220,13 @@ function printSummary(
       endpointTable.push({ Successful: chalk.green(successfulRequests) });
       endpointTable.push({ Failed: chalk.red(failedRequests) });
       endpointTable.push({
-        'Avg Latency (ms)': Math.ceil(avgLatencyMs),
+        'Avg Latency': `${Math.ceil(avgLatencyMs)}ms`,
       });
       endpointTable.push({
-        'p95 Latency (ms)': Math.ceil(p95LatencyMs),
+        'p95 Latency': `${Math.ceil(p95LatencyMs)}ms`,
       });
       endpointTable.push({
-        'p99 Latency (ms)': Math.ceil(p99LatencyMs),
+        'p99 Latency': `${Math.ceil(p99LatencyMs)}ms`,
       });
 
       // eslint-disable-next-line no-console
