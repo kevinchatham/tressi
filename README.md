@@ -141,7 +141,7 @@ npx tressi --config tressi.config.json --workers 20 --duration 30 --rps 300 --no
 | `--ramp-up-time  ` |       | Time in seconds to ramp up to the target Req/s                        |         |
 | `--autoscale`      |       | Enable autoscaling of workers (requires --rps)                        | `false` |
 | `--export [path]`  | `-e`  | Export results to JSON, CSV, and Markdown                             | `false` |
-| `--no-ui`          |       | Disable the interactive terminal UI                                   | `false` |
+| `--no-ui`          |       | Disable the interactive terminal UI (can improve performance)         | `false` |
 
 ### 🧬 Programmatic Usage
 

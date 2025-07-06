@@ -210,6 +210,7 @@ export function generateMarkdownReport(
   // Global Summary
   md += `## Global Summary\n\n`;
   md += `| Stat | Value |\n| --- | --- |\n`;
+  md += `| Duration | ${g.duration.toFixed(0)}s |\n`;
   md += `| Total Requests | ${g.totalRequests} |\n`;
   md += `| Successful | ${g.successfulRequests} |\n`;
   md += `| Failed | ${g.failedRequests} |\n`;
