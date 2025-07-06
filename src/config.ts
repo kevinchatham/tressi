@@ -40,6 +40,11 @@ export const TressiConfigSchema = z.object({
 export type TressiConfig = z.infer<typeof TressiConfigSchema>;
 
 /**
+ * Type representing the input for a Tressi configuration.
+ */
+export type TressiConfigInput = z.input<typeof TressiConfigSchema>;
+
+/**
  * Type representing a single request configuration.
  */
 export type RequestConfig = z.infer<typeof RequestConfigSchema>;
@@ -50,7 +55,7 @@ export type RequestConfig = z.infer<typeof RequestConfigSchema>;
  * @returns A promise that resolves to the validated Tressi configuration.
  */
 export async function loadConfig(
-  configInput: string | TressiConfig,
+  configInput: string | TressiConfigInput,
 ): Promise<TressiConfig> {
   if (typeof configInput === 'object') {
     return TressiConfigSchema.parse(configInput);
