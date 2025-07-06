@@ -308,7 +308,8 @@ export class Runner extends EventEmitter {
   }
 
   /**
-   * The core worker function. It runs in a loop, making requests until stopped.
+   * The core worker function. It runs in a loop, making requests and respecting
+   * the rate limit (RPS) until instructed to stop.
    * @param isStopped A function that returns true if the worker should stop.
    *                  Defaults to checking the main runner's stopped flag.
    */
@@ -349,10 +350,11 @@ export class Runner extends EventEmitter {
 
       const { rps } = this.options;
 
-      // If no RPS is specified, run at max speed but yield to the event loop.
+      // If no RPS is specified, run at max speed (with a yield to the event loop).
+      // Otherwise, calculate the required delay to match the target RPS and sleep.
       if (!rps) {
-        await sleep(0); // Yield to event loop
-        return;
+        await sleep(0); // Yield to event loop to avoid blocking
+        continue;
       }
 
       // If RPS is specified, this.currentTargetRps holds the dynamic target.

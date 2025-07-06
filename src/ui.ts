@@ -1,6 +1,10 @@
 import blessed from 'blessed';
 import contrib from 'blessed-contrib';
-import { getLatencyDistribution } from './distribution';
+
+import {
+  getLatencyDistribution,
+  getStatusCodeDistributionByCategory,
+} from './distribution';
 import { average } from './stats';
 
 /**
@@ -133,18 +137,18 @@ export class TUI {
     }
 
     // Calculate the delta of status codes since the last update
-    const successDelta =
-      this.getDeltaForCodeRange(statusCodeMap, 200, 299) -
-      this.getDeltaForCodeRange(this.lastStatusCodeMap, 200, 299);
-    const redirectDelta =
-      this.getDeltaForCodeRange(statusCodeMap, 300, 399) -
-      this.getDeltaForCodeRange(this.lastStatusCodeMap, 300, 399);
+    const currentDistribution =
+      getStatusCodeDistributionByCategory(statusCodeMap);
+    const lastDistribution = getStatusCodeDistributionByCategory(
+      this.lastStatusCodeMap,
+    );
+
+    const successDelta = currentDistribution['2xx'] - lastDistribution['2xx'];
+    const redirectDelta = currentDistribution['3xx'] - lastDistribution['3xx'];
     const clientErrorDelta =
-      this.getDeltaForCodeRange(statusCodeMap, 400, 499) -
-      this.getDeltaForCodeRange(this.lastStatusCodeMap, 400, 499);
+      currentDistribution['4xx'] - lastDistribution['4xx'];
     const serverErrorDelta =
-      this.getDeltaForCodeRange(statusCodeMap, 500, 599) -
-      this.getDeltaForCodeRange(this.lastStatusCodeMap, 500, 599);
+      currentDistribution['5xx'] - lastDistribution['5xx'];
 
     this.lastStatusCodeMap = { ...statusCodeMap };
 
@@ -250,18 +254,5 @@ export class TUI {
    */
   public destroy(): void {
     this.screen.destroy();
-  }
-
-  private getDeltaForCodeRange(
-    map: Record<number, number>,
-    min: number,
-    max: number,
-  ): number {
-    return Object.entries(map)
-      .filter(([code]) => {
-        const n = Number(code);
-        return n >= min && n <= max;
-      })
-      .reduce((sum, [, count]) => sum + count, 0);
   }
 }

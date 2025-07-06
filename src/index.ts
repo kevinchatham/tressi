@@ -4,9 +4,9 @@ import { promises as fs } from 'fs';
 import ora from 'ora';
 import path from 'path';
 import { z } from 'zod';
-import { getLatencyDistribution } from './distribution';
 
 import { loadConfig, RequestConfig, TressiConfig } from './config';
+import { getLatencyDistribution } from './distribution';
 import { exportDataFiles } from './exporter';
 import { Runner } from './runner';
 import { average, percentile, RequestResult } from './stats';
@@ -47,6 +47,7 @@ export interface RunOptions {
  * Prints a detailed summary of the load test results to the console.
  * @param results An array of `RequestResult` objects from the test run.
  * @param options The original `RunOptions` used for the test.
+ * @param summary The calculated `TestSummary` object for the run.
  */
 function printSummary(
   results: RequestResult[],
