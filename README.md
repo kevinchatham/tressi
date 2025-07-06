@@ -145,20 +145,44 @@ npx tressi --config tressi.config.json --workers 20 --duration 30 --rps 300 --no
 
 ### 🧬 Programmatic Usage
 
-```ts
-import { runLoadTest } from 'tressi';
+`tressi` can be used as a library to run load tests from your own Node.js scripts. The `runLoadTest` function returns a `Promise` that resolves with a `TestSummary` object containing detailed results.
 
-await runLoadTest({
-  config: {
-    requests: [{ url: 'https://api.example.com/health', method: 'GET' }],
-  },
-  workers: 5,
-  durationSec: 10,
-  rps: 100, // Target 100 requests/second
-  rampUpTimeSec: 10, // Ramp up to 100 RPS over 10 seconds
-  autoscale: true,
-  useUI: false,
-});
+```ts
+import { runLoadTest, TestSummary } from 'tressi';
+
+async function myCustomScript() {
+  console.log('Starting custom load test...');
+
+  const summary: TestSummary = await runLoadTest({
+    // Suppress all console output from tressi
+    silent: true,
+    // Define the test configuration directly
+    config: {
+      requests: [{ url: 'https://api.example.com/health', method: 'GET' }],
+    },
+    workers: 5,
+    durationSec: 10,
+    rps: 100, // Target 100 requests/second
+  });
+
+  console.log('Test complete. Analyzing results...');
+
+  // Now you can use the summary object for custom logic
+  if (summary.global.avgLatencyMs > 500) {
+    console.error(
+      `High latency detected: ${summary.global.avgLatencyMs.toFixed(0)}ms!`,
+    );
+    // You could trigger an alert or fail a CI/CD pipeline here
+  }
+
+  if (summary.global.failedRequests > 0) {
+    console.error(`${summary.global.failedRequests} requests failed!`);
+  }
+
+  console.log('Custom script finished.');
+}
+
+myCustomScript();
 ```
 
 ## ⚙️ Configuration Reference

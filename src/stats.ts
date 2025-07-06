@@ -19,7 +19,7 @@ export interface RequestResult {
 /**
  * Calculates the percentile of a dataset.
  * @param data An array of numbers.
- * @param p The percentile to calculate (0-100).
+ * @param p The percentile to calculate (0-1).
  * @returns The value at the specified percentile.
  */
 export function percentile(data: number[], p: number): number {
@@ -27,10 +27,10 @@ export function percentile(data: number[], p: number): number {
   // Ensure the data is sorted
   const sorted =
     data.length === 1 ? [...data] : [...data].sort((a, b) => a - b);
-  const index = Math.floor((p / 100) * sorted.length);
+  const index = Math.ceil(p * (sorted.length - 1));
 
   // If the calculated index is out of bounds, return the last element
-  return sorted[Math.min(index, sorted.length - 1)];
+  return sorted[index];
 }
 
 /**

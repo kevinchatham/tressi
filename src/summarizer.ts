@@ -1,5 +1,5 @@
-import { RunOptions } from '.';
 import { TressiConfig } from './config';
+import { RunOptions } from './index';
 import { average, percentile, RequestResult } from './stats';
 
 export interface ReportMetadata {
@@ -27,107 +27,115 @@ export interface GlobalSummary {
   p95LatencyMs: number;
   p99LatencyMs: number;
   actualRps: number;
-  theoreticalMaxRps?: number;
-  achievedPercentage?: number;
+  theoreticalMaxRps: number;
+  achievedPercentage: number;
 }
 
-export interface Summary {
+export interface TestSummary {
   global: GlobalSummary;
   endpoints: EndpointSummary[];
 }
 
 /**
- * Analyzes the results of a load test and generates a structured summary.
+ * Analyzes the results of a load test and generates a comprehensive summary.
  * @param results An array of `RequestResult` objects from the test run.
  * @param options The original `RunOptions` used for the test.
- * @returns A `Summary` object containing global and per-endpoint statistics.
+ * @returns A `TestSummary` object containing the global and endpoint-specific summaries.
  */
 export function generateSummary(
   results: RequestResult[],
   options: RunOptions,
-): Summary {
-  const { durationSec = 10, rps, rampUpTimeSec } = options;
-
-  // Global calculations
-  const latencies = results.map((r) => r.latencyMs);
-  const totalRequests = results.length;
-  const successfulRequests = results.filter((r) => r.success).length;
-  const failedRequests = totalRequests - successfulRequests;
-  const actualRps = totalRequests / durationSec;
-
-  let theoreticalMaxRps: number | undefined;
-  let achievedPercentage: number | undefined;
-
-  if (rps) {
-    const rampUpRequests = rampUpTimeSec ? (rps / 2) * rampUpTimeSec : 0;
-    const steadyStateDuration = rampUpTimeSec
-      ? durationSec - rampUpTimeSec
-      : durationSec;
-    const steadyStateRequests = rps * steadyStateDuration;
-    theoreticalMaxRps = Math.round(rampUpRequests + steadyStateRequests);
-    achievedPercentage = Math.ceil((totalRequests / theoreticalMaxRps) * 100);
+): TestSummary {
+  if (results.length === 0) {
+    // Return a default summary if no results are available.
+    return {
+      global: {
+        totalRequests: 0,
+        successfulRequests: 0,
+        failedRequests: 0,
+        avgLatencyMs: 0,
+        minLatencyMs: 0,
+        maxLatencyMs: 0,
+        p95LatencyMs: 0,
+        p99LatencyMs: 0,
+        actualRps: 0,
+        theoreticalMaxRps: 0,
+        achievedPercentage: 0,
+      },
+      endpoints: [],
+    };
   }
 
-  const globalSummary: GlobalSummary = {
-    totalRequests,
-    successfulRequests,
-    failedRequests,
-    avgLatencyMs: average(latencies),
-    minLatencyMs: Math.min(...latencies),
-    maxLatencyMs: Math.max(...latencies),
-    p95LatencyMs: percentile(latencies, 95),
-    p99LatencyMs: percentile(latencies, 99),
-    actualRps,
-    theoreticalMaxRps,
-    achievedPercentage,
-  };
+  const { durationSec = 10, rps } = options;
+  const totalRequests = results.length;
+  const allLatencies = results.map((r) => r.latencyMs);
+  const actualRps = totalRequests / durationSec;
+  const avgLatency = average(allLatencies);
+  const theoreticalMaxRps = rps
+    ? Math.min(
+        (1000 / (avgLatency || 1)) * (options.workers || 10),
+        options.rps || Infinity,
+      )
+    : 0;
+  const achievedPercentage =
+    rps && theoreticalMaxRps ? (actualRps / theoreticalMaxRps) * 100 : 0;
 
-  // Endpoint calculations
-  const resultsByUrl: Record<string, RequestResult[]> = results.reduce(
-    (acc, r) => {
-      if (!acc[r.url]) {
-        acc[r.url] = [];
+  const requestsByEndpoint = results.reduce(
+    (acc, result) => {
+      if (!acc[result.url]) {
+        acc[result.url] = [];
       }
-      acc[r.url].push(r);
+      acc[result.url].push(result);
       return acc;
     },
     {} as Record<string, RequestResult[]>,
   );
 
-  const endpointSummaries: EndpointSummary[] = Object.entries(resultsByUrl)
-    .sort(([urlA], [urlB]) => urlA.localeCompare(urlB))
-    .map(([url, endpointResults]) => {
-      const endpointLatencies = endpointResults.map((r) => r.latencyMs);
-      const total = endpointResults.length;
-      const successful = endpointResults.filter((r) => r.success).length;
-      const failed = total - successful;
-
+  const endpointSummaries = Object.values(requestsByEndpoint).map(
+    (endpointResults): EndpointSummary => {
+      const latencies = endpointResults.map((r) => r.latencyMs);
       return {
-        url,
-        totalRequests: total,
-        successfulRequests: successful,
-        failedRequests: failed,
-        avgLatencyMs: average(endpointLatencies),
-        p95LatencyMs: percentile(endpointLatencies, 95),
-        p99LatencyMs: percentile(endpointLatencies, 99),
+        url: endpointResults[0].url,
+        totalRequests: endpointResults.length,
+        successfulRequests: endpointResults.filter((r) => r.status < 400)
+          .length,
+        failedRequests: endpointResults.filter((r) => r.status >= 400).length,
+        avgLatencyMs: average(latencies),
+        p95LatencyMs: percentile(latencies, 0.95),
+        p99LatencyMs: percentile(latencies, 0.99),
       };
-    });
+    },
+  );
 
   return {
-    global: globalSummary,
+    global: {
+      totalRequests,
+      successfulRequests: results.filter((r) => r.status < 400).length,
+      failedRequests: results.filter((r) => r.status >= 400).length,
+      avgLatencyMs: avgLatency,
+      minLatencyMs: Math.min(...allLatencies),
+      maxLatencyMs: Math.max(...allLatencies),
+      p95LatencyMs: percentile(allLatencies, 0.95),
+      p99LatencyMs: percentile(allLatencies, 0.99),
+      actualRps,
+      theoreticalMaxRps,
+      achievedPercentage,
+    },
     endpoints: endpointSummaries,
   };
 }
 
 /**
  * Generates a Markdown report from a summary object.
- * @param summary The summary object to convert to Markdown.
+ * @param summary The `TestSummary` object.
  * @param options The original `RunOptions` used for the test.
- * @param results An array of `RequestResult` objects from the test run.
- * @returns A string containing the Markdown report.
+ * @param results The raw `RequestResult` array.
+ * @param config The `TressiConfig` used for the run.
+ * @param metadata Additional metadata for the report.
+ * @returns A Markdown string representing the report.
  */
 export function generateMarkdownReport(
-  summary: Summary,
+  summary: TestSummary,
   options: RunOptions,
   results: RequestResult[],
   config: TressiConfig,

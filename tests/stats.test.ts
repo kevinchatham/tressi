@@ -1,4 +1,4 @@
-import { describe, expect,it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { average, percentile } from '../src/stats';
 
@@ -48,7 +48,7 @@ describe('stats', () => {
      */
     it('should calculate the 95th percentile', () => {
       const data = Array.from({ length: 100 }, (_, i) => i + 1);
-      expect(percentile(data, 95)).toBe(96);
+      expect(percentile(data, 0.95)).toBe(96);
     });
 
     /**
@@ -56,7 +56,7 @@ describe('stats', () => {
      */
     it('should calculate the 99th percentile', () => {
       const data = Array.from({ length: 100 }, (_, i) => i + 1);
-      expect(percentile(data, 99)).toBe(100);
+      expect(percentile(data, 0.99)).toBe(100);
     });
 
     /**
@@ -64,7 +64,7 @@ describe('stats', () => {
      */
     it('should calculate the 50th percentile (median)', () => {
       const data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-      expect(percentile(data, 50)).toBe(6);
+      expect(percentile(data, 0.5)).toBe(6);
     });
 
     /**
@@ -74,4 +74,4 @@ describe('stats', () => {
       expect(percentile([10], 95)).toBe(10);
     });
   });
-}); 
+});

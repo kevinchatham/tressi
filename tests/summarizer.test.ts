@@ -66,7 +66,7 @@ describe('summarizer', () => {
     expect(g.maxLatencyMs).toBe(500);
     expect(g.p95LatencyMs).toBe(500);
     expect(g.actualRps).toBe(0.4);
-    expect(g.theoreticalMaxRps).toBe(10);
+    expect(g.theoreticalMaxRps).toBe(1);
     expect(g.achievedPercentage).toBe(40);
   });
 

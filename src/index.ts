@@ -9,10 +9,14 @@ import { loadConfig, RequestConfig, TressiConfig } from './config';
 import { exportDataFiles } from './exporter';
 import { Runner } from './runner';
 import { average, RequestResult } from './stats';
-import { generateMarkdownReport, generateSummary } from './summarizer';
+import {
+  generateMarkdownReport,
+  generateSummary,
+  TestSummary,
+} from './summarizer';
 import { TUI } from './ui';
 
-export { RequestConfig, TressiConfig };
+export { RequestConfig, TestSummary, TressiConfig };
 
 /**
  * Defines the options for a Tressi load test run.
@@ -34,6 +38,8 @@ export interface RunOptions {
   exportPath?: string | boolean;
   /** Whether to use the terminal UI. Defaults to true. */
   useUI?: boolean;
+  /** Suppress all console output. Defaults to false. */
+  silent?: boolean;
 }
 
 /**
@@ -41,7 +47,11 @@ export interface RunOptions {
  * @param results An array of `RequestResult` objects from the test run.
  * @param options The original `RunOptions` used for the test.
  */
-function printSummary(results: RequestResult[], options: RunOptions): void {
+function printSummary(
+  results: RequestResult[],
+  options: RunOptions,
+  summary: TestSummary,
+): void {
   const {
     workers = 10,
     durationSec = 10,
@@ -50,7 +60,6 @@ function printSummary(results: RequestResult[], options: RunOptions): void {
     autoscale,
   } = options;
 
-  const summary = generateSummary(results, options);
   const { global: globalSummary, endpoints: endpointSummaries } = summary;
 
   const configTable = new Table({ colWidths: [30, 20] });
@@ -237,9 +246,14 @@ function printSummary(results: RequestResult[], options: RunOptions): void {
  * It loads the configuration, initializes the runner, starts the UI,
  * and prints a summary upon completion.
  * @param options The `RunOptions` for the test.
+ * @returns A `Promise` that resolves with the `TestSummary` object.
  */
-export async function runLoadTest(options: RunOptions): Promise<void> {
-  const spinner = ora('Loading config...').start();
+export async function runLoadTest(options: RunOptions): Promise<TestSummary> {
+  const { silent = false, useUI = true } = options;
+  const spinner = ora({
+    text: 'Loading config...',
+    isEnabled: !silent,
+  }).start();
   let loadedConfig: TressiConfig;
   try {
     loadedConfig = await loadConfig(options.config);
@@ -247,8 +261,10 @@ export async function runLoadTest(options: RunOptions): Promise<void> {
   } catch (err) {
     if (err instanceof z.ZodError) {
       spinner.fail('Config validation failed:');
-      // eslint-disable-next-line no-console
-      console.error(JSON.stringify(err.errors, null, 2));
+      if (!silent) {
+        // eslint-disable-next-line no-console
+        console.error(JSON.stringify(err.errors, null, 2));
+      }
     } else {
       spinner.fail(`Failed to load config: ${(err as Error).message}`);
     }
@@ -262,7 +278,7 @@ export async function runLoadTest(options: RunOptions): Promise<void> {
   );
 
   // If we have a TUI, we need to handle its destruction and polling
-  if (options.useUI) {
+  if (useUI && !silent) {
     const tui = new TUI(() => runner.stop());
     const tuiInterval = setInterval(() => {
       const latencies = runner.getLatencies();
@@ -291,7 +307,10 @@ export async function runLoadTest(options: RunOptions): Promise<void> {
     });
   } else {
     // If we're not using the TUI, we should still provide some basic feedback
-    const noUiSpinner = ora('Test starting...').start();
+    const noUiSpinner = ora({
+      text: 'Test starting...',
+      isEnabled: !silent,
+    }).start();
     const noUiInterval = setInterval(() => {
       const startTime = runner.getStartTime();
       const elapsedSec = startTime > 0 ? (Date.now() - startTime) / 1000 : 0;
@@ -305,7 +324,11 @@ export async function runLoadTest(options: RunOptions): Promise<void> {
 
       const rpsDisplay = options.rps ? `${rps}/${options.rps}` : `${rps}`;
 
-      noUiSpinner.text = `[${elapsedSec.toFixed(0)}s/${totalSec}s] RPS: ${rpsDisplay} | Workers: ${workers} | Success: ${successful} | Fail: ${failed} | Avg Latency: ${avgLatency.toFixed(0)}ms`;
+      noUiSpinner.text = `[${elapsedSec.toFixed(0)}s/${totalSec}s] RPS: ${
+        rpsDisplay
+      } | Workers: ${workers} | Success: ${successful} | Fail: ${failed} | Avg Latency: ${avgLatency.toFixed(
+        0,
+      )}ms`;
     }, 1000);
 
     runner.on('stop', () => {
@@ -315,9 +338,13 @@ export async function runLoadTest(options: RunOptions): Promise<void> {
   }
 
   const results = await runner.run();
+  const summary = generateSummary(results, options);
 
   if (options.exportPath) {
-    const exportSpinner = ora('Exporting results...').start();
+    const exportSpinner = ora({
+      text: 'Exporting results...',
+      isEnabled: !silent,
+    }).start();
     try {
       const baseExportName =
         typeof options.exportPath === 'string'
@@ -330,7 +357,6 @@ export async function runLoadTest(options: RunOptions): Promise<void> {
       );
       await fs.mkdir(reportDir, { recursive: true });
 
-      const summary = generateSummary(results, options);
       const markdownReport = generateMarkdownReport(
         summary,
         options,
@@ -354,5 +380,9 @@ export async function runLoadTest(options: RunOptions): Promise<void> {
   }
 
   // Final summary to console
-  printSummary(results, options);
+  if (!silent) {
+    printSummary(results, options, summary);
+  }
+
+  return summary;
 }
