@@ -102,11 +102,11 @@ export class TUI {
       : currentReqPerSec.toString();
 
     const data: (string | number)[][] = [
+      ['Time', `${elapsedSec.toFixed(0)}s / ${totalSec}s`],
+      ['Workers', workerCount],
       ['Req/s (Actual/Target)', rpsStat],
       ['Success / Fail', `${successfulRequests} / ${failedRequests}`],
       ['Avg Latency (ms)', Math.round(averageLatency)],
-      ['Time', `${elapsedSec.toFixed(0)}s / ${totalSec}s`],
-      ['Workers', workerCount],
     ];
 
     this.statsTable.setData({

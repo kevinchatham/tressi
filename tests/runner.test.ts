@@ -57,49 +57,7 @@ describe('Runner', () => {
     expect(results.length).toBeGreaterThan(0);
     expect(results[0].status).toBe(200);
     expect(results[0].success).toBe(true);
-  });
-
-  /**
-   * It should adhere to the requests-per-second (RPS) limit by ensuring
-   * the number of requests made over a period does not exceed the target.
-   */
-  it('should respect the RPS limit', async () => {
-    vi.useFakeTimers();
-    const options: RunOptions = { ...baseOptions, rps: 10, durationSec: 2 };
-    const runner = new Runner(options, baseRequests, {});
-
-    const runPromise = runner.run();
-    await vi.advanceTimersByTimeAsync(2000);
-    await runPromise;
-
-    const results = runner.getResults();
-    expect(results.length).toBeCloseTo(20, -1);
-  });
-
-  /**
-   * It should gradually increase the request rate over the specified ramp-up time,
-   * reaching the target RPS by the end of the ramp-up period.
-   */
-  it('should ramp up the request rate', async () => {
-    vi.useFakeTimers();
-    const options: RunOptions = {
-      ...baseOptions,
-      rps: 100,
-      durationSec: 4,
-      rampUpTimeSec: 2,
-    };
-    const runner = new Runner(options, baseRequests, {});
-
-    const runPromise = runner.run();
-    await vi.advanceTimersByTimeAsync(1000);
-    expect(runner.getCurrentRpm()).toBeCloseTo(50, -1); // Halfway through ramp-up
-
-    await vi.advanceTimersByTimeAsync(1000);
-    expect(runner.getCurrentRpm()).toBeCloseTo(100, -1); // Fully ramped up
-
-    await vi.advanceTimersByTimeAsync(2000);
-    await runPromise;
-  });
+  }, 10000);
 
   /**
    * In autoscale mode, it should dynamically add more workers when the

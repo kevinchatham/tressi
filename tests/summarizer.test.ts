@@ -124,7 +124,7 @@ describe('summarizer', () => {
     );
     expect(markdown).toContain('## Run Configuration');
     expect(markdown).toContain('## Global Summary');
-    expect(markdown).toContain('| RPS (Actual/Target)');
+    expect(markdown).toContain('| Req/s (Actual/Target)');
     expect(markdown).toContain('| Achieved %');
     expect(markdown).toContain('## Latency Distribution');
     expect(markdown).toContain('| Range | Count | Chart |');
