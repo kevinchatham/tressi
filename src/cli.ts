@@ -76,13 +76,13 @@ program
     '10',
   )
   .option('--duration <s>', 'Duration in seconds', '10')
-  .option(
-    '--ramp-up-time <s>',
-    'Time in seconds to ramp up to the target RPM',
-  )
+  .option('--ramp-up-time <s>', 'Time in seconds to ramp up to the target RPM')
   .option('--rps <n>', 'Target requests per second')
   .option('--autoscale', 'Enable autoscaling of workers')
-  .option('--csv <path>', 'CSV output path')
+  .option(
+    '--export [path]',
+    'Export a complete report to a specified directory',
+  )
   .option('--no-ui', 'Disable live charts (enabled by default)');
 
 program
@@ -148,8 +148,11 @@ Examples:
   # Run a load test with a config file
   $ tressi --config ./tressi.config.ts
 
-  # Run a load test with a config file and save results to a CSV file
-  $ tressi --config ./tressi.config.ts --csv ./results.csv
+  # Export a complete report to a timestamped directory
+  $ tressi --config ./tressi.config.ts --export
+
+  # Export a report to a custom-named, timestamped directory
+  $ tressi --config ./tressi.config.ts --export ./my-report
   
   # Run a load test with a config file and disable the interactive terminal UI
   $ tressi --config ./tressi.config.ts --no-ui
@@ -193,7 +196,7 @@ program.action(async (opts) => {
         : undefined,
       rps: opts.rps ? parseInt(opts.rps, 10) : undefined,
       autoscale: opts.autoscale,
-      csvPath: opts.csv,
+      exportPath: opts.export,
       useUI: opts.ui,
     });
   } catch {

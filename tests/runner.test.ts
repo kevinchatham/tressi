@@ -1,6 +1,14 @@
 import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
-import { afterAll,afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
 
 import { RequestConfig } from '../src/config';
 import { RunOptions } from '../src/index';
@@ -121,7 +129,7 @@ describe('Runner', () => {
         }
       }, 100); // Check every 100ms
 
-      const timeout = setTimeout(() => {
+      setTimeout(() => {
         clearInterval(interval);
         reject(new Error('Autoscaler did not increase worker count in time'));
       }, 4000); // Fail after 4s
@@ -146,8 +154,9 @@ describe('Runner', () => {
     await vi.advanceTimersByTimeAsync(1000);
 
     const results = await runPromise;
-    const duration = results[results.length - 1].timestamp - results[0].timestamp;
+    const duration =
+      results[results.length - 1].timestamp - results[0].timestamp;
 
     expect(duration).toBeLessThan(2000);
   });
-}); 
+});

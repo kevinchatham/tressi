@@ -1,6 +1,8 @@
 import chalk from 'chalk';
 import Table from 'cli-table3';
+import { promises as fs } from 'fs';
 import ora from 'ora';
+import path from 'path';
 import { z } from 'zod';
 
 import {
@@ -9,10 +11,10 @@ import {
   RequestConfig,
   TressiConfig,
 } from './config';
-import { exportResults } from './exporter';
+import { exportDataFiles } from './exporter';
 import { Runner } from './runner';
 import { average, RequestResult } from './stats';
-import { generateSummary } from './summarizer';
+import { generateMarkdownReport, generateSummary } from './summarizer';
 import { TUI } from './ui';
 
 export { defineConfig, TressiConfig, RequestConfig };
@@ -33,8 +35,8 @@ export interface RunOptions {
   rps?: number;
   /** Whether to enable autoscale mode. Defaults to false. --rps is required for this. */
   autoscale?: boolean;
-  /** The path to save the results to a CSV file. If not provided, no CSV will be saved. */
-  csvPath?: string;
+  /** The base path for the exported report. If not provided, no report will be generated. */
+  exportPath?: string | boolean;
   /** Whether to use the terminal UI. Defaults to true. */
   useUI?: boolean;
 }
@@ -323,15 +325,37 @@ export async function runLoadTest(options: RunOptions): Promise<void> {
 
   const results = await runner.run();
 
-  printSummary(results, options);
+  if (options.exportPath) {
+    const exportSpinner = ora('Exporting results...').start();
+    try {
+      let reportDir: string;
+      if (typeof options.exportPath === 'string') {
+        reportDir = path.resolve(
+          process.cwd(),
+          `${options.exportPath}-${new Date().toISOString()}`,
+        );
+      } else {
+        reportDir = path.resolve(
+          process.cwd(),
+          `tressi-report-${new Date().toISOString()}`,
+        );
+      }
+      await fs.mkdir(reportDir, { recursive: true });
 
-  if (options.csvPath) {
-    const summary = generateSummary(results, options);
-    await exportResults(
-      options.csvPath,
-      results,
-      summary.global,
-      summary.endpoints,
-    );
+      const summary = generateSummary(results, options);
+      const markdownReport = generateMarkdownReport(summary);
+      await fs.writeFile(path.join(reportDir, 'report.md'), markdownReport);
+
+      await exportDataFiles(summary, results, reportDir);
+
+      exportSpinner.succeed(`Successfully exported results to ${reportDir}`);
+    } catch (err) {
+      exportSpinner.fail(
+        chalk.red(`Failed to export results: ${(err as Error).message}`),
+      );
+    }
   }
+
+  // Final summary to console
+  printSummary(results, options);
 }

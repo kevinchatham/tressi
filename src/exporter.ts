@@ -1,9 +1,10 @@
 import chalk from 'chalk';
 import { writeFile } from 'fs/promises';
 import ora from 'ora';
+import * as xlsx from 'xlsx';
 
 import { RequestResult } from './stats';
-import { EndpointSummary, GlobalSummary } from './summarizer';
+import { Summary } from './summarizer';
 
 async function exportRawLog(
   path: string,
@@ -31,66 +32,61 @@ async function exportRawLog(
   await writeFile(path, csv, 'utf-8');
 }
 
-async function exportGlobalSummary(
+async function exportXlsx(
   path: string,
-  summary: GlobalSummary,
+  results: RequestResult[],
+  summary: Summary,
 ): Promise<void> {
-  const headers = Object.keys(summary);
-  const values = Object.values(summary).map((v) =>
-    v !== undefined ? v.toString() : '',
-  );
-  const csv = [headers.join(','), values.join(',')].join('\n');
-  await writeFile(path, csv, 'utf-8');
-}
+  const { global: globalSummary, endpoints: endpointSummary } = summary;
+  const wb = xlsx.utils.book_new();
 
-async function exportEndpointSummary(
-  path: string,
-  endpoints: EndpointSummary[],
-): Promise<void> {
-  if (endpoints.length === 0) return;
-  const headers = Object.keys(endpoints[0]);
-  const rows = endpoints.map((e) => Object.values(e).join(','));
-  const csv = [headers.join(','), ...rows].join('\n');
-  await writeFile(path, csv, 'utf-8');
+  // Global Summary Sheet
+  const globalArray = Object.entries(globalSummary).map(([key, value]) => ({
+    Stat: key,
+    Value: value,
+  }));
+  const wsGlobal = xlsx.utils.json_to_sheet(globalArray);
+  xlsx.utils.book_append_sheet(wb, wsGlobal, 'Global Summary');
+
+  // Endpoint Summary Sheet
+  const wsEndpoints = xlsx.utils.json_to_sheet(endpointSummary);
+  xlsx.utils.book_append_sheet(wb, wsEndpoints, 'Endpoint Summary');
+
+  // Raw Requests Sheet
+  const wsRaw = xlsx.utils.json_to_sheet(results);
+  xlsx.utils.book_append_sheet(wb, wsRaw, 'Raw Requests');
+
+  await xlsx.writeFile(wb, path);
 }
 
 /**
- * Exports the results of a load test to multiple CSV files.
- * @param basePath The base path for the output files (e.g., 'results.csv').
+ * Exports the results of a load test to multiple data files (CSV and XLSX).
+ * @param summary The complete summary object.
  * @param results An array of `RequestResult` objects.
- * @param globalSummary The global summary object.
- * @param endpointSummary An array of endpoint summary objects.
+ * @param outputDir The directory to save the files in.
  */
-export async function exportResults(
-  basePath: string,
+export async function exportDataFiles(
+  summary: Summary,
   results: RequestResult[],
-  globalSummary: GlobalSummary,
-  endpointSummary: EndpointSummary[],
+  outputDir: string,
 ): Promise<void> {
-  const exportSpinner = ora(`Exporting CSVs to ${basePath}...`).start();
+  const exportSpinner = ora(`Exporting data files (CSV, XLSX)...`).start();
   try {
-    const summaryPath = basePath.replace('.csv', '.summary.csv');
-    const endpointsPath = basePath.replace('.csv', '.endpoints.csv');
+    const csvBasePath = `${outputDir}/results.csv`;
+    const xlsxPath = `${outputDir}/report.xlsx`;
 
     const promises = [
-      exportRawLog(basePath, results),
-      exportGlobalSummary(summaryPath, globalSummary),
+      exportRawLog(csvBasePath, results),
+      exportXlsx(xlsxPath, results, summary),
     ];
-
-    if (endpointSummary.length > 0) {
-      promises.push(exportEndpointSummary(endpointsPath, endpointSummary));
-    }
 
     await Promise.all(promises);
 
-    let successMessage = `Successfully exported raw log, global summary`;
-    if (endpointSummary.length > 0) {
-      successMessage += `, and endpoint summary`;
-    }
-    exportSpinner.succeed(successMessage);
+    const successMessage = `Successfully exported raw log`;
+    exportSpinner.succeed(successMessage + ' (CSV & XLSX)');
   } catch (err) {
     exportSpinner.fail(
-      chalk.red(`Failed to save CSVs: ${(err as Error).message}`),
+      chalk.red(`Failed to save data files: ${(err as Error).message}`),
     );
   }
 }

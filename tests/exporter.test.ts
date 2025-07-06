@@ -1,16 +1,22 @@
 /// <reference types="vitest/globals" />
 import { beforeEach, describe, expect, it, Mock, vi } from 'vitest';
+import * as xlsx from 'xlsx';
 
-import { exportResults } from '../src/exporter';
+import { exportDataFiles } from '../src/exporter';
 import { RequestResult } from '../src/stats';
-import { EndpointSummary, GlobalSummary } from '../src/summarizer';
+import { EndpointSummary, GlobalSummary, Summary } from '../src/summarizer';
 
-// Mock the fs/promises module
+// Mock file system and external libraries
 vi.mock('fs/promises', () => ({
   writeFile: vi.fn(),
 }));
-
-// Mock ora and chalk as they are used for spinners and logging
+vi.mock('xlsx', async () => {
+  const actualXlsx = await vi.importActual('xlsx');
+  return {
+    ...actualXlsx,
+    writeFile: vi.fn(),
+  };
+});
 vi.mock('ora', () => {
   const mOra = {
     start: vi.fn().mockReturnThis(),
@@ -59,35 +65,45 @@ const mockEndpointSummary: EndpointSummary[] = [
   },
 ];
 
+const mockSummary: Summary = {
+  global: mockGlobalSummary,
+  endpoints: mockEndpointSummary,
+};
+
 /**
- * Test suite for the multi-file CSV exporter functionality.
+ * Test suite for the multi-file data exporter functionality.
  */
 describe('exporter', () => {
   let writeFileMock: Mock;
+  let xlsxWriteFileMock: Mock;
 
   beforeEach(async () => {
     // Dynamically import the mocked module to get the mock function
     const fs = await import('fs/promises');
     writeFileMock = fs.writeFile as Mock;
+    xlsxWriteFileMock = xlsx.writeFile as Mock;
     writeFileMock.mockClear();
+    xlsxWriteFileMock.mockClear();
   });
 
   /**
-   * It should call fs.writeFile for the raw log, global summary, and endpoint summary
+   * It should call the respective file writers for all CSV and XLSX files
    * with the correctly formatted data and file paths.
    */
-  it('should export all three summary files', async () => {
-    await exportResults(
-      'results.csv',
-      mockResults,
-      mockGlobalSummary,
-      mockEndpointSummary,
+  it('should export all data files (CSVs and XLSX)', async () => {
+    await exportDataFiles(mockSummary, mockResults, './test-output');
+
+    // Should be called 1 time for the raw CSV
+    expect(writeFileMock).toHaveBeenCalledTimes(1);
+    // Should be called 1 time for XLSX
+    expect(xlsxWriteFileMock).toHaveBeenCalledTimes(1);
+
+    // Check XLSX call
+    expect(xlsxWriteFileMock.mock.calls[0][1]).toBe(
+      './test-output/report.xlsx',
     );
 
-    // Should be called 3 times: raw, global, and endpoint
-    expect(writeFileMock).toHaveBeenCalledTimes(3);
-
-    // 1. Check raw log file
+    // Check raw CSV log file
     const rawCall = writeFileMock.mock.calls.find((c) =>
       c[0].endsWith('results.csv'),
     );
@@ -96,27 +112,5 @@ describe('exporter', () => {
       'timestamp,url,status,latencyMs,success,error',
     );
     expect(rawCall![1]).toContain('1,"http://a.com",200,100.00,true,""');
-
-    // 2. Check global summary file
-    const summaryCall = writeFileMock.mock.calls.find((c) =>
-      c[0].endsWith('results.summary.csv'),
-    );
-    expect(summaryCall).toBeDefined();
-    expect(summaryCall![1]).toContain(Object.keys(mockGlobalSummary).join(','));
-    expect(summaryCall![1]).toContain(
-      Object.values(mockGlobalSummary).join(','),
-    );
-
-    // 3. Check endpoint summary file
-    const endpointCall = writeFileMock.mock.calls.find((c) =>
-      c[0].endsWith('results.endpoints.csv'),
-    );
-    expect(endpointCall).toBeDefined();
-    expect(endpointCall![1]).toContain(
-      Object.keys(mockEndpointSummary[0]).join(','),
-    );
-    expect(endpointCall![1]).toContain(
-      Object.values(mockEndpointSummary[0]).join(','),
-    );
   });
 });

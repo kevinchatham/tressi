@@ -11,7 +11,7 @@
 - 👥 **Concurrent Workers** — Simulate realistic multi-user load with ease via workers.
 - ⏱️ **Rate Limiting** — Control RPS for accurate throttling scenarios.
 - 📊 **Interactive Terminal UI** — View live RPS, latency stats, and status codes.
-- 📁 **CSV Export** — Export all results for offline analysis.
+- 📁 **Comprehensive Reporting** — Export a full report with Markdown, XLSX, and CSV files.
 - 🧩 **Programmatic API** — Import and use in your own scripts.
 
 ## 📦 Installation
@@ -152,24 +152,24 @@ npx tressi --config tressi.config.ts --autoscale --workers 50 --rps 1000 --durat
 
 #### CI/CD Test
 
-Runs without the interactive UI and exports the results to a CSV file, ideal for automated environments.
+Runs without the interactive UI and exports a complete report (Markdown, XLSX, and CSVs) to a timestamped directory, ideal for automated environments.
 
 ```bash
-npx tressi --config tressi.config.ts --workers 20 --duration 30 --rps 300 --no-ui --csv ./results.csv
+npx tressi --config tressi.config.ts --workers 20 --duration 30 --rps 300 --no-ui --export
 ```
 
 ### ⚙️ CLI Options
 
-| Option               | Alias  | Description                                                           | Default |
-| -------------------- | ------ | --------------------------------------------------------------------- | ------- |
-| `--config <path>`    | `-c`   | Path or URL to config file (.ts or .json)                             |         |
-| `--workers <n>`      |        | Number of concurrent workers, or max workers if autoscale is enabled. | `10`    |
-| `--duration s`       |        | Duration of the test in seconds                                       | `10`    |
-| `--rps <n>`          |        | Target requests per second (ramps up to this value)                   |         |
-| `--ramp-up-time <s>` | `-rut` | Time in seconds to ramp up to the target RPS                          |         |
-| `--autoscale`        |        | Enable autoscaling of workers (requires --rps)                        | `false` |
-| `--csv <path>`       |        | Save results as CSV                                                   |         |
-| `--no-ui`            |        | Disable the interactive terminal UI                                   | `false` |
+| Option             | Alias  | Description                                                           | Default |
+| ------------------ | ------ | --------------------------------------------------------------------- | ------- |
+| `--config <path>`  | `-c`   | Path or URL to config file (.ts or .json)                             |         |
+| `--workers <n>`    |        | Number of concurrent workers, or max workers if autoscale is enabled. | `10`    |
+| `--duration s`     |        | Duration of the test in seconds                                       | `10`    |
+| `--rps <n>`        |        | Target requests per second (ramps up to this value)                   |         |
+| `--ramp-up-time  ` | `-rut` | Time in seconds to ramp up to the target RPS                          |         |
+| `--autoscale`      |        | Enable autoscaling of workers (requires --rps)                        | `false` |
+| `--export [path]`  |        | Export a comprehensive report (Markdown, XLSX, CSVs) to a directory.  |         |
+| `--no-ui`          |        | Disable the interactive terminal UI                                   | `false` |
 
 ### 🧬 Programmatic Usage
 
@@ -191,4 +191,24 @@ await runLoadTest({
 
 ## ⚙️ Configuration Reference
 
-Your `
+Your `tressi` config file can be written in TypeScript or JSON. The following options are available:
+
+- `headers`: An object containing headers to be sent with each request.
+- `requests`: An array of request objects, each with the following properties:
+  - `url`: The URL to send the request to.
+  - `method`: The HTTP method to use (GET, POST, PUT, DELETE, etc.).
+  - `payload`: (Optional) The data to send with the request.
+
+The `--export` flag will generate a unique, timestamped directory containing a comprehensive set of data files:
+
+- **📝 `report.md`**: A clean, readable Markdown summary of the test results.
+- **📊 `report.xlsx`**: A multi-sheet Excel file with the global summary, per-endpoint summary, and raw request log.
+- **📈 `results.csv`**: A raw log of all requests made during the test.
+
+You can also provide a path to the `--export` flag to customize the name of the output directory:
+
+```bash
+npx tressi --config tressi.config.ts --workers 20 --duration 30 --rps 300 --no-ui --export my-test-results
+```
+
+This will create a directory named `my-test-results` in the current working directory.

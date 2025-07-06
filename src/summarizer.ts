@@ -112,3 +112,38 @@ export function generateSummary(
     endpoints: endpointSummaries,
   };
 }
+
+/**
+ * Generates a Markdown report from a summary object.
+ * @param summary The summary object to convert to Markdown.
+ * @returns A string containing the Markdown report.
+ */
+export function generateMarkdownReport(summary: Summary): string {
+  const { global: g, endpoints: e } = summary;
+
+  let md = `# Load Test Report\n\n`;
+  md += `## Global Summary\n\n`;
+  md += `| Metric | Value |\n`;
+  md += `|---|---|\n`;
+  md += `| Total Requests | ${g.totalRequests} |\n`;
+  md += `| Successful | ${g.successfulRequests} |\n`;
+  md += `| Failed | ${g.failedRequests} |\n`;
+  md += `| Avg Latency (ms) | ${g.avgLatencyMs.toFixed(0)} |\n`;
+  md += `| P95 Latency (ms) | ${g.p95LatencyMs.toFixed(0)} |\n`;
+  md += `| P99 Latency (ms) | ${g.p99LatencyMs.toFixed(0)} |\n\n`;
+
+  if (e.length > 0) {
+    md += `## Endpoint Summary\n\n`;
+    md += `| URL | Total | Success | Failed | Avg Latency (ms) | P95 Latency (ms) |\n`;
+    md += `|---|---|---|---|---|---|\n`;
+    for (const endpoint of e) {
+      md += `| ${endpoint.url} | ${endpoint.totalRequests} | ${
+        endpoint.successfulRequests
+      } | ${endpoint.failedRequests} | ${endpoint.avgLatencyMs.toFixed(
+        0,
+      )} | ${endpoint.p95LatencyMs.toFixed(0)} |\n`;
+    }
+  }
+
+  return md;
+}

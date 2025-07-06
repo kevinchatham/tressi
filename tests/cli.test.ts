@@ -1,19 +1,16 @@
-import * as fs from 'fs/promises';
-import inquirer from 'inquirer';
-import { afterEach,beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock dependencies
-vi.mock('inquirer');
-const fsMock = {
+vi.mock('fs/promises', () => ({
   access: vi.fn(),
   writeFile: vi.fn(),
-};
-vi.mock('fs/promises', () => fsMock);
+}));
+
 vi.mock('../src/index', () => ({
   runLoadTest: vi.fn(),
 }));
 
-const runCli = async (args: string[]) => {
+const runCli = async (args: string[]): Promise<void> => {
   process.argv = ['node', 'tressi', ...args];
   await import('../src/cli');
 };
@@ -25,9 +22,6 @@ describe('CLI', () => {
   beforeEach(() => {
     vi.resetModules(); // Reset module cache before each test
     vi.clearAllMocks(); // Clear mocks
-    // Reset the fs mock functions
-    fsMock.access.mockClear();
-    fsMock.writeFile.mockClear();
   });
 
   afterEach(() => {
@@ -57,8 +51,8 @@ describe('CLI', () => {
         '--rps',
         '500',
         '--autoscale',
-        '--csv',
-        'results.csv',
+        '--export',
+        'my-report',
       ]);
 
       expect(runLoadTest).toHaveBeenCalledWith({
@@ -67,10 +61,24 @@ describe('CLI', () => {
         durationSec: 60,
         rps: 500,
         autoscale: true,
-        csvPath: 'results.csv',
+        exportPath: 'my-report',
         rampUpTimeSec: undefined,
         useUI: true,
       });
+    });
+
+    /**
+     * It should pass `exportPath: true` when the --export flag is used without a value.
+     */
+    it('should handle the --export flag without a path', async () => {
+      const { runLoadTest } = await import('../src/index');
+      await runCli(['--config', './tressi.config.ts', '--export']);
+
+      expect(runLoadTest).toHaveBeenCalledWith(
+        expect.objectContaining({
+          exportPath: true,
+        }),
+      );
     });
 
     /**
@@ -96,4 +104,4 @@ describe('CLI', () => {
       consoleErrorSpy.mockRestore();
     });
   });
-}); 
+});
