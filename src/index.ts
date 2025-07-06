@@ -4,6 +4,7 @@ import { promises as fs } from 'fs';
 import ora from 'ora';
 import path from 'path';
 import { z } from 'zod';
+import { getLatencyDistribution } from './distribution';
 
 import { loadConfig, RequestConfig, TressiConfig } from './config';
 import { exportDataFiles } from './exporter';
@@ -169,6 +170,32 @@ function printSummary(
   console.log('\n' + chalk.bold('Global Test Summary'));
   // eslint-disable-next-line no-console
   console.log(summaryTable.toString());
+
+  const latencyDistribution = getLatencyDistribution(
+    results.map((r) => r.latencyMs),
+  );
+
+  if (latencyDistribution.length > 0) {
+    const distributionTable = new Table({
+      head: ['Range (ms)', 'Count', '% Total', 'Cumulative', 'Chart'],
+      colWidths: [15, 10, 10, 12, 20],
+    });
+
+    latencyDistribution.forEach((bucket) => {
+      distributionTable.push([
+        bucket.range,
+        bucket.count,
+        bucket.percent,
+        bucket.cumulative,
+        bucket.chart,
+      ]);
+    });
+
+    // eslint-disable-next-line no-console
+    console.log(chalk.bold('\nLatency Distribution'));
+    // eslint-disable-next-line no-console
+    console.log(distributionTable.toString());
+  }
 
   const statusCodeMap: Record<number, number> = results.reduce(
     (acc, r) => {
