@@ -132,16 +132,16 @@ npx tressi --config tressi.config.json --workers 20 --duration 30 --rps 300 --no
 
 ### ⚙️ CLI Options
 
-| Option             | Alias | Description                                                           | Default |
-| ------------------ | ----- | --------------------------------------------------------------------- | ------- |
-| `--config [path]`  | `-c`  | Path or URL to JSON config file. Defaults to `./tressi.config.json`.  |         |
-| `--workers <n>`    |       | Number of concurrent workers, or max workers if autoscale is enabled. | `10`    |
-| `--duration `      |       | Duration of the test in seconds                                       | `10`    |
-| `--rps <n>`        |       | Target requests per second (ramps up to this value)                   |         |
-| `--ramp-up-time  ` |       | Time in seconds to ramp up to the target RPS                          |         |
-| `--autoscale`      |       | Enable autoscaling of workers (requires --rps)                        | `false` |
-| `--export [path]`  |       | Export a comprehensive report (Markdown, XLSX, CSVs) to a directory.  |         |
-| `--no-ui`          |       | Disable the interactive terminal UI                                   | `false` |
+| Option               | Alias | Description                                                           | Default |
+| :------------------- | :---- | :-------------------------------------------------------------------- | :------ |
+| `--config [path]`    | `-c`  | Path or URL to JSON config file. Defaults to `./tressi.config.json`.  |         |
+| `--workers <n>`      |       | Number of concurrent workers, or max workers if autoscale is enabled. | `10`    |
+| `--duration <s>`     |       | Duration of the test in seconds                                       | `10`    |
+| `--rps <n>`          |       | Target requests per second (ramps up to this value)                   |         |
+| `--ramp-up-time <s>` |       | Time in seconds to ramp up to the target RPS                          |         |
+| `--autoscale`        |       | Enable autoscaling of workers (requires --rps)                        | `false` |
+| `--export [path]`    |       | Export a comprehensive report (Markdown, XLSX, CSVs) to a directory.  |         |
+| `--no-ui`            |       | Disable the interactive terminal UI                                   | `false` |
 
 ### 🧬 Programmatic Usage
 
@@ -162,6 +162,8 @@ await runLoadTest({
 ```
 
 ## ⚙️ Configuration Reference
+
+The `tressi init` command will generate a `tressi.config.json` file with a `$schema` property. This property points to a JSON Schema file that provides autocompletion and validation in supported editors (like VS Code), making it easier to write valid configurations.
 
 Your `tressi.config.json` file is a standard JSON file with the following root properties:
 

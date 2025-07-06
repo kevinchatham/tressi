@@ -53,12 +53,13 @@ program
   .option('--autoscale', 'Enable autoscaling of workers')
   .option(
     '--export [path]',
-    'Export a complete report to a specified directory',
+    'Export a comprehensive report (Markdown, XLSX, CSVs) to a directory.',
   )
-  .option('--no-ui', 'Disable live charts (enabled by default)');
+  .option('--no-ui', 'Disable the interactive terminal UI');
 
 program
   .command('init')
+  .summary('Create a tressi.config.json file')
   .description('Create a boilerplate tressi configuration file')
   .action(async () => {
     const fileName = `tressi.config.json`;
@@ -99,29 +100,32 @@ program.addHelpText(
   'after',
   `
 Examples:
-  # Initialize a new config file
+  # Create a tressi.config.json file
   $ tressi init
+
+  # Run a load test using the tressi.config.json in the current directory
+  $ tressi
+
+  # Run a load test with a specific config file
+  $ tressi --config ./path/to/your/tressi.config.json
   
-  # Run a load test with a config file
-  $ tressi --config ./tressi.config.ts
+  # Run an autoscaling test up to 50 workers with a target of 1000 RPS
+  $ tressi --autoscale --workers 50 --rps 1000 --duration 60
 
   # Export a complete report to a timestamped directory
-  $ tressi --config ./tressi.config.ts --export
+  $ tressi --export
 
   # Export a report to a custom-named, timestamped directory
-  $ tressi --config ./tressi.config.ts --export ./my-report
+  $ tressi --export ./my-report
   
-  # Run a load test with a config file and disable the interactive terminal UI
-  $ tressi --config ./tressi.config.ts --no-ui
+  # Run a load test without the interactive terminal UI
+  $ tressi --no-ui
   
-  # Run a load test with a config file and set the concurrency to 20
-  $ tressi --config ./tressi.config.ts --workers 20
+  # Run a load test with 20 concurrent workers
+  $ tressi --workers 20
   
-  # Run a load test with a config file and set the duration to 30 seconds
-  $ tressi --config ./tressi.config.ts --duration 30
-  
-  # Run a load test with a config file and set the requests per minute limit to 100
-  $ tressi --config ./tressi.config.ts --rpm 100
+  # Run a load test for 30 seconds
+  $ tressi --duration 30
 `,
 );
 
