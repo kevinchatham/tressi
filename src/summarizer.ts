@@ -1,5 +1,6 @@
-import { RunOptions } from '.';
 import { TressiConfig } from './config';
+import { getLatencyDistribution } from './distribution';
+import { RunOptions } from './index';
 import { average, percentile, RequestResult } from './stats';
 
 export interface ReportMetadata {
@@ -27,107 +28,121 @@ export interface GlobalSummary {
   p95LatencyMs: number;
   p99LatencyMs: number;
   actualRps: number;
-  theoreticalMaxRps?: number;
-  achievedPercentage?: number;
+  theoreticalMaxRps: number;
+  achievedPercentage: number;
+  duration: number;
 }
 
-export interface Summary {
+export interface TestSummary {
   global: GlobalSummary;
   endpoints: EndpointSummary[];
 }
 
 /**
- * Analyzes the results of a load test and generates a structured summary.
+ * Analyzes the results of a load test and generates a comprehensive summary.
  * @param results An array of `RequestResult` objects from the test run.
  * @param options The original `RunOptions` used for the test.
- * @returns A `Summary` object containing global and per-endpoint statistics.
+ * @returns A `TestSummary` object containing the global and endpoint-specific summaries.
  */
 export function generateSummary(
   results: RequestResult[],
   options: RunOptions,
-): Summary {
-  const { durationSec = 10, rps, rampUpTimeSec } = options;
-
-  // Global calculations
-  const latencies = results.map((r) => r.latencyMs);
-  const totalRequests = results.length;
-  const successfulRequests = results.filter((r) => r.success).length;
-  const failedRequests = totalRequests - successfulRequests;
-  const actualRps = totalRequests / durationSec;
-
-  let theoreticalMaxRps: number | undefined;
-  let achievedPercentage: number | undefined;
-
-  if (rps) {
-    const rampUpRequests = rampUpTimeSec ? (rps / 2) * rampUpTimeSec : 0;
-    const steadyStateDuration = rampUpTimeSec
-      ? durationSec - rampUpTimeSec
-      : durationSec;
-    const steadyStateRequests = rps * steadyStateDuration;
-    theoreticalMaxRps = Math.round(rampUpRequests + steadyStateRequests);
-    achievedPercentage = Math.ceil((totalRequests / theoreticalMaxRps) * 100);
+  actualDurationSec?: number,
+): TestSummary {
+  if (results.length === 0) {
+    // Return a default summary if no results are available.
+    return {
+      global: {
+        totalRequests: 0,
+        successfulRequests: 0,
+        failedRequests: 0,
+        avgLatencyMs: 0,
+        minLatencyMs: 0,
+        maxLatencyMs: 0,
+        p95LatencyMs: 0,
+        p99LatencyMs: 0,
+        actualRps: 0,
+        theoreticalMaxRps: 0,
+        achievedPercentage: 0,
+        duration: 0,
+      },
+      endpoints: [],
+    };
   }
 
-  const globalSummary: GlobalSummary = {
-    totalRequests,
-    successfulRequests,
-    failedRequests,
-    avgLatencyMs: average(latencies),
-    minLatencyMs: Math.min(...latencies),
-    maxLatencyMs: Math.max(...latencies),
-    p95LatencyMs: percentile(latencies, 95),
-    p99LatencyMs: percentile(latencies, 99),
-    actualRps,
-    theoreticalMaxRps,
-    achievedPercentage,
-  };
+  const { durationSec = 10, rps } = options;
+  const totalRequests = results.length;
+  const allLatencies = results.map((r) => r.latencyMs);
+  const effectiveDuration = actualDurationSec ?? durationSec;
+  const actualRps =
+    effectiveDuration > 0 ? totalRequests / effectiveDuration : 0;
+  const avgLatency = average(allLatencies);
+  const theoreticalMaxRps = rps
+    ? Math.min(
+        (1000 / (avgLatency || 1)) * (options.workers || 10),
+        options.rps || Infinity,
+      )
+    : 0;
+  const achievedPercentage =
+    rps && theoreticalMaxRps ? (actualRps / theoreticalMaxRps) * 100 : 0;
 
-  // Endpoint calculations
-  const resultsByUrl: Record<string, RequestResult[]> = results.reduce(
-    (acc, r) => {
-      if (!acc[r.url]) {
-        acc[r.url] = [];
+  const requestsByEndpoint = results.reduce(
+    (acc, result) => {
+      if (!acc[result.url]) {
+        acc[result.url] = [];
       }
-      acc[r.url].push(r);
+      acc[result.url].push(result);
       return acc;
     },
     {} as Record<string, RequestResult[]>,
   );
 
-  const endpointSummaries: EndpointSummary[] = Object.entries(resultsByUrl)
-    .sort(([urlA], [urlB]) => urlA.localeCompare(urlB))
-    .map(([url, endpointResults]) => {
-      const endpointLatencies = endpointResults.map((r) => r.latencyMs);
-      const total = endpointResults.length;
-      const successful = endpointResults.filter((r) => r.success).length;
-      const failed = total - successful;
-
+  const endpointSummaries = Object.values(requestsByEndpoint).map(
+    (endpointResults): EndpointSummary => {
+      const latencies = endpointResults.map((r) => r.latencyMs);
       return {
-        url,
-        totalRequests: total,
-        successfulRequests: successful,
-        failedRequests: failed,
-        avgLatencyMs: average(endpointLatencies),
-        p95LatencyMs: percentile(endpointLatencies, 95),
-        p99LatencyMs: percentile(endpointLatencies, 99),
+        url: endpointResults[0].url,
+        totalRequests: endpointResults.length,
+        successfulRequests: endpointResults.filter((r) => r.status < 400)
+          .length,
+        failedRequests: endpointResults.filter((r) => r.status >= 400).length,
+        avgLatencyMs: average(latencies),
+        p95LatencyMs: percentile(latencies, 0.95),
+        p99LatencyMs: percentile(latencies, 0.99),
       };
-    });
+    },
+  );
 
   return {
-    global: globalSummary,
+    global: {
+      totalRequests,
+      successfulRequests: results.filter((r) => r.status < 400).length,
+      failedRequests: results.filter((r) => r.status >= 400).length,
+      avgLatencyMs: avgLatency,
+      minLatencyMs: Math.min(...allLatencies),
+      maxLatencyMs: Math.max(...allLatencies),
+      p95LatencyMs: percentile(allLatencies, 0.95),
+      p99LatencyMs: percentile(allLatencies, 0.99),
+      actualRps,
+      theoreticalMaxRps,
+      achievedPercentage,
+      duration: effectiveDuration,
+    },
     endpoints: endpointSummaries,
   };
 }
 
 /**
  * Generates a Markdown report from a summary object.
- * @param summary The summary object to convert to Markdown.
+ * @param summary The `TestSummary` object.
  * @param options The original `RunOptions` used for the test.
- * @param results An array of `RequestResult` objects from the test run.
- * @returns A string containing the Markdown report.
+ * @param results The raw `RequestResult` array.
+ * @param config The `TressiConfig` used for the run.
+ * @param metadata Additional metadata for the report.
+ * @returns A Markdown string representing the report.
  */
 export function generateMarkdownReport(
-  summary: Summary,
+  summary: TestSummary,
   options: RunOptions,
   results: RequestResult[],
   config: TressiConfig,
@@ -171,6 +186,7 @@ export function generateMarkdownReport(
 
   if (warnings.length > 0) {
     md += `## Analysis & Warnings ⚠️\n\n`;
+    md += `> *This section highlights potential performance issues or configuration problems detected during the test.*\n\n`;
     for (const warning of warnings) {
       md += `* ${warning}\n`;
     }
@@ -186,85 +202,54 @@ export function generateMarkdownReport(
 
   // Run Configuration
   md += `## Run Configuration\n\n`;
-  md += `| Option | Setting |\n`;
-  md += `|---|---|\n`;
-  md += `| Workers | ${autoscale ? `Up to ${workers}` : workers} |\n`;
-  md += `| Duration | ${durationSec}s |\n`;
-  if (rps) md += `| Target RPS | ${rps} |\n`;
-  if (autoscale) md += `| Autoscale | Enabled |\n\n`;
+  md += `> *This table shows the main parameters used for the load test run.*\n\n`;
+  md += `| Option | Setting | Argument |\n`;
+  md += `|---|---|---|\n`;
+  md += `| Workers | ${autoscale ? `Up to ${workers}` : workers} | \`--workers\` |\n`;
+  md += `| Duration | ${durationSec}s | \`--duration\` |\n`;
+  if (rps) md += `| Target Req/s | ${rps} | \`--rps\` |\n`;
+  if (autoscale) md += `| Autoscale | Enabled | \`--autoscale\` |\n\n`;
 
   // Global Summary
   md += `## Global Summary\n\n`;
-  md += `| Metric | Value |\n`;
-  md += `|---|---|\n`;
+  md += `> *A high-level overview of the entire test performance across all endpoints.*\n\n`;
+  md += `| Stat | Value |\n| --- | --- |\n`;
+  md += `| Duration | ${g.duration.toFixed(0)}s |\n`;
   md += `| Total Requests | ${g.totalRequests} |\n`;
-
-  if (rps && g.theoreticalMaxRps) {
-    md += `| RPS (Actual/Target) | ${g.actualRps.toFixed(0)} / ${rps} |\n`;
-    md += `| RPM (Actual/Target) | ${(g.actualRps * 60).toFixed(
-      0,
-    )} / ${rps * 60} |\n`;
-    md += `| Theoretical Max Reqs | ${g.theoreticalMaxRps} |\n`;
-    md += `| Achieved % | ${g.achievedPercentage}% |\n`;
-  } else {
-    md += `| RPS | ${g.actualRps.toFixed(0)} |\n`;
-    md += `| RPM | ${(g.actualRps * 60).toFixed(0)} |\n`;
-  }
-
   md += `| Successful | ${g.successfulRequests} |\n`;
   md += `| Failed | ${g.failedRequests} |\n`;
-  md += `| Avg Latency (ms) | ${g.avgLatencyMs.toFixed(0)} |\n`;
-  md += `| Min Latency (ms) | ${g.minLatencyMs.toFixed(0)} |\n`;
-  md += `| Max Latency (ms) | ${g.maxLatencyMs.toFixed(0)} |\n`;
-  md += `| p95 Latency (ms) | ${g.p95LatencyMs.toFixed(0)} |\n`;
-  md += `| p99 Latency (ms) | ${g.p99LatencyMs.toFixed(0)} |\n\n`;
+
+  if (options.rps && g.theoreticalMaxRps) {
+    md += `| Req/s (Actual/Target) | ${g.actualRps.toFixed(0)} / ${
+      options.rps
+    } |\n`;
+    md += `| Req/m (Actual/Target) | ${(g.actualRps * 60).toFixed(
+      0,
+    )} / ${options.rps * 60} |\n`;
+    md += `| Theoretical Max Req/s | ${g.theoreticalMaxRps.toFixed(0)} |\n`;
+    md += `| Achieved % | ${g.achievedPercentage.toFixed(0)}% |\n`;
+  } else {
+    md += `| Req/s | ${g.actualRps.toFixed(0)} |\n`;
+    md += `| Req/m | ${(g.actualRps * 60).toFixed(0)} |\n`;
+  }
+
+  md += `| Avg Latency | ${g.avgLatencyMs.toFixed(0)}ms |\n`;
+  md += `| p95 Latency | ${g.p95LatencyMs.toFixed(0)}ms |\n`;
+  md += `| p99 Latency | ${g.p99LatencyMs.toFixed(0)}ms |\n\n`;
 
   // Latency Distribution
   const latencies = results.map((r) => r.latencyMs);
   if (latencies.length > 0) {
-    const min = g.minLatencyMs;
-    const max = g.maxLatencyMs;
-    const numBuckets = 8;
-    const range = max - min;
-
-    const buckets = new Array(numBuckets).fill(0);
-    const labels: string[] = [];
-
-    if (range === 0) {
-      // If all latencies are the same, create a single bucket
-      labels.push(`${min}ms`);
-      buckets[0] = latencies.length;
-    } else {
-      const bucketSize = Math.ceil(range / numBuckets);
-      for (let i = 0; i < numBuckets; i++) {
-        const lower = Math.floor(min + i * bucketSize);
-        const upper = Math.floor(min + (i + 1) * bucketSize - 1);
-        labels.push(`${lower}-${upper}ms`);
-      }
-
-      for (const latency of latencies) {
-        if (latency === max) {
-          buckets[numBuckets - 1]++;
-        } else {
-          const bucketIndex = Math.floor((latency - min) / bucketSize);
-          buckets[bucketIndex]++;
-        }
-      }
-    }
+    const distribution = getLatencyDistribution(latencies, 8, 20);
 
     md += `## Latency Distribution\n\n`;
-    md += `| Range | Count | Chart |\n`;
-    md += `|---|---|---|\n`;
+    md += `> *This table shows how request latencies were distributed. **% of Total** is the percentage of requests that fell into that specific time range. **Cumulative %** is the running total, showing the percentage of requests at or below that latency.*\n\n`;
+    md += `| Range (ms) | Count | % of Total | Cumulative % | Chart |\n`;
+    md += `|---|---|---|---|---|\n`;
 
-    const maxCount = Math.max(...buckets);
-    for (let i = 0; i < labels.length; i++) {
-      const count = buckets[i];
-      if (count === 0) continue;
-
-      const barLength = maxCount > 0 ? Math.round((count / maxCount) * 20) : 0;
-      const bar = '█'.repeat(barLength);
-      const percentage = ((count / latencies.length) * 100).toFixed(1);
-      md += `| ${labels[i]} | ${count} | \`${bar}\` (${percentage}%) |\n`;
+    for (const bucket of distribution) {
+      if (bucket.count === '0') continue;
+      md += `| ${bucket.range}ms | ${bucket.count} | ${bucket.percent} | ${bucket.cumulative} | \`${bucket.chart}\` |\n`;
     }
     md += `\n`;
   }
@@ -282,6 +267,7 @@ export function generateMarkdownReport(
     );
 
     md += `## Error Summary\n\n`;
+    md += `> *This section summarizes any errors that occurred during the test, grouped by message.*\n\n`;
     md += `| Count | Error Message |\n`;
     md += `|---|---|\n`;
     for (const [error, count] of Object.entries(errorMap).sort(
@@ -303,6 +289,7 @@ export function generateMarkdownReport(
 
   if (Object.keys(statusCodeMap).length > 0) {
     md += `## Responses by Status Code\n\n`;
+    md += `> *A breakdown of all responses by their HTTP status code.*\n\n`;
     md += `| Status Code | Count |\n`;
     md += `|---|---|\n`;
     for (const [code, count] of Object.entries(statusCodeMap).sort((a, b) =>
@@ -316,14 +303,17 @@ export function generateMarkdownReport(
   // Endpoint Summary
   if (e.length > 0) {
     md += `## Endpoint Summary\n\n`;
-    md += `| URL | Total | Success | Failed | Avg Latency (ms) | P95 Latency (ms) |\n`;
-    md += `|---|---|---|---|---|---|\n`;
+    md += `> *A detailed performance breakdown for each individual API endpoint.*\n\n`;
+    md += `| URL | Total | Success | Failed | Avg | P95 | P99 |\n`;
+    md += `|---|---|---|---|---|---|---|\n`;
     for (const endpoint of e) {
       md += `| ${endpoint.url} | ${endpoint.totalRequests} | ${
         endpoint.successfulRequests
       } | ${endpoint.failedRequests} | ${endpoint.avgLatencyMs.toFixed(
         0,
-      )} | ${endpoint.p95LatencyMs.toFixed(0)} |\n`;
+      )}ms | ${endpoint.p95LatencyMs.toFixed(0)}ms | ${endpoint.p99LatencyMs.toFixed(
+        0,
+      )}ms |\n`;
     }
   }
 

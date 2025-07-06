@@ -1,16 +1,20 @@
 import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
-import { afterAll,afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 import { loadConfig, TressiConfig } from '../src/config';
 
-const validConfig: TressiConfig = {
+const minimalConfig = {
   requests: [{ url: 'http://localhost:8080/test' }],
+};
+
+const expectedConfig: TressiConfig = {
+  requests: [{ url: 'http://localhost:8080/test', method: 'GET' }],
 };
 
 const server = setupServer(
   http.get('http://localhost:8080/remote-config', () => {
-    return HttpResponse.json(validConfig);
+    return HttpResponse.json(minimalConfig);
   }),
   http.get('http://localhost:8080/remote-config-failing', () => {
     return new HttpResponse(null, { status: 500 });
@@ -34,8 +38,8 @@ describe('config', () => {
      * and return it after validation.
      */
     it('should load config from a direct object', async () => {
-      const config = await loadConfig(validConfig);
-      expect(config).toEqual(validConfig);
+      const config = await loadConfig(minimalConfig);
+      expect(config).toEqual(expectedConfig);
     });
 
     /**
@@ -44,7 +48,7 @@ describe('config', () => {
      */
     it('should load config from a remote URL', async () => {
       const config = await loadConfig('http://localhost:8080/remote-config');
-      expect(config).toEqual(validConfig);
+      expect(config).toEqual(expectedConfig);
     });
 
     /**
@@ -62,8 +66,8 @@ describe('config', () => {
      * object does not match the TressiConfigSchema.
      */
     it('should throw ZodError for an invalid config object', async () => {
-        const invalidConfig = { requests: [{ url: 'invalid-url' }] };
-        await expect(loadConfig(invalidConfig)).rejects.toThrow();
+      const invalidConfig = { requests: [{ url: 'invalid-url' }] };
+      await expect(loadConfig(invalidConfig)).rejects.toThrow();
     });
   });
-}); 
+});

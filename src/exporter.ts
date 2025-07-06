@@ -4,7 +4,7 @@ import ora from 'ora';
 import * as xlsx from 'xlsx';
 
 import { RequestResult } from './stats';
-import { Summary } from './summarizer';
+import { TestSummary } from './summarizer';
 
 async function exportRawLog(
   path: string,
@@ -35,7 +35,7 @@ async function exportRawLog(
 async function exportXlsx(
   path: string,
   results: RequestResult[],
-  summary: Summary,
+  summary: TestSummary,
 ): Promise<void> {
   const { global: globalSummary, endpoints: endpointSummary } = summary;
   const wb = xlsx.utils.book_new();
@@ -66,14 +66,14 @@ async function exportXlsx(
  * @param outputDir The directory to save the files in.
  */
 export async function exportDataFiles(
-  summary: Summary,
+  summary: TestSummary,
   results: RequestResult[],
-  outputDir: string,
+  directory: string,
 ): Promise<void> {
   const exportSpinner = ora(`Exporting data files (CSV, XLSX)...`).start();
   try {
-    const csvBasePath = `${outputDir}/results.csv`;
-    const xlsxPath = `${outputDir}/report.xlsx`;
+    const csvBasePath = `${directory}/results.csv`;
+    const xlsxPath = `${directory}/report.xlsx`;
 
     const promises = [
       exportRawLog(csvBasePath, results),

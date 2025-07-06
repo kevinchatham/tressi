@@ -1,45 +1,16 @@
 import chalk from 'chalk';
 import { Command } from 'commander';
 import { promises as fs } from 'fs';
-import inquirer from 'inquirer';
 import path from 'path';
 
 import pkg from '../package.json';
 import { runLoadTest } from '.';
 
 /**
- * Template for a TypeScript-based tressi configuration file.
- */
-const tsConfigTemplate = `import { defineConfig } from 'tressi';
-
-export default defineConfig({
-  // Common headers for all requests can be defined here
-  // headers: {
-  //   'Authorization': \`Bearer \${process.env.API_TOKEN}\`,
-  // },
-  requests: [
-    {
-      url: 'https://jsonplaceholder.typicode.com/posts/1',
-      method: 'GET',
-    },
-    {
-      url: 'https://jsonplaceholder.typicode.com/posts',
-      method: 'POST',
-      payload: {
-        name: 'Tressi Post',
-      },
-    },
-  ],
-});
-`;
-
-/**
  * Template for a JSON-based tressi configuration file.
  */
 const jsonConfigTemplate = `{
-  "headers": {
-    "Content-Type": "application/json; charset=UTF-8"
-  },
+  "$schema": "https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v${pkg.version}.json",
   "requests": [
     {
       "url": "https://jsonplaceholder.typicode.com/posts/1",
@@ -49,9 +20,7 @@ const jsonConfigTemplate = `{
       "url": "https://jsonplaceholder.typicode.com/posts",
       "method": "POST",
       "payload": {
-        "title": "foo",
-        "body": "bar",
-        "userId": 1
+        "name": "Tressi Post"
       }
     }
   ]
@@ -69,62 +38,51 @@ program
   .version(pkg.version);
 
 program
-  .option('-c, --config <path>', 'Path or URL to config file (.ts or .json)')
+  .option(
+    '-c, --config [path]',
+    'Path or URL to JSON config file. Defaults to ./tressi.config.json',
+  )
   .option(
     '--workers <n>',
     'Number of concurrent workers, or max workers if autoscale is enabled',
     '10',
   )
   .option('--duration <s>', 'Duration in seconds', '10')
-  .option('--ramp-up-time <s>', 'Time in seconds to ramp up to the target RPM')
+  .option('--ramp-up-time <s>', 'Time in seconds to ramp up to the target RPS')
   .option('--rps <n>', 'Target requests per second')
   .option('--autoscale', 'Enable autoscaling of workers')
   .option(
     '--export [path]',
-    'Export a complete report to a specified directory',
+    'Export a comprehensive report (Markdown, XLSX, CSVs) to a directory.',
   )
-  .option('--no-ui', 'Disable live charts (enabled by default)');
+  .option('--no-ui', 'Disable the interactive terminal UI');
 
 program
   .command('init')
+  .summary('Create a tressi.config.json file')
   .description('Create a boilerplate tressi configuration file')
   .action(async () => {
-    const { format } = await inquirer.prompt([
-      {
-        type: 'list',
-        name: 'format',
-        message: 'What format do you want your config file to be in?',
-        choices: ['typescript', 'json'],
-      },
-    ]);
-
-    const fileExt = format === 'typescript' ? 'ts' : 'json';
-    const fileName = `tressi.config.${fileExt}`;
+    const fileName = `tressi.config.json`;
     const filePath = path.resolve(process.cwd(), fileName);
-    const template = fileExt === 'ts' ? tsConfigTemplate : jsonConfigTemplate;
 
     try {
       await fs.access(filePath);
-      const { overwrite } = await inquirer.prompt([
-        {
-          type: 'confirm',
-          name: 'overwrite',
-          message: `Configuration file ${fileName} already exists. Do you want to overwrite it?`,
-          default: false,
-        },
-      ]);
-
-      if (!overwrite) {
-        // eslint-disable-next-line no-console
-        console.log(chalk.yellow('Aborted.'));
-        return;
-      }
+      // If the file exists, we shouldn't overwrite it without permission,
+      // but for simplicity, we'll just log a message. In a real-world
+      // scenario, you'd prompt the user.
+      // eslint-disable-next-line no-console
+      console.log(
+        chalk.yellow(
+          `Configuration file ${fileName} already exists. Skipping.`,
+        ),
+      );
+      return;
     } catch {
       // File does not exist, continue
     }
 
     try {
-      await fs.writeFile(filePath, template);
+      await fs.writeFile(filePath, jsonConfigTemplate);
       // eslint-disable-next-line no-console
       console.log(
         chalk.green(`Successfully created ${fileName} at ${filePath}`),
@@ -142,29 +100,32 @@ program.addHelpText(
   'after',
   `
 Examples:
-  # Initialize a new config file
+  # Create a tressi.config.json file
   $ tressi init
+
+  # Run a load test using the tressi.config.json in the current directory
+  $ tressi
+
+  # Run a load test with a specific config file
+  $ tressi --config ./path/to/your/tressi.config.json
   
-  # Run a load test with a config file
-  $ tressi --config ./tressi.config.ts
+  # Run an autoscaling test up to 50 workers with a target of 1000 RPS
+  $ tressi --autoscale --workers 50 --rps 1000 --duration 60
 
   # Export a complete report to a timestamped directory
-  $ tressi --config ./tressi.config.ts --export
+  $ tressi --export
 
   # Export a report to a custom-named, timestamped directory
-  $ tressi --config ./tressi.config.ts --export ./my-report
+  $ tressi --export ./my-report
   
-  # Run a load test with a config file and disable the interactive terminal UI
-  $ tressi --config ./tressi.config.ts --no-ui
+  # Run a load test without the interactive terminal UI
+  $ tressi --no-ui
   
-  # Run a load test with a config file and set the concurrency to 20
-  $ tressi --config ./tressi.config.ts --workers 20
+  # Run a load test with 20 concurrent workers
+  $ tressi --workers 20
   
-  # Run a load test with a config file and set the duration to 30 seconds
-  $ tressi --config ./tressi.config.ts --duration 30
-  
-  # Run a load test with a config file and set the requests per minute limit to 100
-  $ tressi --config ./tressi.config.ts --rpm 100
+  # Run a load test for 30 seconds
+  $ tressi --duration 30
 `,
 );
 
@@ -173,11 +134,28 @@ Examples:
  * with options, but without a specific command like `init`.
  */
 program.action(async (opts) => {
-  // If no config is provided, and no command was run, show help.
-  // This handles the case where the user just runs `tressi`.
-  if (!opts.config) {
-    program.help();
-    return;
+  let configPath = opts.config;
+
+  if (!configPath) {
+    const defaultConfigPath = path.resolve(process.cwd(), 'tressi.config.json');
+    try {
+      await fs.access(defaultConfigPath);
+      configPath = defaultConfigPath;
+    } catch {
+      // eslint-disable-next-line no-console
+      console.error(
+        chalk.red(
+          'Error: No config file provided and tressi.config.json not found in the current directory.',
+        ),
+      );
+      // eslint-disable-next-line no-console
+      console.log(
+        chalk.yellow(
+          'Please specify a config file using --config or run `tressi init` to create one.',
+        ),
+      );
+      process.exit(1);
+    }
   }
 
   if (opts.autoscale && !opts.rps) {
@@ -188,7 +166,7 @@ program.action(async (opts) => {
 
   try {
     await runLoadTest({
-      config: opts.config,
+      config: configPath,
       workers: opts.workers ? parseInt(opts.workers, 10) : undefined,
       durationSec: opts.duration ? parseInt(opts.duration, 10) : undefined,
       rampUpTimeSec: opts.rampUpTime

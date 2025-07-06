@@ -5,19 +5,19 @@ import ora from 'ora';
 import path from 'path';
 import { z } from 'zod';
 
-import {
-  defineConfig,
-  loadConfig,
-  RequestConfig,
-  TressiConfig,
-} from './config';
+import { loadConfig, RequestConfig, TressiConfig } from './config';
+import { getLatencyDistribution } from './distribution';
 import { exportDataFiles } from './exporter';
 import { Runner } from './runner';
-import { average, RequestResult } from './stats';
-import { generateMarkdownReport, generateSummary } from './summarizer';
+import { average, percentile, RequestResult } from './stats';
+import {
+  generateMarkdownReport,
+  generateSummary,
+  TestSummary,
+} from './summarizer';
 import { TUI } from './ui';
 
-export { defineConfig, TressiConfig, RequestConfig };
+export { RequestConfig, TestSummary, TressiConfig };
 
 /**
  * Defines the options for a Tressi load test run.
@@ -39,14 +39,22 @@ export interface RunOptions {
   exportPath?: string | boolean;
   /** Whether to use the terminal UI. Defaults to true. */
   useUI?: boolean;
+  /** Suppress all console output. Defaults to false. */
+  silent?: boolean;
 }
 
 /**
  * Prints a detailed summary of the load test results to the console.
  * @param results An array of `RequestResult` objects from the test run.
  * @param options The original `RunOptions` used for the test.
+ * @param summary The calculated `TestSummary` object for the run.
  */
-function printSummary(results: RequestResult[], options: RunOptions): void {
+function printSummary(
+  results: RequestResult[],
+  options: RunOptions,
+  summary: TestSummary,
+): void {
+  const { global: globalSummary, endpoints: endpointSummaries } = summary;
   const {
     workers = 10,
     durationSec = 10,
@@ -55,37 +63,33 @@ function printSummary(results: RequestResult[], options: RunOptions): void {
     autoscale,
   } = options;
 
-  const summary = generateSummary(results, options);
-  const { global: globalSummary, endpoints: endpointSummaries } = summary;
-
-  const configTable = new Table({ colWidths: [30, 20] });
-  configTable.push(
-    { Workers: autoscale ? `Up to ${workers}` : workers },
-    { Duration: `${durationSec}s` },
-  );
+  const configTable = new Table({
+    head: ['Option', 'Setting', 'Argument'],
+    colWidths: [20, 15, 20],
+  });
+  configTable.push([
+    'Workers',
+    autoscale ? `Up to ${workers}` : workers,
+    '--workers',
+  ]);
+  configTable.push(['Duration', `${durationSec}s`, '--duration']);
 
   if (autoscale) {
-    configTable.push({ Autoscale: 'Enabled' });
+    configTable.push(['Autoscale', 'Enabled', '--autoscale']);
   }
 
   if (rps) {
-    configTable.push({ 'Target RPS': rps });
-    configTable.push({ 'Target RPM': rps * 60 });
+    configTable.push(['Target Req/s', rps, '--rps']);
   }
 
   if (rampUpTimeSec) {
-    configTable.push({ 'Ramp-up Time': `${rampUpTimeSec}s` });
+    configTable.push(['Ramp-up Time', `${rampUpTimeSec}s`, '--ramp-up-time']);
   }
 
   // eslint-disable-next-line no-console
   console.log('\n' + chalk.bold('Run Configuration'));
   // eslint-disable-next-line no-console
   console.log(configTable.toString());
-
-  const table = new Table({
-    head: ['Stat', 'Value'],
-    colWidths: [30, 20],
-  });
 
   const latencies = results.map((r) => r.latencyMs); // Keep for warning message logic
 
@@ -101,22 +105,22 @@ function printSummary(results: RequestResult[], options: RunOptions): void {
 
         if (autoscale) {
           warningMessage =
-            `\n⚠️  Warning: Target of ${rps} RPS may be unreachable.` +
+            `\n⚠️  Warning: Target of ${rps} Req/s may be unreachable.` +
             `\n   The autoscaler hit the maximum of ${workers} workers.` +
             `\n   With an average latency of ~${Math.ceil(
               avgLatencyMs,
             )}ms, the theoretical max is only ~${Math.floor(
               maxPossibleRps,
-            )} RPS.` +
+            )} Req/s.` +
             `\n   To meet the target, try increasing the --workers limit to at least ${suggestedWorkers}.`;
         } else {
           warningMessage =
-            `\n⚠️  Warning: Target of ${rps} RPS may be unreachable with ${workers} workers.` +
+            `\n⚠️  Warning: Target of ${rps} Req/s may be unreachable with ${workers} workers.` +
             `\n   With an average latency of ~${Math.ceil(
               avgLatencyMs,
             )}ms, the theoretical max is only ~${Math.floor(
               maxPossibleRps,
-            )} RPS.` +
+            )} Req/s.` +
             `\n   To meet the target, try increasing workers to at least ${suggestedWorkers}.`;
         }
         // eslint-disable-next-line no-console
@@ -125,42 +129,73 @@ function printSummary(results: RequestResult[], options: RunOptions): void {
     }
   }
 
-  table.push(
-    ['Duration', `${durationSec}s`],
+  const summaryTable = new Table({
+    head: ['Stat', 'Value'],
+    colWidths: [30, 20],
+  });
+
+  summaryTable.push(
+    ['Duration', `${Math.ceil(globalSummary.duration)}s`],
     ['Total Requests', globalSummary.totalRequests],
+    [chalk.green('Successful'), globalSummary.successfulRequests],
+    [chalk.red('Failed'), globalSummary.failedRequests],
   );
 
   if (rps && globalSummary.theoreticalMaxRps) {
-    table.push(
-      ['RPS (Actual/Target)', `${Math.ceil(globalSummary.actualRps)} / ${rps}`],
+    summaryTable.push(
       [
-        'RPM (Actual/Target)',
+        'Req/s (Actual/Target)',
+        `${Math.ceil(globalSummary.actualRps)} / ${rps}`,
+      ],
+      [
+        'Req/m (Actual/Target)',
         `${Math.ceil(globalSummary.actualRps * 60)} / ${rps * 60}`,
       ],
-      ['Theoretical Max Reqs', globalSummary.theoreticalMaxRps],
-      ['Achieved %', `${globalSummary.achievedPercentage}%`],
+      ['Theoretical Max Req/s', globalSummary.theoreticalMaxRps.toFixed(0)],
+      ['Achieved %', `${globalSummary.achievedPercentage.toFixed(0)}%`],
     );
   } else {
-    table.push(
-      ['RPS', Math.ceil(globalSummary.actualRps)],
-      ['RPM', Math.ceil(globalSummary.actualRps * 60)],
+    summaryTable.push(
+      ['Req/s', Math.ceil(globalSummary.actualRps)],
+      ['Req/m', Math.ceil(globalSummary.actualRps * 60)],
     );
   }
 
-  table.push(
-    [chalk.green('Successful'), globalSummary.successfulRequests],
-    [chalk.red('Failed'), globalSummary.failedRequests],
-    ['Avg Latency (ms)', Math.ceil(globalSummary.avgLatencyMs)],
-    ['Min Latency (ms)', Math.ceil(globalSummary.minLatencyMs)],
-    ['Max Latency (ms)', Math.ceil(globalSummary.maxLatencyMs)],
-    ['p95 Latency (ms)', Math.ceil(globalSummary.p95LatencyMs)],
-    ['p99 Latency (ms)', Math.ceil(globalSummary.p99LatencyMs)],
+  summaryTable.push(
+    ['Avg Latency', `${Math.ceil(globalSummary.avgLatencyMs)}ms`],
+    ['p95 Latency', `${Math.ceil(globalSummary.p95LatencyMs)}ms`],
+    ['p99 Latency', `${Math.ceil(globalSummary.p99LatencyMs)}ms`],
   );
 
   // eslint-disable-next-line no-console
   console.log('\n' + chalk.bold('Global Test Summary'));
   // eslint-disable-next-line no-console
-  console.log(table.toString());
+  console.log(summaryTable.toString());
+
+  const latencyDistribution = getLatencyDistribution(
+    results.map((r) => r.latencyMs),
+  );
+
+  if (latencyDistribution.length > 0) {
+    const distributionTable = new Table({
+      head: ['Range (ms)', 'Count', '% Total', 'Cumulative'],
+      colWidths: [15, 10, 10, 12],
+    });
+
+    latencyDistribution.forEach((bucket) => {
+      distributionTable.push([
+        bucket.range,
+        bucket.count,
+        bucket.percent,
+        bucket.cumulative,
+      ]);
+    });
+
+    // eslint-disable-next-line no-console
+    console.log(chalk.bold('\nLatency Distribution'));
+    // eslint-disable-next-line no-console
+    console.log(distributionTable.toString());
+  }
 
   const statusCodeMap: Record<number, number> = results.reduce(
     (acc, r) => {
@@ -212,13 +247,13 @@ function printSummary(results: RequestResult[], options: RunOptions): void {
       endpointTable.push({ Successful: chalk.green(successfulRequests) });
       endpointTable.push({ Failed: chalk.red(failedRequests) });
       endpointTable.push({
-        'Avg Latency (ms)': Math.ceil(avgLatencyMs),
+        'Avg Latency': `${Math.ceil(avgLatencyMs)}ms`,
       });
       endpointTable.push({
-        'p95 Latency (ms)': Math.ceil(p95LatencyMs),
+        'p95 Latency': `${Math.ceil(p95LatencyMs)}ms`,
       });
       endpointTable.push({
-        'p99 Latency (ms)': Math.ceil(p99LatencyMs),
+        'p99 Latency': `${Math.ceil(p99LatencyMs)}ms`,
       });
 
       // eslint-disable-next-line no-console
@@ -242,9 +277,14 @@ function printSummary(results: RequestResult[], options: RunOptions): void {
  * It loads the configuration, initializes the runner, starts the UI,
  * and prints a summary upon completion.
  * @param options The `RunOptions` for the test.
+ * @returns A `Promise` that resolves with the `TestSummary` object.
  */
-export async function runLoadTest(options: RunOptions): Promise<void> {
-  const spinner = ora('Loading config...').start();
+export async function runLoadTest(options: RunOptions): Promise<TestSummary> {
+  const { silent = false, useUI = true } = options;
+  const spinner = ora({
+    text: 'Loading config...',
+    isEnabled: !silent,
+  }).start();
   let loadedConfig: TressiConfig;
   try {
     loadedConfig = await loadConfig(options.config);
@@ -252,20 +292,24 @@ export async function runLoadTest(options: RunOptions): Promise<void> {
   } catch (err) {
     if (err instanceof z.ZodError) {
       spinner.fail('Config validation failed:');
-      // eslint-disable-next-line no-console
-      console.error(JSON.stringify(err.errors, null, 2));
+      if (!silent) {
+        // eslint-disable-next-line no-console
+        console.error(JSON.stringify(err.errors, null, 2));
+      }
     } else {
       spinner.fail(`Failed to load config: ${(err as Error).message}`);
     }
     throw err;
   }
 
-  const config = await loadConfig(options.config);
-
-  const runner = new Runner(options, config.requests, config.headers || {});
+  const runner = new Runner(
+    options,
+    loadedConfig.requests,
+    loadedConfig.headers || {},
+  );
 
   // If we have a TUI, we need to handle its destruction and polling
-  if (options.useUI) {
+  if (useUI && !silent) {
     const tui = new TUI(() => runner.stop());
     const tuiInterval = setInterval(() => {
       const latencies = runner.getLatencies();
@@ -294,7 +338,10 @@ export async function runLoadTest(options: RunOptions): Promise<void> {
     });
   } else {
     // If we're not using the TUI, we should still provide some basic feedback
-    const noUiSpinner = ora('Test starting...').start();
+    const noUiSpinner = ora({
+      text: 'Test starting...',
+      isEnabled: !silent,
+    }).start();
     const noUiInterval = setInterval(() => {
       const startTime = runner.getStartTime();
       const elapsedSec = startTime > 0 ? (Date.now() - startTime) / 1000 : 0;
@@ -305,22 +352,44 @@ export async function runLoadTest(options: RunOptions): Promise<void> {
       const failed = runner.getFailedRequestsCount();
       const workers = runner.getWorkerCount();
       const avgLatency = runner.getAverageLatency();
+      const latencies = runner.getLatencies();
+      const p95 = percentile(latencies, 0.95);
+      const p99 = percentile(latencies, 0.99);
 
       const rpsDisplay = options.rps ? `${rps}/${options.rps}` : `${rps}`;
+      const successDisplay = chalk.green(successful);
+      const failDisplay = failed > 0 ? chalk.red(failed) : chalk.gray(0);
 
-      noUiSpinner.text = `[${elapsedSec.toFixed(0)}s/${totalSec}s] RPS: ${rpsDisplay} | Workers: ${workers} | Success: ${successful} | Fail: ${failed} | Avg Latency: ${avgLatency.toFixed(0)}ms`;
+      noUiSpinner.text = `[${elapsedSec.toFixed(0)}s/${totalSec}s] RPS: ${
+        rpsDisplay
+      } | W: ${workers} | OK/Fail: ${successDisplay}/${failDisplay} | Avg: ${avgLatency.toFixed(
+        0,
+      )}ms | p95: ${p95.toFixed(0)}ms | p99: ${p99.toFixed(0)}ms`;
     }, 1000);
+
+    // Handle graceful shutdown on Ctrl+C
+    const handleNoUiExit = (): void => {
+      runner.stop();
+    };
+    process.on('SIGINT', handleNoUiExit);
 
     runner.on('stop', () => {
       clearInterval(noUiInterval);
+      process.removeListener('SIGINT', handleNoUiExit);
       noUiSpinner.succeed('Test finished. Generating summary...');
     });
   }
 
   const results = await runner.run();
+  const startTime = runner.getStartTime();
+  const actualDurationSec = startTime > 0 ? (Date.now() - startTime) / 1000 : 0;
+  const summary = generateSummary(results, options, actualDurationSec);
 
   if (options.exportPath) {
-    const exportSpinner = ora('Exporting results...').start();
+    const exportSpinner = ora({
+      text: 'Exporting results...',
+      isEnabled: !silent,
+    }).start();
     try {
       const baseExportName =
         typeof options.exportPath === 'string'
@@ -333,12 +402,11 @@ export async function runLoadTest(options: RunOptions): Promise<void> {
       );
       await fs.mkdir(reportDir, { recursive: true });
 
-      const summary = generateSummary(results, options);
       const markdownReport = generateMarkdownReport(
         summary,
         options,
         results,
-        config,
+        loadedConfig,
         {
           exportName: baseExportName,
           runDate,
@@ -357,5 +425,9 @@ export async function runLoadTest(options: RunOptions): Promise<void> {
   }
 
   // Final summary to console
-  printSummary(results, options);
+  if (!silent) {
+    printSummary(results, options, summary);
+  }
+
+  return summary;
 }
