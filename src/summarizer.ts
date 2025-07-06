@@ -329,15 +329,17 @@ export function generateMarkdownReport(
 
   // Endpoint Summary
   if (e.length > 0) {
-    md += `## Endpoint Summary\n\n`;
-    md += `| URL | Total | Success | Failed | Avg Latency (ms) | P95 Latency (ms) |\n`;
-    md += `|---|---|---|---|---|---|\n`;
+    md += `## Endpoint Summary (latencies in ms)\n\n`;
+    md += `| URL | Total | Success | Failed | Avg | P95 | P99 |\n`;
+    md += `|---|---|---|---|---|---|---|\n`;
     for (const endpoint of e) {
       md += `| ${endpoint.url} | ${endpoint.totalRequests} | ${
         endpoint.successfulRequests
       } | ${endpoint.failedRequests} | ${endpoint.avgLatencyMs.toFixed(
         0,
-      )} | ${endpoint.p95LatencyMs.toFixed(0)} |\n`;
+      )} | ${endpoint.p95LatencyMs.toFixed(0)} | ${endpoint.p99LatencyMs.toFixed(
+        0,
+      )} |\n`;
     }
   }
 
