@@ -11,6 +11,10 @@ import { runLoadTest } from '.';
  */
 const jsonConfigTemplate = `{
   "$schema": "https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v${pkg.version}.json",
+  "headers": {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer <your-token>"
+  },
   "requests": [
     {
       "url": "https://jsonplaceholder.typicode.com/posts/1",
