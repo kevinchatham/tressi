@@ -34,6 +34,7 @@ export interface GlobalSummary {
 }
 
 export interface TestSummary {
+  tressiVersion: string;
   global: GlobalSummary;
   endpoints: EndpointSummary[];
 }
@@ -67,6 +68,7 @@ export function generateSummary(
         duration: 0,
       },
       endpoints: [],
+      tressiVersion: process.env.npm_package_version || 'unknown',
     };
   }
 
@@ -129,6 +131,7 @@ export function generateSummary(
       duration: effectiveDuration,
     },
     endpoints: endpointSummaries,
+    tressiVersion: process.env.npm_package_version || 'unknown',
   };
 }
 
@@ -151,17 +154,26 @@ export function generateMarkdownReport(
   const { global: g, endpoints: e } = summary;
   const { workers = 10, durationSec = 10, rps, autoscale } = options;
 
-  let md = `# Tressi Load Test Report\n\n`;
+  let md = `# Tressi Load Test Report
 
+`;
+
+  md += `| Metric | Value |
+`;
+  md += `|---|---|
+`;
+  md += `| Version | ${summary.tressiVersion} |
+`;
   if (metadata?.exportName) {
-    md += `**Export Name:** ${metadata.exportName}\n\n`;
+    md += `| Export Name | ${metadata.exportName} |
+`;
   }
-
   if (metadata?.runDate) {
-    md += `**Test Time:** ${metadata.runDate.toLocaleString()}\n\n`;
+    md += `| Test Time | ${metadata.runDate.toLocaleString()} |
+`;
   }
-
-  // Analysis & Warnings
+  md += `
+`;
   const warnings: string[] = [];
   if (rps && g.achievedPercentage && g.achievedPercentage < 80) {
     warnings.push(

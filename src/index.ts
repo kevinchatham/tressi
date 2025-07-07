@@ -63,6 +63,24 @@ function printSummary(
     autoscale,
   } = options;
 
+  const reportInfoTable = new Table({
+    head: ['Metric', 'Value'],
+    colWidths: [20, 35],
+  });
+  reportInfoTable.push(['Version', summary.tressiVersion]);
+  if (options.exportPath) {
+    const baseExportName =
+      typeof options.exportPath === 'string'
+        ? options.exportPath
+        : 'tressi-report';
+    reportInfoTable.push(['Export Name', baseExportName]);
+    reportInfoTable.push(['Test Time', new Date().toLocaleString()]);
+  }
+  // eslint-disable-next-line no-console
+  console.log('\n' + chalk.bold('Report Information'));
+  // eslint-disable-next-line no-console
+  console.log(reportInfoTable.toString());
+
   const configTable = new Table({
     head: ['Option', 'Setting', 'Argument'],
     colWidths: [20, 15, 20],
@@ -310,7 +328,10 @@ export async function runLoadTest(options: RunOptions): Promise<TestSummary> {
 
   // If we have a TUI, we need to handle its destruction and polling
   if (useUI && !silent) {
-    const tui = new TUI(() => runner.stop());
+    const tui = new TUI(
+      () => runner.stop(),
+      process.env.npm_package_version || 'unknown',
+    );
     const tuiInterval = setInterval(() => {
       const latencies = runner.getLatencies();
       const statusCodes = runner.getStatusCodeMap();

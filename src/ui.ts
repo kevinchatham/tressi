@@ -14,9 +14,10 @@ export class TUI {
   private screen: blessed.Widgets.Screen;
   private latencyChart: contrib.Widgets.LineElement;
   private responseCodeChart: contrib.Widgets.LineElement;
-  private responseCodeLegend: blessed.Widgets.BoxElement;
+  private responseCodeLegend: blessed.Widgets.LineElement;
   private statsTable: contrib.Widgets.TableElement;
   private latencyDistributionTable: contrib.Widgets.TableElement;
+  private tressiVersion: string;
 
   private lastStatusCodeMap: Record<number, number> = {};
   private successData: number[] = [];
@@ -30,8 +31,9 @@ export class TUI {
    * Creates a new TUI instance.
    * @param onExit A callback function to be called when the user exits the UI.
    */
-  constructor(onExit: () => void) {
+  constructor(onExit: () => void, tressiVersion: string) {
     this.screen = blessed.screen({ smartCSR: true });
+    this.tressiVersion = tressiVersion;
     const grid = new contrib.grid({ rows: 12, cols: 12, screen: this.screen });
 
     this.latencyChart = grid.set(0, 0, 6, 6, contrib.line, {
@@ -78,6 +80,16 @@ export class TUI {
       bottom: 0,
       left: 'center',
       content: ' q / esc / ctrl+c to quit ',
+      style: {
+        fg: 'white',
+      },
+    });
+
+    blessed.text({
+      parent: this.screen,
+      bottom: 0,
+      left: 0,
+      content: `tressi v${this.tressiVersion}`,
       style: {
         fg: 'white',
       },

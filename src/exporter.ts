@@ -45,6 +45,7 @@ async function exportXlsx(
     Stat: key,
     Value: value,
   }));
+  globalArray.unshift({ Stat: 'Tressi Version', Value: summary.tressiVersion });
   const wsGlobal = xlsx.utils.json_to_sheet(globalArray);
   xlsx.utils.book_append_sheet(wb, wsGlobal, 'Global Summary');
 

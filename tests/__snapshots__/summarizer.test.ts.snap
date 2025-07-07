@@ -3,9 +3,11 @@
 exports[`summarizer > should generate a comprehensive Markdown report 1`] = `
 "# Tressi Load Test Report
 
-**Export Name:** my-test-report
-
-**Test Time:** 1/1/2023, 3:00:00 AM
+| Metric | Value |
+|---|---|
+| Version | 0.0.7 |
+| Export Name | my-test-report |
+| Test Time | 1/1/2023, 3:00:00 AM |
 
 ## Analysis & Warnings ⚠️
 
