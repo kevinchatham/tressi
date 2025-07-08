@@ -14,6 +14,8 @@ export interface EndpointSummary {
   successfulRequests: number;
   failedRequests: number;
   avgLatencyMs: number;
+  minLatencyMs: number;
+  maxLatencyMs: number;
   p95LatencyMs: number;
   p99LatencyMs: number;
 }
@@ -34,6 +36,7 @@ export interface GlobalSummary {
 }
 
 export interface TestSummary {
+  tressiVersion: string;
   global: GlobalSummary;
   endpoints: EndpointSummary[];
 }
@@ -67,6 +70,7 @@ export function generateSummary(
         duration: 0,
       },
       endpoints: [],
+      tressiVersion: process.env.npm_package_version || 'unknown',
     };
   }
 
@@ -107,6 +111,8 @@ export function generateSummary(
           .length,
         failedRequests: endpointResults.filter((r) => r.status >= 400).length,
         avgLatencyMs: average(latencies),
+        minLatencyMs: Math.min(...latencies),
+        maxLatencyMs: Math.max(...latencies),
         p95LatencyMs: percentile(latencies, 0.95),
         p99LatencyMs: percentile(latencies, 0.99),
       };
@@ -129,6 +135,7 @@ export function generateSummary(
       duration: effectiveDuration,
     },
     endpoints: endpointSummaries,
+    tressiVersion: process.env.npm_package_version || 'unknown',
   };
 }
 
@@ -151,17 +158,26 @@ export function generateMarkdownReport(
   const { global: g, endpoints: e } = summary;
   const { workers = 10, durationSec = 10, rps, autoscale } = options;
 
-  let md = `# Tressi Load Test Report\n\n`;
+  let md = `# Tressi Load Test Report
 
+`;
+
+  md += `| Metric | Value |
+`;
+  md += `|---|---|
+`;
+  md += `| Version | ${summary.tressiVersion} |
+`;
   if (metadata?.exportName) {
-    md += `**Export Name:** ${metadata.exportName}\n\n`;
+    md += `| Export Name | ${metadata.exportName} |
+`;
   }
-
   if (metadata?.runDate) {
-    md += `**Test Time:** ${metadata.runDate.toLocaleString()}\n\n`;
+    md += `| Test Time | ${metadata.runDate.toLocaleString()} |
+`;
   }
-
-  // Analysis & Warnings
+  md += `
+`;
   const warnings: string[] = [];
   if (rps && g.achievedPercentage && g.achievedPercentage < 80) {
     warnings.push(
@@ -233,9 +249,17 @@ export function generateMarkdownReport(
     md += `| Req/m | ${(g.actualRps * 60).toFixed(0)} |\n`;
   }
 
-  md += `| Avg Latency | ${g.avgLatencyMs.toFixed(0)}ms |\n`;
-  md += `| p95 Latency | ${g.p95LatencyMs.toFixed(0)}ms |\n`;
-  md += `| p99 Latency | ${g.p99LatencyMs.toFixed(0)}ms |\n\n`;
+  md += `| Avg Latency | ${g.avgLatencyMs.toFixed(0)}ms |
+`;
+  md += `| Min Latency | ${g.minLatencyMs.toFixed(0)}ms |
+`;
+  md += `| Max Latency | ${g.maxLatencyMs.toFixed(0)}ms |
+`;
+  md += `| p95 Latency | ${g.p95LatencyMs.toFixed(0)}ms |
+`;
+  md += `| p99 Latency | ${g.p99LatencyMs.toFixed(0)}ms |
+
+`;
 
   // Latency Distribution
   const latencies = results.map((r) => r.latencyMs);
@@ -300,16 +324,45 @@ export function generateMarkdownReport(
     md += `\n`;
   }
 
+  const sampledResponses = results.filter((r) => r.body);
+  if (sampledResponses.length > 0) {
+    const uniqueSamples = new Map<number, RequestResult>();
+    for (const r of sampledResponses) {
+      if (!uniqueSamples.has(r.status)) {
+        uniqueSamples.set(r.status, r);
+      }
+    }
+
+    md += `## Sampled Responses by Status Code\n\n`;
+    md += `> *A sample response body for one request of each status code received. This is useful for debugging unexpected responses.*\n\n`;
+
+    Array.from(uniqueSamples.values())
+      .sort((a, b) => a.status - b.status)
+      .forEach((r) => {
+        md += `<details>\n`;
+        md += `<summary><strong>${r.status}</strong> - <code>${r.url}</code></summary>\n\n`;
+        md += '```\n';
+        md += `${r.body || '(No body captured)'}\n`;
+        md += '```\n\n';
+        md += `</details>\n`;
+      });
+    md += `\n`;
+  }
+
   // Endpoint Summary
   if (e.length > 0) {
     md += `## Endpoint Summary\n\n`;
     md += `> *A detailed performance breakdown for each individual API endpoint.*\n\n`;
-    md += `| URL | Total | Success | Failed | Avg | P95 | P99 |\n`;
-    md += `|---|---|---|---|---|---|---|\n`;
+    md += `| URL | Total | Success | Failed | Avg | Min | Max | P95 | P99 |\n`;
+    md += `|---|---|---|---|---|---|---|---|---|\n`;
     for (const endpoint of e) {
       md += `| ${endpoint.url} | ${endpoint.totalRequests} | ${
         endpoint.successfulRequests
       } | ${endpoint.failedRequests} | ${endpoint.avgLatencyMs.toFixed(
+        0,
+      )}ms | ${endpoint.minLatencyMs.toFixed(
+        0,
+      )}ms | ${endpoint.maxLatencyMs.toFixed(
         0,
       )}ms | ${endpoint.p95LatencyMs.toFixed(0)}ms | ${endpoint.p99LatencyMs.toFixed(
         0,

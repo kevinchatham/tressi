@@ -11,6 +11,7 @@ import { exportDataFiles } from './exporter';
 import { Runner } from './runner';
 import { average, percentile, RequestResult } from './stats';
 import {
+  EndpointSummary,
   generateMarkdownReport,
   generateSummary,
   TestSummary,
@@ -43,18 +44,27 @@ export interface RunOptions {
   silent?: boolean;
 }
 
-/**
- * Prints a detailed summary of the load test results to the console.
- * @param results An array of `RequestResult` objects from the test run.
- * @param options The original `RunOptions` used for the test.
- * @param summary The calculated `TestSummary` object for the run.
- */
-function printSummary(
-  results: RequestResult[],
-  options: RunOptions,
-  summary: TestSummary,
-): void {
-  const { global: globalSummary, endpoints: endpointSummaries } = summary;
+function printReportInfo(summary: TestSummary, options: RunOptions): void {
+  const reportInfoTable = new Table({
+    head: ['Metric', 'Value'],
+    colWidths: [20, 35],
+  });
+  reportInfoTable.push(['Version', summary.tressiVersion]);
+  if (options.exportPath) {
+    const baseExportName =
+      typeof options.exportPath === 'string'
+        ? options.exportPath
+        : 'tressi-report';
+    reportInfoTable.push(['Export Name', baseExportName]);
+    reportInfoTable.push(['Test Time', new Date().toLocaleString()]);
+  }
+  // eslint-disable-next-line no-console
+  console.log('\n' + chalk.bold('Report Information'));
+  // eslint-disable-next-line no-console
+  console.log(reportInfoTable.toString());
+}
+
+function printRunConfiguration(options: RunOptions): void {
   const {
     workers = 10,
     durationSec = 10,
@@ -90,8 +100,11 @@ function printSummary(
   console.log('\n' + chalk.bold('Run Configuration'));
   // eslint-disable-next-line no-console
   console.log(configTable.toString());
+}
 
-  const latencies = results.map((r) => r.latencyMs); // Keep for warning message logic
+function printRpsWarning(results: RequestResult[], options: RunOptions): void {
+  const { workers = 10, rps, autoscale } = options;
+  const latencies = results.map((r) => r.latencyMs);
 
   if (rps) {
     const avgLatencyMs = average(latencies);
@@ -128,6 +141,11 @@ function printSummary(
       }
     }
   }
+}
+
+function printGlobalSummary(summary: TestSummary, options: RunOptions): void {
+  const { global: globalSummary } = summary;
+  const { rps } = options;
 
   const summaryTable = new Table({
     head: ['Stat', 'Value'],
@@ -163,6 +181,8 @@ function printSummary(
 
   summaryTable.push(
     ['Avg Latency', `${Math.ceil(globalSummary.avgLatencyMs)}ms`],
+    ['Min Latency', `${Math.ceil(globalSummary.minLatencyMs)}ms`],
+    ['Max Latency', `${Math.ceil(globalSummary.maxLatencyMs)}ms`],
     ['p95 Latency', `${Math.ceil(globalSummary.p95LatencyMs)}ms`],
     ['p99 Latency', `${Math.ceil(globalSummary.p99LatencyMs)}ms`],
   );
@@ -171,7 +191,9 @@ function printSummary(
   console.log('\n' + chalk.bold('Global Test Summary'));
   // eslint-disable-next-line no-console
   console.log(summaryTable.toString());
+}
 
+function printLatencyDistribution(results: RequestResult[]): void {
   const latencyDistribution = getLatencyDistribution(
     results.map((r) => r.latencyMs),
   );
@@ -196,7 +218,9 @@ function printSummary(
     // eslint-disable-next-line no-console
     console.log(distributionTable.toString());
   }
+}
 
+function printStatusCodeSummary(results: RequestResult[]): void {
   const statusCodeMap: Record<number, number> = results.reduce(
     (acc, r) => {
       acc[r.status] = (acc[r.status] || 0) + 1;
@@ -227,7 +251,51 @@ function printSummary(
     // eslint-disable-next-line no-console
     console.log(statusTable.toString());
   }
+}
 
+function printSampledResponses(results: RequestResult[]): void {
+  const sampledResponses = results.filter((r) => r.body);
+  if (sampledResponses.length > 0) {
+    // eslint-disable-next-line no-console
+    console.log(chalk.bold('\nSampled Responses by Status Code:'));
+    const sampledResponsesTable = new Table({
+      head: ['Status', 'URL', 'Response Body (truncated)'],
+      colWidths: [10, 40, 50],
+      wordWrap: true,
+    });
+
+    const uniqueSamples = new Map<number, RequestResult>();
+    for (const r of sampledResponses) {
+      if (!uniqueSamples.has(r.status)) {
+        uniqueSamples.set(r.status, r);
+      }
+    }
+
+    Array.from(uniqueSamples.values())
+      .sort((a, b) => a.status - b.status)
+      .forEach((r) => {
+        const color =
+          r.status >= 200 && r.status < 300
+            ? chalk.green
+            : r.status >= 500
+              ? chalk.red
+              : chalk.yellow;
+        const truncatedBody =
+          r.body && r.body.length > 200
+            ? r.body.substring(0, 200) + '...'
+            : r.body;
+        sampledResponsesTable.push([
+          color(r.status),
+          r.url,
+          truncatedBody || '',
+        ]);
+      });
+    // eslint-disable-next-line no-console
+    console.log(sampledResponsesTable.toString());
+  }
+}
+
+function printEndpointSummaries(endpointSummaries: EndpointSummary[]): void {
   if (endpointSummaries.length > 1) {
     // eslint-disable-next-line no-console
     console.log('\n' + chalk.bold('Summary by Endpoint'));
@@ -250,6 +318,12 @@ function printSummary(
         'Avg Latency': `${Math.ceil(avgLatencyMs)}ms`,
       });
       endpointTable.push({
+        'Min Latency': `${Math.ceil(endpointSummary.minLatencyMs)}ms`,
+      });
+      endpointTable.push({
+        'Max Latency': `${Math.ceil(endpointSummary.maxLatencyMs)}ms`,
+      });
+      endpointTable.push({
         'p95 Latency': `${Math.ceil(p95LatencyMs)}ms`,
       });
       endpointTable.push({
@@ -260,7 +334,9 @@ function printSummary(
       console.log(endpointTable.toString());
     });
   }
+}
 
+function printErrorSamples(results: RequestResult[]): void {
   const errors = results.filter((r) => r.error).slice(0, 5);
   if (errors.length > 0) {
     // eslint-disable-next-line no-console
@@ -270,6 +346,28 @@ function printSummary(
       console.log(`- ${e.url}: ${e.error}`);
     });
   }
+}
+
+/**
+ * Prints a detailed summary of the load test results to the console.
+ * @param results An array of `RequestResult` objects from the test run.
+ * @param options The original `RunOptions` used for the test.
+ * @param summary The calculated `TestSummary` object for the run.
+ */
+function printSummary(
+  results: RequestResult[],
+  options: RunOptions,
+  summary: TestSummary,
+): void {
+  printReportInfo(summary, options);
+  printRunConfiguration(options);
+  printRpsWarning(results, options);
+  printGlobalSummary(summary, options);
+  printLatencyDistribution(results);
+  printStatusCodeSummary(results);
+  printSampledResponses(results);
+  printEndpointSummaries(summary.endpoints);
+  printErrorSamples(results);
 }
 
 /**
@@ -310,7 +408,10 @@ export async function runLoadTest(options: RunOptions): Promise<TestSummary> {
 
   // If we have a TUI, we need to handle its destruction and polling
   if (useUI && !silent) {
-    const tui = new TUI(() => runner.stop());
+    const tui = new TUI(
+      () => runner.stop(),
+      process.env.npm_package_version || 'unknown',
+    );
     const tuiInterval = setInterval(() => {
       const latencies = runner.getLatencies();
       const statusCodes = runner.getStatusCodeMap();

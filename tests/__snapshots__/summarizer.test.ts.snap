@@ -3,9 +3,11 @@
 exports[`summarizer > should generate a comprehensive Markdown report 1`] = `
 "# Tressi Load Test Report
 
-**Export Name:** my-test-report
-
-**Test Time:** 1/1/2023, 3:00:00 AM
+| Metric | Value |
+|---|---|
+| Version | 0.0.7 |
+| Export Name | my-test-report |
+| Test Time | 1/1/2023, 3:00:00 AM |
 
 ## Analysis & Warnings ⚠️
 
@@ -54,6 +56,8 @@ exports[`summarizer > should generate a comprehensive Markdown report 1`] = `
 | Theoretical Max Req/s | 1 |
 | Achieved % | 40% |
 | Avg Latency | 238ms |
+| Min Latency | 100ms |
+| Max Latency | 500ms |
 | p95 Latency | 500ms |
 | p99 Latency | 500ms |
 
@@ -63,10 +67,10 @@ exports[`summarizer > should generate a comprehensive Markdown report 1`] = `
 
 | Range (ms) | Count | % of Total | Cumulative % | Chart |
 |---|---|---|---|---|
-| 100-149ms | 1 | 25.0% | 25.0% | \`████████████████████\` |
-| 150-199ms | 1 | 25.0% | 50.0% | \`████████████████████\` |
-| 200-249ms | 1 | 25.0% | 75.0% | \`████████████████████\` |
-| 450+ms | 1 | 25.0% | 100.0% | \`████████████████████\` |
+| 100-149ms | 1 | 25% | 25% | \`████████████████████\` |
+| 150-199ms | 1 | 25% | 50% | \`████████████████████\` |
+| 200-249ms | 1 | 25% | 75% | \`████████████████████\` |
+| 450+ms | 1 | 25% | 100% | \`████████████████████\` |
 
 ## Error Summary
 
@@ -89,9 +93,9 @@ exports[`summarizer > should generate a comprehensive Markdown report 1`] = `
 
 > *A detailed performance breakdown for each individual API endpoint.*
 
-| URL | Total | Success | Failed | Avg | P95 | P99 |
-|---|---|---|---|---|---|---|
-| http://a.com | 2 | 2 | 0 | 125ms | 150ms | 150ms |
-| http://b.com | 2 | 1 | 1 | 350ms | 500ms | 500ms |
+| URL | Total | Success | Failed | Avg | Min | Max | P95 | P99 |
+|---|---|---|---|---|---|---|---|---|
+| http://a.com | 2 | 2 | 0 | 125ms | 100ms | 150ms | 150ms | 150ms |
+| http://b.com | 2 | 1 | 1 | 350ms | 200ms | 500ms | 500ms | 500ms |
 "
 `;

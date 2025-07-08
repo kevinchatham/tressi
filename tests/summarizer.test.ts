@@ -1,4 +1,4 @@
-import { afterAll,beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { RunOptions } from '../src';
 import { TressiConfig } from '../src/config';
