@@ -48,16 +48,12 @@
                 "default": "GET"
               }
             },
-            "required": [
-              "url"
-            ],
+            "required": ["url"],
             "additionalProperties": false
           }
         }
       },
-      "required": [
-        "requests"
-      ],
+      "required": ["requests"],
       "additionalProperties": false
     }
   },

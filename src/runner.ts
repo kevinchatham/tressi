@@ -366,29 +366,21 @@ export class Runner extends EventEmitter {
         });
       }
 
-      const { rps } = this.options;
-
-      // If no RPS is specified, run at max speed (with a yield to the event loop).
-      // Otherwise, calculate the required delay to match the target RPS and sleep.
-      if (!rps) {
-        await sleep(0); // Yield to event loop to avoid blocking
-        continue;
-      }
-
-      // If RPS is specified, this.currentTargetRps holds the dynamic target.
-      // We calculate the delay needed to match the target RPS.
-      const now = Date.now();
-      const oneSecondAgo = now - 1000;
-      const recentRequests = this.results.filter(
-        (r) => r.timestamp >= oneSecondAgo,
-      ).length;
-
-      const targetRpsForSlice = this.currentTargetRps / (1000 / 100); // Target for this 100ms slice
-      const actualRpsForSlice = recentRequests / ((now - oneSecondAgo) / 100); // Actual for this 100ms slice
-
-      if (actualRpsForSlice > targetRpsForSlice) {
-        const delay = (actualRpsForSlice - targetRpsForSlice) * 100;
-        await sleep(delay);
+      // Rate limiting logic
+      // If a target RPS is set, calculate the necessary delay to maintain the rate.
+      // This distributes the requests evenly over time for all workers.
+      if (this.currentTargetRps > 0) {
+        const workerCount = this.getWorkerCount();
+        if (workerCount > 0) {
+          // Calculate the delay needed for each worker to collectively meet the target RPS.
+          const delay = (1000 * workerCount) / this.currentTargetRps;
+          await sleep(delay);
+        } else {
+          await sleep(10); // Small delay if no workers are present
+        }
+      } else {
+        // If no RPS is set, yield to the event loop to avoid blocking it completely.
+        await sleep(0);
       }
     }
   }

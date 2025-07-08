@@ -23,7 +23,7 @@ async function exportRawLog(
       r.timestamp,
       `"${r.url}"`,
       r.status,
-      r.latencyMs.toFixed(2),
+      r.latencyMs.toFixed(0),
       r.success,
       `"${r.error || ''}"`,
     ].join(','),
@@ -43,18 +43,36 @@ async function exportXlsx(
   // Global Summary Sheet
   const globalArray = Object.entries(globalSummary).map(([key, value]) => ({
     Stat: key,
-    Value: value,
+    Value: typeof value === 'number' ? Math.round(value) : value,
   }));
   globalArray.unshift({ Stat: 'Tressi Version', Value: summary.tressiVersion });
   const wsGlobal = xlsx.utils.json_to_sheet(globalArray);
   xlsx.utils.book_append_sheet(wb, wsGlobal, 'Global Summary');
 
   // Endpoint Summary Sheet
-  const wsEndpoints = xlsx.utils.json_to_sheet(endpointSummary);
+  const formattedEndpoints = endpointSummary.map((endpoint) => ({
+    ...endpoint,
+    avgLatencyMs: Math.round(endpoint.avgLatencyMs),
+    minLatencyMs: Math.round(endpoint.minLatencyMs),
+    maxLatencyMs: Math.round(endpoint.maxLatencyMs),
+    p95LatencyMs: Math.round(endpoint.p95LatencyMs),
+    p99LatencyMs: Math.round(endpoint.p99LatencyMs),
+  }));
+  const wsEndpoints = xlsx.utils.json_to_sheet(formattedEndpoints);
   xlsx.utils.book_append_sheet(wb, wsEndpoints, 'Endpoint Summary');
 
   // Raw Requests Sheet
-  const wsRaw = xlsx.utils.json_to_sheet(results);
+  // We round latency and explicitly remove the body from the raw export
+  // as it's available in the "Sampled Responses" sheet and can be very large.
+  const formattedResults = results.map((result) => ({
+    timestamp: result.timestamp,
+    url: result.url,
+    status: result.status,
+    latencyMs: Math.round(result.latencyMs),
+    success: result.success,
+    error: result.error,
+  }));
+  const wsRaw = xlsx.utils.json_to_sheet(formattedResults);
   xlsx.utils.book_append_sheet(wb, wsRaw, 'Raw Requests');
 
   const sampledResponses = results.filter((r) => r.body);

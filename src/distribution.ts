@@ -73,8 +73,8 @@ export function getLatencyDistribution(
     return {
       range: bucket.range,
       count: bucket.count.toString(),
-      percent: `${percentOfTotal.toFixed(1)}%`,
-      cumulative: `${cumulativePercent.toFixed(1)}%`,
+      percent: `${percentOfTotal.toFixed(0)}%`,
+      cumulative: `${cumulativePercent.toFixed(0)}%`,
       chart,
     };
   });
@@ -115,7 +115,7 @@ export function getStatusCodeDistribution(
       return {
         code,
         count: count.toString(),
-        percent: `${percent.toFixed(1)}%`,
+        percent: `${percent.toFixed(0)}%`,
         chart,
       };
     });

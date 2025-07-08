@@ -33,8 +33,8 @@ describe('distribution', () => {
       expect(distribution[0]).toEqual({
         range: '10-43',
         count: '4',
-        percent: '66.7%',
-        cumulative: '66.7%',
+        percent: '67%',
+        cumulative: '67%',
         chart: '',
       });
 
@@ -42,8 +42,8 @@ describe('distribution', () => {
       expect(distribution[1]).toEqual({
         range: '44-77',
         count: '0',
-        percent: '0.0%',
-        cumulative: '66.7%',
+        percent: '0%',
+        cumulative: '67%',
         chart: '',
       });
 
@@ -51,8 +51,8 @@ describe('distribution', () => {
       expect(distribution[2]).toEqual({
         range: '78+',
         count: '2',
-        percent: '33.3%',
-        cumulative: '100.0%',
+        percent: '33%',
+        cumulative: '100%',
         chart: '',
       });
     });
@@ -98,22 +98,22 @@ describe('distribution', () => {
 
       const s200 = distribution.find((d) => d.code === '200');
       expect(s200?.count).toBe('80');
-      expect(s200?.percent).toBe('77.7%');
+      expect(s200?.percent).toBe('78%');
       expect(s200?.chart.length).toBe(15); // round(80/80 * 15) = 15
 
       const s302 = distribution.find((d) => d.code === '302');
       expect(s302?.count).toBe('3');
-      expect(s302?.percent).toBe('2.9%');
+      expect(s302?.percent).toBe('3%');
       expect(s302?.chart.length).toBe(1); // round(3/80 * 15) = round(0.56) = 1
 
       const s404 = distribution.find((d) => d.code === '404');
       expect(s404?.count).toBe('15');
-      expect(s404?.percent).toBe('14.6%');
+      expect(s404?.percent).toBe('15%');
       expect(s404?.chart.length).toBe(3); // round(15/80 * 15) = round(2.81) = 3
 
       const s500 = distribution.find((d) => d.code === '500');
       expect(s500?.count).toBe('5');
-      expect(s500?.percent).toBe('4.9%');
+      expect(s500?.percent).toBe('5%');
       expect(s500?.chart.length).toBe(1); // round(5/80 * 15) = round(0.93) = 1
     });
 
@@ -126,7 +126,7 @@ describe('distribution', () => {
       expect(distribution).toHaveLength(2);
       const s404 = distribution.find((d) => d.code === '404');
       expect(s404?.count).toBe('0');
-      expect(s404?.percent).toBe('0.0%');
+      expect(s404?.percent).toBe('0%');
       expect(s404?.chart).toBe('');
     });
   });
