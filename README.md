@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./tressi-logo.png" alt="tressi-logo" width="150px" height="150px"/>
+  <img src="https://github.com/kevinchatham/tressi/blob/main/tressi-logo.png?raw=true" alt="tressi-logo" width="150px" height="150px"/>
   <br/>
   <em>Stress less, test more.</em>
   <br/><br/>
