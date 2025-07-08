@@ -57,6 +57,29 @@ async function exportXlsx(
   const wsRaw = xlsx.utils.json_to_sheet(results);
   xlsx.utils.book_append_sheet(wb, wsRaw, 'Raw Requests');
 
+  const sampledResponses = results.filter((r) => r.body);
+  if (sampledResponses.length > 0) {
+    const uniqueSamples = new Map<number, RequestResult>();
+    for (const r of sampledResponses) {
+      if (!uniqueSamples.has(r.status)) {
+        uniqueSamples.set(r.status, r);
+      }
+    }
+
+    const samplesForSheet = Array.from(uniqueSamples.values())
+      .sort((a, b) => a.status - b.status)
+      .map((r) => ({
+        'Status Code': r.status,
+        URL: r.url,
+        'Response Body': r.body,
+      }));
+
+    if (samplesForSheet.length > 0) {
+      const wsSamples = xlsx.utils.json_to_sheet(samplesForSheet);
+      xlsx.utils.book_append_sheet(wb, wsSamples, 'Sampled Responses');
+    }
+  }
+
   await xlsx.writeFile(wb, path);
 }
 

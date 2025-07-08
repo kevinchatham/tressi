@@ -14,6 +14,8 @@ export interface RequestResult {
   error?: string;
   /** The timestamp when the request was completed. */
   timestamp: number;
+  /** The sampled response body, if captured. */
+  body?: string;
 }
 
 /**

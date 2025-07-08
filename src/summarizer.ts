@@ -14,6 +14,8 @@ export interface EndpointSummary {
   successfulRequests: number;
   failedRequests: number;
   avgLatencyMs: number;
+  minLatencyMs: number;
+  maxLatencyMs: number;
   p95LatencyMs: number;
   p99LatencyMs: number;
 }
@@ -319,6 +321,31 @@ export function generateMarkdownReport(
     )) {
       md += `| ${code} | ${count} |\n`;
     }
+    md += `\n`;
+  }
+
+  const sampledResponses = results.filter((r) => r.body);
+  if (sampledResponses.length > 0) {
+    const uniqueSamples = new Map<number, RequestResult>();
+    for (const r of sampledResponses) {
+      if (!uniqueSamples.has(r.status)) {
+        uniqueSamples.set(r.status, r);
+      }
+    }
+
+    md += `## Sampled Responses by Status Code\n\n`;
+    md += `> *A sample response body for one request of each status code received. This is useful for debugging unexpected responses.*\n\n`;
+
+    Array.from(uniqueSamples.values())
+      .sort((a, b) => a.status - b.status)
+      .forEach((r) => {
+        md += `<details>\n`;
+        md += `<summary><strong>${r.status}</strong> - <code>${r.url}</code></summary>\n\n`;
+        md += '```\n';
+        md += `${r.body || '(No body captured)'}\n`;
+        md += '```\n\n';
+        md += `</details>\n`;
+      });
     md += `\n`;
   }
 

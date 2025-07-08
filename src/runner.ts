@@ -22,6 +22,7 @@ export class Runner extends EventEmitter {
   private stopped = false;
   private startTime: number = 0;
   private currentTargetRps: number;
+  private sampledStatusCodes: Set<number> = new Set();
   private successfulRequests = 0;
   private failedRequests = 0;
   private activeWorkers: { promise: Promise<void>; stop: () => void }[] = [];
@@ -328,12 +329,29 @@ export class Runner extends EventEmitter {
           body: req.payload ? JSON.stringify(req.payload) : undefined,
         });
 
+        let body: string | undefined;
+        // Check if we should sample this status code
+        if (!this.sampledStatusCodes.has(res.status)) {
+          try {
+            body = await res.text();
+            this.sampledStatusCodes.add(res.status);
+          } catch (e) {
+            // Ignore body read errors, it might be empty.
+            body = `(Could not read body: ${(e as Error).message})`;
+          }
+        } else {
+          // We still need to consume the body to not leave the connection hanging
+          // and to get a more accurate latency measurement.
+          await res.text().catch(() => {});
+        }
+
         const latencyMs = Date.now() - start;
         this.onResult({
           url: req.url,
           status: res.status,
           latencyMs,
           success: res.ok,
+          body, // Will be undefined if not sampled
           timestamp: Date.now(),
         });
       } catch (err) {

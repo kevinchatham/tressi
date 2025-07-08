@@ -248,6 +248,46 @@ function printSummary(
     console.log(statusTable.toString());
   }
 
+  const sampledResponses = results.filter((r) => r.body);
+  if (sampledResponses.length > 0) {
+    // eslint-disable-next-line no-console
+    console.log(chalk.bold('\nSampled Responses by Status Code:'));
+    const sampledResponsesTable = new Table({
+      head: ['Status', 'URL', 'Response Body (truncated)'],
+      colWidths: [10, 40, 50],
+      wordWrap: true,
+    });
+
+    const uniqueSamples = new Map<number, RequestResult>();
+    for (const r of sampledResponses) {
+      if (!uniqueSamples.has(r.status)) {
+        uniqueSamples.set(r.status, r);
+      }
+    }
+
+    Array.from(uniqueSamples.values())
+      .sort((a, b) => a.status - b.status)
+      .forEach((r) => {
+        const color =
+          r.status >= 200 && r.status < 300
+            ? chalk.green
+            : r.status >= 500
+              ? chalk.red
+              : chalk.yellow;
+        const truncatedBody =
+          r.body && r.body.length > 200
+            ? r.body.substring(0, 200) + '...'
+            : r.body;
+        sampledResponsesTable.push([
+          color(r.status),
+          r.url,
+          truncatedBody || '',
+        ]);
+      });
+    // eslint-disable-next-line no-console
+    console.log(sampledResponsesTable.toString());
+  }
+
   if (endpointSummaries.length > 1) {
     // eslint-disable-next-line no-console
     console.log('\n' + chalk.bold('Summary by Endpoint'));

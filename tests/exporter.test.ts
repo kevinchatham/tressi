@@ -4,7 +4,7 @@ import * as xlsx from 'xlsx';
 
 import { exportDataFiles } from '../src/exporter';
 import { RequestResult } from '../src/stats';
-import { EndpointSummary, GlobalSummary, Summary } from '../src/summarizer';
+import { EndpointSummary, GlobalSummary, TestSummary } from '../src/summarizer';
 
 // Mock file system and external libraries
 vi.mock('fs/promises', () => ({
@@ -38,6 +38,7 @@ const mockResults: RequestResult[] = [
     status: 200,
     latencyMs: 100,
     success: true,
+    body: '{"ok":true}',
   },
 ];
 
@@ -51,6 +52,9 @@ const mockGlobalSummary: GlobalSummary = {
   p95LatencyMs: 100,
   p99LatencyMs: 100,
   actualRps: 10,
+  theoreticalMaxRps: 20,
+  achievedPercentage: 50,
+  duration: 10,
 };
 
 const mockEndpointSummary: EndpointSummary[] = [
@@ -60,12 +64,15 @@ const mockEndpointSummary: EndpointSummary[] = [
     successfulRequests: 1,
     failedRequests: 0,
     avgLatencyMs: 100,
+    minLatencyMs: 100,
+    maxLatencyMs: 100,
     p95LatencyMs: 100,
     p99LatencyMs: 100,
   },
 ];
 
-const mockSummary: Summary = {
+const mockSummary: TestSummary = {
+  tressiVersion: 'test',
   global: mockGlobalSummary,
   endpoints: mockEndpointSummary,
 };
@@ -90,13 +97,17 @@ describe('exporter', () => {
    * It should call the respective file writers for all CSV and XLSX files
    * with the correctly formatted data and file paths.
    */
-  it('should export all data files (CSVs and XLSX)', async () => {
+  it('should export all data files and include sampled responses sheet', async () => {
     await exportDataFiles(mockSummary, mockResults, './test-output');
 
     // Should be called 1 time for the raw CSV
     expect(writeFileMock).toHaveBeenCalledTimes(1);
     // Should be called 1 time for XLSX
     expect(xlsxWriteFileMock).toHaveBeenCalledTimes(1);
+
+    const workbook = xlsxWriteFileMock.mock.calls[0][0];
+    expect(workbook.SheetNames).toContain('Sampled Responses');
+    expect(workbook.SheetNames).toHaveLength(4);
 
     // Check XLSX call
     expect(xlsxWriteFileMock.mock.calls[0][1]).toBe(
@@ -109,8 +120,8 @@ describe('exporter', () => {
     );
     expect(rawCall).toBeDefined();
     expect(rawCall![1]).toContain(
-      'timestamp,url,status,latencyMs,success,error',
+      'timestamp,url,status,latencyMs,success,error', // Note: body is not in raw CSV for memory reasons
     );
-    expect(rawCall![1]).toContain('1,"http://a.com",200,100.00,true,""');
+    expect(rawCall![1]).toContain('1,"http://a.com",200,100.00,true,""'); // Note: body is not in raw CSV for memory reasons
   });
 });
