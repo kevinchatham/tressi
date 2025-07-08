@@ -1,5 +1,5 @@
 {
-  "$schema": "./schemas/tressi.schema.v0.0.5.json",
+  "$schema": "./schemas/tressi.schema.v0.0.7.json",
   "headers": {
     "Content-Type": "application/json; charset=UTF-8"
   },

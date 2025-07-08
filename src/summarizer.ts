@@ -109,6 +109,8 @@ export function generateSummary(
           .length,
         failedRequests: endpointResults.filter((r) => r.status >= 400).length,
         avgLatencyMs: average(latencies),
+        minLatencyMs: Math.min(...latencies),
+        maxLatencyMs: Math.max(...latencies),
         p95LatencyMs: percentile(latencies, 0.95),
         p99LatencyMs: percentile(latencies, 0.99),
       };
@@ -245,9 +247,17 @@ export function generateMarkdownReport(
     md += `| Req/m | ${(g.actualRps * 60).toFixed(0)} |\n`;
   }
 
-  md += `| Avg Latency | ${g.avgLatencyMs.toFixed(0)}ms |\n`;
-  md += `| p95 Latency | ${g.p95LatencyMs.toFixed(0)}ms |\n`;
-  md += `| p99 Latency | ${g.p99LatencyMs.toFixed(0)}ms |\n\n`;
+  md += `| Avg Latency | ${g.avgLatencyMs.toFixed(0)}ms |
+`;
+  md += `| Min Latency | ${g.minLatencyMs.toFixed(0)}ms |
+`;
+  md += `| Max Latency | ${g.maxLatencyMs.toFixed(0)}ms |
+`;
+  md += `| p95 Latency | ${g.p95LatencyMs.toFixed(0)}ms |
+`;
+  md += `| p99 Latency | ${g.p99LatencyMs.toFixed(0)}ms |
+
+`;
 
   // Latency Distribution
   const latencies = results.map((r) => r.latencyMs);
@@ -316,12 +326,16 @@ export function generateMarkdownReport(
   if (e.length > 0) {
     md += `## Endpoint Summary\n\n`;
     md += `> *A detailed performance breakdown for each individual API endpoint.*\n\n`;
-    md += `| URL | Total | Success | Failed | Avg | P95 | P99 |\n`;
-    md += `|---|---|---|---|---|---|---|\n`;
+    md += `| URL | Total | Success | Failed | Avg | Min | Max | P95 | P99 |\n`;
+    md += `|---|---|---|---|---|---|---|---|---|\n`;
     for (const endpoint of e) {
       md += `| ${endpoint.url} | ${endpoint.totalRequests} | ${
         endpoint.successfulRequests
       } | ${endpoint.failedRequests} | ${endpoint.avgLatencyMs.toFixed(
+        0,
+      )}ms | ${endpoint.minLatencyMs.toFixed(
+        0,
+      )}ms | ${endpoint.maxLatencyMs.toFixed(
         0,
       )}ms | ${endpoint.p95LatencyMs.toFixed(0)}ms | ${endpoint.p99LatencyMs.toFixed(
         0,

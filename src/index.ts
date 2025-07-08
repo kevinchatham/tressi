@@ -181,6 +181,8 @@ function printSummary(
 
   summaryTable.push(
     ['Avg Latency', `${Math.ceil(globalSummary.avgLatencyMs)}ms`],
+    ['Min Latency', `${Math.ceil(globalSummary.minLatencyMs)}ms`],
+    ['Max Latency', `${Math.ceil(globalSummary.maxLatencyMs)}ms`],
     ['p95 Latency', `${Math.ceil(globalSummary.p95LatencyMs)}ms`],
     ['p99 Latency', `${Math.ceil(globalSummary.p99LatencyMs)}ms`],
   );
@@ -266,6 +268,12 @@ function printSummary(
       endpointTable.push({ Failed: chalk.red(failedRequests) });
       endpointTable.push({
         'Avg Latency': `${Math.ceil(avgLatencyMs)}ms`,
+      });
+      endpointTable.push({
+        'Min Latency': `${Math.ceil(endpointSummary.minLatencyMs)}ms`,
+      });
+      endpointTable.push({
+        'Max Latency': `${Math.ceil(endpointSummary.maxLatencyMs)}ms`,
       });
       endpointTable.push({
         'p95 Latency': `${Math.ceil(p95LatencyMs)}ms`,

@@ -56,6 +56,8 @@ exports[`summarizer > should generate a comprehensive Markdown report 1`] = `
 | Theoretical Max Req/s | 1 |
 | Achieved % | 40% |
 | Avg Latency | 238ms |
+| Min Latency | 100ms |
+| Max Latency | 500ms |
 | p95 Latency | 500ms |
 | p99 Latency | 500ms |
 
@@ -91,9 +93,9 @@ exports[`summarizer > should generate a comprehensive Markdown report 1`] = `
 
 > *A detailed performance breakdown for each individual API endpoint.*
 
-| URL | Total | Success | Failed | Avg | P95 | P99 |
-|---|---|---|---|---|---|---|
-| http://a.com | 2 | 2 | 0 | 125ms | 150ms | 150ms |
-| http://b.com | 2 | 1 | 1 | 350ms | 500ms | 500ms |
+| URL | Total | Success | Failed | Avg | Min | Max | P95 | P99 |
+|---|---|---|---|---|---|---|---|---|
+| http://a.com | 2 | 2 | 0 | 125ms | 100ms | 150ms | 150ms | 150ms |
+| http://b.com | 2 | 1 | 1 | 350ms | 200ms | 500ms | 500ms | 500ms |
 "
 `;
