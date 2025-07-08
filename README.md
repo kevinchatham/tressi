@@ -190,7 +190,7 @@ myCustomScript();
 When you run `tressi` (without the `--no-ui` flag), it displays a live dashboard with four key sections:
 
 <p align="center">
-  <img src="./tressi-ui.png" alt="Tressi UI" width="90%"/>
+  <img src="https://github.com/kevinchatham/tressi/blob/main/tressi-ui.png?raw=true" alt="tressi-ui" width="90%"/>
 </p>
 
 ### How to Interpret the Dashboard
