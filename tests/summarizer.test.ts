@@ -7,6 +7,7 @@ import { generateMarkdownReport, generateSummary } from '../src/summarizer';
 
 const mockResults: RequestResult[] = [
   {
+    method: 'GET',
     url: 'http://a.com',
     latencyMs: 100,
     status: 200,
@@ -14,6 +15,7 @@ const mockResults: RequestResult[] = [
     timestamp: 1,
   },
   {
+    method: 'GET',
     url: 'http://a.com',
     latencyMs: 150,
     status: 200,
@@ -21,6 +23,7 @@ const mockResults: RequestResult[] = [
     timestamp: 2,
   },
   {
+    method: 'GET',
     url: 'http://b.com',
     latencyMs: 200,
     status: 200,
@@ -28,6 +31,7 @@ const mockResults: RequestResult[] = [
     timestamp: 3,
   },
   {
+    method: 'GET',
     url: 'http://b.com',
     latencyMs: 500,
     status: 500,
@@ -90,6 +94,7 @@ describe('summarizer', () => {
 
     const summaryA = e.find((s) => s.url === 'http://a.com');
     expect(summaryA).toBeDefined();
+    expect(summaryA?.method).toBe('GET');
     expect(summaryA?.totalRequests).toBe(2);
     expect(summaryA?.successfulRequests).toBe(2);
     expect(summaryA?.failedRequests).toBe(0);
@@ -98,6 +103,7 @@ describe('summarizer', () => {
 
     const summaryB = e.find((s) => s.url === 'http://b.com');
     expect(summaryB).toBeDefined();
+    expect(summaryB?.method).toBe('GET');
     expect(summaryB?.totalRequests).toBe(2);
     expect(summaryB?.successfulRequests).toBe(1);
     expect(summaryB?.failedRequests).toBe(1);

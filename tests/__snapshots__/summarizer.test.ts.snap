@@ -13,7 +13,7 @@ exports[`summarizer > should generate a comprehensive Markdown report 1`] = `
 
 > *This section highlights potential performance issues or configuration problems detected during the test.*
 
-* **Target RPS Unreachable**: The target of 1 RPS was not met. The test achieved ~0 RPS (40% of the target). Consider increasing workers or optimizing the service.
+* **Target RPS Unreachable**: The target of 1 RPS was not met. The test achieved ~0 RPS (40% of the target). Based on the average latency of 238ms, you would need at least **1** workers to meet the target.
 * **High Failure Rate**: The endpoint \`http://b.com\` had a failure rate of 50.0%. This may indicate a problem under load.
 
 <details>
@@ -95,7 +95,7 @@ exports[`summarizer > should generate a comprehensive Markdown report 1`] = `
 
 | URL | Total | Success | Failed | Avg | Min | Max | P95 | P99 |
 |---|---|---|---|---|---|---|---|---|
-| http://a.com | 2 | 2 | 0 | 125ms | 100ms | 150ms | 150ms | 150ms |
-| http://b.com | 2 | 1 | 1 | 350ms | 200ms | 500ms | 500ms | 500ms |
+| GET http://a.com | 2 | 2 | 0 | 125ms | 100ms | 150ms | 150ms | 150ms |
+| GET http://b.com | 2 | 1 | 1 | 350ms | 200ms | 500ms | 500ms | 500ms |
 "
 `;

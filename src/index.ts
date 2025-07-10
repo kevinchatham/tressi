@@ -257,41 +257,57 @@ function printSampledResponses(results: RequestResult[]): void {
   const sampledResponses = results.filter((r) => r.body);
   if (sampledResponses.length > 0) {
     // eslint-disable-next-line no-console
-    console.log(chalk.bold('\nSampled Responses by Status Code:'));
-    const sampledResponsesTable = new Table({
-      head: ['Status', 'URL', 'Response Body (truncated)'],
-      colWidths: [10, 40, 50],
-      wordWrap: true,
-    });
+    console.log(chalk.bold('\nSampled Responses by Endpoint:'));
 
-    const uniqueSamples = new Map<number, RequestResult>();
-    for (const r of sampledResponses) {
-      if (!uniqueSamples.has(r.status)) {
-        uniqueSamples.set(r.status, r);
-      }
-    }
+    const samplesByEndpoint = sampledResponses.reduce(
+      (acc, r) => {
+        const key = `${r.method} ${r.url}`;
+        if (!acc[key]) {
+          acc[key] = [];
+        }
+        acc[key].push(r);
+        return acc;
+      },
+      {} as Record<string, RequestResult[]>,
+    );
 
-    Array.from(uniqueSamples.values())
-      .sort((a, b) => a.status - b.status)
-      .forEach((r) => {
-        const color =
-          r.status >= 200 && r.status < 300
-            ? chalk.green
-            : r.status >= 500
-              ? chalk.red
-              : chalk.yellow;
-        const truncatedBody =
-          r.body && r.body.length > 200
-            ? r.body.substring(0, 200) + '...'
-            : r.body;
-        sampledResponsesTable.push([
-          color(r.status),
-          r.url,
-          truncatedBody || '',
-        ]);
+    for (const [endpoint, samples] of Object.entries(samplesByEndpoint)) {
+      // eslint-disable-next-line no-console
+      console.log(chalk.bold.cyan(`\n${endpoint}`));
+      const sampledResponsesTable = new Table({
+        head: ['Status', 'Response Body (truncated)'],
+        colWidths: [10, 90],
+        wordWrap: true,
       });
-    // eslint-disable-next-line no-console
-    console.log(sampledResponsesTable.toString());
+
+      const uniqueSamples = new Map<number, RequestResult>();
+      for (const r of samples) {
+        if (!uniqueSamples.has(r.status)) {
+          uniqueSamples.set(r.status, r);
+        }
+      }
+
+      Array.from(uniqueSamples.values())
+        .sort((a, b) => a.status - b.status)
+        .forEach((r) => {
+          const color =
+            r.status >= 200 && r.status < 300
+              ? chalk.green
+              : r.status >= 500
+                ? chalk.red
+                : chalk.yellow;
+          const truncatedBody =
+            r.body && r.body.length > 200
+              ? r.body.substring(0, 200) + '...'
+              : r.body;
+          sampledResponsesTable.push([
+            color(r.status),
+            truncatedBody || '',
+          ]);
+        });
+      // eslint-disable-next-line no-console
+      console.log(sampledResponsesTable.toString());
+    }
   }
 }
 
@@ -301,6 +317,7 @@ function printEndpointSummaries(endpointSummaries: EndpointSummary[]): void {
     console.log('\n' + chalk.bold('Summary by Endpoint'));
     endpointSummaries.forEach((endpointSummary) => {
       const {
+        method,
         url,
         totalRequests,
         successfulRequests,
@@ -310,7 +327,7 @@ function printEndpointSummaries(endpointSummaries: EndpointSummary[]): void {
         p99LatencyMs,
       } = endpointSummary;
       const endpointTable = new Table({ colWidths: [30, 60] });
-      endpointTable.push({ Endpoint: chalk.cyan(url) });
+      endpointTable.push({ Endpoint: chalk.cyan(`${method} ${url}`) });
       endpointTable.push({ 'Total Requests': totalRequests });
       endpointTable.push({ Successful: chalk.green(successfulRequests) });
       endpointTable.push({ Failed: chalk.red(failedRequests) });

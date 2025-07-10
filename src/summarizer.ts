@@ -9,6 +9,7 @@ export interface ReportMetadata {
 }
 
 export interface EndpointSummary {
+  method: string;
   url: string;
   totalRequests: number;
   successfulRequests: number;
@@ -92,10 +93,11 @@ export function generateSummary(
 
   const requestsByEndpoint = results.reduce(
     (acc, result) => {
-      if (!acc[result.url]) {
-        acc[result.url] = [];
+      const key = `${result.method} ${result.url}`;
+      if (!acc[key]) {
+        acc[key] = [];
       }
-      acc[result.url].push(result);
+      acc[key].push(result);
       return acc;
     },
     {} as Record<string, RequestResult[]>,
@@ -105,6 +107,7 @@ export function generateSummary(
     (endpointResults): EndpointSummary => {
       const latencies = endpointResults.map((r) => r.latencyMs);
       return {
+        method: endpointResults[0].method,
         url: endpointResults[0].url,
         totalRequests: endpointResults.length,
         successfulRequests: endpointResults.filter((r) => r.status < 400)
@@ -180,12 +183,17 @@ export function generateMarkdownReport(
 `;
   const warnings: string[] = [];
   if (rps && g.achievedPercentage && g.achievedPercentage < 80) {
+    const maxRpsPerWorker = 1000 / g.avgLatencyMs + 1;
+    const suggestedWorkers = Math.ceil(rps / maxRpsPerWorker) + 1; // at least 2
+
     warnings.push(
       `**Target RPS Unreachable**: The target of ${rps} RPS was not met. The test achieved ~${g.actualRps.toFixed(
         0,
-      )} RPS (${
-        g.achievedPercentage
-      }% of the target). Consider increasing workers or optimizing the service.`,
+      )} RPS (${g.achievedPercentage.toFixed(
+        0,
+      )}% of the target). Based on the average latency of ${g.avgLatencyMs.toFixed(
+        0,
+      )}ms, you would need at least **${suggestedWorkers}** workers to meet the target.`,
     );
   }
   for (const endpoint of e) {
@@ -193,7 +201,9 @@ export function generateMarkdownReport(
       (endpoint.failedRequests / endpoint.totalRequests) * 100;
     if (failureRate > 10) {
       warnings.push(
-        `**High Failure Rate**: The endpoint \`${endpoint.url}\` had a failure rate of ${failureRate.toFixed(
+        `**High Failure Rate**: The endpoint \`${
+          endpoint.url
+        }\` had a failure rate of ${failureRate.toFixed(
           1,
         )}%. This may indicate a problem under load.`,
       );
@@ -221,7 +231,9 @@ export function generateMarkdownReport(
   md += `> *This table shows the main parameters used for the load test run.*\n\n`;
   md += `| Option | Setting | Argument |\n`;
   md += `|---|---|---|\n`;
-  md += `| Workers | ${autoscale ? `Up to ${workers}` : workers} | \`--workers\` |\n`;
+  md += `| Workers | ${
+    autoscale ? `Up to ${workers}` : workers
+  } | \`--workers\` |\n`;
   md += `| Duration | ${durationSec}s | \`--duration\` |\n`;
   if (rps) md += `| Target Req/s | ${rps} | \`--rps\` |\n`;
   if (autoscale) md += `| Autoscale | Enabled | \`--autoscale\` |\n\n`;
@@ -239,9 +251,9 @@ export function generateMarkdownReport(
     md += `| Req/s (Actual/Target) | ${g.actualRps.toFixed(0)} / ${
       options.rps
     } |\n`;
-    md += `| Req/m (Actual/Target) | ${(g.actualRps * 60).toFixed(
-      0,
-    )} / ${options.rps * 60} |\n`;
+    md += `| Req/m (Actual/Target) | ${(g.actualRps * 60).toFixed(0)} / ${
+      options.rps * 60
+    } |\n`;
     md += `| Theoretical Max Req/s | ${g.theoreticalMaxRps.toFixed(0)} |\n`;
     md += `| Achieved % | ${g.achievedPercentage.toFixed(0)}% |\n`;
   } else {
@@ -326,27 +338,42 @@ export function generateMarkdownReport(
 
   const sampledResponses = results.filter((r) => r.body);
   if (sampledResponses.length > 0) {
-    const uniqueSamples = new Map<number, RequestResult>();
-    for (const r of sampledResponses) {
-      if (!uniqueSamples.has(r.status)) {
-        uniqueSamples.set(r.status, r);
+    md += `## Sampled Responses by Endpoint\n\n`;
+    md += `> *A sample response body for each unique status code received per endpoint. This is useful for debugging unexpected responses.*\n\n`;
+
+    const samplesByEndpoint = sampledResponses.reduce(
+      (acc, r) => {
+        const key = `${r.method} ${r.url}`;
+        if (!acc[key]) {
+          acc[key] = [];
+        }
+        acc[key].push(r);
+        return acc;
+      },
+      {} as Record<string, RequestResult[]>,
+    );
+
+    for (const [endpoint, samples] of Object.entries(samplesByEndpoint)) {
+      md += `#### \`${endpoint}\`\n\n`;
+      const uniqueSamples = new Map<number, RequestResult>();
+      for (const r of samples) {
+        if (!uniqueSamples.has(r.status)) {
+          uniqueSamples.set(r.status, r);
+        }
       }
+
+      Array.from(uniqueSamples.values())
+        .sort((a, b) => a.status - b.status)
+        .forEach((r) => {
+          md += `<details>\n`;
+          md += `<summary><strong>${r.status}</strong></summary>\n\n`;
+          md += '```\n';
+          md += `${r.body || '(No body captured)'}\n`;
+          md += '```\n\n';
+          md += `</details>\n`;
+        });
+      md += `\n`;
     }
-
-    md += `## Sampled Responses by Status Code\n\n`;
-    md += `> *A sample response body for one request of each status code received. This is useful for debugging unexpected responses.*\n\n`;
-
-    Array.from(uniqueSamples.values())
-      .sort((a, b) => a.status - b.status)
-      .forEach((r) => {
-        md += `<details>\n`;
-        md += `<summary><strong>${r.status}</strong> - <code>${r.url}</code></summary>\n\n`;
-        md += '```\n';
-        md += `${r.body || '(No body captured)'}\n`;
-        md += '```\n\n';
-        md += `</details>\n`;
-      });
-    md += `\n`;
   }
 
   // Endpoint Summary
@@ -356,17 +383,19 @@ export function generateMarkdownReport(
     md += `| URL | Total | Success | Failed | Avg | Min | Max | P95 | P99 |\n`;
     md += `|---|---|---|---|---|---|---|---|---|\n`;
     for (const endpoint of e) {
-      md += `| ${endpoint.url} | ${endpoint.totalRequests} | ${
-        endpoint.successfulRequests
-      } | ${endpoint.failedRequests} | ${endpoint.avgLatencyMs.toFixed(
+      md += `| ${endpoint.method} ${endpoint.url} | ${
+        endpoint.totalRequests
+      } | ${endpoint.successfulRequests} | ${
+        endpoint.failedRequests
+      } | ${endpoint.avgLatencyMs.toFixed(
         0,
       )}ms | ${endpoint.minLatencyMs.toFixed(
         0,
       )}ms | ${endpoint.maxLatencyMs.toFixed(
         0,
-      )}ms | ${endpoint.p95LatencyMs.toFixed(0)}ms | ${endpoint.p99LatencyMs.toFixed(
+      )}ms | ${endpoint.p95LatencyMs.toFixed(
         0,
-      )}ms |\n`;
+      )}ms | ${endpoint.p99LatencyMs.toFixed(0)}ms |\n`;
     }
   }
 

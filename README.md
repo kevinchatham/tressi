@@ -268,8 +268,8 @@ Each object in the `requests` array defines a single HTTP request and has the fo
 
 The `--export` flag will generate a unique, timestamped directory containing a comprehensive set of data files:
 
-- **📝 `report.md`**: A clean, readable Markdown summary of the test results.
-- **📊 `report.xlsx`**: A multi-sheet Excel file with the global summary, per-endpoint summary, and raw request log.
+- **📝 `report.md`**: A clean, readable Markdown summary of the test results. It includes a "Sampled Responses" section that provides a response body for each unique status code received *per endpoint*, making it easy to debug different outcomes for the same URL.
+- **📊 `report.xlsx`**: A multi-sheet Excel file with the global summary, per-endpoint summary, a raw request log, and a dedicated "Sampled Responses" sheet that lists one sample for each status code received per endpoint.
 - **📈 `results.csv`**: A raw log of all requests made during the test.
 
 You can also provide a path to the `--export` flag to customize the base name of the output directory:

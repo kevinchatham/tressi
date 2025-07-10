@@ -22,7 +22,7 @@ export class Runner extends EventEmitter {
   private stopped = false;
   private startTime: number = 0;
   private currentTargetRps: number;
-  private sampledStatusCodes: Set<number> = new Set();
+  private sampledEndpointResponses: Map<string, Set<number>> = new Map();
   private successfulRequests = 0;
   private failedRequests = 0;
   private activeWorkers: { promise: Promise<void>; stop: () => void }[] = [];
@@ -332,14 +332,22 @@ export class Runner extends EventEmitter {
         });
 
         let body: string | undefined;
-        // Check if we should sample this status code
-        if (!this.sampledStatusCodes.has(res.status)) {
+        const endpointIdentifier = `${req.method || 'GET'} ${req.url}`;
+        if (!this.sampledEndpointResponses.has(endpointIdentifier)) {
+          this.sampledEndpointResponses.set(endpointIdentifier, new Set());
+        }
+        const sampledCodesForEndpoint = this.sampledEndpointResponses.get(
+          endpointIdentifier,
+        )!;
+
+        // Check if we should sample this status code for this endpoint
+        if (!sampledCodesForEndpoint.has(res.status)) {
           try {
             body = await res.text();
-            this.sampledStatusCodes.add(res.status);
+            sampledCodesForEndpoint.add(res.status);
           } catch (e) {
             // Ignore body read errors, it might be empty.
-            body = `(Could not read body: ${(e as Error).message})`;
+            body = `(Could not read body: ${(e as Error).message}`;
           }
         } else {
           // We still need to consume the body to not leave the connection hanging
@@ -349,6 +357,7 @@ export class Runner extends EventEmitter {
 
         const latencyMs = Date.now() - start;
         this.onResult({
+          method: req.method || 'GET',
           url: req.url,
           status: res.status,
           latencyMs,
@@ -359,6 +368,7 @@ export class Runner extends EventEmitter {
       } catch (err) {
         const latencyMs = Date.now() - start;
         this.onResult({
+          method: req.method || 'GET',
           url: req.url,
           status: 0,
           latencyMs,

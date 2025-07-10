@@ -47,6 +47,7 @@ export class TUI {
       label: 'Response Codes Over Time',
       showLegend: false,
       valign: 'bottom',
+      wholeNumbersOnly: true,
     });
 
     this.responseCodeLegend = grid.set(0, 11, 6, 1, blessed.box, {
