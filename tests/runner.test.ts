@@ -52,7 +52,8 @@ describe('Runner', () => {
     const options: RunOptions = { ...baseOptions };
     const runner = new Runner(options, baseRequests, {});
 
-    const results = await runner.run();
+    await runner.run();
+    const results = runner.getSampledResults();
 
     expect(results.length).toBeGreaterThan(0);
     expect(results[0].status).toBe(200);
@@ -111,7 +112,8 @@ describe('Runner', () => {
     setTimeout(() => runner.stop(), 1000);
     await vi.advanceTimersByTimeAsync(1000);
 
-    const results = await runPromise;
+    await runPromise;
+    const results = runner.getSampledResults();
     const duration =
       results[results.length - 1].timestamp - results[0].timestamp;
 
@@ -208,7 +210,8 @@ describe('Runner', () => {
     );
 
     const runner = new Runner({ ...baseOptions, durationSec: 2 }, requests, {});
-    const results = await runner.run();
+    await runner.run();
+    const results = runner.getSampledResults();
 
     const getSample = results.find((r) => r.body === 'GET_OK');
     const postSample = results.find((r) => r.body === 'POST_OK');

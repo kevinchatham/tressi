@@ -21,20 +21,56 @@ export interface RequestResult {
 }
 
 /**
- * Calculates the percentile of a dataset.
+ * Calculates the percentile of a dataset using the quickselect algorithm.
+ * This is much more performant than sorting the entire array.
  * @param data An array of numbers.
  * @param p The percentile to calculate (0-1).
  * @returns The value at the specified percentile.
  */
 export function percentile(data: number[], p: number): number {
   if (data.length === 0) return 0;
-  // Ensure the data is sorted
-  const sorted =
-    data.length === 1 ? [...data] : [...data].sort((a, b) => a - b);
-  const index = Math.ceil(p * (sorted.length - 1));
 
-  // If the calculated index is out of bounds, return the last element
-  return sorted[index];
+  const index = Math.ceil(p * (data.length - 1));
+
+  // A mutable copy of the data for the algorithm to work on
+  const mutableData = [...data];
+
+  // Quickselect implementation to find the k-th smallest element
+  function quickselect(arr: number[], k: number): number {
+    const swap = (i: number, j: number): void => {
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    };
+
+    let left = 0;
+    let right = arr.length - 1;
+
+    while (left <= right) {
+      const pivotIndex = Math.floor(Math.random() * (right - left + 1)) + left;
+      const pivotValue = arr[pivotIndex];
+
+      swap(pivotIndex, right);
+      let storeIndex = left;
+
+      for (let i = left; i < right; i++) {
+        if (arr[i] < pivotValue) {
+          swap(storeIndex, i);
+          storeIndex++;
+        }
+      }
+      swap(right, storeIndex);
+
+      if (storeIndex === k) {
+        return arr[storeIndex];
+      } else if (storeIndex < k) {
+        left = storeIndex + 1;
+      } else {
+        right = storeIndex - 1;
+      }
+    }
+    return -1; // Should not be reached in this context
+  }
+
+  return quickselect(mutableData, index);
 }
 
 /**

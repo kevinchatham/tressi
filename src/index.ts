@@ -6,12 +6,14 @@ import path from 'path';
 import { z } from 'zod';
 
 import { loadConfig, RequestConfig, TressiConfig } from './config';
-import { getLatencyDistribution } from './distribution';
+import {
+  getLatencyDistribution,
+  getStatusCodeDistribution,
+} from './distribution';
 import { exportDataFiles } from './exporter';
 import { Runner } from './runner';
-import { average, percentile, RequestResult } from './stats';
+import { average, percentile } from './stats';
 import {
-  EndpointSummary,
   generateMarkdownReport,
   generateSummary,
   TestSummary,
@@ -102,47 +104,6 @@ function printRunConfiguration(options: RunOptions): void {
   console.log(configTable.toString());
 }
 
-function printRpsWarning(results: RequestResult[], options: RunOptions): void {
-  const { workers = 10, rps, autoscale } = options;
-  const latencies = results.map((r) => r.latencyMs);
-
-  if (rps) {
-    const avgLatencyMs = average(latencies);
-    if (avgLatencyMs > 0) {
-      const maxRpsPerWorker = 1000 / avgLatencyMs;
-      const maxPossibleRps = maxRpsPerWorker * workers;
-
-      if (rps > maxPossibleRps) {
-        const suggestedWorkers = Math.ceil(rps / maxRpsPerWorker);
-        let warningMessage: string;
-
-        if (autoscale) {
-          warningMessage =
-            `\n⚠️  Warning: Target of ${rps} Req/s may be unreachable.` +
-            `\n   The autoscaler hit the maximum of ${workers} workers.` +
-            `\n   With an average latency of ~${Math.ceil(
-              avgLatencyMs,
-            )}ms, the theoretical max is only ~${Math.floor(
-              maxPossibleRps,
-            )} Req/s.` +
-            `\n   To meet the target, try increasing the --workers limit to at least ${suggestedWorkers}.`;
-        } else {
-          warningMessage =
-            `\n⚠️  Warning: Target of ${rps} Req/s may be unreachable with ${workers} workers.` +
-            `\n   With an average latency of ~${Math.ceil(
-              avgLatencyMs,
-            )}ms, the theoretical max is only ~${Math.floor(
-              maxPossibleRps,
-            )} Req/s.` +
-            `\n   To meet the target, try increasing workers to at least ${suggestedWorkers}.`;
-        }
-        // eslint-disable-next-line no-console
-        console.log(chalk.yellow(warningMessage));
-      }
-    }
-  }
-}
-
 function printGlobalSummary(summary: TestSummary, options: RunOptions): void {
   const { global: globalSummary } = summary;
   const { rps } = options;
@@ -193,198 +154,119 @@ function printGlobalSummary(summary: TestSummary, options: RunOptions): void {
   console.log(summaryTable.toString());
 }
 
-function printLatencyDistribution(results: RequestResult[]): void {
-  const latencyDistribution = getLatencyDistribution(
-    results.map((r) => r.latencyMs),
-  );
+function printEndpointSummary(summary: TestSummary): void {
+  const { endpoints } = summary;
+  if (endpoints.length === 0) return;
 
-  if (latencyDistribution.length > 0) {
-    const distributionTable = new Table({
-      head: ['Range (ms)', 'Count', '% Total', 'Cumulative'],
-      colWidths: [15, 10, 10, 12],
-    });
-
-    latencyDistribution.forEach((bucket) => {
-      distributionTable.push([
-        bucket.range,
-        bucket.count,
-        bucket.percent,
-        bucket.cumulative,
-      ]);
-    });
-
-    // eslint-disable-next-line no-console
-    console.log(chalk.bold('\nLatency Distribution'));
-    // eslint-disable-next-line no-console
-    console.log(distributionTable.toString());
-  }
-}
-
-function printStatusCodeSummary(results: RequestResult[]): void {
-  const statusCodeMap: Record<number, number> = results.reduce(
-    (acc, r) => {
-      acc[r.status] = (acc[r.status] || 0) + 1;
-      return acc;
-    },
-    {} as Record<number, number>,
-  );
-
-  const statusTable = new Table({
-    head: ['Status Code', 'Count'],
-    colWidths: [20, 20],
+  const endpointSummaryTable = new Table({
+    head: ['Endpoint', 'Success', 'Failed'],
+    colWidths: [50, 10, 10],
   });
 
-  Object.entries(statusCodeMap)
-    .sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
-    .forEach(([code, count]) => {
-      const color = code.startsWith('2')
-        ? chalk.green
-        : code.startsWith('5')
-          ? chalk.red
-          : chalk.yellow;
-      statusTable.push([color(code), count]);
-    });
+  const endpointLatencyTable = new Table({
+    head: ['Endpoint', 'Avg', 'Min', 'Max', 'P95', 'P99'],
+    colWidths: [50, 10, 10, 10, 10, 10],
+  });
 
-  if (statusTable.length > 0) {
-    // eslint-disable-next-line no-console
-    console.log(chalk.bold('\nResponses by Status Code:'));
-    // eslint-disable-next-line no-console
-    console.log(statusTable.toString());
+  for (const endpoint of endpoints) {
+    const url = endpoint.url;
+    const maxUrlLength = 48; // Account for table padding
+    const displayUrl =
+      url.length > maxUrlLength
+        ? `...${url.slice(url.length - (maxUrlLength - 3))}`
+        : url;
+
+    endpointSummaryTable.push([
+      displayUrl,
+      chalk.green(endpoint.successfulRequests),
+      chalk.red(endpoint.failedRequests),
+    ]);
+
+    endpointLatencyTable.push([
+      displayUrl,
+      `${Math.round(endpoint.avgLatencyMs)}ms`,
+      `${Math.round(endpoint.minLatencyMs)}ms`,
+      `${Math.round(endpoint.maxLatencyMs)}ms`,
+      `${Math.round(endpoint.p95LatencyMs)}ms`,
+      `${Math.round(endpoint.p99LatencyMs)}ms`,
+    ]);
   }
+
+  // eslint-disable-next-line no-console
+  console.log('\n' + chalk.bold('Endpoint Summary'));
+  // eslint-disable-next-line no-console
+  console.log(endpointSummaryTable.toString());
+
+  // eslint-disable-next-line no-console
+  console.log('\n' + chalk.bold('Endpoint Latency'));
+  // eslint-disable-next-line no-console
+  console.log(endpointLatencyTable.toString());
 }
 
-function printSampledResponses(results: RequestResult[]): void {
-  const sampledResponses = results.filter((r) => r.body);
-  if (sampledResponses.length > 0) {
-    // eslint-disable-next-line no-console
-    console.log(chalk.bold('\nSampled Responses by Endpoint:'));
+function printLatencyDistribution(runner: Runner): void {
+  const latencies = runner.getLatencies();
+  if (latencies.length === 0) return;
 
-    const samplesByEndpoint = sampledResponses.reduce(
-      (acc, r) => {
-        const key = `${r.method} ${r.url}`;
-        if (!acc[key]) {
-          acc[key] = [];
-        }
-        acc[key].push(r);
-        return acc;
-      },
-      {} as Record<string, RequestResult[]>,
-    );
+  const distribution = getLatencyDistribution(latencies, 8, 20);
+  const distributionTable = new Table({
+    head: ['Range (ms)', 'Count', '% of Total', 'Cumulative %', 'Chart'],
+    colWidths: [15, 10, 15, 15, 25],
+  });
 
-    for (const [endpoint, samples] of Object.entries(samplesByEndpoint)) {
-      // eslint-disable-next-line no-console
-      console.log(chalk.bold.cyan(`\n${endpoint}`));
-      const sampledResponsesTable = new Table({
-        head: ['Status', 'Response Body (truncated)'],
-        colWidths: [10, 90],
-        wordWrap: true,
-      });
-
-      const uniqueSamples = new Map<number, RequestResult>();
-      for (const r of samples) {
-        if (!uniqueSamples.has(r.status)) {
-          uniqueSamples.set(r.status, r);
-        }
-      }
-
-      Array.from(uniqueSamples.values())
-        .sort((a, b) => a.status - b.status)
-        .forEach((r) => {
-          const color =
-            r.status >= 200 && r.status < 300
-              ? chalk.green
-              : r.status >= 500
-                ? chalk.red
-                : chalk.yellow;
-          const truncatedBody =
-            r.body && r.body.length > 200
-              ? r.body.substring(0, 200) + '...'
-              : r.body;
-          sampledResponsesTable.push([
-            color(r.status),
-            truncatedBody || '',
-          ]);
-        });
-      // eslint-disable-next-line no-console
-      console.log(sampledResponsesTable.toString());
-    }
+  for (const bucket of distribution) {
+    if (bucket.count === '0') continue;
+    distributionTable.push([
+      `${bucket.range}ms`,
+      bucket.count,
+      bucket.percent,
+      bucket.cumulative,
+      chalk.green(bucket.chart),
+    ]);
   }
+
+  // eslint-disable-next-line no-console
+  console.log('\n' + chalk.bold('Latency Distribution'));
+  // eslint-disable-next-line no-console
+  console.log(distributionTable.toString());
 }
 
-function printEndpointSummaries(endpointSummaries: EndpointSummary[]): void {
-  if (endpointSummaries.length > 1) {
-    // eslint-disable-next-line no-console
-    console.log('\n' + chalk.bold('Summary by Endpoint'));
-    endpointSummaries.forEach((endpointSummary) => {
-      const {
-        method,
-        url,
-        totalRequests,
-        successfulRequests,
-        failedRequests,
-        avgLatencyMs,
-        p95LatencyMs,
-        p99LatencyMs,
-      } = endpointSummary;
-      const endpointTable = new Table({ colWidths: [30, 60] });
-      endpointTable.push({ Endpoint: chalk.cyan(`${method} ${url}`) });
-      endpointTable.push({ 'Total Requests': totalRequests });
-      endpointTable.push({ Successful: chalk.green(successfulRequests) });
-      endpointTable.push({ Failed: chalk.red(failedRequests) });
-      endpointTable.push({
-        'Avg Latency': `${Math.ceil(avgLatencyMs)}ms`,
-      });
-      endpointTable.push({
-        'Min Latency': `${Math.ceil(endpointSummary.minLatencyMs)}ms`,
-      });
-      endpointTable.push({
-        'Max Latency': `${Math.ceil(endpointSummary.maxLatencyMs)}ms`,
-      });
-      endpointTable.push({
-        'p95 Latency': `${Math.ceil(p95LatencyMs)}ms`,
-      });
-      endpointTable.push({
-        'p99 Latency': `${Math.ceil(p99LatencyMs)}ms`,
-      });
+function printStatusCodeDistribution(runner: Runner): void {
+  const statusCodeMap = runner.getStatusCodeMap();
+  if (Object.keys(statusCodeMap).length === 0) return;
 
-      // eslint-disable-next-line no-console
-      console.log(endpointTable.toString());
-    });
-  }
-}
+  const distribution = getStatusCodeDistribution(statusCodeMap);
+  const distributionTable = new Table({
+    head: ['Status Code', 'Count', '% of Total', 'Chart'],
+    colWidths: [15, 10, 15, 25],
+  });
 
-function printErrorSamples(results: RequestResult[]): void {
-  const errors = results.filter((r) => r.error).slice(0, 5);
-  if (errors.length > 0) {
-    // eslint-disable-next-line no-console
-    console.log(chalk.bold.red('\nSampled Errors:'));
-    errors.forEach((e) => {
-      // eslint-disable-next-line no-console
-      console.log(`- ${e.url}: ${e.error}`);
-    });
+  for (const item of distribution) {
+    distributionTable.push([item.code, item.count, item.percent, item.chart]);
   }
+
+  // eslint-disable-next-line no-console
+  console.log('\n' + chalk.bold('Status Code Distribution'));
+  // eslint-disable-next-line no-console
+  console.log(distributionTable.toString());
 }
 
 /**
  * Prints a detailed summary of the load test results to the console.
- * @param results An array of `RequestResult` objects from the test run.
+ * @param runner The `Runner` instance from the test run.
  * @param options The original `RunOptions` used for the test.
  * @param summary The calculated `TestSummary` object for the run.
  */
 function printSummary(
-  results: RequestResult[],
+  runner: Runner,
   options: RunOptions,
   summary: TestSummary,
 ): void {
   printReportInfo(summary, options);
   printRunConfiguration(options);
-  printRpsWarning(results, options);
   printGlobalSummary(summary, options);
-  printLatencyDistribution(results);
-  printStatusCodeSummary(results);
-  printSampledResponses(results);
-  printEndpointSummaries(summary.endpoints);
-  printErrorSamples(results);
+  printEndpointSummary(summary);
+  printStatusCodeDistribution(runner);
+  printLatencyDistribution(runner);
 }
 
 /**
@@ -430,24 +312,11 @@ export async function runLoadTest(options: RunOptions): Promise<TestSummary> {
       process.env.npm_package_version || 'unknown',
     );
     const tuiInterval = setInterval(() => {
-      const latencies = runner.getLatencies();
-      const statusCodes = runner.getStatusCodeMap();
       const startTime = runner.getStartTime();
       const elapsedSec = startTime > 0 ? (Date.now() - startTime) / 1000 : 0;
       const totalSec = options.durationSec || 10;
 
-      tui.update(
-        latencies,
-        statusCodes,
-        runner.getCurrentRps(),
-        elapsedSec,
-        totalSec,
-        options.rps,
-        runner.getSuccessfulRequestsCount(),
-        runner.getFailedRequestsCount(),
-        runner.getAverageLatency(),
-        runner.getWorkerCount(),
-      );
+      tui.update(runner, elapsedSec, totalSec, options.rps);
     }, 500);
 
     runner.on('stop', () => {
@@ -469,10 +338,14 @@ export async function runLoadTest(options: RunOptions): Promise<TestSummary> {
       const successful = runner.getSuccessfulRequestsCount();
       const failed = runner.getFailedRequestsCount();
       const workers = runner.getWorkerCount();
-      const avgLatency = runner.getAverageLatency();
+
+      // For the spinner, we'll use a sample of recent latencies to avoid
+      // performance issues with very long test runs.
       const latencies = runner.getLatencies();
-      const p95 = percentile(latencies, 0.95);
-      const p99 = percentile(latencies, 0.99);
+      const recentLatencies = latencies.slice(-1000);
+      const avgLatency = average(recentLatencies);
+      const p95 = percentile(recentLatencies, 0.95);
+      const p99 = percentile(recentLatencies, 0.99);
 
       const rpsDisplay = options.rps ? `${rps}/${options.rps}` : `${rps}`;
       const successDisplay = chalk.green(successful);
@@ -498,10 +371,10 @@ export async function runLoadTest(options: RunOptions): Promise<TestSummary> {
     });
   }
 
-  const results = await runner.run();
+  await runner.run();
   const startTime = runner.getStartTime();
   const actualDurationSec = startTime > 0 ? (Date.now() - startTime) / 1000 : 0;
-  const summary = generateSummary(results, options, actualDurationSec);
+  const summary = generateSummary(runner, options, actualDurationSec);
 
   if (options.exportPath) {
     const exportSpinner = ora({
@@ -523,7 +396,7 @@ export async function runLoadTest(options: RunOptions): Promise<TestSummary> {
       const markdownReport = generateMarkdownReport(
         summary,
         options,
-        results,
+        runner.getSampledResults(),
         loadedConfig,
         {
           exportName: baseExportName,
@@ -532,7 +405,7 @@ export async function runLoadTest(options: RunOptions): Promise<TestSummary> {
       );
       await fs.writeFile(path.join(reportDir, 'report.md'), markdownReport);
 
-      await exportDataFiles(summary, results, reportDir);
+      await exportDataFiles(summary, runner.getSampledResults(), reportDir);
 
       exportSpinner.succeed(`Successfully exported results to ${reportDir}`);
     } catch (err) {
@@ -544,7 +417,7 @@ export async function runLoadTest(options: RunOptions): Promise<TestSummary> {
 
   // Final summary to console
   if (!silent) {
-    printSummary(results, options, summary);
+    printSummary(runner, options, summary);
   }
 
   return summary;

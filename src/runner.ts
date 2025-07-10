@@ -16,8 +16,9 @@ export class Runner extends EventEmitter {
   private options: RunOptions;
   private requests: RequestConfig[];
   private headers: Record<string, string>;
-  private results: RequestResult[] = [];
+  private sampledResults: RequestResult[] = [];
   private latencies: number[] = [];
+  private recentRequestTimestamps: number[] = [];
   private statusCodeMap: Record<number, number> = {};
   private stopped = false;
   private startTime: number = 0;
@@ -54,8 +55,11 @@ export class Runner extends EventEmitter {
    * @param result The `RequestResult` to record.
    */
   public onResult(result: RequestResult): void {
-    this.results.push(result);
+    if (this.sampledResults.length < 1000) {
+      this.sampledResults.push(result);
+    }
     this.latencies.push(result.latencyMs);
+    this.recentRequestTimestamps.push(Date.now());
     this.statusCodeMap[result.status] =
       (this.statusCodeMap[result.status] || 0) + 1;
 
@@ -67,11 +71,11 @@ export class Runner extends EventEmitter {
   }
 
   /**
-   * Gets all the results collected during the test run.
+   * Gets a sample of the results collected during the test run.
    * @returns An array of `RequestResult` objects.
    */
-  public getResults(): RequestResult[] {
-    return this.results;
+  public getSampledResults(): RequestResult[] {
+    return this.sampledResults;
   }
 
   /**
@@ -138,10 +142,11 @@ export class Runner extends EventEmitter {
   public getCurrentRps(): number {
     const now = Date.now();
     const oneSecondAgo = now - 1000;
-    const recentRequests = this.results.filter(
-      (r) => r.timestamp >= oneSecondAgo,
+    // Filter out timestamps older than 1 second
+    this.recentRequestTimestamps = this.recentRequestTimestamps.filter(
+      (timestamp) => timestamp >= oneSecondAgo,
     );
-    return recentRequests.length;
+    return this.recentRequestTimestamps.length;
   }
 
   /**
@@ -158,9 +163,8 @@ export class Runner extends EventEmitter {
   /**
    * Starts the load test. This is the main entry point for the runner.
    * It sets up workers, timers, and ramp-up/autoscaling logic.
-   * @returns A promise that resolves with all the request results when the test is complete.
    */
-  public async run(): Promise<RequestResult[]> {
+  public async run(): Promise<void> {
     this.startTime = Date.now();
 
     const {
@@ -257,7 +261,6 @@ export class Runner extends EventEmitter {
     }
 
     this.cleanup();
-    return this.results;
   }
 
   public stop(): void {
@@ -336,9 +339,8 @@ export class Runner extends EventEmitter {
         if (!this.sampledEndpointResponses.has(endpointIdentifier)) {
           this.sampledEndpointResponses.set(endpointIdentifier, new Set());
         }
-        const sampledCodesForEndpoint = this.sampledEndpointResponses.get(
-          endpointIdentifier,
-        )!;
+        const sampledCodesForEndpoint =
+          this.sampledEndpointResponses.get(endpointIdentifier)!;
 
         // Check if we should sample this status code for this endpoint
         if (!sampledCodesForEndpoint.has(res.status)) {

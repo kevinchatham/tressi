@@ -2,44 +2,51 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { RunOptions } from '../src';
 import { TressiConfig } from '../src/config';
-import { RequestResult } from '../src/stats';
+import { Runner } from '../src/runner';
 import { generateMarkdownReport, generateSummary } from '../src/summarizer';
 
-const mockResults: RequestResult[] = [
-  {
-    method: 'GET',
-    url: 'http://a.com',
-    latencyMs: 100,
-    status: 200,
-    success: true,
-    timestamp: 1,
-  },
-  {
-    method: 'GET',
-    url: 'http://a.com',
-    latencyMs: 150,
-    status: 200,
-    success: true,
-    timestamp: 2,
-  },
-  {
-    method: 'GET',
-    url: 'http://b.com',
-    latencyMs: 200,
-    status: 200,
-    success: true,
-    timestamp: 3,
-  },
-  {
-    method: 'GET',
-    url: 'http://b.com',
-    latencyMs: 500,
-    status: 500,
-    success: false,
-    error: 'Error',
-    timestamp: 4,
-  },
-];
+const mockRunner = {
+  getSampledResults: () => [
+    {
+      method: 'GET',
+      url: 'http://a.com',
+      latencyMs: 100,
+      status: 200,
+      success: true,
+      timestamp: 1,
+    },
+    {
+      method: 'GET',
+      url: 'http://a.com',
+      latencyMs: 150,
+      status: 200,
+      success: true,
+      timestamp: 2,
+    },
+    {
+      method: 'GET',
+      url: 'http://b.com',
+      latencyMs: 200,
+      status: 200,
+      success: true,
+      timestamp: 3,
+    },
+    {
+      method: 'GET',
+      url: 'http://b.com',
+      latencyMs: 500,
+      status: 500,
+      success: false,
+      error: 'Error',
+      timestamp: 4,
+    },
+  ],
+  getLatencies: () => [100, 150, 200, 500],
+  getStatusCodeMap: () => ({ 200: 3, 500: 1 }),
+  getSuccessfulRequestsCount: () => 3,
+  getFailedRequestsCount: () => 1,
+  getAverageLatency: () => 237.5,
+} as unknown as Runner;
 
 const mockOptions: RunOptions = {
   config: { requests: [] },
@@ -68,7 +75,7 @@ describe('summarizer', () => {
    * It should correctly calculate all global statistics for a given set of results.
    */
   it('should generate an accurate global summary', () => {
-    const summary = generateSummary(mockResults, mockOptions);
+    const summary = generateSummary(mockRunner, mockOptions);
     const { global: g } = summary;
 
     expect(g.totalRequests).toBe(4);
@@ -87,7 +94,7 @@ describe('summarizer', () => {
    * It should correctly aggregate results by URL and calculate statistics for each endpoint.
    */
   it('should generate an accurate summary for each endpoint', () => {
-    const summary = generateSummary(mockResults, mockOptions);
+    const summary = generateSummary(mockRunner, mockOptions);
     const { endpoints: e } = summary;
 
     expect(e).toHaveLength(2);
@@ -115,7 +122,7 @@ describe('summarizer', () => {
    * It should generate a Markdown report containing all summary sections.
    */
   it('should generate a comprehensive Markdown report', () => {
-    const summary = generateSummary(mockResults, mockOptions);
+    const summary = generateSummary(mockRunner, mockOptions);
     const metadata = {
       exportName: 'my-test-report',
       runDate: new Date(),
@@ -123,7 +130,7 @@ describe('summarizer', () => {
     const markdown = generateMarkdownReport(
       summary,
       mockOptions,
-      mockResults,
+      mockRunner.getSampledResults(),
       mockConfig,
       metadata,
     );

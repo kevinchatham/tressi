@@ -1,6 +1,7 @@
 import { TressiConfig } from './config';
 import { getLatencyDistribution } from './distribution';
 import { RunOptions } from './index';
+import { Runner } from './runner';
 import { average, percentile, RequestResult } from './stats';
 
 export interface ReportMetadata {
@@ -44,15 +45,16 @@ export interface TestSummary {
 
 /**
  * Analyzes the results of a load test and generates a comprehensive summary.
- * @param results An array of `RequestResult` objects from the test run.
+ * @param runner The `Runner` instance from the test run.
  * @param options The original `RunOptions` used for the test.
  * @returns A `TestSummary` object containing the global and endpoint-specific summaries.
  */
 export function generateSummary(
-  results: RequestResult[],
+  runner: Runner,
   options: RunOptions,
   actualDurationSec?: number,
 ): TestSummary {
+  const results = runner.getSampledResults();
   if (results.length === 0) {
     // Return a default summary if no results are available.
     return {
@@ -161,26 +163,18 @@ export function generateMarkdownReport(
   const { global: g, endpoints: e } = summary;
   const { workers = 10, durationSec = 10, rps, autoscale } = options;
 
-  let md = `# Tressi Load Test Report
+  let md = `# Tressi Load Test Report\n\n`;
 
-`;
-
-  md += `| Metric | Value |
-`;
-  md += `|---|---|
-`;
-  md += `| Version | ${summary.tressiVersion} |
-`;
+  md += `| Metric | Value |\n`;
+  md += `|---|---|\n`;
+  md += `| Version | ${summary.tressiVersion} |\n`;
   if (metadata?.exportName) {
-    md += `| Export Name | ${metadata.exportName} |
-`;
+    md += `| Export Name | ${metadata.exportName} |\n`;
   }
   if (metadata?.runDate) {
-    md += `| Test Time | ${metadata.runDate.toLocaleString()} |
-`;
+    md += `| Test Time | ${metadata.runDate.toLocaleString()} |\n`;
   }
-  md += `
-`;
+  md += `\n`;
   const warnings: string[] = [];
   if (rps && g.achievedPercentage && g.achievedPercentage < 80) {
     const maxRpsPerWorker = 1000 / g.avgLatencyMs + 1;
@@ -261,17 +255,11 @@ export function generateMarkdownReport(
     md += `| Req/m | ${(g.actualRps * 60).toFixed(0)} |\n`;
   }
 
-  md += `| Avg Latency | ${g.avgLatencyMs.toFixed(0)}ms |
-`;
-  md += `| Min Latency | ${g.minLatencyMs.toFixed(0)}ms |
-`;
-  md += `| Max Latency | ${g.maxLatencyMs.toFixed(0)}ms |
-`;
-  md += `| p95 Latency | ${g.p95LatencyMs.toFixed(0)}ms |
-`;
-  md += `| p99 Latency | ${g.p99LatencyMs.toFixed(0)}ms |
-
-`;
+  md += `| Avg Latency | ${g.avgLatencyMs.toFixed(0)}ms |\n`;
+  md += `| Min Latency | ${g.minLatencyMs.toFixed(0)}ms |\n`;
+  md += `| Max Latency | ${g.maxLatencyMs.toFixed(0)}ms |\n`;
+  md += `| p95 Latency | ${g.p95LatencyMs.toFixed(0)}ms |\n`;
+  md += `| p99 Latency | ${g.p99LatencyMs.toFixed(0)}ms |\n\n`;
 
   // Latency Distribution
   const latencies = results.map((r) => r.latencyMs);
@@ -379,15 +367,20 @@ export function generateMarkdownReport(
   // Endpoint Summary
   if (e.length > 0) {
     md += `## Endpoint Summary\n\n`;
-    md += `> *A detailed performance breakdown for each individual API endpoint.*\n\n`;
-    md += `| URL | Total | Success | Failed | Avg | Min | Max | P95 | P99 |\n`;
-    md += `|---|---|---|---|---|---|---|---|---|\n`;
+    md += `> *A summary of request outcomes for each endpoint.*\n\n`;
+    md += `| Endpoint | Success | Failed |\n`;
+    md += `|---|---|---|\n`;
     for (const endpoint of e) {
-      md += `| ${endpoint.method} ${endpoint.url} | ${
-        endpoint.totalRequests
-      } | ${endpoint.successfulRequests} | ${
-        endpoint.failedRequests
-      } | ${endpoint.avgLatencyMs.toFixed(
+      md += `| ${endpoint.method} ${endpoint.url} | ${endpoint.successfulRequests} | ${endpoint.failedRequests} |\n`;
+    }
+    md += `\n`;
+
+    md += `## Endpoint Latency\n\n`;
+    md += `> *A detailed latency breakdown for each individual API endpoint.*\n\n`;
+    md += `| Endpoint | Avg | Min | Max | P95 | P99 |\n`;
+    md += `|---|---|---|---|---|---|\n`;
+    for (const endpoint of e) {
+      md += `| ${endpoint.method} ${endpoint.url} | ${endpoint.avgLatencyMs.toFixed(
         0,
       )}ms | ${endpoint.minLatencyMs.toFixed(
         0,
