@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./tressi-logo.png" alt="tressi-logo" width="150px" height="150px"/>
+  <img src="https://github.com/kevinchatham/tressi/blob/main/tressi-logo.png?raw=true" alt="tressi-logo" width="150px" height="150px"/>
   <br/>
   <em>Stress less, test more.</em>
   <br/><br/>
@@ -190,7 +190,7 @@ myCustomScript();
 When you run `tressi` (without the `--no-ui` flag), it displays a live dashboard with four key sections:
 
 <p align="center">
-  <img src="./tressi-ui.png" alt="Tressi UI" width="90%"/>
+  <img src="https://github.com/kevinchatham/tressi/blob/main/tressi-ui.png?raw=true" alt="tressi-ui" width="90%"/>
 </p>
 
 ### How to Interpret the Dashboard

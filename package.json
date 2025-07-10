@@ -1,8 +1,16 @@
 {
   "name": "tressi",
   "version": "0.0.8",
-  "description": "",
+  "description": "A lightweight, declarative stress testing CLI for modern developers.",
   "license": "MIT",
+  "keywords": [
+    "performance",
+    "load",
+    "stress",
+    "testing",
+    "cli",
+    "automation"
+  ],
   "author": "kevinchatham",
   "type": "commonjs",
   "main": "dist/index.js",
