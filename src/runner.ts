@@ -323,9 +323,11 @@ export class Runner extends EventEmitter {
       const start = Date.now();
 
       try {
+        const headers = { ...this.headers, ...req.headers };
+
         const res = await fetch(req.url, {
           method: req.method || 'GET',
-          headers: this.headers,
+          headers,
           body: req.payload ? JSON.stringify(req.payload) : undefined,
         });
 

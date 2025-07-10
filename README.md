@@ -220,13 +220,49 @@ When you run `tressi` (without the `--no-ui` flag), it displays a live dashboard
 
 The `tressi init` command will generate a `tressi.config.json` file with a `$schema` property. This property points to a JSON Schema file that provides autocompletion and validation in supported editors (like VS Code), making it easier to write valid configurations.
 
-Your `tressi.config.json` file is a standard JSON file with the following root properties:
+### Example `tressi.config.json`
 
-- `headers`: An object containing headers to be sent with each request.
-- `requests`: An array of request objects, each with the following properties:
-  - `url`: The URL to send the request to.
-  - `method`: The HTTP method. It is case-insensitive, defaults to `GET`, and supports `GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `HEAD`, and `OPTIONS`.
-  - `payload`: (Optional) The data to send with the request.
+```json
+{
+  "$schema": "https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.8.json",
+  "headers": {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer <your-token>"
+  },
+  "requests": [
+    {
+      "url": "https://api.example.com/users",
+      "method": "GET"
+    },
+    {
+      "url": "https://api.example.com/users",
+      "method": "POST",
+      "payload": { "name": "Tressi" },
+      "headers": {
+        "Content-Type": "application/vnd.api+json"
+      }
+    }
+  ]
+}
+```
+
+### Root Properties
+
+| Property   | Type     | Description                                                                        |
+| ---------- | -------- | ---------------------------------------------------------------------------------- |
+| `headers`  | `object` | (Optional) An object containing global headers to be sent with every request.      |
+| `requests` | `array`  | A required array of one or more request objects to be executed by the test runner. |
+
+### Request Properties
+
+Each object in the `requests` array defines a single HTTP request and has the following properties:
+
+| Property  | Type                | Description                                                                                                                                                |
+| --------- | ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `url`     | `string`            | The full URL to send the request to.                                                                                                                       |
+| `method`  | `string`            | (Optional) The HTTP method. It is case-insensitive, defaults to `GET`, and supports `GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `HEAD`, and `OPTIONS`.        |
+| `payload` | `object` or `array` | (Optional) The JSON data to send as the request body.                                                                                                      |
+| `headers` | `object`            | (Optional) An object containing headers for this specific request. If a header is defined here and in the global `headers`, this one will take precedence. |
 
 ## 📁 Exporting Results
 

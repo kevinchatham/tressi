@@ -20,6 +20,8 @@ const RequestConfigSchema = z.object({
       z.enum(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS']),
     )
     .default('GET'),
+  /** Headers to be sent with this specific request. Merged with global headers. */
+  headers: z.record(z.string(), z.string()).optional(),
 });
 
 /**

@@ -160,4 +160,35 @@ describe('Runner', () => {
 
     vi.useRealTimers();
   });
+
+  it('should merge global and request-specific headers correctly', async () => {
+    const globalHeaders = { Authorization: 'Bearer global-token' };
+    const requestHeaders = { 'X-Request-ID': '456' };
+    const requests: RequestConfig[] = [
+      {
+        url: 'http://localhost:8080/test',
+        method: 'GET',
+        headers: requestHeaders,
+      },
+    ];
+
+    const runner = new Runner(baseOptions, requests, globalHeaders);
+
+    // Mock fetch to inspect headers
+    const fetchSpy = vi.spyOn(global, 'fetch');
+
+    await runner.run();
+
+    expect(fetchSpy).toHaveBeenCalledWith(
+      'http://localhost:8080/test',
+      expect.objectContaining({
+        headers: {
+          ...globalHeaders,
+          ...requestHeaders,
+        },
+      }),
+    );
+
+    fetchSpy.mockRestore();
+  });
 });

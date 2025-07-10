@@ -25,6 +25,9 @@ const jsonConfigTemplate = `{
       "method": "POST",
       "payload": {
         "name": "Tressi Post"
+      },
+      "headers": {
+        "X-Custom-Header": "custom-value"
       }
     }
   ]
