@@ -13,7 +13,7 @@ exports[`summarizer > should generate a comprehensive Markdown report 1`] = `
 
 > *This section highlights potential performance issues or configuration problems detected during the test.*
 
-* **Target RPS Unreachable**: The target of 1 RPS was not met. The test achieved ~0 RPS (40% of the target). Based on the average latency of 238ms, you would need at least **1** workers to meet the target.
+* **Target RPS Unreachable**: The target of 1 RPS was not met. The test achieved ~0 RPS (40% of the target). Based on the average latency of 238ms, you would need at least **2** workers to meet the target.
 * **High Failure Rate**: The endpoint \`http://b.com\` had a failure rate of 50.0%. This may indicate a problem under load.
 
 <details>
