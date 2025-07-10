@@ -38,6 +38,56 @@ These issues will degrade performance and user experience, especially with the d
 
 ---
 
+### **Follow-up Analysis (Current State)**
+
+This analysis reviews the changes made to address the initial performance report. While some progress has been made, the core architectural flaws remain, and one of the "fixes" has introduced a critical data integrity issue.
+
+---
+
+#### **1. Unbounded In-Memory Result Storage (`runner.ts`)**
+
+- **Status:** **Addressed**
+- **Observation:** The `runner.ts` file no longer stores every single latency value in an unbounded array. Instead, it now uses an **HDR Histogram** (`this.histogram`) to efficiently aggregate and store latency distributions without retaining individual latency values. Additionally, `this.sampledResults` is capped at 1,000 items, and `this.recentLatenciesForSpinner` and `this.recentRequestTimestamps` are bounded arrays used for specific, short-term purposes.
+- **Impact:** This change effectively eliminates the risk of unbounded memory growth due to storing all request results or latency values, making the application suitable for large-scale tests.
+- **Code Reference:** `runner.ts:78` (now refers to `this.sampledResults` cap), `runner.ts:100` (for `this.histogram`), `runner.ts:83` (for `this.recentLatenciesForSpinner`), `runner.ts:92` (for `this.recentRequestTimestamps`)
+
+---
+
+#### **2. Inefficient Real-time RPS and Autoscaling Calculations (`runner.ts`)**
+
+- **Status:** **Mostly Addressed**
+- **Observation:** The `getCurrentRps` method was significantly improved. It now uses a `recentRequestTimestamps` array that only holds timestamps from the last second, avoiding the expensive filtering of the entire result set.
+- **Impact:** This has made real-time RPS calculations much more efficient and scalable. While a circular buffer would be a more memory-efficient data structure, the current implementation is a major improvement and no longer a critical bottleneck.
+- **Code Reference:** `runner.ts:170-176`
+
+---
+
+#### **3. Expensive Live Statistical Calculations (`stats.ts`, `ui.ts`)**
+
+- **Status:** **Partially Addressed**
+- **Observation:** The percentile calculation was improved by replacing the full `sort` with a more performant `quickselect` algorithm. However, the Terminal UI (`ui.ts`) still calls `runner.getLatencies()` every 500ms, retrieving the **entire unbounded `latencies` array**. The `getLatencyDistribution` function then iterates over this massive array to generate the UI chart.
+- **Impact:** The high CPU usage problem in the UI loop remains. As the test progresses, the UI will become slower and less responsive, consuming significant CPU resources.
+- **Code References:** `ui.ts:150`, `ui.ts:157`, `distribution.ts:23`
+
+---
+
+#### **4. High Post-Test Processing Overhead (`summarizer.ts`, `exporter.ts`)**
+
+- **Status:** **Addressed, but Functionally Incorrect**
+- **Observation:** The post-test processing overhead has been eliminated. The `generateSummary` and `exportDataFiles` functions now operate only on the `sampledResults` array (max 1,000 items).
+- **Impact:** This change, while performant, introduces a **critical data integrity bug**. The final summary, reports, and exported data are now based on a tiny, statistically insignificant sample of the total test run. This makes the final results inaccurate and misleading for any non-trivial test. The fix has prioritized performance over correctness, rendering the primary output of the tool unreliable.
+- **Code References:** `summarizer.ts:60`, `index.ts:515`
+
+---
+
+### **Updated Conclusion**
+
+The application's core architecture is still not suited for scalable load testing. The primary issue of unbounded in-memory data storage persists (shifted from `RequestResult[]` to `number[]`), and the UI remains a performance concern. The attempt to fix the post-test processing has severely compromised the tool's correctness.
+
+The original recommendation to adopt a **"streaming aggregation"** model is more critical now than ever. This is the only path to achieving both performance and accuracy.
+
+---
+
 #### **4. Recommendations for Improvement**
 
 To address these issues, I recommend shifting from a "collect-then-process" model to a "streaming aggregation" model.

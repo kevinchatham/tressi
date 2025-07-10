@@ -6,7 +6,6 @@ import {
   getStatusCodeDistributionByCategory,
 } from './distribution';
 import { Runner } from './runner';
-import { average } from './stats';
 
 /**
  * Manages the terminal user interface for Tressi.
@@ -109,7 +108,7 @@ export class TUI {
     totalSec: number,
     targetReqPerSec: number | undefined,
   ): void {
-    const latencies = runner.getLatencies();
+    const histogram = runner.getHistogram();
     const statusCodeMap = runner.getStatusCodeMap();
     const currentReqPerSec = runner.getCurrentRps();
     const successfulRequests = runner.getSuccessfulRequestsCount();
@@ -118,7 +117,7 @@ export class TUI {
     const workerCount = runner.getWorkerCount();
 
     // Calculate average latency for the latest interval
-    const avgLatencyForInterval = average(latencies.slice(-100)); // Use a sample for interval avg
+    const avgLatencyForInterval = histogram.mean;
 
     const maxDataPoints = 30; // Same as response codes
     this.avgLatencyData.push(avgLatencyForInterval);
@@ -126,7 +125,7 @@ export class TUI {
       this.avgLatencyData.shift();
     }
 
-    const latencyDistribution = getLatencyDistribution(latencies);
+    const latencyDistribution = getLatencyDistribution(histogram);
     this.latencyDistributionTable.setData({
       headers: ['Range', 'Count', '% of Total', 'Cumulative'],
       data: latencyDistribution.map((b) => [

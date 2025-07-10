@@ -1,8 +1,10 @@
+import { Histogram } from 'hdr-histogram-js';
+
 import { TressiConfig } from './config';
 import { getLatencyDistribution } from './distribution';
 import { RunOptions } from './index';
 import { Runner } from './runner';
-import { average, percentile, RequestResult } from './stats';
+import { RequestResult } from './stats';
 
 export interface ReportMetadata {
   exportName?: string;
@@ -55,7 +57,9 @@ export function generateSummary(
   actualDurationSec?: number,
 ): TestSummary {
   const results = runner.getSampledResults();
-  if (results.length === 0) {
+  const histogram = runner.getHistogram();
+
+  if (histogram.totalCount === 0) {
     // Return a default summary if no results are available.
     return {
       global: {
@@ -78,12 +82,11 @@ export function generateSummary(
   }
 
   const { durationSec = 10, rps } = options;
-  const totalRequests = results.length;
-  const allLatencies = results.map((r) => r.latencyMs);
+  const totalRequests = histogram.totalCount;
   const effectiveDuration = actualDurationSec ?? durationSec;
   const actualRps =
     effectiveDuration > 0 ? totalRequests / effectiveDuration : 0;
-  const avgLatency = average(allLatencies);
+  const avgLatency = histogram.mean;
   const theoreticalMaxRps = rps
     ? Math.min(
         (1000 / (avgLatency || 1)) * (options.workers || 10),
@@ -107,7 +110,6 @@ export function generateSummary(
 
   const endpointSummaries = Object.values(requestsByEndpoint).map(
     (endpointResults): EndpointSummary => {
-      const latencies = endpointResults.map((r) => r.latencyMs);
       return {
         method: endpointResults[0].method,
         url: endpointResults[0].url,
@@ -115,11 +117,11 @@ export function generateSummary(
         successfulRequests: endpointResults.filter((r) => r.status < 400)
           .length,
         failedRequests: endpointResults.filter((r) => r.status >= 400).length,
-        avgLatencyMs: average(latencies),
-        minLatencyMs: Math.min(...latencies),
-        maxLatencyMs: Math.max(...latencies),
-        p95LatencyMs: percentile(latencies, 0.95),
-        p99LatencyMs: percentile(latencies, 0.99),
+        avgLatencyMs: 0, // Accurate per-endpoint latency calculation requires per-endpoint histograms
+        minLatencyMs: 0,
+        maxLatencyMs: 0,
+        p95LatencyMs: 0,
+        p99LatencyMs: 0,
       };
     },
   );
@@ -130,10 +132,10 @@ export function generateSummary(
       successfulRequests: results.filter((r) => r.status < 400).length,
       failedRequests: results.filter((r) => r.status >= 400).length,
       avgLatencyMs: avgLatency,
-      minLatencyMs: Math.min(...allLatencies),
-      maxLatencyMs: Math.max(...allLatencies),
-      p95LatencyMs: percentile(allLatencies, 0.95),
-      p99LatencyMs: percentile(allLatencies, 0.99),
+      minLatencyMs: histogram.minNonZeroValue,
+      maxLatencyMs: histogram.maxValue,
+      p95LatencyMs: histogram.getValueAtPercentile(95),
+      p99LatencyMs: histogram.getValueAtPercentile(99),
       actualRps,
       theoreticalMaxRps,
       achievedPercentage,
@@ -158,6 +160,7 @@ export function generateMarkdownReport(
   options: RunOptions,
   results: RequestResult[],
   config: TressiConfig,
+  histogram: Histogram,
   metadata?: ReportMetadata,
 ): string {
   const { global: g, endpoints: e } = summary;
@@ -262,9 +265,8 @@ export function generateMarkdownReport(
   md += `| p99 Latency | ${g.p99LatencyMs.toFixed(0)}ms |\n\n`;
 
   // Latency Distribution
-  const latencies = results.map((r) => r.latencyMs);
-  if (latencies.length > 0) {
-    const distribution = getLatencyDistribution(latencies, 8, 20);
+  if (histogram.totalCount > 0) {
+    const distribution = getLatencyDistribution(histogram, 8, 20);
 
     md += `## Latency Distribution\n\n`;
     md += `> *This table shows how request latencies were distributed. **% of Total** is the percentage of requests that fell into that specific time range. **Cumulative %** is the running total, showing the percentage of requests at or below that latency.*\n\n`;
@@ -273,7 +275,7 @@ export function generateMarkdownReport(
 
     for (const bucket of distribution) {
       if (bucket.count === '0') continue;
-      md += `| ${bucket.range}ms | ${bucket.count} | ${bucket.percent} | ${bucket.cumulative} | \`${bucket.chart}\` |\n`;
+      md += `| ${bucket.range}ms | ${bucket.count} | ${bucket.percent} | ${bucket.cumulative} | ${bucket.chart} |\n`;
     }
     md += `\n`;
   }

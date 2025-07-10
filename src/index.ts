@@ -12,7 +12,7 @@ import {
 } from './distribution';
 import { exportDataFiles } from './exporter';
 import { Runner } from './runner';
-import { average, percentile } from './stats';
+import {} from './stats';
 import {
   generateMarkdownReport,
   generateSummary,
@@ -204,10 +204,10 @@ function printEndpointSummary(summary: TestSummary): void {
 }
 
 function printLatencyDistribution(runner: Runner): void {
-  const latencies = runner.getLatencies();
-  if (latencies.length === 0) return;
+  const histogram = runner.getHistogram();
+  if (histogram.totalCount === 0) return;
 
-  const distribution = getLatencyDistribution(latencies, 8, 20);
+  const distribution = getLatencyDistribution(histogram, 8, 20);
   const distributionTable = new Table({
     head: ['Range (ms)', 'Count', '% of Total', 'Cumulative %', 'Chart'],
     colWidths: [15, 10, 15, 15, 25],
@@ -341,11 +341,10 @@ export async function runLoadTest(options: RunOptions): Promise<TestSummary> {
 
       // For the spinner, we'll use a sample of recent latencies to avoid
       // performance issues with very long test runs.
-      const latencies = runner.getLatencies();
-      const recentLatencies = latencies.slice(-1000);
-      const avgLatency = average(recentLatencies);
-      const p95 = percentile(recentLatencies, 0.95);
-      const p99 = percentile(recentLatencies, 0.99);
+      const histogram = runner.getHistogram();
+      const avgLatency = histogram.mean;
+      const p95 = histogram.getValueAtPercentile(95);
+      const p99 = histogram.getValueAtPercentile(99);
 
       const rpsDisplay = options.rps ? `${rps}/${options.rps}` : `${rps}`;
       const successDisplay = chalk.green(successful);
@@ -398,6 +397,7 @@ export async function runLoadTest(options: RunOptions): Promise<TestSummary> {
         options,
         runner.getSampledResults(),
         loadedConfig,
+        runner.getHistogram(),
         {
           exportName: baseExportName,
           runDate,

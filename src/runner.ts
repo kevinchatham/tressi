@@ -1,8 +1,9 @@
 import { EventEmitter } from 'events';
+import { build, Histogram } from 'hdr-histogram-js';
 
 import { RequestConfig } from './config';
 import { RunOptions } from './index';
-import { average, RequestResult } from './stats';
+import { RequestResult } from './stats';
 
 async function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -17,7 +18,8 @@ export class Runner extends EventEmitter {
   private requests: RequestConfig[];
   private headers: Record<string, string>;
   private sampledResults: RequestResult[] = [];
-  private latencies: number[] = [];
+  private histogram: Histogram;
+  private recentLatenciesForSpinner: number[] = [];
   private recentRequestTimestamps: number[] = [];
   private statusCodeMap: Record<number, number> = {};
   private stopped = false;
@@ -46,6 +48,7 @@ export class Runner extends EventEmitter {
     this.options = options;
     this.requests = requests;
     this.headers = headers;
+    this.histogram = build();
     this.currentTargetRps =
       options.rampUpTimeSec && options.rps ? 0 : options.rps || 0;
   }
@@ -58,7 +61,17 @@ export class Runner extends EventEmitter {
     if (this.sampledResults.length < 1000) {
       this.sampledResults.push(result);
     }
-    this.latencies.push(result.latencyMs);
+
+    this.histogram.recordValue(result.latencyMs);
+
+    // Keep a small, rotating log of recent latencies for the non-UI spinner
+    if (!this.options.useUI) {
+      this.recentLatenciesForSpinner.push(result.latencyMs);
+      if (this.recentLatenciesForSpinner.length > 1000) {
+        this.recentLatenciesForSpinner.shift();
+      }
+    }
+
     this.recentRequestTimestamps.push(Date.now());
     this.statusCodeMap[result.status] =
       (this.statusCodeMap[result.status] || 0) + 1;
@@ -79,11 +92,19 @@ export class Runner extends EventEmitter {
   }
 
   /**
-   * Gets all the latency values collected during the test.
+   * Gets the histogram containing all latency values.
+   * @returns The HDR histogram instance.
+   */
+  public getHistogram(): Histogram {
+    return this.histogram;
+  }
+
+  /**
+   * Gets an array of recent latency values for the non-UI spinner.
    * @returns An array of latency numbers in milliseconds.
    */
-  public getLatencies(): number[] {
-    return this.latencies;
+  public getRecentLatencies(): number[] {
+    return this.recentLatenciesForSpinner;
   }
 
   /**
@@ -115,7 +136,7 @@ export class Runner extends EventEmitter {
    * @returns The average latency in milliseconds.
    */
   public getAverageLatency(): number {
-    return average(this.latencies);
+    return this.histogram.mean;
   }
 
   /**

@@ -1,14 +1,15 @@
 import chalk from 'chalk';
+import { Histogram } from 'hdr-histogram-js';
 
 /**
  * Calculates the latency distribution for a given set of latencies.
- * @param latencies An array of latency values.
+ * @param histogram An HDR histogram instance.
  * @param bucketCount The number of buckets to create.
  * @param chartWidth Optional width for the bar chart. If provided, a text-based chart is generated.
  * @returns An array of bucket objects with range, count, percentage, cumulative, and chart values.
  */
 export function getLatencyDistribution(
-  latencies: number[],
+  histogram: Histogram,
   bucketCount = 6,
   chartWidth?: number,
 ): {
@@ -18,13 +19,13 @@ export function getLatencyDistribution(
   cumulative: string;
   chart: string;
 }[] {
-  if (latencies.length === 0) {
+  if (histogram.totalCount === 0) {
     return [];
   }
 
-  const totalCount = latencies.length;
-  const minLatency = Math.min(...latencies);
-  const maxLatency = Math.max(...latencies);
+  const totalCount = histogram.totalCount;
+  const minLatency = histogram.minNonZeroValue;
+  const maxLatency = histogram.maxValue;
   const range = maxLatency - minLatency;
   const bucketSize = Math.ceil(range / bucketCount) || 1;
 
@@ -44,17 +45,32 @@ export function getLatencyDistribution(
   buckets[buckets.length - 1].range =
     `${buckets[buckets.length - 1].lowerBound}+`;
 
-  for (const latency of latencies) {
-    const targetBucket = buckets.find(
-      (b) => latency >= b.lowerBound && latency <= b.upperBound,
-    );
-    if (targetBucket) {
-      targetBucket.count++;
-    }
-  }
+  const distributionOutput = histogram.outputPercentileDistribution();
+  const lines = distributionOutput.split('\n');
+
+  // Skip header and footer lines, focus on data lines
+  const dataLines = lines.slice(3, lines.length - 3); // Adjust slice based on actual output
 
   let cumulativeCount = 0;
-  const maxCount = Math.max(...buckets.map((b) => b.count));
+  let maxCount = 0;
+
+  dataLines.forEach(line => {
+    const parts = line.trim().split(/\s+/);
+    if (parts.length >= 3) {
+      const value = parseFloat(parts[0]);
+      const count = parseInt(parts[2]);
+
+      // Find the appropriate bucket for this value
+      const targetBucket = buckets.find(b => value >= b.lowerBound && value <= b.upperBound);
+
+      if (targetBucket) {
+        targetBucket.count += count;
+        if (targetBucket.count > maxCount) {
+          maxCount = targetBucket.count;
+        }
+      }
+    }
+  });
 
   return buckets.map((bucket) => {
     const percentOfTotal =
