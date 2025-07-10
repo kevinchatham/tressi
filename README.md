@@ -46,11 +46,7 @@ Install globally to run `tressi` from anywhere:
 npm install -g tressi
 ```
 
-## 🛠️ Usage
-
-`tressi` can be run directly from the command line **or** used as a library in your own app.
-
-### 🧪 CLI: Quick Start
+## 🛠️ Quick Start
 
 1. **Generate a config file**
 
@@ -66,19 +62,40 @@ If you have a `tressi.config.json` file in your current directory, you can simpl
 npx tressi
 ```
 
-Or, you can explicitly provide a path to a config file:
+## 📊 Live Terminal UI
 
-```bash
-npx tressi --config ./path/to/your/tressi.config.json
-```
+When you run `tressi` (without the `--no-ui` flag), it displays a live dashboard with four key sections:
 
-### 📚 CLI Commands
+<p align="center">
+  <img src="https://github.com/kevinchatham/tressi/blob/main/tressi-ui.png?raw=true" alt="tressi-ui" width="90%"/>
+</p>
 
-| Command | Description                        |
-| ------- | ---------------------------------- |
-| `init`  | Create a `tressi.config.json` file |
+### How to Interpret the Dashboard
 
-### 🧪 Test Scenarios
+1.  **Avg Latency (ms) (Top-Left)**
+    - **What it is:** A line chart showing the average latency (in milliseconds) over a rolling time window. Each point on the graph represents the average latency of all requests that completed within that time slice.
+    - **What to look for:** A steady, low line is ideal. Sudden spikes or a consistently rising trend can indicate performance bottlenecks under load.
+
+2.  **Response Codes Over Time (Top-Right)**
+    - **What it is:** A line chart that tracks the count of different response code categories (2xx, 3xx, 4xx, 5xx) over the course of the test. The x-axis shows the elapsed time in seconds.
+    - **What to look for:** The appearance of red (4xx/5xx) lines, which signals that errors started occurring at a specific point in time during the test.
+
+3.  **Live Stats (Bottom-Left)**
+    - **What it is:** A table of key performance indicators (KPIs) for the entire test run so far.
+    - **Key Stats:**
+      - `Time`: Elapsed time versus the total test duration.
+      - `Workers`: The current number of active concurrent workers.
+      - `Req/s`: The actual requests per second versus your target.
+      - `Success / Fail`: Total count of successful versus failed requests.
+      - `Avg Latency`: The average latency across all requests.
+
+4.  **Latency Distribution (Bottom-Right)**
+    - **What it is:** A histogram that groups all completed requests into latency buckets (e.g., 17-42ms, 43-68ms).
+    - **What to look for:** This shows you where the majority of your response times are concentrated. An ideal result is a tight grouping in the lowest buckets. A wide spread indicates inconsistent performance.
+
+## ⚙️ Usage & Examples
+
+### Test Scenarios
 
 `tressi` can be configured to simulate a variety of load testing scenarios. Here are a few examples:
 
@@ -130,7 +147,71 @@ Runs a test without the UI and exports the results to a specified directory.
 npx tressi --config tressi.config.json --workers 20 --duration 30 --rps 300 --no-ui --export
 ```
 
-### ⚙️ CLI Options
+### Configuration Reference
+
+The `tressi init` command will generate a `tressi.config.json` file with a `$schema` property. This property points to a JSON Schema file that provides autocompletion and validation in supported editors (like VS Code), making it easier to write valid configurations.
+
+#### Example `tressi.config.json`
+
+```json
+{
+  "$schema": "https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.8.json",
+  "headers": {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer <your-token>"
+  },
+  "requests": [
+    {
+      "url": "https://api.example.com/users",
+      "method": "GET"
+    },
+    {
+      "url": "https://api.example.com/users",
+      "method": "POST",
+      "payload": { "name": "Tressi" },
+      "headers": {
+        "Content-Type": "application/vnd.api+json"
+      }
+    }
+  ]
+}
+```
+
+#### Root Properties
+
+| Property   | Type     | Description                                                                        |
+| ---------- | -------- | ---------------------------------------------------------------------------------- |
+| `headers`  | `object` | (Optional) An object containing global headers to be sent with every request.      |
+| `requests` | `array`  | A required array of one or more request objects to be executed by the test runner. |
+
+#### Request Properties
+
+Each object in the `requests` array defines a single HTTP request and has the following properties:
+
+| Property  | Type                | Description                                                                                                                                                |
+| --------- | ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `url`     | `string`            | The full URL to send the request to.                                                                                                                       |
+| `method`  | `string`            | (Optional) The HTTP method. It is case-insensitive, defaults to `GET`, and supports `GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `HEAD`, and `OPTIONS`.        |
+| `payload` | `object` or `array` | (Optional) The JSON data to send as the request body.                                                                                                      |
+| `headers` | `object`            | (Optional) An object containing headers for this specific request. If a header is defined here and in the global `headers`, this one will take precedence. |
+
+### Exporting Results
+
+The `--export` flag will generate a unique, timestamped directory containing a comprehensive set of data files:
+
+- **📝 `report.md`**: A clean, readable Markdown summary of the test results. It includes a "Sampled Responses" section that provides a response body for each unique status code received *per endpoint*, making it easy to debug different outcomes for the same URL.
+- **📊 `report.xlsx`**: A multi-sheet Excel file with the global summary, per-endpoint summary, a raw request log, and a dedicated "Sampled Responses" sheet that lists one sample for each status code received per endpoint.
+- **📈 `results.csv`**: A raw log of all requests made during the test.
+
+You can also provide a path to the `--export` flag to customize the base name of the output directory:
+
+```bash
+npx tressi --config tressi.config.json --workers 20 --duration 30 --rps 300 --no-ui --export my-test-results
+```
+
+This will create a uniquely named, timestamped directory, such as `my-test-results-2025-07-06T10:00:00.000Z`.
+
+### CLI Options
 
 | Option               | Alias | Description                                                           | Default |
 | -------------------- | ----- | --------------------------------------------------------------------- | ------- |
@@ -143,7 +224,7 @@ npx tressi --config tressi.config.json --workers 20 --duration 30 --rps 300 --no
 | `--export [path]`    |       | Export results to Markdown, XLSX, and CSVs                            | `false` |
 | `--no-ui`            |       | Disable the interactive terminal UI (can improve performance)         | `false` |
 
-### 🧬 Programmatic Usage
+## 🧬 Programmatic Usage
 
 `tressi` can be used as a library to run load tests from your own Node.js scripts. The `runLoadTest` function accepts an `options` object and returns a `Promise` that resolves with a `TestSummary` object containing detailed results.
 
@@ -184,98 +265,3 @@ async function myCustomScript() {
 
 myCustomScript();
 ```
-
-## 📊 Live Terminal UI
-
-When you run `tressi` (without the `--no-ui` flag), it displays a live dashboard with four key sections:
-
-<p align="center">
-  <img src="https://github.com/kevinchatham/tressi/blob/main/tressi-ui.png?raw=true" alt="tressi-ui" width="90%"/>
-</p>
-
-### How to Interpret the Dashboard
-
-1.  **Avg Latency (ms) (Top-Left)**
-    - **What it is:** A line chart showing the average latency (in milliseconds) over a rolling time window. Each point on the graph represents the average latency of all requests that completed within that time slice.
-    - **What to look for:** A steady, low line is ideal. Sudden spikes or a consistently rising trend can indicate performance bottlenecks under load.
-
-2.  **Response Codes Over Time (Top-Right)**
-    - **What it is:** A line chart that tracks the count of different response code categories (2xx, 3xx, 4xx, 5xx) over the course of the test. The x-axis shows the elapsed time in seconds.
-    - **What to look for:** The appearance of red (4xx/5xx) lines, which signals that errors started occurring at a specific point in time during the test.
-
-3.  **Live Stats (Bottom-Left)**
-    - **What it is:** A table of key performance indicators (KPIs) for the entire test run so far.
-    - **Key Stats:**
-      - `Time`: Elapsed time versus the total test duration.
-      - `Workers`: The current number of active concurrent workers.
-      - `Req/s`: The actual requests per second versus your target.
-      - `Success / Fail`: Total count of successful versus failed requests.
-      - `Avg Latency`: The average latency across all requests.
-
-4.  **Latency Distribution (Bottom-Right)**
-    - **What it is:** A histogram that groups all completed requests into latency buckets (e.g., 17-42ms, 43-68ms).
-    - **What to look for:** This shows you where the majority of your response times are concentrated. An ideal result is a tight grouping in the lowest buckets. A wide spread indicates inconsistent performance.
-
-## ⚙️ Configuration Reference
-
-The `tressi init` command will generate a `tressi.config.json` file with a `$schema` property. This property points to a JSON Schema file that provides autocompletion and validation in supported editors (like VS Code), making it easier to write valid configurations.
-
-### Example `tressi.config.json`
-
-```json
-{
-  "$schema": "https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.8.json",
-  "headers": {
-    "Content-Type": "application/json",
-    "Authorization": "Bearer <your-token>"
-  },
-  "requests": [
-    {
-      "url": "https://api.example.com/users",
-      "method": "GET"
-    },
-    {
-      "url": "https://api.example.com/users",
-      "method": "POST",
-      "payload": { "name": "Tressi" },
-      "headers": {
-        "Content-Type": "application/vnd.api+json"
-      }
-    }
-  ]
-}
-```
-
-### Root Properties
-
-| Property   | Type     | Description                                                                        |
-| ---------- | -------- | ---------------------------------------------------------------------------------- |
-| `headers`  | `object` | (Optional) An object containing global headers to be sent with every request.      |
-| `requests` | `array`  | A required array of one or more request objects to be executed by the test runner. |
-
-### Request Properties
-
-Each object in the `requests` array defines a single HTTP request and has the following properties:
-
-| Property  | Type                | Description                                                                                                                                                |
-| --------- | ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `url`     | `string`            | The full URL to send the request to.                                                                                                                       |
-| `method`  | `string`            | (Optional) The HTTP method. It is case-insensitive, defaults to `GET`, and supports `GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `HEAD`, and `OPTIONS`.        |
-| `payload` | `object` or `array` | (Optional) The JSON data to send as the request body.                                                                                                      |
-| `headers` | `object`            | (Optional) An object containing headers for this specific request. If a header is defined here and in the global `headers`, this one will take precedence. |
-
-## 📁 Exporting Results
-
-The `--export` flag will generate a unique, timestamped directory containing a comprehensive set of data files:
-
-- **📝 `report.md`**: A clean, readable Markdown summary of the test results. It includes a "Sampled Responses" section that provides a response body for each unique status code received *per endpoint*, making it easy to debug different outcomes for the same URL.
-- **📊 `report.xlsx`**: A multi-sheet Excel file with the global summary, per-endpoint summary, a raw request log, and a dedicated "Sampled Responses" sheet that lists one sample for each status code received per endpoint.
-- **📈 `results.csv`**: A raw log of all requests made during the test.
-
-You can also provide a path to the `--export` flag to customize the base name of the output directory:
-
-```bash
-npx tressi --config tressi.config.json --workers 20 --duration 30 --rps 300 --no-ui --export my-test-results
-```
-
-This will create a uniquely named, timestamped directory, such as `my-test-results-2025-07-06T10:00:00.000Z`.
