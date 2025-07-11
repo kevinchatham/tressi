@@ -23,7 +23,7 @@ describe('Distribution', () => {
 
     it('should correctly bucket latencies', () => {
       const distribution = new Distribution();
-      [10, 20, 25, 30, 100, 110].forEach(l => distribution.add(l));
+      [10, 20, 25, 30, 100, 110].forEach((l) => distribution.add(l));
       const result = distribution.getLatencyDistribution({ count: 3 });
 
       expect(result).toHaveLength(3);
@@ -53,12 +53,10 @@ describe('Distribution', () => {
 
     it('should handle all latencies being the same', () => {
       const distribution = new Distribution();
-      [50, 50, 50, 50].forEach(l => distribution.add(l));
+      [50, 50, 50, 50].forEach((l) => distribution.add(l));
       const result = distribution.getLatencyDistribution({ count: 4 });
       // All should fall in the first bucket
       expect(result[0].count).toBe('4');
     });
   });
 });
-
-

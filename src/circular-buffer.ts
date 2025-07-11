@@ -1,4 +1,3 @@
-
 /**
  * A memory-efficient circular buffer implementation for storing a fixed number of items.
  * When the buffer is full, new items overwrite the oldest ones.

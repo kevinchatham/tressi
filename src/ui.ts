@@ -1,8 +1,8 @@
 import blessed from 'blessed';
 import contrib from 'blessed-contrib';
 
-import { getStatusCodeDistributionByCategory } from './stats';
 import { Runner } from './runner';
+import { getStatusCodeDistributionByCategory } from './stats';
 
 /**
  * Manages the terminal user interface for Tressi.
@@ -127,7 +127,12 @@ export class TUI {
     });
     this.latencyDistributionTable.setData({
       headers: ['Range', 'Count', '% of Total', 'Cumulative'],
-      data: latencyDistribution.map((b) => [b.latency, b.count, b.percent, b.cumulative]),
+      data: latencyDistribution.map((b) => [
+        b.latency,
+        b.count,
+        b.percent,
+        b.cumulative,
+      ]),
     });
 
     const currentDistribution =

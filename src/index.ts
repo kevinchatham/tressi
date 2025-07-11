@@ -6,13 +6,9 @@ import path from 'path';
 import { z } from 'zod';
 
 import { loadConfig, RequestConfig, TressiConfig } from './config';
-import {
-  getLatencyDistribution,
-  getStatusCodeDistribution,
-} from './distribution';
 import { exportDataFiles } from './exporter';
 import { Runner } from './runner';
-import {} from './stats';
+import { getStatusCodeDistributionByCategory } from './stats';
 import {
   generateMarkdownReport,
   generateSummary,
@@ -207,7 +203,10 @@ function printLatencyDistribution(runner: Runner): void {
   const histogram = runner.getHistogram();
   if (histogram.totalCount === 0) return;
 
-  const distribution = getLatencyDistribution(histogram, 8, 20);
+  const distribution = runner.getLatencyDistribution({
+    count: 8,
+    chartWidth: 20,
+  });
   const distributionTable = new Table({
     head: ['Range (ms)', 'Count', '% of Total', 'Cumulative %', 'Chart'],
     colWidths: [15, 10, 15, 15, 25],
@@ -216,7 +215,7 @@ function printLatencyDistribution(runner: Runner): void {
   for (const bucket of distribution) {
     if (bucket.count === '0') continue;
     distributionTable.push([
-      `${bucket.range}ms`,
+      bucket.latency,
       bucket.count,
       bucket.percent,
       bucket.cumulative,
@@ -234,14 +233,14 @@ function printStatusCodeDistribution(runner: Runner): void {
   const statusCodeMap = runner.getStatusCodeMap();
   if (Object.keys(statusCodeMap).length === 0) return;
 
-  const distribution = getStatusCodeDistribution(statusCodeMap);
+  const distribution = getStatusCodeDistributionByCategory(statusCodeMap);
   const distributionTable = new Table({
-    head: ['Status Code', 'Count', '% of Total', 'Chart'],
-    colWidths: [15, 10, 15, 25],
+    head: ['Status Code', 'Count'],
+    colWidths: [15, 10],
   });
 
-  for (const item of distribution) {
-    distributionTable.push([item.code, item.count, item.percent, item.chart]);
+  for (const [code, count] of Object.entries(distribution)) {
+    distributionTable.push([code, count]);
   }
 
   // eslint-disable-next-line no-console
