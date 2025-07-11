@@ -1,3 +1,4 @@
+import pkg from '../package.json';
 import { TressiConfig } from './config';
 import { RunOptions } from './index';
 import { Runner } from './runner';
@@ -76,7 +77,7 @@ export function generateSummary(
         duration: 0,
       },
       endpoints: [],
-      tressiVersion: process.env.npm_package_version || 'unknown',
+      tressiVersion: pkg.version || 'unknown',
     };
   }
 
@@ -144,7 +145,7 @@ export function generateSummary(
       duration: effectiveDuration,
     },
     endpoints: endpointSummaries,
-    tressiVersion: process.env.npm_package_version || 'unknown',
+    tressiVersion: pkg.version || 'unknown',
   };
 }
 
