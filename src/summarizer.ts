@@ -1,7 +1,4 @@
-import { Histogram } from 'hdr-histogram-js';
-
 import { TressiConfig } from './config';
-import { Distribution } from './distribution';
 import { RunOptions } from './index';
 import { Runner } from './runner';
 import { RequestResult } from './stats';
@@ -263,7 +260,10 @@ export function generateMarkdownReport(
 
   // Latency Distribution
   if (distribution.getTotalCount() > 0) {
-    const distributionResult = distribution.getLatencyDistribution({count: 8,chartWidth: 20,});
+    const distributionResult = distribution.getLatencyDistribution({
+      count: 8,
+      chartWidth: 20,
+    });
     md += `## Latency Distribution\n\n`;
     md += `> *This table shows how request latencies were distributed. **% of Total** is the percentage of requests that fell into that specific time range. **Cumulative %** is the running total, showing the percentage of requests at or below that latency.*\n\n`;
     md += `| Range (ms) | Count | % of Total | Cumulative % | Chart |\n`;

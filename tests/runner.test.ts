@@ -193,6 +193,4 @@ describe('Runner', () => {
 
     fetchSpy.mockRestore();
   });
-
-  
 });

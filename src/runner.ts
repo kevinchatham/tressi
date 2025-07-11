@@ -2,8 +2,8 @@ import { EventEmitter } from 'events';
 import { build, Histogram } from 'hdr-histogram-js';
 
 import { CircularBuffer } from './circular-buffer';
-import { Distribution } from './distribution';
 import { RequestConfig } from './config';
+import { Distribution } from './distribution';
 import { RunOptions } from './index';
 import { RequestResult } from './stats';
 
@@ -124,7 +124,14 @@ export class Runner extends EventEmitter {
    */
   public getLatencyDistribution(options: {
     count: number;
-  }): { latency: string; count: string; percent: string; cumulative: string; chart: string; }[] {
+    chartWidth?: number;
+  }): {
+    latency: string;
+    count: string;
+    percent: string;
+    cumulative: string;
+    chart: string;
+  }[] {
     return this.distribution.getLatencyDistribution(options);
   }
 
@@ -431,7 +438,7 @@ export class Runner extends EventEmitter {
           await res.text().catch(() => {});
         }
 
-        const latencyMs = Date.now() - start;
+        const latencyMs = Math.max(0, Date.now() - start);
         this.onResult({
           method: req.method || 'GET',
           url: req.url,
@@ -442,7 +449,7 @@ export class Runner extends EventEmitter {
           timestamp: Date.now(),
         });
       } catch (err) {
-        const latencyMs = Date.now() - start;
+        const latencyMs = Math.max(0, Date.now() - start);
         this.onResult({
           method: req.method || 'GET',
           url: req.url,
