@@ -2,6 +2,7 @@ import { TressiConfig } from './config';
 import { RunOptions } from './index';
 import { Runner } from './runner';
 import { RequestResult } from './stats';
+import { getStatusCodeDistributionByCategory } from './stats';
 
 export interface ReportMetadata {
   exportName?: string;
@@ -309,14 +310,14 @@ export function generateMarkdownReport(
   );
 
   if (Object.keys(statusCodeMap).length > 0) {
+    const statusCodeDistribution =
+      getStatusCodeDistributionByCategory(statusCodeMap);
     md += `## Responses by Status Code\n\n`;
-    md += `> *A breakdown of all responses by their HTTP status code.*\n\n`;
-    md += `| Status Code | Count |\n`;
+    md += `> *A breakdown of all responses by their HTTP status code categories.\n\n`;
+    md += `| Status Code Category | Count |\n`;
     md += `|---|---|\n`;
-    for (const [code, count] of Object.entries(statusCodeMap).sort((a, b) =>
-      a[0].localeCompare(b[0]),
-    )) {
-      md += `| ${code} | ${count} |\n`;
+    for (const [category, count] of Object.entries(statusCodeDistribution)) {
+      md += `| ${category} | ${count} |\n`;
     }
     md += `\n`;
   }
