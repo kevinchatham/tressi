@@ -58,6 +58,7 @@ export function generateSummary(
 ): TestSummary {
   const results = runner.getSampledResults();
   const histogram = runner.getHistogram();
+  const endpointHistograms = runner.getEndpointHistograms();
 
   if (histogram.totalCount === 0) {
     // Return a default summary if no results are available.
@@ -110,6 +111,9 @@ export function generateSummary(
 
   const endpointSummaries = Object.values(requestsByEndpoint).map(
     (endpointResults): EndpointSummary => {
+      const endpointKey = `${endpointResults[0].method} ${endpointResults[0].url}`;
+      const endpointHistogram = endpointHistograms.get(endpointKey);
+
       return {
         method: endpointResults[0].method,
         url: endpointResults[0].url,
@@ -117,11 +121,11 @@ export function generateSummary(
         successfulRequests: endpointResults.filter((r) => r.status < 400)
           .length,
         failedRequests: endpointResults.filter((r) => r.status >= 400).length,
-        avgLatencyMs: 0, // Accurate per-endpoint latency calculation requires per-endpoint histograms
-        minLatencyMs: 0,
-        maxLatencyMs: 0,
-        p95LatencyMs: 0,
-        p99LatencyMs: 0,
+        avgLatencyMs: endpointHistogram?.mean || 0,
+        minLatencyMs: endpointHistogram?.minNonZeroValue || 0,
+        maxLatencyMs: endpointHistogram?.maxValue || 0,
+        p95LatencyMs: endpointHistogram?.getValueAtPercentile(95) || 0,
+        p99LatencyMs: endpointHistogram?.getValueAtPercentile(99) || 0,
       };
     },
   );

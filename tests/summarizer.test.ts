@@ -51,6 +51,12 @@ const mockRunner = {
     },
   ],
   getHistogram: () => createHistogram([100, 150, 200, 500]),
+  getEndpointHistograms: () => {
+    const map = new Map<string, Histogram>();
+    map.set('GET http://a.com', createHistogram([100, 150]));
+    map.set('GET http://b.com', createHistogram([200, 500]));
+    return map;
+  },
   getStatusCodeMap: () => ({ 200: 3, 500: 1 }),
   getSuccessfulRequestsCount: () => 3,
   getFailedRequestsCount: () => 1,
@@ -114,8 +120,8 @@ describe('summarizer', () => {
     expect(summaryA?.totalRequests).toBe(2);
     expect(summaryA?.successfulRequests).toBe(2);
     expect(summaryA?.failedRequests).toBe(0);
-    expect(summaryA?.avgLatencyMs).toBe(0);
-    expect(summaryA?.p95LatencyMs).toBe(0);
+    expect(summaryA?.avgLatencyMs).toBe(125);
+    expect(summaryA?.p95LatencyMs).toBe(150);
 
     const summaryB = e.find((s) => s.url === 'http://b.com');
     expect(summaryB).toBeDefined();
@@ -123,8 +129,8 @@ describe('summarizer', () => {
     expect(summaryB?.totalRequests).toBe(2);
     expect(summaryB?.successfulRequests).toBe(1);
     expect(summaryB?.failedRequests).toBe(1);
-    expect(summaryB?.avgLatencyMs).toBe(0);
-    expect(summaryB?.p95LatencyMs).toBe(0);
+    expect(summaryB?.avgLatencyMs).toBe(350);
+    expect(summaryB?.p95LatencyMs).toBe(500);
   });
 
   /**

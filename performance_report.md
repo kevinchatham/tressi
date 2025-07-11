@@ -44,7 +44,7 @@ This analysis reviews the changes made to address the initial performance report
 
 ---
 
-#### **1. Unbounded In-Memory Result Storage (`runner.ts`)**
+#### **1. DONE - Unbounded In-Memory Result Storage (`runner.ts`)**
 
 - **Status:** **Addressed**
 - **Observation:** The `runner.ts` file no longer stores every single latency value in an unbounded array. Instead, it now uses an **HDR Histogram** (`this.histogram`) to efficiently aggregate and store latency distributions without retaining individual latency values. Additionally, `this.sampledResults` is capped at 1,000 items, and `this.recentLatenciesForSpinner` and `this.recentRequestTimestamps` are bounded arrays used for specific, short-term purposes.
@@ -53,12 +53,12 @@ This analysis reviews the changes made to address the initial performance report
 
 ---
 
-#### **2. Inefficient Real-time RPS and Autoscaling Calculations (`runner.ts`)**
+#### **2. DONE - Inefficient Real-time RPS and Autoscaling Calculations (`runner.ts`)**
 
-- **Status:** **Mostly Addressed**
-- **Observation:** The `getCurrentRps` method was significantly improved. It now uses a `recentRequestTimestamps` array that only holds timestamps from the last second, avoiding the expensive filtering of the entire result set.
-- **Impact:** This has made real-time RPS calculations much more efficient and scalable. While a circular buffer would be a more memory-efficient data structure, the current implementation is a major improvement and no longer a critical bottleneck.
-- **Code Reference:** `runner.ts:170-176`
+- **Status:** **Addressed**
+- **Observation:** The `getCurrentRps` method has been re-implemented to use a `CircularBuffer` for storing recent request timestamps. This avoids iterating over a large, growing array.
+- **Impact:** This change makes the real-time RPS calculation highly efficient and scalable. The operation is now O(1) with respect to the total number of requests, eliminating the previous performance bottleneck entirely.
+- **Code Reference:** `runner.ts:188-204`
 
 ---
 

@@ -1,6 +1,7 @@
 import { EventEmitter } from 'events';
 import { build, Histogram } from 'hdr-histogram-js';
 
+import { CircularBuffer } from './circular-buffer';
 import { RequestConfig } from './config';
 import { RunOptions } from './index';
 import { RequestResult } from './stats';
@@ -19,8 +20,9 @@ export class Runner extends EventEmitter {
   private headers: Record<string, string>;
   private sampledResults: RequestResult[] = [];
   private histogram: Histogram;
+  private endpointHistograms: Map<string, Histogram> = new Map();
   private recentLatenciesForSpinner: number[] = [];
-  private recentRequestTimestamps: number[] = [];
+  private recentRequestTimestamps: CircularBuffer<number>;
   private statusCodeMap: Record<number, number> = {};
   private stopped = false;
   private startTime: number = 0;
@@ -51,6 +53,11 @@ export class Runner extends EventEmitter {
     this.histogram = build();
     this.currentTargetRps =
       options.rampUpTimeSec && options.rps ? 0 : options.rps || 0;
+
+    // Estimate buffer size: 2 seconds of requests at max RPS, or 10k, whichever is larger
+    const maxRps = options.rps || 1000;
+    const bufferSize = Math.max(10000, maxRps * 2);
+    this.recentRequestTimestamps = new CircularBuffer<number>(bufferSize);
   }
 
   /**
@@ -64,6 +71,12 @@ export class Runner extends EventEmitter {
 
     this.histogram.recordValue(result.latencyMs);
 
+    const endpointKey = `${result.method} ${result.url}`;
+    if (!this.endpointHistograms.has(endpointKey)) {
+      this.endpointHistograms.set(endpointKey, build());
+    }
+    this.endpointHistograms.get(endpointKey)!.recordValue(result.latencyMs);
+
     // Keep a small, rotating log of recent latencies for the non-UI spinner
     if (!this.options.useUI) {
       this.recentLatenciesForSpinner.push(result.latencyMs);
@@ -72,7 +85,7 @@ export class Runner extends EventEmitter {
       }
     }
 
-    this.recentRequestTimestamps.push(Date.now());
+    this.recentRequestTimestamps.add(Date.now());
     this.statusCodeMap[result.status] =
       (this.statusCodeMap[result.status] || 0) + 1;
 
@@ -97,6 +110,14 @@ export class Runner extends EventEmitter {
    */
   public getHistogram(): Histogram {
     return this.histogram;
+  }
+
+  /**
+   * Gets the map of histograms for each endpoint.
+   * @returns A map where keys are endpoint identifiers and values are HDR histograms.
+   */
+  public getEndpointHistograms(): Map<string, Histogram> {
+    return this.endpointHistograms;
   }
 
   /**
@@ -163,11 +184,19 @@ export class Runner extends EventEmitter {
   public getCurrentRps(): number {
     const now = Date.now();
     const oneSecondAgo = now - 1000;
-    // Filter out timestamps older than 1 second
-    this.recentRequestTimestamps = this.recentRequestTimestamps.filter(
-      (timestamp) => timestamp >= oneSecondAgo,
-    );
-    return this.recentRequestTimestamps.length;
+
+    const timestamps = this.recentRequestTimestamps.getAll();
+    let count = 0;
+    // Iterate backwards since recent timestamps are at the end
+    for (let i = timestamps.length - 1; i >= 0; i--) {
+      if (timestamps[i] >= oneSecondAgo) {
+        count++;
+      } else {
+        // The timestamps are ordered, so we can stop.
+        break;
+      }
+    }
+    return count;
   }
 
   /**
