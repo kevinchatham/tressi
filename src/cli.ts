@@ -116,6 +116,9 @@ Examples:
   # Run a load test with a specific config file
   $ tressi --config ./path/to/your/tressi.config.json
   
+  # Run a ramp-up test to 500 RPS over 30 seconds
+  $ tressi --workers 20 --duration 60 --rps 500 --ramp-up-time 30
+
   # Run an autoscaling test up to 50 workers with a target of 1000 RPS
   $ tressi --autoscale --workers 50 --rps 1000 --duration 60
 
