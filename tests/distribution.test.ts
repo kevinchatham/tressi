@@ -1,9 +1,18 @@
+import { build, Histogram } from 'hdr-histogram-js';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
   getLatencyDistribution,
   getStatusCodeDistribution,
 } from '../src/distribution';
+
+const createHistogram = (latencies: number[]): Histogram => {
+  const histogram = build();
+  for (const l of latencies) {
+    histogram.recordValue(l);
+  }
+  return histogram;
+};
 
 vi.mock('chalk', () => ({
   default: {
@@ -20,12 +29,14 @@ describe('distribution', () => {
 
   describe('getLatencyDistribution', () => {
     it('should return an empty array for no latencies', () => {
-      expect(getLatencyDistribution([])).toEqual([]);
+      const histogram = createHistogram([]);
+      expect(getLatencyDistribution(histogram)).toEqual([]);
     });
 
     it('should correctly bucket latencies', () => {
       const latencies = [10, 20, 25, 30, 100, 110]; // min 10, max 110, range 100
-      const distribution = getLatencyDistribution(latencies, 3); // bucketSize = ceil(100/3) = 34
+      const histogram = createHistogram(latencies);
+      const distribution = getLatencyDistribution(histogram, 3); // bucketSize = ceil(100/3) = 34
 
       expect(distribution).toHaveLength(3);
 
@@ -58,8 +69,9 @@ describe('distribution', () => {
     });
 
     it('should handle a single latency value', () => {
+      const histogram = createHistogram([100]);
       // min 100, max 100, range 0, bucketSize = 1
-      const distribution = getLatencyDistribution([100], 3);
+      const distribution = getLatencyDistribution(histogram, 3);
       expect(distribution).toHaveLength(3);
       // Bucket 1: 100-100. Count 1
       expect(distribution[0].count).toBe('1');
@@ -70,7 +82,8 @@ describe('distribution', () => {
 
     it('should handle all latencies being the same', () => {
       const latencies = [50, 50, 50, 50];
-      const distribution = getLatencyDistribution(latencies, 4);
+      const histogram = createHistogram(latencies);
+      const distribution = getLatencyDistribution(histogram, 4);
       // All should fall in the first bucket
       expect(distribution[0].count).toBe('4');
       expect(distribution[1].count).toBe('0');

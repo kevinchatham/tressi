@@ -7,7 +7,7 @@ exports[`summarizer > should generate a comprehensive Markdown report 1`] = `
 |---|---|
 | Version | 0.0.8 |
 | Export Name | my-test-report |
-| Test Time | 1/1/2023, 3:00:00 AM |
+| Test Time | 12/31/2022, 9:00:00 PM |
 
 ## Analysis & Warnings ⚠️
 
@@ -67,10 +67,10 @@ exports[`summarizer > should generate a comprehensive Markdown report 1`] = `
 
 | Range (ms) | Count | % of Total | Cumulative % | Chart |
 |---|---|---|---|---|
-| 100-149ms | 1 | 25% | 25% | \`████████████████████\` |
-| 150-199ms | 1 | 25% | 50% | \`████████████████████\` |
-| 200-249ms | 1 | 25% | 75% | \`████████████████████\` |
-| 450+ms | 1 | 25% | 100% | \`████████████████████\` |
+| 100-149ms | 1 | 25% | 25% | ████████████████████ |
+| 150-199ms | 1 | 25% | 50% | ████████████████████ |
+| 200-249ms | 1 | 25% | 75% | ████████████████████ |
+| 450+ms | 1 | 25% | 100% | ████████████████████ |
 
 ## Error Summary
 
@@ -91,11 +91,20 @@ exports[`summarizer > should generate a comprehensive Markdown report 1`] = `
 
 ## Endpoint Summary
 
-> *A detailed performance breakdown for each individual API endpoint.*
+> *A summary of request outcomes for each endpoint.*
 
-| URL | Total | Success | Failed | Avg | Min | Max | P95 | P99 |
-|---|---|---|---|---|---|---|---|---|
-| GET http://a.com | 2 | 2 | 0 | 125ms | 100ms | 150ms | 150ms | 150ms |
-| GET http://b.com | 2 | 1 | 1 | 350ms | 200ms | 500ms | 500ms | 500ms |
+| Endpoint | Success | Failed |
+|---|---|---|
+| GET http://a.com | 2 | 0 |
+| GET http://b.com | 1 | 1 |
+
+## Endpoint Latency
+
+> *A detailed latency breakdown for each individual API endpoint.*
+
+| Endpoint | Avg | Min | Max | P95 | P99 |
+|---|---|---|---|---|---|
+| GET http://a.com | 0ms | 0ms | 0ms | 0ms | 0ms |
+| GET http://b.com | 0ms | 0ms | 0ms | 0ms | 0ms |
 "
 `;

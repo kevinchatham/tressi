@@ -49,28 +49,30 @@ export function getLatencyDistribution(
   const lines = distributionOutput.split('\n');
 
   // Skip header and footer lines, focus on data lines
-  const dataLines = lines.slice(3, lines.length - 3); // Adjust slice based on actual output
+  const dataLines = lines.slice(3, lines.length - 3);
 
-  let cumulativeCount = 0;
-  let maxCount = 0;
-
-  dataLines.forEach(line => {
+  let lastCumulativeCount = 0;
+  for (const line of dataLines) {
     const parts = line.trim().split(/\s+/);
     if (parts.length >= 3) {
       const value = parseFloat(parts[0]);
-      const count = parseInt(parts[2]);
+      const cumulativeCount = parseInt(parts[2]);
+      const count = cumulativeCount - lastCumulativeCount;
 
-      // Find the appropriate bucket for this value
-      const targetBucket = buckets.find(b => value >= b.lowerBound && value <= b.upperBound);
-
-      if (targetBucket) {
-        targetBucket.count += count;
-        if (targetBucket.count > maxCount) {
-          maxCount = targetBucket.count;
+      if (count > 0) {
+        const bucket = buckets.find(
+          (b) => value >= b.lowerBound && value <= b.upperBound,
+        );
+        if (bucket) {
+          bucket.count += count;
         }
       }
+      lastCumulativeCount = cumulativeCount;
     }
-  });
+  }
+
+  let cumulativeCount = 0;
+  const maxCount = Math.max(...buckets.map((b) => b.count));
 
   return buckets.map((bucket) => {
     const percentOfTotal =

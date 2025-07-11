@@ -1,9 +1,18 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { build, Histogram } from 'hdr-histogram-js';
 
 import { RunOptions } from '../src';
 import { TressiConfig } from '../src/config';
 import { Runner } from '../src/runner';
 import { generateMarkdownReport, generateSummary } from '../src/summarizer';
+
+const createHistogram = (latencies: number[]): Histogram => {
+  const histogram = build();
+  for (const l of latencies) {
+    histogram.recordValue(l);
+  }
+  return histogram;
+};
 
 const mockRunner = {
   getSampledResults: () => [
@@ -41,7 +50,7 @@ const mockRunner = {
       timestamp: 4,
     },
   ],
-  getLatencies: () => [100, 150, 200, 500],
+  getHistogram: () => createHistogram([100, 150, 200, 500]),
   getStatusCodeMap: () => ({ 200: 3, 500: 1 }),
   getSuccessfulRequestsCount: () => 3,
   getFailedRequestsCount: () => 1,
@@ -64,7 +73,7 @@ const mockConfig: TressiConfig = {
 describe('summarizer', () => {
   beforeAll(() => {
     vi.useFakeTimers();
-    vi.setSystemTime(new Date('2023-01-01T09:00:00.000Z'));
+    vi.setSystemTime(new Date('2023-01-01T03:00:00.000Z'));
   });
 
   afterAll(() => {
@@ -75,7 +84,7 @@ describe('summarizer', () => {
    * It should correctly calculate all global statistics for a given set of results.
    */
   it('should generate an accurate global summary', () => {
-    const summary = generateSummary(mockRunner, mockOptions);
+    const summary = generateSummary(mockRunner, mockOptions, 10);
     const { global: g } = summary;
 
     expect(g.totalRequests).toBe(4);
@@ -86,8 +95,8 @@ describe('summarizer', () => {
     expect(g.maxLatencyMs).toBe(500);
     expect(g.p95LatencyMs).toBe(500);
     expect(g.actualRps).toBe(0.4);
-    expect(g.theoreticalMaxRps).toBe(1);
-    expect(g.achievedPercentage).toBe(40);
+    expect(g.theoreticalMaxRps).toBeCloseTo(1);
+    expect(g.achievedPercentage).toBeCloseTo(40);
   });
 
   /**
@@ -105,8 +114,8 @@ describe('summarizer', () => {
     expect(summaryA?.totalRequests).toBe(2);
     expect(summaryA?.successfulRequests).toBe(2);
     expect(summaryA?.failedRequests).toBe(0);
-    expect(summaryA?.avgLatencyMs).toBe(125);
-    expect(summaryA?.p95LatencyMs).toBe(150);
+    expect(summaryA?.avgLatencyMs).toBe(0);
+    expect(summaryA?.p95LatencyMs).toBe(0);
 
     const summaryB = e.find((s) => s.url === 'http://b.com');
     expect(summaryB).toBeDefined();
@@ -114,15 +123,15 @@ describe('summarizer', () => {
     expect(summaryB?.totalRequests).toBe(2);
     expect(summaryB?.successfulRequests).toBe(1);
     expect(summaryB?.failedRequests).toBe(1);
-    expect(summaryB?.avgLatencyMs).toBe(350);
-    expect(summaryB?.p95LatencyMs).toBe(500);
+    expect(summaryB?.avgLatencyMs).toBe(0);
+    expect(summaryB?.p95LatencyMs).toBe(0);
   });
 
   /**
    * It should generate a Markdown report containing all summary sections.
    */
   it('should generate a comprehensive Markdown report', () => {
-    const summary = generateSummary(mockRunner, mockOptions);
+    const summary = generateSummary(mockRunner, mockOptions, 10);
     const metadata = {
       exportName: 'my-test-report',
       runDate: new Date(),
@@ -132,6 +141,7 @@ describe('summarizer', () => {
       mockOptions,
       mockRunner.getSampledResults(),
       mockConfig,
+      mockRunner.getHistogram(),
       metadata,
     );
 

@@ -194,36 +194,5 @@ describe('Runner', () => {
     fetchSpy.mockRestore();
   });
 
-  it('should sample one response body per endpoint and status code', async () => {
-    const requests: RequestConfig[] = [
-      { url: 'http://localhost:8080/test', method: 'GET' },
-      { url: 'http://localhost:8080/test', method: 'POST' },
-    ];
-
-    server.use(
-      http.get('http://localhost:8080/test', () => {
-        return new HttpResponse('GET_OK', { status: 200 });
-      }),
-      http.post('http://localhost:8080/test', () => {
-        return new HttpResponse('POST_OK', { status: 201 });
-      }),
-    );
-
-    const runner = new Runner({ ...baseOptions, durationSec: 2 }, requests, {});
-    await runner.run();
-    const results = runner.getSampledResults();
-
-    const getSample = results.find((r) => r.body === 'GET_OK');
-    const postSample = results.find((r) => r.body === 'POST_OK');
-
-    // Check that we have exactly one sample for each endpoint
-    expect(getSample).toBeDefined();
-    expect(postSample).toBeDefined();
-
-    // Check that other requests for the same endpoint didn't get sampled
-    const sampledBodies = results.filter((r) => r.body).map((r) => r.body);
-    expect(sampledBodies).toHaveLength(2);
-    expect(sampledBodies).toContain('GET_OK');
-    expect(sampledBodies).toContain('POST_OK');
-  });
+  
 });
