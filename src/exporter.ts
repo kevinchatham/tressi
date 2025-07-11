@@ -4,8 +4,8 @@ import ora from 'ora';
 import * as xlsx from 'xlsx';
 
 import { RequestResult } from './stats';
-import { TestSummary } from './summarizer';
 import { getStatusCodeDistributionByCategory } from './stats';
+import { TestSummary } from './summarizer';
 
 async function exportRawLog(
   path: string,
@@ -79,12 +79,17 @@ async function exportXlsx(
 
   // Status Code Distribution Sheet
   const statusCodeMap = runner.getStatusCodeMap();
-  const statusCodeDistribution = getStatusCodeDistributionByCategory(statusCodeMap);
-  const formattedStatusCodeDistribution = Object.entries(statusCodeDistribution).map(([category, count]) => ({
+  const statusCodeDistribution =
+    getStatusCodeDistributionByCategory(statusCodeMap);
+  const formattedStatusCodeDistribution = Object.entries(
+    statusCodeDistribution,
+  ).map(([category, count]) => ({
     'Status Code Category': category,
     Count: count,
   }));
-  const wsStatusCode = xlsx.utils.json_to_sheet(formattedStatusCodeDistribution);
+  const wsStatusCode = xlsx.utils.json_to_sheet(
+    formattedStatusCodeDistribution,
+  );
   xlsx.utils.book_append_sheet(wb, wsStatusCode, 'Status Code Distribution');
 
   const sampledResponses = results.filter((r) => r.body);

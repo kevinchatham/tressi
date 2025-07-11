@@ -95,6 +95,7 @@ describe('exporter', () => {
   let writeFileMock: Mock;
   let xlsxWriteFileMock: Mock;
   let jsonToSheetMock: Mock;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockRunner: any;
 
   beforeEach(async () => {
@@ -116,7 +117,12 @@ describe('exporter', () => {
    * with the correctly formatted data and file paths.
    */
   it('should export all data files and round numbers for reports', async () => {
-    await exportDataFiles(mockSummary, mockResults, './test-output', mockRunner);
+    await exportDataFiles(
+      mockSummary,
+      mockResults,
+      './test-output',
+      mockRunner,
+    );
 
     // Should be called 1 time for the raw CSV
     expect(writeFileMock).toHaveBeenCalledTimes(1);

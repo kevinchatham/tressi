@@ -310,7 +310,8 @@ export function generateMarkdownReport(
   );
 
   if (Object.keys(statusCodeMap).length > 0) {
-    const statusCodeDistribution = getStatusCodeDistributionByCategory(statusCodeMap);
+    const statusCodeDistribution =
+      getStatusCodeDistributionByCategory(statusCodeMap);
     md += `## Responses by Status Code\n\n`;
     md += `> *A breakdown of all responses by their HTTP status code categories.\n\n`;
     md += `| Status Code Category | Count |\n`;
