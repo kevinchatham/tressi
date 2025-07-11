@@ -1,10 +1,13 @@
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { build, Histogram } from 'hdr-histogram-js';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+
+import { Distribution } from '../src/distribution';
 
 import { RunOptions } from '../src';
 import { TressiConfig } from '../src/config';
-import { Runner } from '../src/runner';
 import { generateMarkdownReport, generateSummary } from '../src/summarizer';
+import { Runner } from '../src/runner';
+
 
 const createHistogram = (latencies: number[]): Histogram => {
   const histogram = build();
@@ -61,6 +64,11 @@ const mockRunner = {
   getSuccessfulRequestsCount: () => 3,
   getFailedRequestsCount: () => 1,
   getAverageLatency: () => 237.5,
+  getDistribution: () => {
+    const distribution = new Distribution();
+    [100, 150, 200, 500].forEach(l => distribution.add(l));
+    return distribution;
+  },
 } as unknown as Runner;
 
 const mockOptions: RunOptions = {
@@ -145,9 +153,8 @@ describe('summarizer', () => {
     const markdown = generateMarkdownReport(
       summary,
       mockOptions,
-      mockRunner.getSampledResults(),
+      mockRunner,
       mockConfig,
-      mockRunner.getHistogram(),
       metadata,
     );
 

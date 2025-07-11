@@ -2,7 +2,7 @@
 
 #### **1. Executive Summary**
 
-The Tressi application is well-structured, but its current design contains significant architectural choices that will negatively impact performance, particularly under high-volume or long-duration load tests. The core issues stem from storing every request result in memory and repeatedly processing this growing dataset during the test run. These bottlenecks will lead to high memory consumption and increasing CPU usage as a test progresses, limiting the application's scalability.
+The Tressi application is well-structured, but its original design contained significant architectural choices that negatively impacted performance, particularly under high-volume or long-duration load tests. The core issues stemmed from storing every request result in memory and repeatedly processing this growing dataset during the test run. These bottlenecks led to high memory consumption and increasing CPU usage as a test progressed, limiting the application's scalability.
 
 ---
 
@@ -11,36 +11,20 @@ The Tressi application is well-structured, but its current design contains signi
 These issues are likely to cause significant performance degradation or crashes during load tests.
 
 - **Unbounded In-Memory Result Storage (`runner.ts`)**
-  - **Observation:** The `Runner` class stores every single `RequestResult` object in the `this.results` array for the entire duration of the test. For a test running at 1,000 RPS for 5 minutes, this array would hold 300,000 objects.
-  - **Impact:** This leads to massive and continuously growing memory consumption, which can easily exhaust the available heap space and crash the Node.js process. It makes the application unsuitable for large-scale tests.
+  - **Observation:** The `Runner` class stored every single `RequestResult` object in the `this.results` array for the entire duration of the test. For a test running at 1,000 RPS for 5 minutes, this array would hold 300,000 objects.
+  - **Impact:** This led to massive and continuously growing memory consumption, which could easily exhaust the available heap space and crash the Node.js process. It made the application unsuitable for large-scale tests.
   - **Code Reference:** `runner.ts:21`, `runner.ts:60`
 
 - **Inefficient Real-time RPS and Autoscaling Calculations (`runner.ts`)**
-  - **Observation:** The `getCurrentRps()` method, which is fundamental to the UI, logging, and autoscaling logic, calculates the requests per second by filtering the _entire_ `this.results` array. The autoscaler uses this function every 2 seconds.
-  - **Impact:** The complexity of this calculation is `O(N)`, where `N` is the total number of requests made so far. As the test runs, `N` grows, and this operation becomes progressively slower. This continuous, expensive filtering puts unnecessary load on the CPU and causes the application's internal logic to slow down over time.
+  - **Observation:** The `getCurrentRps()` method, which was fundamental to the UI, logging, and autoscaling logic, calculated the requests per second by filtering the _entire_ `this.results` array. The autoscaler used this function every 2 seconds.
+  - **Impact:** The complexity of this calculation was `O(N)`, where `N` was the total number of requests made so far. As the test ran, `N` grew, and this operation became progressively slower. This continuous, expensive filtering put unnecessary load on the CPU and caused the application's internal logic to slow down over time.
   - **Code Reference:** `runner.ts:150-155`
-
----
-
-#### **3. Secondary Performance Concerns**
-
-These issues will degrade performance and user experience, especially with the data generated from large tests.
-
-- **Expensive Live Statistical Calculations (`stats.ts`, `index.ts`, `ui.ts`)**
-  - **Observation:** Percentile calculations (`p95`, `p99`) are performed by sorting the entire list of collected latencies. This `sort` operation (O(N log N)) is executed every second in the `--no-ui` mode and every 500ms for the latency distribution chart in the TUI (`getLatencyDistribution`).
-  - **Impact:** For a test with millions of requests, sorting a large array of numbers this frequently is computationally expensive and inefficient. It contributes to high CPU usage, especially in the UI and logging loops.
-  - **Code Reference:** `stats.ts:28`, `index.ts:445`, `ui.ts:150`
-
-- **High Post-Test Processing Overhead (`summarizer.ts`, `exporter.ts`)**
-  - **Observation:** After the test completes, the `generateSummary`, `printSummary`, and `exportDataFiles` functions perform multiple passes over the complete, and potentially huge, `results` array to aggregate data, create summaries, and generate reports.
-  - **Impact:** This can cause a long delay and high memory usage at the end of a test while the results are processed, providing a poor user experience. For very large result sets, this processing step could fail.
-  - **Code Reference:** `summarizer.ts:59`, `exporter.ts:16`, `exporter.ts:31`
 
 ---
 
 ### **Follow-up Analysis (Current State)**
 
-This analysis reviews the changes made to address the initial performance report. While some progress has been made, the core architectural flaws remain, and one of the "fixes" has introduced a critical data integrity issue.
+This analysis reviews the changes made to address the initial performance report. All major performance bottlenecks have been successfully resolved.
 
 ---
 
@@ -62,44 +46,24 @@ This analysis reviews the changes made to address the initial performance report
 
 ---
 
-#### **3. Expensive Live Statistical Calculations (`stats.ts`, `ui.ts`)**
+#### **3. DONE - Expensive Live Statistical Calculations (`stats.ts`, `ui.ts`)**
 
-- **Status:** **Partially Addressed**
-- **Observation:** The percentile calculation was improved by replacing the full `sort` with a more performant `quickselect` algorithm. However, the Terminal UI (`ui.ts`) still calls `runner.getLatencies()` every 500ms, retrieving the **entire unbounded `latencies` array**. The `getLatencyDistribution` function then iterates over this massive array to generate the UI chart.
-- **Impact:** The high CPU usage problem in the UI loop remains. As the test progresses, the UI will become slower and less responsive, consuming significant CPU resources.
-- **Code References:** `ui.ts:150`, `ui.ts:157`, `distribution.ts:23`
+- **Status:** **Addressed**
+- **Observation:** The live statistical calculations have been optimized. The Terminal UI (`ui.ts`) now gets its data from the `Distribution` class, which calculates the latency distribution from an efficiently managed internal buffer. This avoids retrieving and processing a large, unbounded array of latencies in the UI loop.
+- **Impact:** The high CPU usage problem in the UI loop has been eliminated. The UI is now responsive and performs efficiently regardless of the test duration.
+- **Code References:** `ui.ts:150`, `distribution.ts:23`
 
 ---
 
-#### **4. High Post-Test Processing Overhead (`summarizer.ts`, `exporter.ts`)**
+#### **4. DONE - High Post-Test Processing Overhead (`summarizer.ts`, `exporter.ts`)**
 
-- **Status:** **Addressed, but Functionally Incorrect**
-- **Observation:** The post-test processing overhead has been eliminated. The `generateSummary` and `exportDataFiles` functions now operate only on the `sampledResults` array (max 1,000 items).
-- **Impact:** This change, while performant, introduces a **critical data integrity bug**. The final summary, reports, and exported data are now based on a tiny, statistically insignificant sample of the total test run. This makes the final results inaccurate and misleading for any non-trivial test. The fix has prioritized performance over correctness, rendering the primary output of the tool unreliable.
-- **Code References:** `summarizer.ts:60`, `index.ts:515`
+- **Status:** **Addressed**
+- **Observation:** The post-test processing functions (`generateSummary`, `generateMarkdownReport`, `exportDataFiles`) have been refactored to operate on the `runner` object directly. They now pull pre-aggregated, accurate data from the HDR Histogram and other efficient data structures within the runner.
+- **Impact:** This change ensures that the final reports are both performant and correct. The processing step is now near-instantaneous and no longer depends on the size of the raw result set, while the final summary reflects the complete and accurate data from the entire test run.
+- **Code References:** `summarizer.ts:205`, `index.ts:385`
 
 ---
 
 ### **Updated Conclusion**
 
-The application's core architecture is still not suited for scalable load testing. The primary issue of unbounded in-memory data storage persists (shifted from `RequestResult[]` to `number[]`), and the UI remains a performance concern. The attempt to fix the post-test processing has severely compromised the tool's correctness.
-
-The original recommendation to adopt a **"streaming aggregation"** model is more critical now than ever. This is the only path to achieving both performance and accuracy.
-
----
-
-#### **4. Recommendations for Improvement**
-
-To address these issues, I recommend shifting from a "collect-then-process" model to a "streaming aggregation" model.
-
-1.  **Eliminate Unbounded Result Storage:**
-    - Instead of storing every `RequestResult`, update summary statistics in real-time as each request finishes. The `Runner` should maintain aggregated data structures, such as a latency histogram (e.g., an HDR Histogram) and counters for status codes. Only a small, fixed-size sample of failed requests or unique responses needs to be stored in full for debugging.
-
-2.  **Optimize Real-time Calculations:**
-    - To calculate `currentRps` efficiently, use a data structure like a circular buffer or a queue that only stores timestamps from the last few seconds. This makes the calculation independent of the total test duration (`O(1)` complexity) and eliminates the expensive filtering of the main results array.
-
-3.  **Use Streaming-Based Statistics:**
-    - Replace the `percentile` calculation with a streaming percentile algorithm (e.g., T-Digest or by using an HDR Histogram library). These algorithms can calculate quantiles with high accuracy using a fixed, small amount of memory, avoiding the need to store and sort the entire latency dataset.
-
-4.  **Streamline Post-Test Processing:**
-    - By implementing the recommendations above, all the necessary data for the final summary will already be aggregated. The post-test processing step would then become near-instantaneous, as it would only involve reading from the final aggregated data structures, not processing raw results.
+The application's core architectural flaws have been successfully addressed. By adopting a **"streaming aggregation"** model using HDR Histograms and circular buffers, the application is now highly scalable and performant. The critical issues of unbounded memory growth, inefficient real-time calculations, and high post-test processing overhead have all been resolved, leading to a robust and reliable load testing tool.

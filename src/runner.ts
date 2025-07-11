@@ -2,6 +2,7 @@ import { EventEmitter } from 'events';
 import { build, Histogram } from 'hdr-histogram-js';
 
 import { CircularBuffer } from './circular-buffer';
+import { Distribution } from './distribution';
 import { RequestConfig } from './config';
 import { RunOptions } from './index';
 import { RequestResult } from './stats';
@@ -20,6 +21,7 @@ export class Runner extends EventEmitter {
   private headers: Record<string, string>;
   private sampledResults: RequestResult[] = [];
   private histogram: Histogram;
+  private distribution: Distribution;
   private endpointHistograms: Map<string, Histogram> = new Map();
   private recentLatenciesForSpinner: number[] = [];
   private recentRequestTimestamps: CircularBuffer<number>;
@@ -51,6 +53,7 @@ export class Runner extends EventEmitter {
     this.requests = requests;
     this.headers = headers;
     this.histogram = build();
+    this.distribution = new Distribution();
     this.currentTargetRps =
       options.rampUpTimeSec && options.rps ? 0 : options.rps || 0;
 
@@ -70,6 +73,7 @@ export class Runner extends EventEmitter {
     }
 
     this.histogram.recordValue(result.latencyMs);
+    this.distribution.add(result.latencyMs);
 
     const endpointKey = `${result.method} ${result.url}`;
     if (!this.endpointHistograms.has(endpointKey)) {
@@ -104,12 +108,26 @@ export class Runner extends EventEmitter {
     return this.sampledResults;
   }
 
+  public getSampledResults(): RequestResult[] {
+    return this.sampledResults;
+  }
+
   /**
    * Gets the histogram containing all latency values.
    * @returns The HDR histogram instance.
    */
   public getHistogram(): Histogram {
     return this.histogram;
+  }
+
+  public getLatencyDistribution(options: {
+    count: number;
+  }): { latency: number; count: number }[] {
+    return this.distribution.getLatencyDistribution(options);
+  }
+
+  public getDistribution(): Distribution {
+    return this.distribution;
   }
 
   /**

@@ -395,9 +395,8 @@ export async function runLoadTest(options: RunOptions): Promise<TestSummary> {
       const markdownReport = generateMarkdownReport(
         summary,
         options,
-        runner.getSampledResults(),
+        runner,
         loadedConfig,
-        runner.getHistogram(),
         {
           exportName: baseExportName,
           runDate,

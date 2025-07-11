@@ -1,7 +1,7 @@
 import { Histogram } from 'hdr-histogram-js';
 
 import { TressiConfig } from './config';
-import { getLatencyDistribution } from './distribution';
+import { Distribution } from './distribution';
 import { RunOptions } from './index';
 import { Runner } from './runner';
 import { RequestResult } from './stats';
@@ -154,7 +154,7 @@ export function generateSummary(
  * Generates a Markdown report from a summary object.
  * @param summary The `TestSummary` object.
  * @param options The original `RunOptions` used for the test.
- * @param results The raw `RequestResult` array.
+ * @param runner The `Runner` instance from the test run.
  * @param config The `TressiConfig` used for the run.
  * @param metadata Additional metadata for the report.
  * @returns A Markdown string representing the report.
@@ -162,12 +162,13 @@ export function generateSummary(
 export function generateMarkdownReport(
   summary: TestSummary,
   options: RunOptions,
-  results: RequestResult[],
+  runner: Runner,
   config: TressiConfig,
-  histogram: Histogram,
   metadata?: ReportMetadata,
 ): string {
   const { global: g, endpoints: e } = summary;
+  const results = runner.getSampledResults();
+  const distribution = runner.getDistribution();
   const { workers = 10, durationSec = 10, rps, autoscale } = options;
 
   let md = `# Tressi Load Test Report\n\n`;
@@ -202,9 +203,7 @@ export function generateMarkdownReport(
       (endpoint.failedRequests / endpoint.totalRequests) * 100;
     if (failureRate > 10) {
       warnings.push(
-        `**High Failure Rate**: The endpoint \`${
-          endpoint.url
-        }\` had a failure rate of ${failureRate.toFixed(
+        `**High Failure Rate**: The endpoint \`${endpoint.url}\` had a failure rate of ${failureRate.toFixed(
           1,
         )}%. This may indicate a problem under load.`,
       );
@@ -232,9 +231,7 @@ export function generateMarkdownReport(
   md += `> *This table shows the main parameters used for the load test run.*\n\n`;
   md += `| Option | Setting | Argument |\n`;
   md += `|---|---|---|\n`;
-  md += `| Workers | ${
-    autoscale ? `Up to ${workers}` : workers
-  } | \`--workers\` |\n`;
+  md += `| Workers | ${autoscale ? `Up to ${workers}` : workers} | \`--workers\` |\n`;
   md += `| Duration | ${durationSec}s | \`--duration\` |\n`;
   if (rps) md += `| Target Req/s | ${rps} | \`--rps\` |\n`;
   if (autoscale) md += `| Autoscale | Enabled | \`--autoscale\` |\n\n`;
@@ -249,12 +246,8 @@ export function generateMarkdownReport(
   md += `| Failed | ${g.failedRequests} |\n`;
 
   if (options.rps && g.theoreticalMaxRps) {
-    md += `| Req/s (Actual/Target) | ${g.actualRps.toFixed(0)} / ${
-      options.rps
-    } |\n`;
-    md += `| Req/m (Actual/Target) | ${(g.actualRps * 60).toFixed(0)} / ${
-      options.rps * 60
-    } |\n`;
+    md += `| Req/s (Actual/Target) | ${g.actualRps.toFixed(0)} / ${options.rps} |\n`;
+    md += `| Req/m (Actual/Target) | ${(g.actualRps * 60).toFixed(0)} / ${options.rps * 60} |\n`;
     md += `| Theoretical Max Req/s | ${g.theoreticalMaxRps.toFixed(0)} |\n`;
     md += `| Achieved % | ${g.achievedPercentage.toFixed(0)}% |\n`;
   } else {
@@ -269,17 +262,15 @@ export function generateMarkdownReport(
   md += `| p99 Latency | ${g.p99LatencyMs.toFixed(0)}ms |\n\n`;
 
   // Latency Distribution
-  if (histogram.totalCount > 0) {
-    const distribution = getLatencyDistribution(histogram, 8, 20);
-
+  if (distribution.getTotalCount() > 0) {
+    const distributionResult = distribution.getLatencyDistribution({count: 8,chartWidth: 20,});
     md += `## Latency Distribution\n\n`;
     md += `> *This table shows how request latencies were distributed. **% of Total** is the percentage of requests that fell into that specific time range. **Cumulative %** is the running total, showing the percentage of requests at or below that latency.*\n\n`;
     md += `| Range (ms) | Count | % of Total | Cumulative % | Chart |\n`;
     md += `|---|---|---|---|---|\n`;
-
-    for (const bucket of distribution) {
+    for (const bucket of distributionResult) {
       if (bucket.count === '0') continue;
-      md += `| ${bucket.range}ms | ${bucket.count} | ${bucket.percent} | ${bucket.cumulative} | ${bucket.chart} |\n`;
+      md += `| ${bucket.latency}ms | ${bucket.count} | ${bucket.percent} | ${bucket.cumulative} | ${bucket.chart} |\n`;
     }
     md += `\n`;
   }
@@ -386,15 +377,7 @@ export function generateMarkdownReport(
     md += `| Endpoint | Avg | Min | Max | P95 | P99 |\n`;
     md += `|---|---|---|---|---|---|\n`;
     for (const endpoint of e) {
-      md += `| ${endpoint.method} ${endpoint.url} | ${endpoint.avgLatencyMs.toFixed(
-        0,
-      )}ms | ${endpoint.minLatencyMs.toFixed(
-        0,
-      )}ms | ${endpoint.maxLatencyMs.toFixed(
-        0,
-      )}ms | ${endpoint.p95LatencyMs.toFixed(
-        0,
-      )}ms | ${endpoint.p99LatencyMs.toFixed(0)}ms |\n`;
+      md += `| ${endpoint.method} ${endpoint.url} | ${endpoint.avgLatencyMs.toFixed(0)}ms | ${endpoint.minLatencyMs.toFixed(0)}ms | ${endpoint.maxLatencyMs.toFixed(0)}ms | ${endpoint.p95LatencyMs.toFixed(0)}ms | ${endpoint.p99LatencyMs.toFixed(0)}ms |\n`;
     }
   }
 

@@ -1,10 +1,7 @@
 import blessed from 'blessed';
 import contrib from 'blessed-contrib';
 
-import {
-  getLatencyDistribution,
-  getStatusCodeDistributionByCategory,
-} from './distribution';
+import { getStatusCodeDistributionByCategory } from './stats';
 import { Runner } from './runner';
 
 /**
@@ -125,15 +122,12 @@ export class TUI {
       this.avgLatencyData.shift();
     }
 
-    const latencyDistribution = getLatencyDistribution(histogram);
+    const latencyDistribution = runner.getLatencyDistribution({
+      count: 10,
+    });
     this.latencyDistributionTable.setData({
       headers: ['Range', 'Count', '% of Total', 'Cumulative'],
-      data: latencyDistribution.map((b) => [
-        b.range,
-        b.count,
-        b.percent,
-        b.cumulative,
-      ]),
+      data: latencyDistribution.map((b) => [b.latency, b.count, b.percent, b.cumulative]),
     });
 
     const currentDistribution =
