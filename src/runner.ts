@@ -108,10 +108,6 @@ export class Runner extends EventEmitter {
     return this.sampledResults;
   }
 
-  public getSampledResults(): RequestResult[] {
-    return this.sampledResults;
-  }
-
   /**
    * Gets the histogram containing all latency values.
    * @returns The HDR histogram instance.
@@ -120,12 +116,22 @@ export class Runner extends EventEmitter {
     return this.histogram;
   }
 
+  /**
+   * Generates a latency distribution report.
+   * @param options - The options for generating the distribution.
+   * @param options.count - The number of buckets to group latencies into.
+   * @returns An array of objects representing each bucket in the distribution.
+   */
   public getLatencyDistribution(options: {
     count: number;
-  }): { latency: number; count: number }[] {
+  }): { latency: string; count: string; percent: string; cumulative: string; chart: string; }[] {
     return this.distribution.getLatencyDistribution(options);
   }
 
+  /**
+   * Gets the full Distribution instance.
+   * @returns The `Distribution` instance containing all latency data.
+   */
   public getDistribution(): Distribution {
     return this.distribution;
   }

@@ -1,18 +1,34 @@
 const PERCENTILES = [0.5, 0.75, 0.9, 0.95, 0.99, 0.999, 1];
 
+/**
+ * A class for calculating and storing latency distribution data.
+ * It is used to generate histogram-style views of latency values.
+ */
 export class Distribution {
   private buffer: number[] = [];
   private isSorted = false;
 
+  /**
+   * Adds a new latency measurement to the distribution.
+   * @param latency The latency value in milliseconds.
+   */
   public add(latency: number): void {
     this.buffer.push(latency);
     this.isSorted = false;
   }
 
+  /**
+   * Gets the total number of latency measurements recorded.
+   * @returns The total count of items.
+   */
   public getTotalCount(): number {
     return this.buffer.length;
   }
 
+  /**
+   * Calculates the latency at various predefined percentiles.
+   * @returns An array of objects, each containing a percentile and the corresponding latency.
+   */
   public getPercentiles(): { percentile: number; latency: number }[] {
     if (!this.isSorted) {
       this.buffer.sort((a, b) => a - b);
@@ -28,6 +44,14 @@ export class Distribution {
     });
   }
 
+  /**
+   * Generates a latency distribution report with a specified number of buckets.
+   * This is used to create tables and charts for the UI and reports.
+   * @param options - The options for generating the distribution.
+   * @param options.count - The number of buckets to group latencies into.
+   * @param options.chartWidth - The maximum width of the chart bar.
+   * @returns An array of objects representing each bucket in the distribution.
+   */
   public getLatencyDistribution(options: {
     count: number;
     chartWidth?: number;
