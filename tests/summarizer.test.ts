@@ -67,6 +67,18 @@ const mockRunner = {
     [100, 150, 200, 500].forEach((l) => distribution.add(l));
     return distribution;
   },
+  getSuccessfulRequestsByEndpoint: () => {
+    const map = new Map<string, number>();
+    map.set('GET http://a.com', 2);
+    map.set('GET http://b.com', 1);
+    return map;
+  },
+  getFailedRequestsByEndpoint: () => {
+    const map = new Map<string, number>();
+    map.set('GET http://a.com', 0);
+    map.set('GET http://b.com', 1);
+    return map;
+  },
 } as unknown as Runner;
 
 const mockOptions: RunOptions = {

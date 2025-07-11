@@ -26,6 +26,8 @@ export class Runner extends EventEmitter {
   private recentLatenciesForSpinner: number[] = [];
   private recentRequestTimestamps: CircularBuffer<number>;
   private statusCodeMap: Record<number, number> = {};
+  private successfulRequestsByEndpoint: Map<string, number> = new Map();
+  private failedRequestsByEndpoint: Map<string, number> = new Map();
   private stopped = false;
   private startTime: number = 0;
   private currentTargetRps: number;
@@ -95,8 +97,16 @@ export class Runner extends EventEmitter {
 
     if (result.success) {
       this.successfulRequests++;
+      this.successfulRequestsByEndpoint.set(
+        endpointKey,
+        (this.successfulRequestsByEndpoint.get(endpointKey) || 0) + 1,
+      );
     } else {
       this.failedRequests++;
+      this.failedRequestsByEndpoint.set(
+        endpointKey,
+        (this.failedRequestsByEndpoint.get(endpointKey) || 0) + 1,
+      );
     }
   }
 
@@ -181,6 +191,14 @@ export class Runner extends EventEmitter {
    */
   public getFailedRequestsCount(): number {
     return this.failedRequests;
+  }
+
+  public getSuccessfulRequestsByEndpoint(): Map<string, number> {
+    return this.successfulRequestsByEndpoint;
+  }
+
+  public getFailedRequestsByEndpoint(): Map<string, number> {
+    return this.failedRequestsByEndpoint;
   }
 
   /**

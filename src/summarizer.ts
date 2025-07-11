@@ -55,7 +55,6 @@ export function generateSummary(
   options: RunOptions,
   actualDurationSec?: number,
 ): TestSummary {
-  const results = runner.getSampledResults();
   const histogram = runner.getHistogram();
   const endpointHistograms = runner.getEndpointHistograms();
 
@@ -96,30 +95,20 @@ export function generateSummary(
   const achievedPercentage =
     rps && theoreticalMaxRps ? (actualRps / theoreticalMaxRps) * 100 : 0;
 
-  const requestsByEndpoint = results.reduce(
-    (acc, result) => {
-      const key = `${result.method} ${result.url}`;
-      if (!acc[key]) {
-        acc[key] = [];
-      }
-      acc[key].push(result);
-      return acc;
-    },
-    {} as Record<string, RequestResult[]>,
-  );
-
-  const endpointSummaries = Object.values(requestsByEndpoint).map(
-    (endpointResults): EndpointSummary => {
-      const endpointKey = `${endpointResults[0].method} ${endpointResults[0].url}`;
-      const endpointHistogram = endpointHistograms.get(endpointKey);
+  const endpointSummaries = Array.from(endpointHistograms.entries()).map(
+    ([endpointKey, endpointHistogram]): EndpointSummary => {
+      const [method, url] = endpointKey.split(' ');
+      const successfulRequests =
+        runner.getSuccessfulRequestsByEndpoint().get(endpointKey) || 0;
+      const failedRequests =
+        runner.getFailedRequestsByEndpoint().get(endpointKey) || 0;
 
       return {
-        method: endpointResults[0].method,
-        url: endpointResults[0].url,
-        totalRequests: endpointResults.length,
-        successfulRequests: endpointResults.filter((r) => r.status < 400)
-          .length,
-        failedRequests: endpointResults.filter((r) => r.status >= 400).length,
+        method,
+        url,
+        totalRequests: successfulRequests + failedRequests,
+        successfulRequests,
+        failedRequests,
         avgLatencyMs: endpointHistogram?.mean || 0,
         minLatencyMs: endpointHistogram?.minNonZeroValue || 0,
         maxLatencyMs: endpointHistogram?.maxValue || 0,
@@ -132,8 +121,8 @@ export function generateSummary(
   return {
     global: {
       totalRequests,
-      successfulRequests: results.filter((r) => r.status < 400).length,
-      failedRequests: results.filter((r) => r.status >= 400).length,
+      successfulRequests: runner.getSuccessfulRequestsCount(),
+      failedRequests: runner.getFailedRequestsCount(),
       avgLatencyMs: avgLatency,
       minLatencyMs: histogram.minNonZeroValue,
       maxLatencyMs: histogram.maxValue,
@@ -166,7 +155,7 @@ export function generateMarkdownReport(
   metadata?: ReportMetadata,
 ): string {
   const { global: g, endpoints: e } = summary;
-  const results = runner.getSampledResults();
+
   const distribution = runner.getDistribution();
   const { workers = 10, durationSec = 10, rps, autoscale } = options;
 
@@ -278,37 +267,13 @@ export function generateMarkdownReport(
   }
 
   // Error Summary
-  const errors = results.filter((r) => r.error);
-  if (errors.length > 0) {
-    const errorMap: Record<string, number> = errors.reduce(
-      (acc, r) => {
-        const errorKey = r.error || 'Unknown Error';
-        acc[errorKey] = (acc[errorKey] || 0) + 1;
-        return acc;
-      },
-      {} as Record<string, number>,
-    );
-
+  if (g.failedRequests > 0) {
     md += `## Error Summary\n\n`;
-    md += `> *This section summarizes any errors that occurred during the test, grouped by message.*\n\n`;
-    md += `| Count | Error Message |\n`;
-    md += `|---|---|\n`;
-    for (const [error, count] of Object.entries(errorMap).sort(
-      (a, b) => b[1] - a[1],
-    )) {
-      md += `| ${count} | ${error} |\n`;
-    }
-    md += `\n`;
+    md += `> *A total of ${g.failedRequests} requests failed. Detailed error messages are available in the raw log (if exported).*\n\n`;
   }
 
   // Status Code Summary
-  const statusCodeMap: Record<number, number> = results.reduce(
-    (acc, r) => {
-      acc[r.status] = (acc[r.status] || 0) + 1;
-      return acc;
-    },
-    {} as Record<number, number>,
-  );
+  const statusCodeMap: Record<number, number> = runner.getStatusCodeMap();
 
   if (Object.keys(statusCodeMap).length > 0) {
     const statusCodeDistribution =
@@ -323,7 +288,8 @@ export function generateMarkdownReport(
     md += `\n`;
   }
 
-  const sampledResponses = results.filter((r) => r.body);
+  const sampledResults = runner.getSampledResults();
+  const sampledResponses = sampledResults.filter((r) => r.body);
   if (sampledResponses.length > 0) {
     md += `## Sampled Responses by Endpoint\n\n`;
     md += `> *A sample response body for each unique status code received per endpoint. This is useful for debugging unexpected responses.*\n\n`;
