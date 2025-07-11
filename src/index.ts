@@ -5,6 +5,7 @@ import ora from 'ora';
 import path from 'path';
 import { z } from 'zod';
 
+import pkg from '../package.json';
 import { loadConfig, RequestConfig, TressiConfig } from './config';
 import { exportDataFiles } from './exporter';
 import { Runner } from './runner';
@@ -306,10 +307,7 @@ export async function runLoadTest(options: RunOptions): Promise<TestSummary> {
 
   // If we have a TUI, we need to handle its destruction and polling
   if (useUI && !silent) {
-    const tui = new TUI(
-      () => runner.stop(),
-      process.env.npm_package_version || 'unknown',
-    );
+    const tui = new TUI(() => runner.stop(), pkg.version || 'unknown');
     const tuiInterval = setInterval(() => {
       const startTime = runner.getStartTime();
       const elapsedSec = startTime > 0 ? (Date.now() - startTime) / 1000 : 0;
