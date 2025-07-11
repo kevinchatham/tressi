@@ -403,7 +403,7 @@ export async function runLoadTest(options: RunOptions): Promise<TestSummary> {
       );
       await fs.writeFile(path.join(reportDir, 'report.md'), markdownReport);
 
-      await exportDataFiles(summary, runner.getSampledResults(), reportDir);
+      await exportDataFiles(summary, runner.getSampledResults(), reportDir, runner);
 
       exportSpinner.succeed(`Successfully exported results to ${reportDir}`);
     } catch (err) {

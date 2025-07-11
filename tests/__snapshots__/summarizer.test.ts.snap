@@ -82,12 +82,15 @@ exports[`summarizer > should generate a comprehensive Markdown report 1`] = `
 
 ## Responses by Status Code
 
-> *A breakdown of all responses by their HTTP status code.*
+> *A breakdown of all responses by their HTTP status code categories.
 
-| Status Code | Count |
+| Status Code Category | Count |
 |---|---|
-| 200 | 3 |
-| 500 | 1 |
+| 2xx | 3 |
+| 3xx | 0 |
+| 4xx | 0 |
+| 5xx | 1 |
+| other | 0 |
 
 ## Endpoint Summary
 

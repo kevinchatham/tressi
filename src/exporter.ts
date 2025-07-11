@@ -5,6 +5,7 @@ import * as xlsx from 'xlsx';
 
 import { RequestResult } from './stats';
 import { TestSummary } from './summarizer';
+import { getStatusCodeDistributionByCategory } from './stats';
 
 async function exportRawLog(
   path: string,
@@ -36,6 +37,7 @@ async function exportXlsx(
   path: string,
   results: RequestResult[],
   summary: TestSummary,
+  runner: Runner,
 ): Promise<void> {
   const { global: globalSummary, endpoints: endpointSummary } = summary;
   const wb = xlsx.utils.book_new();
@@ -75,6 +77,16 @@ async function exportXlsx(
   const wsRaw = xlsx.utils.json_to_sheet(formattedResults);
   xlsx.utils.book_append_sheet(wb, wsRaw, 'Raw Requests');
 
+  // Status Code Distribution Sheet
+  const statusCodeMap = runner.getStatusCodeMap();
+  const statusCodeDistribution = getStatusCodeDistributionByCategory(statusCodeMap);
+  const formattedStatusCodeDistribution = Object.entries(statusCodeDistribution).map(([category, count]) => ({
+    'Status Code Category': category,
+    Count: count,
+  }));
+  const wsStatusCode = xlsx.utils.json_to_sheet(formattedStatusCodeDistribution);
+  xlsx.utils.book_append_sheet(wb, wsStatusCode, 'Status Code Distribution');
+
   const sampledResponses = results.filter((r) => r.body);
   if (sampledResponses.length > 0) {
     const uniqueSamples = new Map<string, RequestResult>();
@@ -109,10 +121,13 @@ async function exportXlsx(
  * @param results An array of `RequestResult` objects.
  * @param outputDir The directory to save the files in.
  */
+import { Runner } from './runner';
+
 export async function exportDataFiles(
   summary: TestSummary,
   results: RequestResult[],
   directory: string,
+  runner: Runner,
 ): Promise<void> {
   const exportSpinner = ora(`Exporting data files (CSV, XLSX)...`).start();
   try {
@@ -121,7 +136,7 @@ export async function exportDataFiles(
 
     const promises = [
       exportRawLog(csvBasePath, results),
-      exportXlsx(xlsxPath, results, summary),
+      exportXlsx(xlsxPath, results, summary, runner),
     ];
 
     await Promise.all(promises);
