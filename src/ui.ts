@@ -1,11 +1,8 @@
 import blessed from 'blessed';
 import contrib from 'blessed-contrib';
 
-import {
-  getLatencyDistribution,
-  getStatusCodeDistributionByCategory,
-} from './distribution';
-import { average } from './stats';
+import { getStatusCodeDistributionByCategory } from './stats';
+import { Runner } from './runner';
 
 /**
  * Manages the terminal user interface for Tressi.
@@ -19,12 +16,10 @@ export class TUI {
   private latencyDistributionTable: contrib.Widgets.TableElement;
   private tressiVersion: string;
 
-  private lastStatusCodeMap: Record<number, number> = {};
   private successData: number[] = [];
   private redirectData: number[] = [];
   private clientErrorData: number[] = [];
   private serverErrorData: number[] = [];
-  private lastLatencyCount = 0;
   private avgLatencyData: number[] = [];
 
   /**
@@ -47,6 +42,7 @@ export class TUI {
       label: 'Response Codes Over Time',
       showLegend: false,
       valign: 'bottom',
+      wholeNumbersOnly: true,
     });
 
     this.responseCodeLegend = grid.set(0, 11, 6, 1, blessed.box, {
@@ -98,33 +94,27 @@ export class TUI {
 
   /**
    * Updates the UI with new data from the load test.
-   * @param latencies An array of recent latency values.
-   * @param statusCodeMap A map of status codes to their counts.
-   * @param currentReqPerSec The current requests per second.
+   * @param runner The `Runner` instance for the test.
    * @param elapsedSec The elapsed time of the test in seconds.
    * @param totalSec The total duration of the test in seconds.
    * @param targetReqPerSec The target requests per second, if any.
-   * @param successfulRequests The total number of successful requests.
-   * @param failedRequests The total number of failed requests.
-   * @param averageLatency The average latency of all requests.
-   * @param workerCount The current number of active workers.
    */
   public update(
-    latencies: number[],
-    statusCodeMap: Record<number, number>,
-    currentReqPerSec: number,
+    runner: Runner,
     elapsedSec: number,
     totalSec: number,
     targetReqPerSec: number | undefined,
-    successfulRequests: number,
-    failedRequests: number,
-    averageLatency: number,
-    workerCount: number,
   ): void {
+    const histogram = runner.getHistogram();
+    const statusCodeMap = runner.getStatusCodeMap();
+    const currentReqPerSec = runner.getCurrentRps();
+    const successfulRequests = runner.getSuccessfulRequestsCount();
+    const failedRequests = runner.getFailedRequestsCount();
+    const averageLatency = runner.getAverageLatency();
+    const workerCount = runner.getWorkerCount();
+
     // Calculate average latency for the latest interval
-    const newLatencies = latencies.slice(this.lastLatencyCount);
-    this.lastLatencyCount = latencies.length;
-    const avgLatencyForInterval = average(newLatencies);
+    const avgLatencyForInterval = histogram.mean;
 
     const maxDataPoints = 30; // Same as response codes
     this.avgLatencyData.push(avgLatencyForInterval);
@@ -132,44 +122,23 @@ export class TUI {
       this.avgLatencyData.shift();
     }
 
-    const latencyDistribution = getLatencyDistribution(latencies);
+    const latencyDistribution = runner.getLatencyDistribution({
+      count: 10,
+    });
     this.latencyDistributionTable.setData({
-      headers: ['Range', 'Count', '% Total', 'Cumulative'],
-      data: latencyDistribution.map((b) => [
-        b.range,
-        b.count,
-        b.percent,
-        b.cumulative,
-      ]),
+      headers: ['Range', 'Count', '% of Total', 'Cumulative'],
+      data: latencyDistribution.map((b) => [b.latency, b.count, b.percent, b.cumulative]),
     });
 
-    // If this is the first data point, initialize the history
-    if (Object.keys(this.lastStatusCodeMap).length === 0) {
-      this.lastStatusCodeMap = { ...statusCodeMap };
-    }
-
-    // Calculate the delta of status codes since the last update
     const currentDistribution =
       getStatusCodeDistributionByCategory(statusCodeMap);
-    const lastDistribution = getStatusCodeDistributionByCategory(
-      this.lastStatusCodeMap,
-    );
-
-    const successDelta = currentDistribution['2xx'] - lastDistribution['2xx'];
-    const redirectDelta = currentDistribution['3xx'] - lastDistribution['3xx'];
-    const clientErrorDelta =
-      currentDistribution['4xx'] - lastDistribution['4xx'];
-    const serverErrorDelta =
-      currentDistribution['5xx'] - lastDistribution['5xx'];
-
-    this.lastStatusCodeMap = { ...statusCodeMap };
 
     // Add new data points and trim old ones
     const dataPointsCount = this.successData.length;
-    this.successData.push(successDelta);
-    this.redirectData.push(redirectDelta);
-    this.clientErrorData.push(clientErrorDelta);
-    this.serverErrorData.push(serverErrorDelta);
+    this.successData.push(currentDistribution['2xx']);
+    this.redirectData.push(currentDistribution['3xx']);
+    this.clientErrorData.push(currentDistribution['4xx']);
+    this.serverErrorData.push(currentDistribution['5xx']);
 
     if (this.successData.length > maxDataPoints) {
       this.successData.shift();
@@ -226,9 +195,6 @@ export class TUI {
       });
     }
 
-    // blessed-contrib's line chart crashes if it's given an empty array of series.
-    // If no data is available, we pass a single, empty series to clear the chart
-    // without causing a crash.
     if (series.length === 0) {
       this.responseCodeChart.setData([
         {

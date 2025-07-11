@@ -1,8 +1,11 @@
 import { EventEmitter } from 'events';
+import { build, Histogram } from 'hdr-histogram-js';
 
+import { CircularBuffer } from './circular-buffer';
+import { Distribution } from './distribution';
 import { RequestConfig } from './config';
 import { RunOptions } from './index';
-import { average, RequestResult } from './stats';
+import { RequestResult } from './stats';
 
 async function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -16,13 +19,17 @@ export class Runner extends EventEmitter {
   private options: RunOptions;
   private requests: RequestConfig[];
   private headers: Record<string, string>;
-  private results: RequestResult[] = [];
-  private latencies: number[] = [];
+  private sampledResults: RequestResult[] = [];
+  private histogram: Histogram;
+  private distribution: Distribution;
+  private endpointHistograms: Map<string, Histogram> = new Map();
+  private recentLatenciesForSpinner: number[] = [];
+  private recentRequestTimestamps: CircularBuffer<number>;
   private statusCodeMap: Record<number, number> = {};
   private stopped = false;
   private startTime: number = 0;
   private currentTargetRps: number;
-  private sampledStatusCodes: Set<number> = new Set();
+  private sampledEndpointResponses: Map<string, Set<number>> = new Map();
   private successfulRequests = 0;
   private failedRequests = 0;
   private activeWorkers: { promise: Promise<void>; stop: () => void }[] = [];
@@ -45,8 +52,15 @@ export class Runner extends EventEmitter {
     this.options = options;
     this.requests = requests;
     this.headers = headers;
+    this.histogram = build();
+    this.distribution = new Distribution();
     this.currentTargetRps =
       options.rampUpTimeSec && options.rps ? 0 : options.rps || 0;
+
+    // Estimate buffer size: 2 seconds of requests at max RPS, or 10k, whichever is larger
+    const maxRps = options.rps || 1000;
+    const bufferSize = Math.max(10000, maxRps * 2);
+    this.recentRequestTimestamps = new CircularBuffer<number>(bufferSize);
   }
 
   /**
@@ -54,8 +68,28 @@ export class Runner extends EventEmitter {
    * @param result The `RequestResult` to record.
    */
   public onResult(result: RequestResult): void {
-    this.results.push(result);
-    this.latencies.push(result.latencyMs);
+    if (this.sampledResults.length < 1000) {
+      this.sampledResults.push(result);
+    }
+
+    this.histogram.recordValue(result.latencyMs);
+    this.distribution.add(result.latencyMs);
+
+    const endpointKey = `${result.method} ${result.url}`;
+    if (!this.endpointHistograms.has(endpointKey)) {
+      this.endpointHistograms.set(endpointKey, build());
+    }
+    this.endpointHistograms.get(endpointKey)!.recordValue(result.latencyMs);
+
+    // Keep a small, rotating log of recent latencies for the non-UI spinner
+    if (!this.options.useUI) {
+      this.recentLatenciesForSpinner.push(result.latencyMs);
+      if (this.recentLatenciesForSpinner.length > 1000) {
+        this.recentLatenciesForSpinner.shift();
+      }
+    }
+
+    this.recentRequestTimestamps.add(Date.now());
     this.statusCodeMap[result.status] =
       (this.statusCodeMap[result.status] || 0) + 1;
 
@@ -67,19 +101,55 @@ export class Runner extends EventEmitter {
   }
 
   /**
-   * Gets all the results collected during the test run.
+   * Gets a sample of the results collected during the test run.
    * @returns An array of `RequestResult` objects.
    */
-  public getResults(): RequestResult[] {
-    return this.results;
+  public getSampledResults(): RequestResult[] {
+    return this.sampledResults;
   }
 
   /**
-   * Gets all the latency values collected during the test.
+   * Gets the histogram containing all latency values.
+   * @returns The HDR histogram instance.
+   */
+  public getHistogram(): Histogram {
+    return this.histogram;
+  }
+
+  /**
+   * Generates a latency distribution report.
+   * @param options - The options for generating the distribution.
+   * @param options.count - The number of buckets to group latencies into.
+   * @returns An array of objects representing each bucket in the distribution.
+   */
+  public getLatencyDistribution(options: {
+    count: number;
+  }): { latency: string; count: string; percent: string; cumulative: string; chart: string; }[] {
+    return this.distribution.getLatencyDistribution(options);
+  }
+
+  /**
+   * Gets the full Distribution instance.
+   * @returns The `Distribution` instance containing all latency data.
+   */
+  public getDistribution(): Distribution {
+    return this.distribution;
+  }
+
+  /**
+   * Gets the map of histograms for each endpoint.
+   * @returns A map where keys are endpoint identifiers and values are HDR histograms.
+   */
+  public getEndpointHistograms(): Map<string, Histogram> {
+    return this.endpointHistograms;
+  }
+
+  /**
+   * Gets an array of recent latency values for the non-UI spinner.
    * @returns An array of latency numbers in milliseconds.
    */
-  public getLatencies(): number[] {
-    return this.latencies;
+  public getRecentLatencies(): number[] {
+    return this.recentLatenciesForSpinner;
   }
 
   /**
@@ -111,7 +181,7 @@ export class Runner extends EventEmitter {
    * @returns The average latency in milliseconds.
    */
   public getAverageLatency(): number {
-    return average(this.latencies);
+    return this.histogram.mean;
   }
 
   /**
@@ -138,10 +208,19 @@ export class Runner extends EventEmitter {
   public getCurrentRps(): number {
     const now = Date.now();
     const oneSecondAgo = now - 1000;
-    const recentRequests = this.results.filter(
-      (r) => r.timestamp >= oneSecondAgo,
-    );
-    return recentRequests.length;
+
+    const timestamps = this.recentRequestTimestamps.getAll();
+    let count = 0;
+    // Iterate backwards since recent timestamps are at the end
+    for (let i = timestamps.length - 1; i >= 0; i--) {
+      if (timestamps[i] >= oneSecondAgo) {
+        count++;
+      } else {
+        // The timestamps are ordered, so we can stop.
+        break;
+      }
+    }
+    return count;
   }
 
   /**
@@ -158,9 +237,8 @@ export class Runner extends EventEmitter {
   /**
    * Starts the load test. This is the main entry point for the runner.
    * It sets up workers, timers, and ramp-up/autoscaling logic.
-   * @returns A promise that resolves with all the request results when the test is complete.
    */
-  public async run(): Promise<RequestResult[]> {
+  public async run(): Promise<void> {
     this.startTime = Date.now();
 
     const {
@@ -257,7 +335,6 @@ export class Runner extends EventEmitter {
     }
 
     this.cleanup();
-    return this.results;
   }
 
   public stop(): void {
@@ -323,21 +400,30 @@ export class Runner extends EventEmitter {
       const start = Date.now();
 
       try {
+        const headers = { ...this.headers, ...req.headers };
+
         const res = await fetch(req.url, {
           method: req.method || 'GET',
-          headers: this.headers,
+          headers,
           body: req.payload ? JSON.stringify(req.payload) : undefined,
         });
 
         let body: string | undefined;
-        // Check if we should sample this status code
-        if (!this.sampledStatusCodes.has(res.status)) {
+        const endpointIdentifier = `${req.method || 'GET'} ${req.url}`;
+        if (!this.sampledEndpointResponses.has(endpointIdentifier)) {
+          this.sampledEndpointResponses.set(endpointIdentifier, new Set());
+        }
+        const sampledCodesForEndpoint =
+          this.sampledEndpointResponses.get(endpointIdentifier)!;
+
+        // Check if we should sample this status code for this endpoint
+        if (!sampledCodesForEndpoint.has(res.status)) {
           try {
             body = await res.text();
-            this.sampledStatusCodes.add(res.status);
+            sampledCodesForEndpoint.add(res.status);
           } catch (e) {
             // Ignore body read errors, it might be empty.
-            body = `(Could not read body: ${(e as Error).message})`;
+            body = `(Could not read body: ${(e as Error).message}`;
           }
         } else {
           // We still need to consume the body to not leave the connection hanging
@@ -347,6 +433,7 @@ export class Runner extends EventEmitter {
 
         const latencyMs = Date.now() - start;
         this.onResult({
+          method: req.method || 'GET',
           url: req.url,
           status: res.status,
           latencyMs,
@@ -357,6 +444,7 @@ export class Runner extends EventEmitter {
       } catch (err) {
         const latencyMs = Date.now() - start;
         this.onResult({
+          method: req.method || 'GET',
           url: req.url,
           status: 0,
           latencyMs,

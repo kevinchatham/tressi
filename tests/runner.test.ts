@@ -52,7 +52,8 @@ describe('Runner', () => {
     const options: RunOptions = { ...baseOptions };
     const runner = new Runner(options, baseRequests, {});
 
-    const results = await runner.run();
+    await runner.run();
+    const results = runner.getSampledResults();
 
     expect(results.length).toBeGreaterThan(0);
     expect(results[0].status).toBe(200);
@@ -111,7 +112,8 @@ describe('Runner', () => {
     setTimeout(() => runner.stop(), 1000);
     await vi.advanceTimersByTimeAsync(1000);
 
-    const results = await runPromise;
+    await runPromise;
+    const results = runner.getSampledResults();
     const duration =
       results[results.length - 1].timestamp - results[0].timestamp;
 
@@ -160,4 +162,37 @@ describe('Runner', () => {
 
     vi.useRealTimers();
   });
+
+  it('should merge global and request-specific headers correctly', async () => {
+    const globalHeaders = { Authorization: 'Bearer global-token' };
+    const requestHeaders = { 'X-Request-ID': '456' };
+    const requests: RequestConfig[] = [
+      {
+        url: 'http://localhost:8080/test',
+        method: 'GET',
+        headers: requestHeaders,
+      },
+    ];
+
+    const runner = new Runner(baseOptions, requests, globalHeaders);
+
+    // Mock fetch to inspect headers
+    const fetchSpy = vi.spyOn(global, 'fetch');
+
+    await runner.run();
+
+    expect(fetchSpy).toHaveBeenCalledWith(
+      'http://localhost:8080/test',
+      expect.objectContaining({
+        headers: {
+          ...globalHeaders,
+          ...requestHeaders,
+        },
+      }),
+    );
+
+    fetchSpy.mockRestore();
+  });
+
+  
 });

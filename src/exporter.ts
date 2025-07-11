@@ -77,18 +77,20 @@ async function exportXlsx(
 
   const sampledResponses = results.filter((r) => r.body);
   if (sampledResponses.length > 0) {
-    const uniqueSamples = new Map<number, RequestResult>();
+    const uniqueSamples = new Map<string, RequestResult>();
     for (const r of sampledResponses) {
-      if (!uniqueSamples.has(r.status)) {
-        uniqueSamples.set(r.status, r);
+      const key = `${r.method} ${r.url} ${r.status}`;
+      if (!uniqueSamples.has(key)) {
+        uniqueSamples.set(key, r);
       }
     }
 
     const samplesForSheet = Array.from(uniqueSamples.values())
       .sort((a, b) => a.status - b.status)
       .map((r) => ({
-        'Status Code': r.status,
+        Method: r.method,
         URL: r.url,
+        'Status Code': r.status,
         'Response Body': r.body,
       }));
 

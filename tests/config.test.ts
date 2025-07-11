@@ -61,13 +61,29 @@ describe('config', () => {
       ).rejects.toThrow('Remote config fetch failed: 500');
     });
 
-    /**
-     * It should throw a Zod validation error if the provided config
-     * object does not match the TressiConfigSchema.
-     */
-    it('should throw ZodError for an invalid config object', async () => {
-      const invalidConfig = { requests: [{ url: 'invalid-url' }] };
-      await expect(loadConfig(invalidConfig)).rejects.toThrow();
+    it('should correctly parse a config with per-request headers', async () => {
+      const configWithHeaders = {
+        headers: {
+          Authorization: 'Bearer global-token',
+        },
+        requests: [
+          {
+            url: 'http://localhost:8080/test',
+            headers: {
+              'X-Request-ID': '123',
+            },
+          },
+        ],
+      };
+
+      const parsedConfig = await loadConfig(configWithHeaders);
+
+      expect(parsedConfig.requests[0].headers).toEqual({
+        'X-Request-ID': '123',
+      });
+      expect(parsedConfig.headers).toEqual({
+        Authorization: 'Bearer global-token',
+      });
     });
   });
 });

@@ -1,7 +1,10 @@
+import { Histogram } from 'hdr-histogram-js';
+
 import { TressiConfig } from './config';
-import { getLatencyDistribution } from './distribution';
+import { Distribution } from './distribution';
 import { RunOptions } from './index';
-import { average, percentile, RequestResult } from './stats';
+import { Runner } from './runner';
+import { RequestResult } from './stats';
 
 export interface ReportMetadata {
   exportName?: string;
@@ -9,6 +12,7 @@ export interface ReportMetadata {
 }
 
 export interface EndpointSummary {
+  method: string;
   url: string;
   totalRequests: number;
   successfulRequests: number;
@@ -43,16 +47,20 @@ export interface TestSummary {
 
 /**
  * Analyzes the results of a load test and generates a comprehensive summary.
- * @param results An array of `RequestResult` objects from the test run.
+ * @param runner The `Runner` instance from the test run.
  * @param options The original `RunOptions` used for the test.
  * @returns A `TestSummary` object containing the global and endpoint-specific summaries.
  */
 export function generateSummary(
-  results: RequestResult[],
+  runner: Runner,
   options: RunOptions,
   actualDurationSec?: number,
 ): TestSummary {
-  if (results.length === 0) {
+  const results = runner.getSampledResults();
+  const histogram = runner.getHistogram();
+  const endpointHistograms = runner.getEndpointHistograms();
+
+  if (histogram.totalCount === 0) {
     // Return a default summary if no results are available.
     return {
       global: {
@@ -75,12 +83,11 @@ export function generateSummary(
   }
 
   const { durationSec = 10, rps } = options;
-  const totalRequests = results.length;
-  const allLatencies = results.map((r) => r.latencyMs);
+  const totalRequests = histogram.totalCount;
   const effectiveDuration = actualDurationSec ?? durationSec;
   const actualRps =
     effectiveDuration > 0 ? totalRequests / effectiveDuration : 0;
-  const avgLatency = average(allLatencies);
+  const avgLatency = histogram.mean;
   const theoreticalMaxRps = rps
     ? Math.min(
         (1000 / (avgLatency || 1)) * (options.workers || 10),
@@ -92,10 +99,11 @@ export function generateSummary(
 
   const requestsByEndpoint = results.reduce(
     (acc, result) => {
-      if (!acc[result.url]) {
-        acc[result.url] = [];
+      const key = `${result.method} ${result.url}`;
+      if (!acc[key]) {
+        acc[key] = [];
       }
-      acc[result.url].push(result);
+      acc[key].push(result);
       return acc;
     },
     {} as Record<string, RequestResult[]>,
@@ -103,18 +111,21 @@ export function generateSummary(
 
   const endpointSummaries = Object.values(requestsByEndpoint).map(
     (endpointResults): EndpointSummary => {
-      const latencies = endpointResults.map((r) => r.latencyMs);
+      const endpointKey = `${endpointResults[0].method} ${endpointResults[0].url}`;
+      const endpointHistogram = endpointHistograms.get(endpointKey);
+
       return {
+        method: endpointResults[0].method,
         url: endpointResults[0].url,
         totalRequests: endpointResults.length,
         successfulRequests: endpointResults.filter((r) => r.status < 400)
           .length,
         failedRequests: endpointResults.filter((r) => r.status >= 400).length,
-        avgLatencyMs: average(latencies),
-        minLatencyMs: Math.min(...latencies),
-        maxLatencyMs: Math.max(...latencies),
-        p95LatencyMs: percentile(latencies, 0.95),
-        p99LatencyMs: percentile(latencies, 0.99),
+        avgLatencyMs: endpointHistogram?.mean || 0,
+        minLatencyMs: endpointHistogram?.minNonZeroValue || 0,
+        maxLatencyMs: endpointHistogram?.maxValue || 0,
+        p95LatencyMs: endpointHistogram?.getValueAtPercentile(95) || 0,
+        p99LatencyMs: endpointHistogram?.getValueAtPercentile(99) || 0,
       };
     },
   );
@@ -125,10 +136,10 @@ export function generateSummary(
       successfulRequests: results.filter((r) => r.status < 400).length,
       failedRequests: results.filter((r) => r.status >= 400).length,
       avgLatencyMs: avgLatency,
-      minLatencyMs: Math.min(...allLatencies),
-      maxLatencyMs: Math.max(...allLatencies),
-      p95LatencyMs: percentile(allLatencies, 0.95),
-      p99LatencyMs: percentile(allLatencies, 0.99),
+      minLatencyMs: histogram.minNonZeroValue,
+      maxLatencyMs: histogram.maxValue,
+      p95LatencyMs: histogram.getValueAtPercentile(95),
+      p99LatencyMs: histogram.getValueAtPercentile(99),
       actualRps,
       theoreticalMaxRps,
       achievedPercentage,
@@ -143,7 +154,7 @@ export function generateSummary(
  * Generates a Markdown report from a summary object.
  * @param summary The `TestSummary` object.
  * @param options The original `RunOptions` used for the test.
- * @param results The raw `RequestResult` array.
+ * @param runner The `Runner` instance from the test run.
  * @param config The `TressiConfig` used for the run.
  * @param metadata Additional metadata for the report.
  * @returns A Markdown string representing the report.
@@ -151,41 +162,40 @@ export function generateSummary(
 export function generateMarkdownReport(
   summary: TestSummary,
   options: RunOptions,
-  results: RequestResult[],
+  runner: Runner,
   config: TressiConfig,
   metadata?: ReportMetadata,
 ): string {
   const { global: g, endpoints: e } = summary;
+  const results = runner.getSampledResults();
+  const distribution = runner.getDistribution();
   const { workers = 10, durationSec = 10, rps, autoscale } = options;
 
-  let md = `# Tressi Load Test Report
+  let md = `# Tressi Load Test Report\n\n`;
 
-`;
-
-  md += `| Metric | Value |
-`;
-  md += `|---|---|
-`;
-  md += `| Version | ${summary.tressiVersion} |
-`;
+  md += `| Metric | Value |\n`;
+  md += `|---|---|\n`;
+  md += `| Version | ${summary.tressiVersion} |\n`;
   if (metadata?.exportName) {
-    md += `| Export Name | ${metadata.exportName} |
-`;
+    md += `| Export Name | ${metadata.exportName} |\n`;
   }
   if (metadata?.runDate) {
-    md += `| Test Time | ${metadata.runDate.toLocaleString()} |
-`;
+    md += `| Test Time | ${metadata.runDate.toLocaleString()} |\n`;
   }
-  md += `
-`;
+  md += `\n`;
   const warnings: string[] = [];
   if (rps && g.achievedPercentage && g.achievedPercentage < 80) {
+    const maxRpsPerWorker = 1000 / g.avgLatencyMs + 1;
+    const suggestedWorkers = Math.ceil(rps / maxRpsPerWorker) + 1; // at least 2
+
     warnings.push(
       `**Target RPS Unreachable**: The target of ${rps} RPS was not met. The test achieved ~${g.actualRps.toFixed(
         0,
-      )} RPS (${
-        g.achievedPercentage
-      }% of the target). Consider increasing workers or optimizing the service.`,
+      )} RPS (${g.achievedPercentage.toFixed(
+        0,
+      )}% of the target). Based on the average latency of ${g.avgLatencyMs.toFixed(
+        0,
+      )}ms, you would need at least **${suggestedWorkers}** workers to meet the target.`,
     );
   }
   for (const endpoint of e) {
@@ -236,12 +246,8 @@ export function generateMarkdownReport(
   md += `| Failed | ${g.failedRequests} |\n`;
 
   if (options.rps && g.theoreticalMaxRps) {
-    md += `| Req/s (Actual/Target) | ${g.actualRps.toFixed(0)} / ${
-      options.rps
-    } |\n`;
-    md += `| Req/m (Actual/Target) | ${(g.actualRps * 60).toFixed(
-      0,
-    )} / ${options.rps * 60} |\n`;
+    md += `| Req/s (Actual/Target) | ${g.actualRps.toFixed(0)} / ${options.rps} |\n`;
+    md += `| Req/m (Actual/Target) | ${(g.actualRps * 60).toFixed(0)} / ${options.rps * 60} |\n`;
     md += `| Theoretical Max Req/s | ${g.theoreticalMaxRps.toFixed(0)} |\n`;
     md += `| Achieved % | ${g.achievedPercentage.toFixed(0)}% |\n`;
   } else {
@@ -249,31 +255,22 @@ export function generateMarkdownReport(
     md += `| Req/m | ${(g.actualRps * 60).toFixed(0)} |\n`;
   }
 
-  md += `| Avg Latency | ${g.avgLatencyMs.toFixed(0)}ms |
-`;
-  md += `| Min Latency | ${g.minLatencyMs.toFixed(0)}ms |
-`;
-  md += `| Max Latency | ${g.maxLatencyMs.toFixed(0)}ms |
-`;
-  md += `| p95 Latency | ${g.p95LatencyMs.toFixed(0)}ms |
-`;
-  md += `| p99 Latency | ${g.p99LatencyMs.toFixed(0)}ms |
-
-`;
+  md += `| Avg Latency | ${g.avgLatencyMs.toFixed(0)}ms |\n`;
+  md += `| Min Latency | ${g.minLatencyMs.toFixed(0)}ms |\n`;
+  md += `| Max Latency | ${g.maxLatencyMs.toFixed(0)}ms |\n`;
+  md += `| p95 Latency | ${g.p95LatencyMs.toFixed(0)}ms |\n`;
+  md += `| p99 Latency | ${g.p99LatencyMs.toFixed(0)}ms |\n\n`;
 
   // Latency Distribution
-  const latencies = results.map((r) => r.latencyMs);
-  if (latencies.length > 0) {
-    const distribution = getLatencyDistribution(latencies, 8, 20);
-
+  if (distribution.getTotalCount() > 0) {
+    const distributionResult = distribution.getLatencyDistribution({count: 8,chartWidth: 20,});
     md += `## Latency Distribution\n\n`;
     md += `> *This table shows how request latencies were distributed. **% of Total** is the percentage of requests that fell into that specific time range. **Cumulative %** is the running total, showing the percentage of requests at or below that latency.*\n\n`;
     md += `| Range (ms) | Count | % of Total | Cumulative % | Chart |\n`;
     md += `|---|---|---|---|---|\n`;
-
-    for (const bucket of distribution) {
+    for (const bucket of distributionResult) {
       if (bucket.count === '0') continue;
-      md += `| ${bucket.range}ms | ${bucket.count} | ${bucket.percent} | ${bucket.cumulative} | \`${bucket.chart}\` |\n`;
+      md += `| ${bucket.latency}ms | ${bucket.count} | ${bucket.percent} | ${bucket.cumulative} | ${bucket.chart} |\n`;
     }
     md += `\n`;
   }
@@ -326,47 +323,61 @@ export function generateMarkdownReport(
 
   const sampledResponses = results.filter((r) => r.body);
   if (sampledResponses.length > 0) {
-    const uniqueSamples = new Map<number, RequestResult>();
-    for (const r of sampledResponses) {
-      if (!uniqueSamples.has(r.status)) {
-        uniqueSamples.set(r.status, r);
+    md += `## Sampled Responses by Endpoint\n\n`;
+    md += `> *A sample response body for each unique status code received per endpoint. This is useful for debugging unexpected responses.*\n\n`;
+
+    const samplesByEndpoint = sampledResponses.reduce(
+      (acc, r) => {
+        const key = `${r.method} ${r.url}`;
+        if (!acc[key]) {
+          acc[key] = [];
+        }
+        acc[key].push(r);
+        return acc;
+      },
+      {} as Record<string, RequestResult[]>,
+    );
+
+    for (const [endpoint, samples] of Object.entries(samplesByEndpoint)) {
+      md += `#### \`${endpoint}\`\n\n`;
+      const uniqueSamples = new Map<number, RequestResult>();
+      for (const r of samples) {
+        if (!uniqueSamples.has(r.status)) {
+          uniqueSamples.set(r.status, r);
+        }
       }
+
+      Array.from(uniqueSamples.values())
+        .sort((a, b) => a.status - b.status)
+        .forEach((r) => {
+          md += `<details>\n`;
+          md += `<summary><strong>${r.status}</strong></summary>\n\n`;
+          md += '```\n';
+          md += `${r.body || '(No body captured)'}\n`;
+          md += '```\n\n';
+          md += `</details>\n`;
+        });
+      md += `\n`;
     }
-
-    md += `## Sampled Responses by Status Code\n\n`;
-    md += `> *A sample response body for one request of each status code received. This is useful for debugging unexpected responses.*\n\n`;
-
-    Array.from(uniqueSamples.values())
-      .sort((a, b) => a.status - b.status)
-      .forEach((r) => {
-        md += `<details>\n`;
-        md += `<summary><strong>${r.status}</strong> - <code>${r.url}</code></summary>\n\n`;
-        md += '```\n';
-        md += `${r.body || '(No body captured)'}\n`;
-        md += '```\n\n';
-        md += `</details>\n`;
-      });
-    md += `\n`;
   }
 
   // Endpoint Summary
   if (e.length > 0) {
     md += `## Endpoint Summary\n\n`;
-    md += `> *A detailed performance breakdown for each individual API endpoint.*\n\n`;
-    md += `| URL | Total | Success | Failed | Avg | Min | Max | P95 | P99 |\n`;
-    md += `|---|---|---|---|---|---|---|---|---|\n`;
+    md += `> *A summary of request outcomes for each endpoint.*\n\n`;
+    md += `| Endpoint | Success | Failed |\n`;
+    md += `|---|---|---|\n`;
     for (const endpoint of e) {
-      md += `| ${endpoint.url} | ${endpoint.totalRequests} | ${
-        endpoint.successfulRequests
-      } | ${endpoint.failedRequests} | ${endpoint.avgLatencyMs.toFixed(
-        0,
-      )}ms | ${endpoint.minLatencyMs.toFixed(
-        0,
-      )}ms | ${endpoint.maxLatencyMs.toFixed(
-        0,
-      )}ms | ${endpoint.p95LatencyMs.toFixed(0)}ms | ${endpoint.p99LatencyMs.toFixed(
-        0,
-      )}ms |\n`;
+      md += `| ${endpoint.method} ${endpoint.url} | ${endpoint.successfulRequests} | ${endpoint.failedRequests} |\n`;
+    }
+    md += `\n`;
+
+    md += `## Endpoint Latency\n\n`;
+    md += `> *A detailed latency breakdown for each individual API endpoint.*\n\n`;
+    md += `| Endpoint | Avg | Min | Max | P95 | P99 |\n`;
+    md += `|---|---|---|---|---|---|\n`;
+    for (const endpoint of e) {
+      md += `| ${endpoint.method} ${endpoint.url} | ${endpoint.avgLatencyMs.toFixed(0)}ms | ${endpoint.minLatencyMs.toFixed(0)}ms | ${endpoint.maxLatencyMs.toFixed(0)}ms | ${endpoint.p95LatencyMs.toFixed(0)}ms | ${endpoint.p99LatencyMs.toFixed(0)}ms |\n`;
     }
   }
 
