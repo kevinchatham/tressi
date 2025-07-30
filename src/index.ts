@@ -1,9 +1,9 @@
 import chalk from 'chalk';
 import Table from 'cli-table3';
-import { performance } from 'perf_hooks';
 import { promises as fs } from 'fs';
 import ora from 'ora';
 import path from 'path';
+import { performance } from 'perf_hooks';
 import { z } from 'zod';
 
 import pkg from '../package.json';

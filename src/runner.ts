@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
-import { performance } from 'perf_hooks';
 import { build, Histogram } from 'hdr-histogram-js';
+import { performance } from 'perf_hooks';
 import { request } from 'undici';
 
 import { CircularBuffer } from './circular-buffer';

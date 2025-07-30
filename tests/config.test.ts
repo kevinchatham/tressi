@@ -50,7 +50,9 @@ describe('config', () => {
      */
     it('should load config from a remote URL', async () => {
       const mockPool = mockAgent.get('http://localhost:8080');
-      mockPool.intercept({ path: '/remote-config', method: 'GET' }).reply(200, minimalConfig);
+      mockPool
+        .intercept({ path: '/remote-config', method: 'GET' })
+        .reply(200, minimalConfig);
 
       const config = await loadConfig('http://localhost:8080/remote-config');
       expect(config).toEqual(expectedConfig);
@@ -62,7 +64,9 @@ describe('config', () => {
      */
     it('should throw an error for a failing remote URL', async () => {
       const mockPool = mockAgent.get('http://localhost:8080');
-      mockPool.intercept({ path: '/remote-config-failing', method: 'GET' }).reply(500);
+      mockPool
+        .intercept({ path: '/remote-config-failing', method: 'GET' })
+        .reply(500);
 
       await expect(
         loadConfig('http://localhost:8080/remote-config-failing'),
