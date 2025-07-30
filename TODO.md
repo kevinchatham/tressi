@@ -119,17 +119,19 @@ this.recentLatenciesForSpinner.push(result.latencyMs);
 
 ---
 
-### 7. **Avoid setInterval/setTimeout if ramp-up is disabled**
+### 7. **✅ Avoid setInterval/setTimeout if ramp-up is disabled**
 
-You're always setting:
+~~You're always setting:~~
 
 ```ts
 this.rampUpInterval = setInterval(...);
 ```
 
-✅ Skip that entirely if `rampUpTimeSec === 0`.
+~~✅ Skip that entirely if `rampUpTimeSec === 0`.~~
 
-Even an idle `setInterval` adds a timer check to every loop of the event loop.
+~~Even an idle `setInterval` adds a timer check to every loop of the event loop.~~
+
+✅ **Completed**: This was incorrectly identified as a performance issue. The current implementation already uses `if (rampUpTimeSec > 0)` to conditionally create the interval only when ramp-up is actually needed. No idle timers are created when `rampUpTimeSec === 0`.
 
 ---
 
