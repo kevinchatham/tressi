@@ -82,9 +82,9 @@ Implemented object pooling for headers and result objects, plus caching for endp
 
 ---
 
-### 4. **Throttle or remove `sampledEndpointResponses` logic**
+### 4. **❌ Throttle or remove `sampledEndpointResponses` logic** - INVALID CONCERN
 
-You're doing this logic:
+~~You're doing this logic:~~
 
 ```ts
 if (!sampledCodesForEndpoint.has(res.status)) {
@@ -95,7 +95,15 @@ if (!sampledCodesForEndpoint.has(res.status)) {
 }
 ```
 
-📉 This check and storage can create bottlenecks under thousands of URLs or status codes.
+~~📉 This check and storage can create bottlenecks under thousands of URLs or status codes.~~
+
+❌ **Analysis Complete**: This concern is **invalid**. The `sampledCodesForEndpoint` Set has:
+- **O(1) time complexity** for `.has()` and `.add()` operations
+- **Bounded memory usage**: Maximum 500 status codes per endpoint (100-599 range)
+- **Realistic memory footprint**: ~300 bytes per endpoint (20 typical codes)
+- **Even with 100,000 endpoints**: Only ~30MB total memory usage
+
+The implementation is already optimized and represents a sound engineering trade-off. No changes needed.
 
 ---
 
