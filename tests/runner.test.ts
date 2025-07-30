@@ -124,32 +124,43 @@ describe('Runner', () => {
   it('should ramp up the request rate over time', async () => {
     vi.useFakeTimers();
 
+    // Mock the Node.js performance module using spyOn
+    const perfHooks = await import('perf_hooks');
+    const mockNow = vi.spyOn(perfHooks.performance, 'now');
+
+    // Set initial time to 0
+    mockNow.mockReturnValue(0);
+
     const options: RunOptions = {
       ...baseOptions,
       durationSec: 10,
       rps: 100,
       rampUpTimeSec: 5, // Ramp up to 100 Req/s over 5 seconds
     };
-    const runner = new Runner(options, baseRequests, {});
 
+    const runner = new Runner(options, baseRequests, {});
     const runPromise = runner.run();
 
     // At 0s, RPS should be 0
     expect(runner.getCurrentTargetRps()).toBe(0);
 
     // At 1s, should be 20 Req/s (1/5th of the way)
+    mockNow.mockReturnValue(1000);
     await vi.advanceTimersByTimeAsync(1000);
     expect(runner.getCurrentTargetRps()).toBe(20);
 
     // At 3s, should be 60 Req/s (3/5th of the way)
+    mockNow.mockReturnValue(3000);
     await vi.advanceTimersByTimeAsync(2000);
     expect(runner.getCurrentTargetRps()).toBe(60);
 
     // At 5s (end of ramp-up), should be at the target of 100 Req/s
+    mockNow.mockReturnValue(5000);
     await vi.advanceTimersByTimeAsync(2000);
     expect(runner.getCurrentTargetRps()).toBe(100);
 
     // After ramp-up, it should stay at the target
+    mockNow.mockReturnValue(7000);
     await vi.advanceTimersByTimeAsync(2000);
     expect(runner.getCurrentTargetRps()).toBe(100);
 
@@ -158,6 +169,7 @@ describe('Runner', () => {
     await vi.runAllTimersAsync();
     await runPromise;
 
+    mockNow.mockRestore();
     vi.useRealTimers();
   });
 

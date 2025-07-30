@@ -12,9 +12,9 @@ This file tracks potential new features and improvements for `tressi`
 
 ## 🔍 High-Impact Areas to Improve
 
-### 1. **Avoid per-request `Date.now()`**
+### 1. **✅ Avoid per-request `Date.now()`**
 
-Your code does this on every request:
+~~Your code does this on every request:~~
 
 ```ts
 const start = Date.now();
@@ -22,15 +22,15 @@ const start = Date.now();
 const latencyMs = Math.max(0, Date.now() - start);
 ```
 
-📉 `Date.now()` is relatively expensive under heavy load.
+~~📉 `Date.now()` is relatively expensive under heavy load.~~
 
-✅ Replace with:
+✅ **Completed**: Replaced with:
 
 ```ts
 const start = performance.now();
 ```
 
-✅ Use [`perf_hooks`](https://nodejs.org/api/perf_hooks.html) for microsecond-level timing:
+✅ **Completed**: Using [`perf_hooks`](https://nodejs.org/api/perf_hooks.html) for microsecond-level timing:
 
 ```ts
 import { performance } from 'perf_hooks';

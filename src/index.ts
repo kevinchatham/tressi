@@ -1,5 +1,6 @@
 import chalk from 'chalk';
 import Table from 'cli-table3';
+import { performance } from 'perf_hooks';
 import { promises as fs } from 'fs';
 import ora from 'ora';
 import path from 'path';
@@ -310,7 +311,8 @@ export async function runLoadTest(options: RunOptions): Promise<TestSummary> {
     const tui = new TUI(() => runner.stop(), pkg.version || 'unknown');
     const tuiInterval = setInterval(() => {
       const startTime = runner.getStartTime();
-      const elapsedSec = startTime > 0 ? (Date.now() - startTime) / 1000 : 0;
+      const elapsedSec =
+        startTime > 0 ? (performance.now() - startTime) / 1000 : 0;
       const totalSec = options.durationSec || 10;
 
       tui.update(runner, elapsedSec, totalSec, options.rps);
@@ -328,7 +330,8 @@ export async function runLoadTest(options: RunOptions): Promise<TestSummary> {
     }).start();
     const noUiInterval = setInterval(() => {
       const startTime = runner.getStartTime();
-      const elapsedSec = startTime > 0 ? (Date.now() - startTime) / 1000 : 0;
+      const elapsedSec =
+        startTime > 0 ? (performance.now() - startTime) / 1000 : 0;
       const totalSec = options.durationSec || 10;
 
       const rps = runner.getCurrentRps();
@@ -369,7 +372,8 @@ export async function runLoadTest(options: RunOptions): Promise<TestSummary> {
 
   await runner.run();
   const startTime = runner.getStartTime();
-  const actualDurationSec = startTime > 0 ? (Date.now() - startTime) / 1000 : 0;
+  const actualDurationSec =
+    startTime > 0 ? (performance.now() - startTime) / 1000 : 0;
   const summary = generateSummary(runner, options, actualDurationSec);
 
   if (options.exportPath) {

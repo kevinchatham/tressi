@@ -1,4 +1,5 @@
 import { EventEmitter } from 'events';
+import { performance } from 'perf_hooks';
 import { build, Histogram } from 'hdr-histogram-js';
 import { request } from 'undici';
 
@@ -93,7 +94,7 @@ export class Runner extends EventEmitter {
       }
     }
 
-    this.recentRequestTimestamps.add(Date.now());
+    this.recentRequestTimestamps.add(performance.now());
     this.statusCodeMap[result.status] =
       (this.statusCodeMap[result.status] || 0) + 1;
 
@@ -233,7 +234,7 @@ export class Runner extends EventEmitter {
    * @returns The current actual Req/s.
    */
   public getCurrentRps(): number {
-    const now = Date.now();
+    const now = performance.now();
     const oneSecondAgo = now - 1000;
 
     const timestamps = this.recentRequestTimestamps.getAll();
@@ -266,7 +267,7 @@ export class Runner extends EventEmitter {
    * It sets up workers, timers, and ramp-up/autoscaling logic.
    */
   public async run(): Promise<void> {
-    this.startTime = Date.now();
+    this.startTime = performance.now();
 
     const {
       workers = 10,
@@ -283,7 +284,7 @@ export class Runner extends EventEmitter {
     // If ramp-up is enabled, start the governor
     if (rampUpTimeSec > 0) {
       this.rampUpInterval = setInterval(() => {
-        const elapsedTimeSec = (Date.now() - this.startTime) / 1000;
+        const elapsedTimeSec = (performance.now() - this.startTime) / 1000;
 
         if (this.stopped) {
           clearInterval(this.rampUpInterval as NodeJS.Timeout);
@@ -427,7 +428,7 @@ export class Runner extends EventEmitter {
     while (!isStopped()) {
       const req =
         this.requests[Math.floor(Math.random() * this.requests.length)];
-      const start = Date.now();
+      const start = performance.now();
 
       try {
         const headers = { ...this.headers, ...req.headers };
@@ -469,7 +470,7 @@ export class Runner extends EventEmitter {
           await responseBody.text().catch(() => {});
         }
 
-        const latencyMs = Math.max(0, Date.now() - start);
+        const latencyMs = Math.max(0, performance.now() - start);
         this.onResult({
           method: req.method || 'GET',
           url: req.url,
@@ -477,10 +478,10 @@ export class Runner extends EventEmitter {
           latencyMs,
           success: statusCode >= 200 && statusCode < 300,
           body, // Will be undefined if not sampled
-          timestamp: Date.now(),
+          timestamp: performance.now(),
         });
       } catch (err) {
-        const latencyMs = Math.max(0, Date.now() - start);
+        const latencyMs = Math.max(0, performance.now() - start);
         this.onResult({
           method: req.method || 'GET',
           url: req.url,
@@ -488,7 +489,7 @@ export class Runner extends EventEmitter {
           latencyMs,
           success: false,
           error: (err as Error).message,
-          timestamp: Date.now(),
+          timestamp: performance.now(),
         });
       }
 
