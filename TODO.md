@@ -58,19 +58,21 @@ This avoids the extra `JSON.stringify(undefined)` call overhead.
 
 ---
 
-### 3. **Minimize object allocations inside `runWorker`**
+### 3. **✅ Minimize object allocations inside `runWorker`**
 
-Every loop creates:
+~~Every loop creates:~~
 
-- Headers object: `{ ...this.headers, ...req.headers }`
-- A new result object
-- A new latency Set/map entry
+~~- Headers object: `{ ...this.headers, ...req.headers }`~~
+~~- A new result object~~
+~~- A new latency Set/map entry~~
 
-✅ Pre-allocate where possible or reuse:
+✅ **Completed**: Pre-allocate where possible or reuse:
 
 - Use a **shared `Headers` instance** if static
 - Cache endpoint histogram maps/sets outside the loop
-- Avoid repeatedly creating identical `endpointKey` strings — use a string cache or interned lookup if you’re testing few URLs
+- Avoid repeatedly creating identical `endpointKey` strings — use a string cache or interned lookup if you're testing few URLs
+
+Implemented object pooling for headers and result objects, plus caching for endpoint keys and response sampling sets to minimize GC pressure.
 
 ---
 

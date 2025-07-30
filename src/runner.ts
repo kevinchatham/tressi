@@ -34,13 +34,19 @@ export class Runner extends EventEmitter {
   private stopped = false;
   private startTime: number = 0;
   private currentTargetRps: number;
-  private sampledEndpointResponses: Map<string, Set<number>> = new Map();
   private successfulRequests = 0;
   private failedRequests = 0;
   private activeWorkers: { promise: Promise<void>; stop: () => void }[] = [];
   private testTimeout?: NodeJS.Timeout;
   private rampUpInterval?: NodeJS.Timeout;
   private autoscaleInterval?: NodeJS.Timeout;
+
+  // Object allocation optimizations
+  private headersPool: Record<string, string>[] = [];
+  private resultPool: RequestResult[] = [];
+  private endpointKeyCache = new Map<string, string>();
+  private responseSamplingSets = new Map<string, Set<number>>();
+  private maxPoolSize = 1000;
 
   /**
    * Creates a new Runner instance.
@@ -66,6 +72,12 @@ export class Runner extends EventEmitter {
     const maxRps = options.rps || 1000;
     const bufferSize = Math.max(10000, maxRps * 2);
     this.recentRequestTimestamps = new CircularBuffer<number>(bufferSize);
+
+    // Initialize optimization pools with reasonable starting capacity
+    this.headersPool = [];
+    this.resultPool = [];
+    this.endpointKeyCache = new Map();
+    this.responseSamplingSets = new Map();
   }
 
   /**
@@ -74,13 +86,14 @@ export class Runner extends EventEmitter {
    */
   public onResult(result: RequestResult): void {
     if (this.sampledResults.length < 1000) {
-      this.sampledResults.push(result);
+      // Create a shallow copy for sampled results to avoid pool contamination
+      this.sampledResults.push({ ...result });
     }
 
     this.histogram.recordValue(result.latencyMs);
     this.distribution.add(result.latencyMs);
 
-    const endpointKey = `${result.method} ${result.url}`;
+    const endpointKey = this.getEndpointKey(result.method, result.url);
     if (!this.endpointHistograms.has(endpointKey)) {
       this.endpointHistograms.set(endpointKey, build());
     }
@@ -111,6 +124,9 @@ export class Runner extends EventEmitter {
         (this.failedRequestsByEndpoint.get(endpointKey) || 0) + 1,
       );
     }
+
+    // Release result object back to pool
+    this.releaseResultObject(result);
   }
 
   /**
@@ -390,6 +406,12 @@ export class Runner extends EventEmitter {
       this.autoscaleInterval = undefined;
     }
 
+    // Clear object pools and caches
+    this.headersPool.length = 0;
+    this.resultPool.length = 0;
+    this.endpointKeyCache.clear();
+    this.responseSamplingSets.clear();
+
     // Close all HTTP agents to free up connections
     globalAgentManager.closeAll();
   }
@@ -417,6 +439,76 @@ export class Runner extends EventEmitter {
   }
 
   /**
+   * Gets a reusable headers object from the pool or creates a new one
+   */
+  private getHeadersObject(): Record<string, string> {
+    return this.headersPool.pop() || {};
+  }
+
+  /**
+   * Returns a headers object to the pool for reuse
+   */
+  private releaseHeadersObject(headers: Record<string, string>): void {
+    if (this.headersPool.length < this.maxPoolSize) {
+      // Clear the object for reuse
+      for (const key in headers) {
+        delete headers[key];
+      }
+      this.headersPool.push(headers);
+    }
+  }
+
+  /**
+   * Gets a RequestResult object from the pool or creates a new one
+   */
+  private getResultObject(): RequestResult {
+    return this.resultPool.pop() || ({} as RequestResult);
+  }
+
+  /**
+   * Returns a RequestResult object to the pool for reuse
+   */
+  private releaseResultObject(result: RequestResult): void {
+    if (this.resultPool.length < this.maxPoolSize) {
+      // Clear the object for reuse
+      result.method = '';
+      result.url = '';
+      result.status = 0;
+      result.latencyMs = 0;
+      result.success = false;
+      result.body = undefined;
+      result.error = undefined;
+      result.timestamp = 0;
+      this.resultPool.push(result);
+    }
+  }
+
+  /**
+   * Gets a cached endpoint key to avoid string concatenation
+   */
+  private getEndpointKey(method: string, url: string): string {
+    const cacheKey = `${method}|${url}`;
+    let endpointKey = this.endpointKeyCache.get(cacheKey);
+    if (!endpointKey) {
+      endpointKey = `${method} ${url}`;
+      this.endpointKeyCache.set(cacheKey, endpointKey);
+    }
+    return endpointKey;
+  }
+
+  /**
+   * Gets a reusable Set for response sampling
+   */
+  private getResponseSamplingSet(endpointKey: string): Set<number> {
+    let set = this.responseSamplingSets.get(endpointKey);
+    if (!set) {
+      set = new Set();
+      this.responseSamplingSets.set(endpointKey, set);
+    }
+    return set;
+  }
+
+  /**
    * The core worker function. It runs in a loop, making requests and respecting
    * the rate limit (RPS) until instructed to stop.
    * @param isStopped A function that returns true if the worker should stop.
@@ -430,8 +522,13 @@ export class Runner extends EventEmitter {
         this.requests[Math.floor(Math.random() * this.requests.length)];
       const start = performance.now();
 
+      // Get reusable objects from pools
+      const headers = this.getHeadersObject();
+      const result = this.getResultObject();
+
       try {
-        const headers = { ...this.headers, ...req.headers };
+        // Reuse headers object instead of creating new one
+        Object.assign(headers, this.headers, req.headers);
 
         // Use per-endpoint agents in production, global dispatcher in tests
         const dispatcher =
@@ -448,12 +545,10 @@ export class Runner extends EventEmitter {
         });
 
         let body: string | undefined;
-        const endpointIdentifier = `${req.method || 'GET'} ${req.url}`;
-        if (!this.sampledEndpointResponses.has(endpointIdentifier)) {
-          this.sampledEndpointResponses.set(endpointIdentifier, new Set());
-        }
+        const method = req.method || 'GET';
+        const endpointKey = this.getEndpointKey(method, req.url);
         const sampledCodesForEndpoint =
-          this.sampledEndpointResponses.get(endpointIdentifier)!;
+          this.getResponseSamplingSet(endpointKey);
 
         // Check if we should sample this status code for this endpoint
         if (!sampledCodesForEndpoint.has(statusCode)) {
@@ -471,26 +566,34 @@ export class Runner extends EventEmitter {
         }
 
         const latencyMs = Math.max(0, performance.now() - start);
-        this.onResult({
-          method: req.method || 'GET',
-          url: req.url,
-          status: statusCode,
-          latencyMs,
-          success: statusCode >= 200 && statusCode < 300,
-          body, // Will be undefined if not sampled
-          timestamp: performance.now(),
-        });
+
+        // Populate result object from pool
+        result.method = method;
+        result.url = req.url;
+        result.status = statusCode;
+        result.latencyMs = latencyMs;
+        result.success = statusCode >= 200 && statusCode < 300;
+        result.body = body; // Will be undefined if not sampled
+        result.timestamp = performance.now();
+
+        this.onResult(result);
       } catch (err) {
         const latencyMs = Math.max(0, performance.now() - start);
-        this.onResult({
-          method: req.method || 'GET',
-          url: req.url,
-          status: 0,
-          latencyMs,
-          success: false,
-          error: (err as Error).message,
-          timestamp: performance.now(),
-        });
+
+        // Populate result object for error case
+        result.method = req.method || 'GET';
+        result.url = req.url;
+        result.status = 0;
+        result.latencyMs = latencyMs;
+        result.success = false;
+        result.error = (err as Error).message;
+        result.timestamp = performance.now();
+
+        this.onResult(result);
+      } finally {
+        // Always release objects back to pools
+        this.releaseHeadersObject(headers);
+        // Note: result object is released by onResult after it's processed
       }
 
       // Rate limiting logic
