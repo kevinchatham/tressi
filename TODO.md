@@ -1,5 +1,9 @@
 This file tracks potential new features and improvements for `tressi`
 
+## Bug Fixes
+
+- [ ] **XLSX Export Failure**: Long tests exceed Excel row limits due to large request datasets. Remove requests sheet from XLSX export.
+
 ## Future Features
 
 - [ ] **Early Exit on Error**: Implement graceful test termination when all endpoints return erroneous response codes (4xx/5xx). This prevents unnecessary resource consumption in failure scenarios and provides immediate feedback about configuration or endpoint issues.
@@ -107,17 +111,17 @@ The implementation uses `undici`'s `Agent` with connection pooling and keep-aliv
 
 ---
 
-### 6. **Avoid `Array.prototype.push()` in tight loops**
+### 6. **✅ Avoid `Array.prototype.push()` in tight loops**
 
-e.g., in:
+~~e.g., in:~~
 
 ```ts
 this.recentLatenciesForSpinner.push(result.latencyMs);
 ```
 
-📉 Push with bounds checks adds GC pressure.
+~~📉 Push with bounds checks adds GC pressure.~~
 
-✅ Use a `CircularBuffer` (which you already have for timestamps) for all bounded history tracking.
+✅ **Completed**: Migrated to `CircularBuffer` for all bounded history tracking, including latency tracking for the spinner display. This eliminates GC pressure from array push operations in tight loops.
 
 ---
 

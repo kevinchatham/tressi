@@ -26,7 +26,7 @@ export class Runner extends EventEmitter {
   private histogram: Histogram;
   private distribution: Distribution;
   private endpointHistograms: Map<string, Histogram> = new Map();
-  private recentLatenciesForSpinner: number[] = [];
+  private recentLatenciesForSpinner: CircularBuffer<number>;
   private recentRequestTimestamps: CircularBuffer<number>;
   private statusCodeMap: Record<number, number> = {};
   private successfulRequestsByEndpoint: Map<string, number> = new Map();
@@ -72,6 +72,7 @@ export class Runner extends EventEmitter {
     const maxRps = options.rps || 1000;
     const bufferSize = Math.max(10000, maxRps * 2);
     this.recentRequestTimestamps = new CircularBuffer<number>(bufferSize);
+    this.recentLatenciesForSpinner = new CircularBuffer<number>(1000);
 
     // Initialize optimization pools with reasonable starting capacity
     this.headersPool = [];
@@ -101,10 +102,7 @@ export class Runner extends EventEmitter {
 
     // Keep a small, rotating log of recent latencies for the non-UI spinner
     if (!this.options.useUI) {
-      this.recentLatenciesForSpinner.push(result.latencyMs);
-      if (this.recentLatenciesForSpinner.length > 1000) {
-        this.recentLatenciesForSpinner.shift();
-      }
+      this.recentLatenciesForSpinner.add(result.latencyMs);
     }
 
     this.recentRequestTimestamps.add(performance.now());
@@ -185,7 +183,7 @@ export class Runner extends EventEmitter {
    * @returns An array of latency numbers in milliseconds.
    */
   public getRecentLatencies(): number[] {
-    return this.recentLatenciesForSpinner;
+    return this.recentLatenciesForSpinner.getAll();
   }
 
   /**
