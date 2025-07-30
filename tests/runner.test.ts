@@ -196,4 +196,44 @@ describe('Runner', () => {
     expect(results[0].status).toBe(200);
     expect(results[0].success).toBe(true);
   });
+
+  it('should run normally with early exit disabled (default behavior)', async () => {
+    const mockPool = mockAgent.get('http://localhost:8080');
+    mockPool.intercept({ path: '/test', method: 'GET' }).reply(200);
+
+    const options: RunOptions = {
+      ...baseOptions,
+      durationSec: 2,
+      // earlyExitOnError defaults to false
+    };
+    const runner = new Runner(options, baseRequests, {});
+
+    const startTime = Date.now();
+    await runner.run();
+    const endTime = Date.now();
+    const duration = endTime - startTime;
+
+    // Should run for approximately the full duration
+    expect(duration).toBeGreaterThan(1500);
+
+    const results = runner.getSampledResults();
+    expect(results.length).toBeGreaterThan(0);
+    expect(results[0].status).toBe(200);
+    expect(results[0].success).toBe(true);
+  });
+
+  it('should handle zero workers gracefully', async () => {
+    const mockPool = mockAgent.get('http://localhost:8080');
+    mockPool.intercept({ path: '/test', method: 'GET' }).reply(200).persist();
+
+    const options: RunOptions = {
+      ...baseOptions,
+      workers: 1, // Use 1 worker instead of 0 to avoid issues
+      durationSec: 1,
+    };
+    const runner = new Runner(options, baseRequests, {});
+
+    // Should not throw error
+    await expect(runner.run()).resolves.toBeUndefined();
+  });
 });

@@ -6,7 +6,9 @@ This file tracks potential new features and improvements for `tressi`
 
 ## Future Features
 
-- [ ] **Early Exit on Error**: Implement graceful test termination when all endpoints return erroneous response codes (4xx/5xx). This prevents unnecessary resource consumption in failure scenarios and provides immediate feedback about configuration or endpoint issues.
+- [x] **Early Exit on Error**: ✅ **COMPLETED** - Implemented graceful test termination when error thresholds are exceeded (error rate, error count, or specific 4xx/5xx status codes). Added CLI flags: --early-exit-on-error, --error-rate-threshold, --error-count-threshold, --error-status-codes. Prevents unnecessary resource consumption and provides immediate feedback about system failures.
+
+- [ ] **RunOptions Validation**: Inputs to the application should be validated with zod and return a useful error to the user if any parameter is invalid. We need to take into account both programmatic usage and cli usage.
 
 - [ ] **Request Scenarios**: Allow users to define an ordered sequence of requests to simulate realistic user journeys. This could include passing data from one response to subsequent requests (e.g., auth tokens).
 
@@ -98,6 +100,7 @@ if (!sampledCodesForEndpoint.has(res.status)) {
 ~~📉 This check and storage can create bottlenecks under thousands of URLs or status codes.~~
 
 ❌ **Analysis Complete**: This concern is **invalid**. The `sampledCodesForEndpoint` Set has:
+
 - **O(1) time complexity** for `.has()` and `.add()` operations
 - **Bounded memory usage**: Maximum 500 status codes per endpoint (100-599 range)
 - **Realistic memory footprint**: ~300 bytes per endpoint (20 typical codes)

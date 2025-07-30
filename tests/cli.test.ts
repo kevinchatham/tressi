@@ -103,5 +103,151 @@ describe('CLI', () => {
       processExitSpy.mockRestore();
       consoleErrorSpy.mockRestore();
     });
+
+    describe('early exit options', () => {
+      it('should parse early exit options correctly', async () => {
+        const { runLoadTest } = await import('../src/index');
+        await runCli([
+          '--config',
+          './tressi.config.ts',
+          '--early-exit-on-error',
+          '--error-rate-threshold',
+          '0.05',
+          '--error-count-threshold',
+          '100',
+          '--error-status-codes',
+          '500,503,404',
+        ]);
+
+        expect(runLoadTest).toHaveBeenCalledWith(
+          expect.objectContaining({
+            earlyExitOnError: true,
+            errorRateThreshold: 0.05,
+            errorCountThreshold: 100,
+            errorStatusCodes: [500, 503, 404],
+          }),
+        );
+      });
+
+      it('should parse single error status code', async () => {
+        const { runLoadTest } = await import('../src/index');
+        await runCli([
+          '--config',
+          './tressi.config.ts',
+          '--early-exit-on-error',
+          '--error-status-codes',
+          '500',
+        ]);
+
+        expect(runLoadTest).toHaveBeenCalledWith(
+          expect.objectContaining({
+            earlyExitOnError: true,
+            errorStatusCodes: [500],
+          }),
+        );
+      });
+
+      it('should exit with error when early exit is enabled but no thresholds provided', async () => {
+        const processExitSpy = vi
+          .spyOn(process, 'exit')
+          .mockImplementation(() => undefined as never);
+        const consoleErrorSpy = vi
+          .spyOn(console, 'error')
+          .mockImplementation(() => {});
+
+        await runCli([
+          '--config',
+          './tressi.config.ts',
+          '--early-exit-on-error',
+        ]);
+
+        expect(processExitSpy).toHaveBeenCalledWith(1);
+        expect(consoleErrorSpy).toHaveBeenCalledWith(
+          'Error: When --early-exit-on-error is enabled, at least one of --error-rate-threshold, --error-count-threshold, or --error-status-codes must be provided.',
+        );
+
+        processExitSpy.mockRestore();
+        consoleErrorSpy.mockRestore();
+      });
+
+      it('should exit with error when error status codes are invalid', async () => {
+        const processExitSpy = vi
+          .spyOn(process, 'exit')
+          .mockImplementation(() => undefined as never);
+        const consoleErrorSpy = vi
+          .spyOn(console, 'error')
+          .mockImplementation(() => {});
+
+        await runCli([
+          '--config',
+          './tressi.config.ts',
+          '--early-exit-on-error',
+          '--error-status-codes',
+          'invalid,500',
+        ]);
+
+        expect(processExitSpy).toHaveBeenCalledWith(1);
+        expect(consoleErrorSpy).toHaveBeenCalled();
+
+        processExitSpy.mockRestore();
+        consoleErrorSpy.mockRestore();
+      });
+
+      it('should exit with error when error rate threshold is invalid', async () => {
+        const { runLoadTest } = await import('../src/index');
+
+        await runCli([
+          '--config',
+          './tressi.config.ts',
+          '--early-exit-on-error',
+          '--error-rate-threshold',
+          'invalid',
+        ]);
+
+        expect(runLoadTest).toHaveBeenCalledWith(
+          expect.objectContaining({
+            earlyExitOnError: true,
+            errorRateThreshold: NaN,
+          }),
+        );
+      });
+
+      it('should exit with error when error count threshold is invalid', async () => {
+        const { runLoadTest } = await import('../src/index');
+
+        await runCli([
+          '--config',
+          './tressi.config.ts',
+          '--early-exit-on-error',
+          '--error-count-threshold',
+          'invalid',
+        ]);
+
+        expect(runLoadTest).toHaveBeenCalledWith(
+          expect.objectContaining({
+            earlyExitOnError: true,
+            errorCountThreshold: NaN,
+          }),
+        );
+      });
+
+      it('should handle edge case status codes correctly', async () => {
+        const { runLoadTest } = await import('../src/index');
+        await runCli([
+          '--config',
+          './tressi.config.ts',
+          '--early-exit-on-error',
+          '--error-status-codes',
+          '100,200,300,400,500',
+        ]);
+
+        expect(runLoadTest).toHaveBeenCalledWith(
+          expect.objectContaining({
+            earlyExitOnError: true,
+            errorStatusCodes: [100, 200, 300, 400, 500],
+          }),
+        );
+      });
+    });
   });
 });

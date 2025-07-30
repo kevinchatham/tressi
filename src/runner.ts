@@ -60,7 +60,10 @@ export class Runner extends EventEmitter {
     headers: Record<string, string>,
   ) {
     super();
-    this.options = options;
+
+    // Validate early exit options
+    const validatedOptions = this.validateEarlyExitOptions(options);
+    this.options = validatedOptions;
     this.requests = requests;
     this.headers = headers;
     this.histogram = build();
@@ -79,6 +82,74 @@ export class Runner extends EventEmitter {
     this.resultPool = [];
     this.endpointKeyCache = new Map();
     this.responseSamplingSets = new Map();
+  }
+
+  /**
+   * Validates early exit configuration options with proper defaults and constraints.
+   * @param options The raw RunOptions to validate
+   * @returns Validated RunOptions with defaults applied
+   */
+  private validateEarlyExitOptions(options: RunOptions): RunOptions {
+    const validated = { ...options };
+
+    // Set defaults for early exit options
+    validated.earlyExitOnError = options.earlyExitOnError ?? false;
+    validated.errorRateThreshold = options.errorRateThreshold;
+    validated.errorCountThreshold = options.errorCountThreshold;
+    validated.errorStatusCodes = options.errorStatusCodes;
+
+    // Validate constraints when early exit is enabled
+    if (validated.earlyExitOnError) {
+      // Validate error rate threshold (must be between 0.0 and 1.0)
+      if (validated.errorRateThreshold !== undefined) {
+        if (
+          typeof validated.errorRateThreshold !== 'number' ||
+          validated.errorRateThreshold < 0 ||
+          validated.errorRateThreshold > 1
+        ) {
+          throw new Error(
+            'errorRateThreshold must be a number between 0.0 and 1.0',
+          );
+        }
+      }
+
+      // Validate error count threshold (must be positive integer)
+      if (validated.errorCountThreshold !== undefined) {
+        if (
+          !Number.isInteger(validated.errorCountThreshold) ||
+          validated.errorCountThreshold < 0
+        ) {
+          throw new Error('errorCountThreshold must be a non-negative integer');
+        }
+      }
+
+      // Validate error status codes (must be array of valid HTTP status codes)
+      if (validated.errorStatusCodes !== undefined) {
+        if (!Array.isArray(validated.errorStatusCodes)) {
+          throw new Error('errorStatusCodes must be an array of numbers');
+        }
+        for (const code of validated.errorStatusCodes) {
+          if (!Number.isInteger(code) || code < 100 || code > 599) {
+            throw new Error(
+              `Invalid HTTP status code: ${code}. Must be between 100-599`,
+            );
+          }
+        }
+      }
+
+      // Ensure at least one threshold is provided when early exit is enabled
+      if (
+        validated.errorRateThreshold === undefined &&
+        validated.errorCountThreshold === undefined &&
+        validated.errorStatusCodes === undefined
+      ) {
+        throw new Error(
+          'When earlyExitOnError is enabled, at least one of errorRateThreshold, errorCountThreshold, or errorStatusCodes must be provided',
+        );
+      }
+    }
+
+    return validated;
   }
 
   /**
@@ -507,6 +578,48 @@ export class Runner extends EventEmitter {
   }
 
   /**
+   * Checks if early exit conditions are met based on configured thresholds.
+   * This method is thread-safe as it only reads atomic counters and maps.
+   * @returns true if early exit conditions are met, false otherwise
+   */
+  private shouldEarlyExit(): boolean {
+    if (!this.options.earlyExitOnError) {
+      return false;
+    }
+
+    const totalRequests = this.successfulRequests + this.failedRequests;
+    if (totalRequests === 0) {
+      return false;
+    }
+
+    // Check error rate threshold
+    if (this.options.errorRateThreshold !== undefined) {
+      const errorRate = this.failedRequests / totalRequests;
+      if (errorRate >= this.options.errorRateThreshold) {
+        return true;
+      }
+    }
+
+    // Check error count threshold
+    if (this.options.errorCountThreshold !== undefined) {
+      if (this.failedRequests >= this.options.errorCountThreshold) {
+        return true;
+      }
+    }
+
+    // Check specific status codes threshold
+    if (this.options.errorStatusCodes !== undefined) {
+      for (const code of this.options.errorStatusCodes) {
+        if (this.statusCodeMap[code] > 0) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  /**
    * The core worker function. It runs in a loop, making requests and respecting
    * the rate limit (RPS) until instructed to stop.
    * @param isStopped A function that returns true if the worker should stop.
@@ -519,6 +632,12 @@ export class Runner extends EventEmitter {
       const req =
         this.requests[Math.floor(Math.random() * this.requests.length)];
       const start = performance.now();
+
+      // Check for early exit conditions before making the request
+      if (this.shouldEarlyExit()) {
+        this.stop();
+        return;
+      }
 
       // Get reusable objects from pools
       const headers = this.getHeadersObject();
@@ -575,6 +694,12 @@ export class Runner extends EventEmitter {
         result.timestamp = performance.now();
 
         this.onResult(result);
+
+        // Check for early exit conditions after processing the result
+        if (this.shouldEarlyExit()) {
+          this.stop();
+          return;
+        }
       } catch (err) {
         const latencyMs = Math.max(0, performance.now() - start);
 
@@ -588,6 +713,12 @@ export class Runner extends EventEmitter {
         result.timestamp = performance.now();
 
         this.onResult(result);
+
+        // Check for early exit conditions after processing the error
+        if (this.shouldEarlyExit()) {
+          this.stop();
+          return;
+        }
       } finally {
         // Always release objects back to pools
         this.releaseHeadersObject(headers);

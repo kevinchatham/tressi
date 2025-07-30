@@ -42,6 +42,14 @@ export interface RunOptions {
   useUI?: boolean;
   /** Suppress all console output. Defaults to false. */
   silent?: boolean;
+  /** Whether to enable early exit on error conditions. Defaults to false. */
+  earlyExitOnError?: boolean;
+  /** Error rate threshold (0.0-1.0) to trigger early exit. Requires earlyExitOnError=true. */
+  errorRateThreshold?: number;
+  /** Absolute error count threshold to trigger early exit. Requires earlyExitOnError=true. */
+  errorCountThreshold?: number;
+  /** Specific HTTP status codes that should trigger early exit. Requires earlyExitOnError=true. */
+  errorStatusCodes?: number[];
 }
 
 function printReportInfo(summary: TestSummary, options: RunOptions): void {
