@@ -1,5 +1,6 @@
 import { promises as fs } from 'fs';
 import path from 'path';
+import { request } from 'undici';
 import { z } from 'zod';
 
 /**
@@ -60,9 +61,11 @@ export async function loadConfig(
 
   let rawContent: unknown;
   if (configInput.startsWith('http://') || configInput.startsWith('https://')) {
-    const res = await fetch(configInput);
-    if (!res.ok) throw new Error(`Remote config fetch failed: ${res.status}`);
-    rawContent = await res.json();
+    const { statusCode, body } = await request(configInput);
+    if (statusCode >= 400) {
+      throw new Error(`Remote config fetch failed: ${statusCode}`);
+    }
+    rawContent = await body.json();
   } else {
     const absolutePath = path.resolve(configInput);
     const fileContent = await fs.readFile(absolutePath, 'utf-8');

@@ -1,9 +1,11 @@
 import { EventEmitter } from 'events';
 import { build, Histogram } from 'hdr-histogram-js';
+import { request } from 'undici';
 
 import { CircularBuffer } from './circular-buffer';
 import { RequestConfig } from './config';
 import { Distribution } from './distribution';
+import { globalAgentManager } from './http-agent';
 import { RunOptions } from './index';
 import { RequestResult } from './stats';
 
@@ -386,6 +388,9 @@ export class Runner extends EventEmitter {
       clearInterval(this.autoscaleInterval);
       this.autoscaleInterval = undefined;
     }
+
+    // Close all HTTP agents to free up connections
+    globalAgentManager.closeAll();
   }
 
   /**
@@ -427,10 +432,17 @@ export class Runner extends EventEmitter {
       try {
         const headers = { ...this.headers, ...req.headers };
 
-        const res = await fetch(req.url, {
+        // Use per-endpoint agents in production, global dispatcher in tests
+        const dispatcher =
+          process.env.NODE_ENV !== 'test'
+            ? globalAgentManager.getAgent(req.url)
+            : undefined;
+
+        const { statusCode, body: responseBody } = await request(req.url, {
           method: req.method || 'GET',
           headers,
           body: req.payload ? JSON.stringify(req.payload) : undefined,
+          dispatcher,
         });
 
         let body: string | undefined;
@@ -442,10 +454,10 @@ export class Runner extends EventEmitter {
           this.sampledEndpointResponses.get(endpointIdentifier)!;
 
         // Check if we should sample this status code for this endpoint
-        if (!sampledCodesForEndpoint.has(res.status)) {
+        if (!sampledCodesForEndpoint.has(statusCode)) {
           try {
-            body = await res.text();
-            sampledCodesForEndpoint.add(res.status);
+            body = await responseBody.text();
+            sampledCodesForEndpoint.add(statusCode);
           } catch (e) {
             // Ignore body read errors, it might be empty.
             body = `(Could not read body: ${(e as Error).message}`;
@@ -453,16 +465,16 @@ export class Runner extends EventEmitter {
         } else {
           // We still need to consume the body to not leave the connection hanging
           // and to get a more accurate latency measurement.
-          await res.text().catch(() => {});
+          await responseBody.text().catch(() => {});
         }
 
         const latencyMs = Math.max(0, Date.now() - start);
         this.onResult({
           method: req.method || 'GET',
           url: req.url,
-          status: res.status,
+          status: statusCode,
           latencyMs,
-          success: res.ok,
+          success: statusCode >= 200 && statusCode < 300,
           body, // Will be undefined if not sampled
           timestamp: Date.now(),
         });

@@ -33,7 +33,7 @@
     "pretest:spike": "npm run schema:generate",
     "schema:generate": "tsx scripts/generate-schema.ts",
     "start": "npm run build && node dist/cli.js",
-    "test:dev": "tsx src/cli.ts --duration 10 --export",
+    "test:dev": "tsx src/cli.ts --duration 10 --export temp/report",
     "test:autoscale": "tsx src/cli.ts --autoscale --workers 50 --rps 1000 --duration 15",
     "test:basic": "tsx src/cli.ts --workers 10 --duration 15 --rps 200",
     "test:ci": "tsx src/cli.ts --workers 5 --duration 15 --rps 300 --no-ui --export",
@@ -52,6 +52,7 @@
     "commander": "^14.0.0",
     "hdr-histogram-js": "^3.0.1",
     "ora": "^8.2.0",
+    "undici": "^7.3.0",
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
     "zod": "^3.25.74"
   },

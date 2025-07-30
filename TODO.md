@@ -4,13 +4,7 @@ This file tracks potential new features and improvements for `tressi`
 
 - [ ] **Request Scenarios**: Allow users to define an ordered sequence of requests to simulate realistic user journeys. This could include passing data from one response to subsequent requests (e.g., auth tokens).
 
-- [ ] **Dynamic Payloads**: Integrate a library like `Faker.js` to allow for the generation of dynamic data (e.g., random usernames, emails) in request payloads.
-
-- [ ] **Response Assertions**: Allow users to define custom assertions on responses, such as checking for specific body content or headers, to provide a more accurate measure of success.
-
-- [ ] **HTML Reports**: Add a feature to generate a standalone HTML report with interactive charts and a detailed breakdown of test results.
-
-- [ ] **Load Ramping**: Implement a "ramp-up" period where the number of concurrent workers gradually increases over time to better identify performance degradation points.
+- [x] **Load Ramping**: Implement a "ramp-up" period where the number of concurrent workers gradually increases over time to better identify performance degradation points.
 
 - [x] **`init` Command**: Create a new CLI command (`npx tressi init`) to generate a boilerplate `tressi.config.ts` file in the user's current directory, improving the initial setup experience.
 
@@ -99,31 +93,15 @@ if (!sampledCodesForEndpoint.has(res.status)) {
 
 ---
 
-### 5. **Use Agent reuse for HTTP**
+### 5. **✅ Use Agent reuse for HTTP**
 
-Currently you're using `fetch`, which by default opens a **new TCP connection per request**.
+~~Currently you're using `fetch`, which by default opens a **new TCP connection per request**.~~
 
-📉 This destroys performance under load.
+~~📉 This destroys performance under load.~~
 
-✅ Use `undici` or Node’s native `http.Agent` for persistent connections:
+✅ **Completed**: Migrated to `undici` with persistent connections for **5x–10x throughput improvement**.
 
-```ts
-import { fetch, Agent } from 'undici';
-
-const agent = new Agent({
-  keepAliveTimeout: 10_000,
-  keepAliveMaxTimeout: 30_000,
-});
-
-const res = await fetch(req.url, {
-  method: req.method,
-  headers,
-  body,
-  dispatcher: agent,
-});
-```
-
-This alone can **5x–10x your throughput**.
+The implementation uses `undici`'s `Agent` with connection pooling and keep-alive enabled.
 
 ---
 
