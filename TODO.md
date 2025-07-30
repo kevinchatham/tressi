@@ -2,6 +2,8 @@ This file tracks potential new features and improvements for `tressi`
 
 ## Future Features
 
+- [ ] **Early Exit on Error**: Implement graceful test termination when all endpoints return erroneous response codes (4xx/5xx). This prevents unnecessary resource consumption in failure scenarios and provides immediate feedback about configuration or endpoint issues.
+
 - [ ] **Request Scenarios**: Allow users to define an ordered sequence of requests to simulate realistic user journeys. This could include passing data from one response to subsequent requests (e.g., auth tokens).
 
 - [x] **Load Ramping**: Implement a "ramp-up" period where the number of concurrent workers gradually increases over time to better identify performance degradation points.
@@ -90,8 +92,6 @@ if (!sampledCodesForEndpoint.has(res.status)) {
 ```
 
 📉 This check and storage can create bottlenecks under thousands of URLs or status codes.
-
-✅ Option: Make this sampling optional (`--sample-bodies` flag), or limit to `N endpoints` total with a fast-path guard.
 
 ---
 
