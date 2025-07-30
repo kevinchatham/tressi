@@ -40,21 +40,21 @@ import { performance } from 'perf_hooks';
 
 ---
 
-### 2. **Avoid JSON.stringify for undefined payloads**
+### 2. **✅ Avoid JSON.stringify for undefined payloads**
 
-You're doing this:
+~~You're doing this:~~
 
 ```ts
 body: req.payload ? JSON.stringify(req.payload) : undefined,
 ```
 
-✅ Better:
+✅ **Completed**: Using the optimized pattern:
 
 ```ts
 body: req.payload === undefined ? undefined : JSON.stringify(req.payload);
 ```
 
-Why? Because `JSON.stringify(undefined)` returns `undefined`, but checking explicitly avoids extra call overhead.
+This avoids the extra `JSON.stringify(undefined)` call overhead.
 
 ---
 

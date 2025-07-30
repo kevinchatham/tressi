@@ -441,7 +441,8 @@ export class Runner extends EventEmitter {
         const { statusCode, body: responseBody } = await request(req.url, {
           method: req.method || 'GET',
           headers,
-          body: req.payload ? JSON.stringify(req.payload) : undefined,
+          body:
+            req.payload === undefined ? undefined : JSON.stringify(req.payload),
           dispatcher,
         });
 
