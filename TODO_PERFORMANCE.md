@@ -19,6 +19,13 @@ This analysis identifies **7 critical bottlenecks** in tressi's HTTP implementat
 - **Issue**: Uses `await sleep(delay)` which blocks the event loop between requests
 - **Impact**: **5x performance penalty** - creates artificial gaps in request flow
 - **Root Cause**: Naive sleep-based throttling instead of non-blocking algorithms
+- **User Note**: Replace the current sleep-based global rate limiting strategy with a **token bucket algorithm** for a more efficient, non-blocking approach.
+  - The existing implementation applies a shared limit across all endpoints, which results in unintuitive behavior. For example:
+    - With a global limit of 10 RPS:
+      - **10 endpoints** → \~1 RPS per endpoint
+      - **1 endpoint** → full 10 RPS to that endpoint
+
+  - Refactor to apply rate limits **per endpoint** instead of globally. The token bucket implementation should reflect this change.
 
 ### 🔴 **P2 - Connection Pool Misconfiguration**
 
