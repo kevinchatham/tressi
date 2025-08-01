@@ -6,12 +6,13 @@ This analysis identifies **7 critical bottlenecks** in tressi's HTTP implementat
 
 ## Critical Performance Bottlenecks
 
-### 🔴 **P0 - Synchronous Body Consumption**
+### ✅ **P0 - Synchronous Body Consumption** [COMPLETED]
 
 - **Location**: `src/runner.ts:673-683`
 - **Issue**: Every request waits for complete body consumption via `await responseBody.text()`
 - **Impact**: **10x performance penalty** - prevents connection reuse and creates blocking I/O
 - **Root Cause**: Even non-sampled responses fully consume the body for "accurate latency measurement"
+- **Fix Applied**: Only consume response bodies when requests are actually sampled.
 
 ### 🔴 **P1 - Inefficient Rate Limiting**
 
@@ -27,12 +28,13 @@ This analysis identifies **7 critical bottlenecks** in tressi's HTTP implementat
 
   - Refactor to apply rate limits **per endpoint** instead of globally. The token bucket implementation should reflect this change.
 
-### 🔴 **P2 - Connection Pool Misconfiguration**
+### ✅ **P2 - Connection Pool Misconfiguration** [COMPLETED]
 
 - **Location**: `src/http-agent.ts:23`
 - **Issue**: Default connection pool limited to 128 connections
 - **Impact**: **3x performance penalty** - artificially constrains concurrency
 - **Root Cause**: Conservative default not suitable for load testing scenarios
+- **Fix Applied**: Increased connection pool limit from 128 to 1024 connections
 
 ### 🟡 **P3 - Sequential Request Processing**
 
@@ -95,82 +97,6 @@ graph TD
 2. **G → A**: Blocking sleep operation
 3. **A → B**: Sequential processing model
 
-## Immediate Fix Priority
-
-### Phase 1: High-Impact Fixes (Est. 50x improvement)
-
-1. **Skip body consumption for non-sampled responses** (10x)
-2. **Replace sleep-based rate limiting** (5x)
-3. **Increase connection pool to 1000** (3x)
-
-### Phase 2: Medium-Impact Fixes (Est. 5x improvement)
-
-4. **Implement batch request processing** (2x)
-5. **Optimize object allocation patterns** (1.5x)
-6. **Tune HTTP agent timeouts** (1.3x)
-
-### Phase 3: Fine-Tuning (Est. 2x improvement)
-
-7. **Implement intelligent request distribution** (1.2x)
-
-## Implementation Recommendations
-
-### Fix 1: Body Consumption Optimization
-
-```typescript
-// BEFORE (Current)
-const { statusCode, body: responseBody } = await request(req.url, {...});
-let body: string | undefined;
-if (!sampledCodesForEndpoint.has(statusCode)) {
-    body = await responseBody.text(); // ALWAYS waits
-    sampledCodesForEndpoint.add(statusCode);
-} else {
-    await responseBody.text().catch(() => {}); // Still waits!
-}
-
-// AFTER (Optimized)
-const { statusCode, body: responseBody } = await request(req.url, {...});
-let body: string | undefined;
-if (!sampledCodesForEndpoint.has(statusCode)) {
-    body = await responseBody.text();
-    sampledCodesForEndpoint.add(statusCode);
-} else {
-    // Drain without parsing for non-sampled responses
-    responseBody.dump().catch(() => {});
-}
-```
-
-### Fix 2: Rate Limiting Optimization
-
-```typescript
-// BEFORE (Current)
-await sleep(delay); // Blocks event loop
-
-// AFTER (Optimized)
-class TokenBucket {
-  private tokens: number;
-  private lastRefill: number;
-
-  async waitForToken(): Promise<void> {
-    while (this.tokens <= 0) {
-      await new Promise((resolve) => setImmediate(resolve));
-      this.refill();
-    }
-    this.tokens--;
-  }
-}
-```
-
-### Fix 3: Connection Pool Configuration
-
-```typescript
-// BEFORE (Current)
-connections: 128;
-
-// AFTER (Optimized)
-connections: process.env.TRESSI_CONNECTIONS || 1000;
-```
-
 ## Validation Strategy
 
 ### Performance Metrics to Track
@@ -213,21 +139,3 @@ private performanceMetrics = {
     bodyConsumptionTime: 0
 };
 ```
-
-## Conclusion
-
-The 350x performance gap is primarily due to **three architectural decisions**:
-
-1. Always consuming response bodies (10x penalty)
-2. Blocking rate limiting (5x penalty)
-3. Conservative connection pooling (3x penalty)
-
-These are **configuration and implementation issues**, not fundamental architectural limitations. The fixes are straightforward and should achieve parity with autocannon's performance.
-
-## Next Steps
-
-1. Implement Phase 1 fixes (estimated 2-3 hours)
-2. Run performance validation tests
-3. Implement Phase 2 optimizations
-4. Document performance tuning options
-5. Add performance monitoring to CLI output

@@ -676,10 +676,6 @@ export class Runner extends EventEmitter {
             // Ignore body read errors, it might be empty.
             body = `(Could not read body: ${(e as Error).message}`;
           }
-        } else {
-          // We still need to consume the body to not leave the connection hanging
-          // and to get a more accurate latency measurement.
-          await responseBody.text().catch(() => {});
         }
 
         const latencyMs = Math.max(0, performance.now() - start);

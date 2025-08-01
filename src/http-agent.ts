@@ -16,18 +16,16 @@ export interface EndpointAgent {
 export class HttpAgentManager {
   private agents = new Map<string, Dispatcher>();
   private defaultConfig: AgentConfig;
-  private useGlobalDispatcher: boolean;
 
-  constructor(defaultConfig: AgentConfig = {}, useGlobalDispatcher = false) {
+  constructor(defaultConfig: AgentConfig = {}) {
     this.defaultConfig = {
-      connections: 128,
+      connections: 1024,
       keepAliveTimeout: 4000,
       keepAliveMaxTimeout: 60000,
       headersTimeout: 30000,
       bodyTimeout: 30000,
       ...defaultConfig,
     };
-    this.useGlobalDispatcher = useGlobalDispatcher;
   }
 
   /**
