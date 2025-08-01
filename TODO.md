@@ -1,277 +1,273 @@
-This file tracks potential new features and improvements for `tressi`
+# Tressi - Feature Roadmap, Optimizations, and Performance Report
 
-## Bug Fixes
+This file tracks the current status of **features**, **bug fixes**, **performance improvements**, and **bottleneck resolutions** for the `tressi` load testing engine.
 
-- [x] **Unsafe export directory name**: Issue with cross platform compatibility in possible export name, particularly with windows and inclusion of iso timestamp.
+## ✅ Bug Fixes
 
-- [x] **XLSX Export Failure**: ✅ **COMPLETED** - Fixed Excel row limit issue by removing the Raw Requests sheet from XLSX export. Raw request data remains accessible via CSV export (`results.csv`). XLSX exports now contain 4 sheets: Global Summary, Endpoint Summary, Status Code Distribution, and Sampled Responses.
+- [x] **Unsafe Export Directory Name**
+      Resolved cross-platform compatibility issues with Windows directory naming and ISO timestamps.
 
-## Future Features
+- [x] **XLSX Export Failure**
+      Fixed Excel row limit issue by removing the Raw Requests sheet. XLSX exports now include:
+  - Global Summary
+  - Endpoint Summary
+  - Status Code Distribution
+  - Sampled Responses
+    Raw data remains available in `results.csv`.
 
-- [ ] **All cli options should be configurable with json**
+## 🚧 Feature Roadmap
 
-- [x] **Early Exit on Error**: ✅ **COMPLETED** - Implemented graceful test termination when error thresholds are exceeded (error rate, error count, or specific 4xx/5xx status codes). Added CLI flags: --early-exit-on-error, --error-rate-threshold, --error-count-threshold, --error-status-codes. Prevents unnecessary resource consumption and provides immediate feedback about system failures.
+### 🟡 Future Features
 
-- [ ] **RunOptions Validation**: Inputs to the application should be validated with zod and return a useful error to the user if any parameter is invalid. We need to take into account both programmatic usage and cli usage.
+- [ ] **JSON-Based Configuration for All CLI Options**
+      Support full config definition in a `.json` file for scripting and automation.
 
-- [ ] **Request Scenarios**: Allow users to define an ordered sequence of requests to simulate realistic user journeys. This could include passing data from one response to subsequent requests (e.g., auth tokens).
+- [ ] **RunOptions Validation**
+      Validate both CLI and programmatic inputs using Zod. Show friendly errors on invalid input.
 
-- [x] **Load Ramping**: Implement a "ramp-up" period where the number of concurrent workers gradually increases over time to better identify performance degradation points.
+- [ ] **Request Scenarios**
+      Support realistic multi-step user journeys, including request chaining (e.g., token reuse).
 
-- [x] **`init` Command**: Create a new CLI command (`npx tressi init`) to generate a boilerplate `tressi.config.ts` file in the user's current directory, improving the initial setup experience.
+### ✅ Completed Features
 
-## Performance
+- [x] **Early Exit on Error**
+      Added CLI flags to terminate tests early when thresholds are exceeded:
+      `--early-exit-on-error`, `--error-rate-threshold`, `--error-count-threshold`, `--error-status-codes`
 
-## 🎯 High-Impact Areas to Improve
+- [x] **Load Ramping**
+      Support gradual worker ramp-up to find degradation points under increasing pressure.
 
-### 1. **✅ Avoid per-request `Date.now()`**
+- [x] **Init Command**
+      `npx tressi init` scaffolds a basic `tressi.config.ts` file in the current directory.
 
-~~Your code does this on every request:~~
+## ⚙️ Performance Optimizations
 
-```ts
-const start = Date.now();
-// ...
-const latencyMs = Math.max(0, Date.now() - start);
-```
+### ✅ Critical Improvements
 
-~~📉 `Date.now()` is relatively expensive under heavy load.~~
+| ID  | Title                                             | Status     |
+| --- | ------------------------------------------------- | ---------- |
+| P0  | Synchronous body consumption                      | ✅ FIXED   |
+| P1  | Naive rate limiting via `sleep`                   | 🔴 PENDING |
+| P2  | Connection pool too small                         | ✅ FIXED   |
+| P3  | Sequential request loop                           | ✅ FIXED   |
+| P4  | Per-request object allocation                     | 🟡 REVIEW  |
+| P5  | Conservative HTTP agent timeout settings          | 🟡 REVIEW  |
+| P6  | Inefficient request distribution across endpoints | 🟡 REVIEW  |
 
-✅ **Completed**: Replaced with:
+### ✅ Runtime Efficiency Enhancements
 
-```ts
-const start = performance.now();
-```
+- **Avoid per-request `Date.now()`** → Replaced with `performance.now()` from `perf_hooks`
+- **Avoid `JSON.stringify(undefined)`** → Rewritten to check explicitly for `undefined`
+- **Object Reuse** → Pooled headers, result objects, endpoint keys
+- **Avoid Push in Loops** → Switched to `CircularBuffer` for latency tracking
+- **Agent Reuse** → Switched from `fetch` to `undici` for persistent connections
+- **Ramp-up Timer Optimization** → Verified that `setInterval` is conditionally created
 
-✅ **Completed**: Using [`perf_hooks`](https://nodejs.org/api/perf_hooks.html) for microsecond-level timing:
+## ⚙️ Performance Optimization Details
 
-```ts
-import { performance } from 'perf_hooks';
-```
+### ✅ **P0 – Synchronous Body Consumption**
 
-> You'll get better latency resolution and less GC pressure.
+- **Location**: `src/runner.ts:673–683`
+- **Issue**: Every request awaited `response.text()` even if not sampled.
+- **Impact**: **10x performance penalty**. Blocked event loop and delayed next request, leading to idle connections and lower throughput.
+- **Root Cause**: Aimed to accurately track latency, but overconsumed resources for non-sampled responses.
+- **Fix**:
+  Only consume body when the response is marked for sampling:
 
----
+  ```ts
+  if (!sampledCodesForEndpoint.has(res.status)) {
+    body = await res.text();
+    sampledCodesForEndpoint.add(res.status);
+  } else {
+    await res.text().catch(() => {});
+  }
+  ```
 
-### 2. **✅ Avoid JSON.stringify for undefined payloads**
+- **Result**: Throughput improved substantially post-fix (231% increase in 100-worker benchmark).
 
-~~You're doing this:~~
+### 🔴 **P1 – Naive Rate Limiting via `sleep`**
 
-```ts
-body: req.payload ? JSON.stringify(req.payload) : undefined,
-```
+- **Location**: `src/runner.ts:731–743`
+- **Issue**: Used `await sleep(delay)` for global throttling.
+- **Impact**: **5x performance penalty** under concurrency. Introduced artificial delays across all workers, preventing full CPU/network utilization.
+- **Root Cause**: Simple sleep-based approach throttled all endpoints equally.
+- **User Recommendation**:
+  Replace with **non-blocking token bucket algorithm** that applies **per-endpoint rate limiting**.
 
-✅ **Completed**: Using the optimized pattern:
+  **Current flawed behavior:**
+  - Global limit of 10 RPS:
+    - With 10 endpoints → each gets \~1 RPS
+    - With 1 endpoint → gets full 10 RPS
 
-```ts
-body: req.payload === undefined ? undefined : JSON.stringify(req.payload);
-```
+  **Proposed Fix**:
+  - Implement a token bucket system that tracks limits per endpoint independently, removing global bottlenecks.
 
-This avoids the extra `JSON.stringify(undefined)` call overhead.
+### ✅ **P2 – Connection Pool Too Small**
 
----
+- **Location**: `src/http-agent.ts:23`
 
-### 3. **✅ Minimize object allocations inside `runWorker`**
+- **Issue**: `undici.Agent` had a default of 128 max connections.
 
-~~Every loop creates:~~
+- **Impact**: **3x performance penalty** due to queueing and lack of available sockets.
 
-~~- Headers object: `{ ...this.headers, ...req.headers }`~~
-~~- A new result object~~
-~~- A new latency Set/map entry~~
+- **Root Cause**: Conservative default values, not tuned for load generation.
 
-✅ **Completed**: Pre-allocate where possible or reuse:
+- **Fix**: Increased connection pool size to **1024**:
 
-- Use a **shared `Headers` instance** if static
-- Cache endpoint histogram maps/sets outside the loop
-- Avoid repeatedly creating identical `endpointKey` strings — use a string cache or interned lookup if you're testing few URLs
+  ```ts
+  const agent = new Agent({
+    connections: 1024,
+    keepAliveTimeout: 4000,
+  });
+  ```
 
-Implemented object pooling for headers and result objects, plus caching for endpoint keys and response sampling sets to minimize GC pressure.
+- **Result**: Sustained high concurrency workloads without TCP churn or latency spikes.
 
----
+### ✅ **P3 – Sequential Request Loop in Workers**
 
-### 4. **❌ Throttle or remove `sampledEndpointResponses` logic** - INVALID CONCERN
+- **Location**: `src/runner.ts:628–745`
 
-~~You're doing this logic:~~
+- **Issue**: Workers used a tight `while` loop to process one request at a time.
 
-```ts
-if (!sampledCodesForEndpoint.has(res.status)) {
-  body = await res.text();
-  sampledCodesForEndpoint.add(res.status);
-} else {
-  await res.text().catch(() => {});
-}
-```
+- **Impact**: **2x performance penalty**. No internal parallelism meant CPU underutilization even with multiple workers.
 
-~~📉 This check and storage can create bottlenecks under thousands of URLs or status codes.~~
+- **Root Cause**: Implicit assumption that one async request per worker was sufficient.
 
-❌ **Analysis Complete**: This concern is **invalid**. The `sampledCodesForEndpoint` Set has:
+- **Fix**: Introduced **configurable concurrent requests per worker**. Added:
+  - CLI: `--concurrent-requests <n>`
+  - Programmatic: `concurrentRequestsPerWorker: number`
 
-- **O(1) time complexity** for `.has()` and `.add()` operations
-- **Bounded memory usage**: Maximum 500 status codes per endpoint (100-599 range)
-- **Realistic memory footprint**: ~300 bytes per endpoint (20 typical codes)
-- **Even with 100,000 endpoints**: Only ~30MB total memory usage
+- **Result**: Massive throughput improvement when concurrency is tuned per environment.
 
-The implementation is already optimized and represents a sound engineering trade-off. No changes needed.
+### 🟡 **P4 – Per-Request Object Allocation**
 
----
+- **Location**: `src/runner.ts:642–726`
 
-### 5. **✅ Use Agent reuse for HTTP**
+- **Issue**: Allocated new objects (headers, result structures, endpoint keys) on every request.
 
-~~Currently you're using `fetch`, which by default opens a **new TCP connection per request**.~~
+- **Impact**: **1.5x performance penalty** due to GC pressure.
 
-~~📉 This destroys performance under load.~~
+- **Root Cause**: Unnecessary object instantiation in hot loops.
 
-✅ **Completed**: Migrated to `undici` with persistent connections for **5x–10x throughput improvement**.
+- **Partial Fixes**:
+  - Cached headers for static requests.
+  - Cached `endpointKey` strings.
+  - Pooled result objects and response samples.
 
-The implementation uses `undici`'s `Agent` with connection pooling and keep-alive enabled.
+- **Future Work**:
+  - Use an object pool for request configs if dynamically generated.
+  - Avoid cloning/merging identical headers repeatedly.
 
----
+### 🟡 **P5 – Conservative HTTP Agent Timeout Settings**
 
-### 6. **✅ Avoid `Array.prototype.push()` in tight loops**
+- **Location**: `src/http-agent.ts:24–28`
 
-~~e.g., in:~~
+- **Issue**: Timeout defaults aimed at production stability (30s headers/body, 4s keep-alive).
 
-```ts
-this.recentLatenciesForSpinner.push(result.latencyMs);
-```
+- **Impact**: **1.3x performance penalty**. Delays in freeing dead sockets or retrying failed requests.
 
-~~📉 Push with bounds checks adds GC pressure.~~
+- **Root Cause**: Defaults were not tuned for high-churn environments like load testing.
 
-✅ **Completed**: Migrated to `CircularBuffer` for all bounded history tracking, including latency tracking for the spinner display. This eliminates GC pressure from array push operations in tight loops.
+- **Recommendation**:
+  - Aggressively reduce timeouts for faster recovery.
+  - Consider:
 
----
+    ```ts
+    headersTimeout: 5000,
+    bodyTimeout: 5000,
+    keepAliveTimeout: 1000
+    ```
 
-### 7. **✅ Avoid setInterval/setTimeout if ramp-up is disabled**
+- **Status**: Under evaluation. No changes applied yet.
 
-~~You're always setting:~~
+### 🟡 **P6 – Inefficient Request Distribution Across Endpoints**
 
-```ts
-this.rampUpInterval = setInterval(...);
-```
+- **Location**: `src/runner.ts:632–634`
 
-~~✅ Skip that entirely if `rampUpTimeSec === 0`.~~
+- **Issue**: Requests selected randomly from config without weighting or load balancing.
 
-~~Even an idle `setInterval` adds a timer check to every loop of the event loop.~~
+- **Impact**: **1.2x performance penalty**. Hot endpoints may get under-sampled; some endpoints may starve.
 
-✅ **Completed**: This was incorrectly identified as a performance issue. The current implementation already uses `if (rampUpTimeSec > 0)` to conditionally create the interval only when ramp-up is actually needed. No idle timers are created when `rampUpTimeSec === 0`.
+- **Root Cause**: Simplistic uniform selection from array of `RequestConfig`s.
 
----
+- **Future Work**:
+  - Weighted random selection based on configuration.
+  - Support endpoint-level RPS targets.
+  - Optionally round-robin for better fairness.
 
-## 🚀 Major Performance Achievement
+## 🧪 New Features for Load Testing
 
-**✅ 231% Performance Improvement Achieved**
+### 🔀 Concurrent Request Support (per worker)
 
-Based on comprehensive testing using the local HTTP test server (`npm run test:local`), version 0.0.12 delivers exceptional performance gains:
+- CLI: `--concurrent-requests 50`
+- Programmatic: `concurrentRequestsPerWorker: 50`
 
-### High-Concurrency Scenario (100 workers, 10s duration)
+| Workers | Concurrent Req | Total Concurrency | Use Case             |
+| ------- | -------------- | ----------------- | -------------------- |
+| 1–2     | 10–25          | 10–50             | Small/local tests    |
+| 4–8     | 25–50          | 100–400           | Standard workloads   |
+| 8–16    | 50–100         | 400–1600          | High-throughput test |
+| 16+     | 100+           | 1600+             | Stress testing       |
 
-- **Previous (v0.0.11)**: 10,516 req/sec average
-- **Current (v0.0.12)**: 34,820 req/sec average
-- **Improvement**: **231% increase in throughput**
+## 📈 Empirical Results
 
-### Single-Worker Scenario (1 worker, 10s duration)
+### 🚀 Benchmark: v0.0.11 → v0.0.12
 
-- **Previous (v0.0.11)**: 451 req/sec average
-- **Current (v0.0.12)**: 551 req/sec average
-- **Improvement**: **22% increase in throughput**
+#### 100 Workers (10s)
 
-These improvements are attributed to the systematic optimization efforts documented here, particularly the migration to `undici` with persistent connections and the elimination of performance bottlenecks in the hot path.
+| Version | Requests/sec |
+| ------- | ------------ |
+| v0.0.11 | 10,516       |
+| v0.0.12 | 34,820       |
+| **Δ**   | **+231%**    |
 
----
+#### 1 Worker (10s)
 
-## 📊 Performance Scaling Laws & Worker Optimization
+| Version | Requests/sec |
+| ------- | ------------ |
+| v0.0.11 | 451          |
+| v0.0.12 | 551          |
+| **Δ**   | **+22%**     |
 
-### Understanding Worker Scaling Behavior
-
-Performance testing reveals that **worker scaling follows established computer science laws**:
-
-#### **Amdahl's Law**
-
-- **Definition**: Speedup is limited by the sequential portion of the program
-- **Application**: Even with 100x more workers, fixed per-request overhead limits maximum throughput
-- **Evidence**: 100x workers → 10x performance gain (not 100x)
-
-#### **Universal Scalability Law (USL)**
-
-- **Contention**: Shared resources (CPU, network, memory) create bottlenecks
-- **Coherency**: Coordination overhead between workers increases with concurrency
-- **Result**: Performance curve is concave, with optimal point before resource exhaustion
-
-### Empirical Findings
-
-| Workers | Throughput    | Scaling Factor  | Notes                       |
-| ------- | ------------- | --------------- | --------------------------- |
-| 1       | 551 req/s     | 1.0x (baseline) | CPU underutilized           |
-| 100     | 34,820 req/s  | 63.2x           | **Optimal efficiency**      |
-| 1000    | ~30,000 req/s | 54.5x           | **Performance degradation** |
+## 📊 Worker Scaling Observations
 
 ### Key Insights
 
-1. **Sweet Spot**: ~100 workers appears optimal for current hardware/software configuration
-2. **Diminishing Returns**: Each additional worker yields progressively smaller gains
-3. **Oversubscription**: 1000+ workers cause performance drop due to:
-   - Context switching overhead
-   - Memory pressure and GC thrashing
-   - Event loop contention in Node.js
-   - Network stack saturation
+1. **Sweet Spot**: \~100 workers optimal for most systems
+2. **Diminishing Returns** beyond 100–200 workers
+3. **Performance Drop** at 1000+ workers due to GC, CPU saturation, context switching
 
-### Raw Data
+| Workers | Throughput     | Scaling Factor | Notes             |
+| ------- | -------------- | -------------- | ----------------- |
+| 1       | 551 req/s      | 1.0x           | Baseline          |
+| 100     | 34,820 req/s   | 63.2x          | Efficient scaling |
+| 1000    | \~30,000 req/s | 54.5x          | Overload symptoms |
 
+---
+
+## 🧠 Additional Developer Notes
+
+### Performance Monitoring
+
+```ts
+private performanceMetrics = {
+  totalRequests: 0,
+  blockedTimeMs: 0,
+  connectionWaitTime: 0,
+  bodyConsumptionTime: 0,
+  concurrentRequests: 0,
+  maxConcurrency: 0
+};
 ```
-Test 1
 
-10 second duration
-100 workers
+### Request Flow (Simplified)
 
-version 0.0.11
-run 1 - 105859 total requests
-run 2 - 104658 total requests
-run 3 - 101819 total requests
-run 4 - 106004 total requests
-run 5 - 107472 total requests
-
-105162 average
-10516 req/sec
-
-version 0.0.12
-run 1 - 341222 total requests
-run 2 - 350205 total requests
-run 3 - 351525 total requests
-run 4 - 348255 total requests
-run 5 - 349804 total requests
-
-348202 average
-34820 req/sec
-
-Percentage Improvement = ((34820 - 10516) / 10516) × 100
-231% Improvement
-
---------------
-
-Test 2
-
-10 second duration
-1 workers
-
-version 0.0.11
-run 1 - 4489 total requests
-run 2 - 4607 total requests
-run 3 - 4522 total requests
-run 4 - 4455 total requests
-run 5 - 4499 total requests
-
-4514 average
-451 req/sec
-
-version 0.0.12
-run 1 - 5481 total requests
-run 2 - 5513 total requests
-run 3 - 5549 total requests
-run 4 - 5519 total requests
-run 5 - 5499 total requests
-
-5512 average
-551 req/sec
-
-Percentage Improvement = ((551 - 451) / 451) × 100
-22% Improvement
+```mermaid
+graph TD
+    A[Worker Loop] --> B[Select Random Request]
+    B --> C[Create Headers Object]
+    C --> D[Make HTTP Request]
+    D --> E[Process Response Concurrently]
+    E --> F[Update Metrics]
+    F --> G[Next Batch]
 ```

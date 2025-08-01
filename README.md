@@ -4,7 +4,7 @@
   <em>Stress less, test more.</em>
   <br/><br/>
   <a href="./LICENSE">
-    <img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT License"/>
+    <img src="https://img.shields.io/badge/license-Unlicense-blue" alt="Unlicense"/>
   </a>
 </p>
 

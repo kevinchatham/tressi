@@ -2,7 +2,7 @@
   "name": "tressi",
   "version": "0.0.12",
   "description": "A lightweight, declarative stress testing CLI for modern developers.",
-  "license": "MIT",
+  "license": "Unlicense",
   "keywords": [
     "performance",
     "load",
