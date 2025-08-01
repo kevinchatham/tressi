@@ -389,3 +389,25 @@ await runLoadTest({
   errorStatusCodes: [429, 503], // Rate limiting or service unavailable
 });
 ```
+
+## 🤝 Contributing
+
+**Current Status**: I'm currently not accepting external contributions to `tressi`.
+
+This project was built during late-night hours as a way to deepen my understanding of Node.js performance and CLI architecture. Keeping it as a solo effort allows me to iterate rapidly, make breaking changes without constraint, and focus narrowly on my own use cases.
+
+That said, I'm grateful for the community's interest and may open it up in the future. For more details, see [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## 🧭 Stability & Compatibility
+
+- 📚 **Documentation**  
+  The documentation will always reflect the latest release. All documented features are expected to work as described.
+
+- 🚀 **Release Quality**  
+  Each release is intended to be stable and functional. If issues arise, they will be addressed based on my availability and priorities.
+
+- 🔁 **Backwards Compatibility**  
+  Future enhancements will strive to maintain backwards compatibility. If breaking changes become necessary, they will be clearly documented with upgrade guidance.
+
+- 🧪 **Programmatic Usage Warning**  
+  While CLI usage is the recommended and stable interface, programmatic usage (via importing internal modules) is **not guaranteed to be stable** at this time. APIs may change without notice until the internal structure matures.
