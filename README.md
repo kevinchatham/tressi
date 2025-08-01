@@ -241,20 +241,21 @@ This will create a uniquely named, timestamped directory, such as `my-test-resul
 
 ### CLI Options
 
-| Option                         | Alias | Description                                                           | Default |
-| ------------------------------ | ----- | --------------------------------------------------------------------- | ------- |
-| `--config <path>`              | `-c`  | Path to the configuration file (e.g., `tressi.config.json`)           |         |
-| `--workers <n>`                |       | Number of concurrent workers (for autoscale, this is the max workers) | `10`    |
-| `--duration <s>`               |       | Total test duration in seconds                                        | `10`    |
-| `--rps <n>`                    |       | Target requests per second (ramps up to this value)                   |         |
-| `--ramp-up-time <s>`           |       | Time in seconds to ramp up to the target Req/s                        |         |
-| `--autoscale`                  |       | Enable autoscaling of workers (requires --rps)                        | `false` |
-| `--export [path]`              |       | Export results to Markdown, XLSX, and CSVs                            | `false` |
-| `--no-ui`                      |       | Disable the interactive terminal UI (can improve performance)         | `false` |
-| `--early-exit-on-error`        |       | Enable early exit when error thresholds are exceeded                  | `false` |
-| `--error-rate-threshold <n>`   |       | Exit when error rate exceeds this value (0.0-1.0)                     |         |
-| `--error-count-threshold <n>`  |       | Exit when total error count reaches this number                       |         |
-| `--error-status-codes <codes>` |       | Comma-separated list of status codes that trigger early exit          |         |
+| Option                         | Alias | Description                                                           | Default                                 |
+| ------------------------------ | ----- | --------------------------------------------------------------------- | --------------------------------------- |
+| `--config <path>`              | `-c`  | Path to the configuration file (e.g., `tressi.config.json`)           |                                         |
+| `--workers <n>`                |       | Number of concurrent workers (for autoscale, this is the max workers) | `10`                                    |
+| `--concurrent-requests <n>`    |       | Maximum concurrent requests per worker                                | Dynamic calculation based on target RPS |
+| `--duration <s>`               |       | Total test duration in seconds                                        | `10`                                    |
+| `--rps <n>`                    |       | Target requests per second (ramps up to this value)                   |                                         |
+| `--ramp-up-time <s>`           |       | Time in seconds to ramp up to the target Req/s                        |                                         |
+| `--autoscale`                  |       | Enable autoscaling of workers (requires --rps)                        | `false`                                 |
+| `--export [path]`              |       | Export results to Markdown, XLSX, and CSVs                            | `false`                                 |
+| `--no-ui`                      |       | Disable the interactive terminal UI (can improve performance)         | `false`                                 |
+| `--early-exit-on-error`        |       | Enable early exit when error thresholds are exceeded                  | `false`                                 |
+| `--error-rate-threshold <n>`   |       | Exit when error rate exceeds this value (0.0-1.0)                     |                                         |
+| `--error-count-threshold <n>`  |       | Exit when total error count reaches this number                       |                                         |
+| `--error-status-codes <codes>` |       | Comma-separated list of status codes that trigger early exit          |                                         |
 
 ## 🧬 Programmatic Usage
 

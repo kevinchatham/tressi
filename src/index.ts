@@ -50,6 +50,8 @@ export interface RunOptions {
   errorCountThreshold?: number;
   /** Specific HTTP status codes that should trigger early exit. Requires earlyExitOnError=true. */
   errorStatusCodes?: number[];
+  /** Number of concurrent requests per worker. Defaults to dynamic calculation based on target RPS. */
+  concurrentRequestsPerWorker?: number;
 }
 
 function printReportInfo(summary: TestSummary, options: RunOptions): void {

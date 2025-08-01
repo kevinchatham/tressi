@@ -54,6 +54,7 @@ program
     'Number of concurrent workers, or max workers if autoscale is enabled',
     '10',
   )
+  .option('--concurrent-requests <n>', 'Maximum concurrent requests per worker')
   .option('--duration <s>', 'Duration in seconds', '10')
   .option('--ramp-up-time <s>', 'Time in seconds to ramp up to the target RPS')
   .option('--rps <n>', 'Target requests per second')
@@ -150,6 +151,9 @@ Examples:
   # Run a load test for 30 seconds
   $ tressi --duration 30
 
+  # Run a load test with 5 concurrent requests per worker
+  $ tressi --workers 10 --concurrent-requests 5
+
   # Run a test that exits early if error rate exceeds 5%
   $ tressi --early-exit-on-error --error-rate-threshold 0.05
 
@@ -236,6 +240,9 @@ program.action(async (opts) => {
     await runLoadTest({
       config: configPath,
       workers: opts.workers ? parseInt(opts.workers, 10) : undefined,
+      concurrentRequestsPerWorker: opts.concurrentRequests
+        ? parseInt(opts.concurrentRequests, 10)
+        : undefined,
       durationSec: opts.duration ? parseInt(opts.duration, 10) : undefined,
       rampUpTimeSec: opts.rampUpTime
         ? parseInt(opts.rampUpTime, 10)

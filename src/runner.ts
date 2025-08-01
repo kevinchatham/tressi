@@ -620,7 +620,117 @@ export class Runner extends EventEmitter {
   }
 
   /**
-   * The core worker function. It runs in a loop, making requests and respecting
+   * Makes a single HTTP request and returns the result
+   * @param req The request configuration
+   * @returns Promise<RequestResult> The request result
+   */
+  private async makeSingleRequest(req: RequestConfig): Promise<RequestResult> {
+    const start = performance.now();
+    const headers = this.getHeadersObject();
+    const result = this.getResultObject();
+
+    try {
+      // Reuse headers object instead of creating new one
+      Object.assign(headers, this.headers, req.headers);
+
+      // Use per-endpoint agents in production, global dispatcher in tests
+      const dispatcher =
+        process.env.NODE_ENV !== 'test'
+          ? globalAgentManager.getAgent(req.url)
+          : undefined;
+
+      const { statusCode, body: responseBody } = await request(req.url, {
+        method: req.method || 'GET',
+        headers,
+        body:
+          req.payload === undefined ? undefined : JSON.stringify(req.payload),
+        dispatcher,
+      });
+
+      let body: string | undefined;
+      const method = req.method || 'GET';
+      const endpointKey = this.getEndpointKey(method, req.url);
+      const sampledCodesForEndpoint = this.getResponseSamplingSet(endpointKey);
+
+      // Check if we should sample this status code for this endpoint
+      if (!sampledCodesForEndpoint.has(statusCode)) {
+        try {
+          body = await responseBody.text();
+          sampledCodesForEndpoint.add(statusCode);
+        } catch (e) {
+          // Ignore body read errors, it might be empty.
+          body = `(Could not read body: ${(e as Error).message}`;
+        }
+      }
+
+      const latencyMs = Math.max(0, performance.now() - start);
+
+      // Populate result object from pool
+      result.method = method;
+      result.url = req.url;
+      result.status = statusCode;
+      result.latencyMs = latencyMs;
+      result.success = statusCode >= 200 && statusCode < 300;
+      result.body = body; // Will be undefined if not sampled
+      result.timestamp = performance.now();
+
+      return result;
+    } catch (err) {
+      const latencyMs = Math.max(0, performance.now() - start);
+
+      // Populate result object for error case
+      result.method = req.method || 'GET';
+      result.url = req.url;
+      result.status = 0;
+      result.latencyMs = latencyMs;
+      result.success = false;
+      result.error = (err as Error).message;
+      result.timestamp = performance.now();
+
+      return result;
+    } finally {
+      // Always release headers object back to pool
+      this.releaseHeadersObject(headers);
+      // Note: result object is released by onResult after it's processed
+    }
+  }
+
+  /**
+   * Calculates the optimal concurrency level for this worker based on target RPS and worker count
+   * @returns The number of concurrent requests this worker should make
+   */
+  private calculateOptimalConcurrency(): number {
+    const workerCount = this.getWorkerCount();
+    const targetRps = this.currentTargetRps;
+
+    if (targetRps <= 0 || workerCount <= 0) {
+      // Default concurrency when no RPS target or no workers
+      return this.options.concurrentRequestsPerWorker ?? 10;
+    }
+
+    // Calculate optimal concurrency based on target RPS per worker
+    const targetRpsPerWorker = targetRps / workerCount;
+
+    // Use configured value if provided, otherwise calculate dynamically
+    if (this.options.concurrentRequestsPerWorker !== undefined) {
+      return Math.min(
+        this.options.concurrentRequestsPerWorker,
+        Math.max(1, Math.ceil(targetRpsPerWorker)),
+      );
+    }
+
+    // Dynamic calculation: ensure we can meet target RPS with reasonable concurrency
+    // Allow up to 50 concurrent requests per worker, but at least 1
+    const dynamicConcurrency = Math.min(
+      50,
+      Math.max(1, Math.ceil(targetRpsPerWorker)),
+    );
+
+    return dynamicConcurrency;
+  }
+
+  /**
+   * The core worker function. It runs in a loop, making concurrent requests and respecting
    * the rate limit (RPS) until instructed to stop.
    * @param isStopped A function that returns true if the worker should stop.
    *                  Defaults to checking the main runner's stopped flag.
@@ -629,112 +739,63 @@ export class Runner extends EventEmitter {
     isStopped: () => boolean = () => this.stopped,
   ): Promise<void> {
     while (!isStopped()) {
-      const req =
-        this.requests[Math.floor(Math.random() * this.requests.length)];
-      const start = performance.now();
-
-      // Check for early exit conditions before making the request
+      // Check for early exit conditions before making requests
       if (this.shouldEarlyExit()) {
         this.stop();
         return;
       }
 
-      // Get reusable objects from pools
-      const headers = this.getHeadersObject();
-      const result = this.getResultObject();
+      // Calculate optimal concurrency for this worker
+      const requestsToMake = this.calculateOptimalConcurrency();
 
-      try {
-        // Reuse headers object instead of creating new one
-        Object.assign(headers, this.headers, req.headers);
+      // Select random requests for this batch
+      const batchRequests = Array.from(
+        { length: requestsToMake },
+        () => this.requests[Math.floor(Math.random() * this.requests.length)],
+      );
 
-        // Use per-endpoint agents in production, global dispatcher in tests
-        const dispatcher =
-          process.env.NODE_ENV !== 'test'
-            ? globalAgentManager.getAgent(req.url)
-            : undefined;
+      // Execute all requests concurrently
+      const requestPromises = batchRequests.map((req) =>
+        this.makeSingleRequest(req),
+      );
+      const results = await Promise.allSettled(requestPromises);
 
-        const { statusCode, body: responseBody } = await request(req.url, {
-          method: req.method || 'GET',
-          headers,
-          body:
-            req.payload === undefined ? undefined : JSON.stringify(req.payload),
-          dispatcher,
-        });
-
-        let body: string | undefined;
-        const method = req.method || 'GET';
-        const endpointKey = this.getEndpointKey(method, req.url);
-        const sampledCodesForEndpoint =
-          this.getResponseSamplingSet(endpointKey);
-
-        // Check if we should sample this status code for this endpoint
-        if (!sampledCodesForEndpoint.has(statusCode)) {
-          try {
-            body = await responseBody.text();
-            sampledCodesForEndpoint.add(statusCode);
-          } catch (e) {
-            // Ignore body read errors, it might be empty.
-            body = `(Could not read body: ${(e as Error).message}`;
-          }
+      // Process all results
+      for (const result of results) {
+        if (result.status === 'fulfilled') {
+          this.onResult(result.value);
+        } else {
+          // Handle rejected promises (shouldn't normally happen with our implementation)
+          const errorResult = this.getResultObject();
+          errorResult.method = 'GET';
+          errorResult.url = 'unknown';
+          errorResult.status = 0;
+          errorResult.latencyMs = 0;
+          errorResult.success = false;
+          errorResult.error = result.reason?.toString() || 'Unknown error';
+          errorResult.timestamp = performance.now();
+          this.onResult(errorResult);
         }
-
-        const latencyMs = Math.max(0, performance.now() - start);
-
-        // Populate result object from pool
-        result.method = method;
-        result.url = req.url;
-        result.status = statusCode;
-        result.latencyMs = latencyMs;
-        result.success = statusCode >= 200 && statusCode < 300;
-        result.body = body; // Will be undefined if not sampled
-        result.timestamp = performance.now();
-
-        this.onResult(result);
-
-        // Check for early exit conditions after processing the result
-        if (this.shouldEarlyExit()) {
-          this.stop();
-          return;
-        }
-      } catch (err) {
-        const latencyMs = Math.max(0, performance.now() - start);
-
-        // Populate result object for error case
-        result.method = req.method || 'GET';
-        result.url = req.url;
-        result.status = 0;
-        result.latencyMs = latencyMs;
-        result.success = false;
-        result.error = (err as Error).message;
-        result.timestamp = performance.now();
-
-        this.onResult(result);
-
-        // Check for early exit conditions after processing the error
-        if (this.shouldEarlyExit()) {
-          this.stop();
-          return;
-        }
-      } finally {
-        // Always release objects back to pools
-        this.releaseHeadersObject(headers);
-        // Note: result object is released by onResult after it's processed
       }
 
-      // Rate limiting logic
-      // If a target RPS is set, calculate the necessary delay to maintain the rate.
-      // This distributes the requests evenly over time for all workers.
+      // Check for early exit conditions after processing all results
+      if (this.shouldEarlyExit()) {
+        this.stop();
+        return;
+      }
+
+      // Rate limiting for the batch
       if (this.currentTargetRps > 0) {
         const workerCount = this.getWorkerCount();
         if (workerCount > 0) {
-          // Calculate the delay needed for each worker to collectively meet the target RPS.
-          const delay = (1000 * workerCount) / this.currentTargetRps;
-          await sleep(delay);
+          // Calculate delay for the entire batch
+          const batchDelay = (1000 * workerCount) / this.currentTargetRps;
+          await sleep(batchDelay);
         } else {
-          await sleep(10); // Small delay if no workers are present
+          await sleep(10);
         }
       } else {
-        // If no RPS is set, yield to the event loop to avoid blocking it completely.
+        // If no RPS is set, yield to the event loop
         await sleep(0);
       }
     }

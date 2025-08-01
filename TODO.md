@@ -6,6 +6,8 @@ This file tracks potential new features and improvements for `tressi`
 
 ## Future Features
 
+- [ ] **All cli options should be configurable with json**
+
 - [x] **Early Exit on Error**: ✅ **COMPLETED** - Implemented graceful test termination when error thresholds are exceeded (error rate, error count, or specific 4xx/5xx status codes). Added CLI flags: --early-exit-on-error, --error-rate-threshold, --error-count-threshold, --error-status-codes. Prevents unnecessary resource consumption and provides immediate feedback about system failures.
 
 - [ ] **RunOptions Validation**: Inputs to the application should be validated with zod and return a useful error to the user if any parameter is invalid. We need to take into account both programmatic usage and cli usage.

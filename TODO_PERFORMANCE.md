@@ -23,7 +23,7 @@ This analysis identifies **7 critical bottlenecks** in tressi's HTTP implementat
 - **User Note**: Replace the current sleep-based global rate limiting strategy with a **token bucket algorithm** for a more efficient, non-blocking approach.
   - The existing implementation applies a shared limit across all endpoints, which results in unintuitive behavior. For example:
     - With a global limit of 10 RPS:
-      - **10 endpoints** → \~1 RPS per endpoint
+      - **10 endpoints** → ~1 RPS per endpoint
       - **1 endpoint** → full 10 RPS to that endpoint
 
   - Refactor to apply rate limits **per endpoint** instead of globally. The token bucket implementation should reflect this change.
@@ -36,12 +36,13 @@ This analysis identifies **7 critical bottlenecks** in tressi's HTTP implementat
 - **Root Cause**: Conservative default not suitable for load testing scenarios
 - **Fix Applied**: Increased connection pool limit from 128 to 1024 connections
 
-### 🟡 **P3 - Sequential Request Processing**
+### ✅ **P3 - Sequential Request Processing** [COMPLETED]
 
 - **Location**: `src/runner.ts:628-745`
 - **Issue**: Each worker processes requests sequentially in while loop
 - **Impact**: **2x performance penalty** - no true concurrency within workers
 - **Root Cause**: Single-threaded request model per worker
+- **Fix Applied**: Implemented concurrent request processing with configurable concurrency per worker
 
 ### 🟡 **P4 - Per-Request Object Allocation**
 
@@ -64,17 +65,31 @@ This analysis identifies **7 critical bottlenecks** in tressi's HTTP implementat
 - **Impact**: **1.2x performance penalty** - uneven endpoint distribution
 - **Root Cause**: No intelligent request routing
 
-## Performance Comparison Matrix
+## New Configuration Options
 
-| Factor                | Tressi Current   | Autocannon         | Industry Best Practice | Impact |
-| --------------------- | ---------------- | ------------------ | ---------------------- | ------ |
-| **Connection Pool**   | 128 max          | 1000+ default      | 1000-5000              | 3x     |
-| **Body Handling**     | Always consume   | Skip by default    | Skip non-critical      | 10x    |
-| **Rate Limiting**     | Sleep blocking   | Event-driven       | Token bucket           | 5x     |
-| **Worker Model**      | Sequential       | Concurrent batches | Async batches          | 2x     |
-| **Timeouts**          | 30s conservative | 5s aggressive      | 5-10s                  | 1.3x   |
-| **Object Allocation** | Per-request      | Reuse everything   | Zero-allocation        | 1.5x   |
-| **Load Balancing**    | Random           | Round-robin        | Weighted/RR            | 1.2x   |
+### Concurrent Request Processing
+
+Tressi now supports concurrent request processing within each worker, significantly improving throughput. The following configuration options are available:
+
+#### CLI Flag
+
+- **`--concurrent-requests <number>`**: Maximum concurrent requests per worker (default: 10)
+  ```bash
+  tressi --config test.json --concurrent-requests 50 --workers 4
+  ```
+
+#### Programmatic Configuration
+
+- **`concurrentRequestsPerWorker`**: Number of concurrent requests each worker can handle
+
+### Performance Tuning Guidelines
+
+| Worker Count | Concurrent Requests | Total Concurrency | Use Case                 |
+| ------------ | ------------------- | ----------------- | ------------------------ |
+| 1-2          | 10-25               | 10-50             | Development, small tests |
+| 4-8          | 25-50               | 100-400           | Standard load testing    |
+| 8-16         | 50-100              | 400-1600          | High-throughput testing  |
+| 16+          | 100+                | 1600+             | Stress testing           |
 
 ## Detailed Code Analysis
 
@@ -85,46 +100,16 @@ graph TD
     A[Worker Loop] --> B[Select Random Request]
     B --> C[Create Headers Object]
     C --> D[Make HTTP Request]
-    D --> E[Wait for Full Body]
-    E --> F[Process Response]
-    F --> G[Sleep for Rate Limit]
-    G --> A
+    D --> E[Process Response Concurrently]
+    E --> F[Update Metrics]
+    F --> G[Next Batch]
 ```
 
 ### Bottleneck Hotspots
 
-1. **D → E**: Synchronous body consumption
-2. **G → A**: Blocking sleep operation
-3. **A → B**: Sequential processing model
-
-## Validation Strategy
-
-### Performance Metrics to Track
-
-1. **Requests per second** (primary metric)
-2. **Connection pool utilization**
-3. **Memory allocation rate**
-4. **Event loop lag**
-5. **Garbage collection frequency**
-
-### Testing Scenarios
-
-```bash
-# Baseline test
-tressi --config simple.json --duration 10 --workers 1 --no-ui
-
-# Optimized test (after fixes)
-tressi --config simple.json --duration 10 --workers 1 --no-ui
-```
-
-### Expected Improvements
-
-| Fix              | Current RPS | Expected RPS | Improvement |
-| ---------------- | ----------- | ------------ | ----------- |
-| Body consumption | 20          | 200          | 10x         |
-| Rate limiting    | 200         | 1000         | 5x          |
-| Connection pool  | 1000        | 3000         | 3x          |
-| **Combined**     | **20**      | **7000+**    | **350x**    |
+1. **D → E**: Synchronous body consumption ✅ **FIXED**
+2. **G → A**: Blocking sleep operation ⚠️ **PENDING**
+3. **A → B**: Sequential processing model ✅ **FIXED**
 
 ## Monitoring Implementation
 
@@ -136,6 +121,8 @@ private performanceMetrics = {
     totalRequests: 0,
     blockedTimeMs: 0,
     connectionWaitTime: 0,
-    bodyConsumptionTime: 0
+    bodyConsumptionTime: 0,
+    concurrentRequests: 0,
+    maxConcurrency: 0
 };
 ```
