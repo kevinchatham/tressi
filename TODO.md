@@ -2,7 +2,9 @@ This file tracks potential new features and improvements for `tressi`
 
 ## Bug Fixes
 
-- [ ] **XLSX Export Failure**: Long tests exceed Excel row limits due to large request datasets. Remove requests sheet from XLSX export.
+- [x] **Unsafe export directory name**: Issue with cross platform compatibility in possible export name, particularly with windows and inclusion of iso timestamp.
+
+- [x] **XLSX Export Failure**: ✅ **COMPLETED** - Fixed Excel row limit issue by removing the Raw Requests sheet from XLSX export. Raw request data remains accessible via CSV export (`results.csv`). XLSX exports now contain 4 sheets: Global Summary, Endpoint Summary, Status Code Distribution, and Sampled Responses.
 
 ## Future Features
 

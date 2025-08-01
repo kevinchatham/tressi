@@ -17,6 +17,7 @@ import {
   TestSummary,
 } from './summarizer';
 import { TUI } from './ui';
+import { getSafeDirectoryName } from './utils';
 
 export { RequestConfig, TestSummary, TressiConfig };
 
@@ -397,9 +398,10 @@ export async function runLoadTest(options: RunOptions): Promise<TestSummary> {
           ? options.exportPath
           : 'tressi-report';
       const runDate = new Date();
+
       const reportDir = path.resolve(
         process.cwd(),
-        `${baseExportName}-${runDate.toISOString()}`,
+        getSafeDirectoryName(`${baseExportName}-${runDate.toISOString()}`),
       );
       await fs.mkdir(reportDir, { recursive: true });
 

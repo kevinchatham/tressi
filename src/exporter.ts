@@ -63,20 +63,6 @@ async function exportXlsx(
   const wsEndpoints = xlsx.utils.json_to_sheet(formattedEndpoints);
   xlsx.utils.book_append_sheet(wb, wsEndpoints, 'Endpoint Summary');
 
-  // Raw Requests Sheet
-  // We round latency and explicitly remove the body from the raw export
-  // as it's available in the "Sampled Responses" sheet and can be very large.
-  const formattedResults = results.map((result) => ({
-    timestamp: result.timestamp,
-    url: result.url,
-    status: result.status,
-    latencyMs: Math.round(result.latencyMs),
-    success: result.success,
-    error: result.error,
-  }));
-  const wsRaw = xlsx.utils.json_to_sheet(formattedResults);
-  xlsx.utils.book_append_sheet(wb, wsRaw, 'Raw Requests');
-
   // Status Code Distribution Sheet
   const statusCodeMap = runner.getStatusCodeMap();
   const statusCodeDistribution =

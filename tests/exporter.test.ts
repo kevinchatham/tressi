@@ -11,7 +11,7 @@ vi.mock('fs/promises', () => ({
   writeFile: vi.fn(),
 }));
 vi.mock('xlsx', async () => {
-  const actualXlsx = await vi.importActual('xlsx');
+  const actualXlsx = await vi.importActual<typeof import('xlsx')>('xlsx');
   return {
     ...actualXlsx,
     writeFile: vi.fn(),
@@ -39,6 +39,7 @@ vi.mock('chalk', () => ({
 
 const mockResults: RequestResult[] = [
   {
+    method: 'GET',
     timestamp: 1,
     url: 'http://a.com',
     status: 200,
@@ -65,6 +66,7 @@ const mockGlobalSummary: GlobalSummary = {
 
 const mockEndpointSummary: EndpointSummary[] = [
   {
+    method: 'GET',
     url: 'http://a.com',
     totalRequests: 1,
     successfulRequests: 1,
@@ -166,12 +168,8 @@ describe('exporter', () => {
     const endpointSheetData = jsonToSheetMock.mock.calls[1][0];
     expect(endpointSheetData[0].avgLatencyMs).toBe(101);
 
-    // 3. Raw Results
-    const rawSheetData = jsonToSheetMock.mock.calls[2][0];
-    expect(rawSheetData[0].latencyMs).toBe(100); // 100.45 -> 100
-
-    // 4. Status Code Distribution
-    const statusCodeSheetData = jsonToSheetMock.mock.calls[3][0];
+    // 3. Status Code Distribution
+    const statusCodeSheetData = jsonToSheetMock.mock.calls[2][0];
     expect(statusCodeSheetData).toEqual([
       { 'Status Code Category': '2xx', Count: 3 },
       { 'Status Code Category': '3xx', Count: 0 },

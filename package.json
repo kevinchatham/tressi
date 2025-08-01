@@ -42,8 +42,9 @@
     "test:soak": "tsx src/cli.ts --workers 5 --duration 150 --rps 50",
     "test:spike": "tsx src/cli.ts --workers 100 --duration 10",
     "test:ui": "vitest --ui",
-    "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "test": "npm run typecheck:tests && vitest run",
+    "typecheck": "tsc --noEmit",
+    "typecheck:tests": "tsc -p tsconfig.tests.json --noEmit"
   },
   "dependencies": {
     "blessed": "^0.1.81",
