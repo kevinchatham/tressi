@@ -4,7 +4,7 @@
   <em>Stress less, test more.</em>
   <br/><br/>
   <a href="./LICENSE">
-    <img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT License"/>
+    <img src="https://img.shields.io/badge/license-Unlicense-blue" alt="Unlicense"/>
   </a>
 </p>
 
@@ -147,6 +147,34 @@ Runs a test without the UI and exports the results to a specified directory.
 npx tressi --config tressi.config.json --workers 20 --duration 30 --rps 300 --no-ui --export
 ```
 
+#### Early Exit Tests
+
+Stop tests automatically when error thresholds are exceeded to save time and resources.
+
+**Exit on error rate threshold (5%):**
+
+```bash
+npx tressi --config tressi.config.json --workers 10 --duration 60 --rps 100 --early-exit-on-error --error-rate-threshold 0.05
+```
+
+**Exit on error count threshold (50 errors):**
+
+```bash
+npx tressi --config tressi.config.json --workers 20 --duration 120 --rps 200 --early-exit-on-error --error-count-threshold 50
+```
+
+**Exit on specific status codes:**
+
+```bash
+npx tressi --config tressi.config.json --workers 15 --duration 90 --rps 150 --early-exit-on-error --error-status-codes 500,503,404
+```
+
+**Combined early exit conditions:**
+
+```bash
+npx tressi --config tressi.config.json --workers 25 --duration 180 --rps 300 --early-exit-on-error --error-rate-threshold 0.1 --error-count-threshold 100 --error-status-codes 500,503
+```
+
 ### Configuration Reference
 
 The `tressi init` command will generate a `tressi.config.json` file with a `$schema` property. This property points to a JSON Schema file that provides autocompletion and validation in supported editors (like VS Code), making it easier to write valid configurations.
@@ -213,16 +241,21 @@ This will create a uniquely named, timestamped directory, such as `my-test-resul
 
 ### CLI Options
 
-| Option               | Alias | Description                                                           | Default |
-| -------------------- | ----- | --------------------------------------------------------------------- | ------- |
-| `--config <path>`    | `-c`  | Path to the configuration file (e.g., `tressi.config.json`)           |         |
-| `--workers <n>`      |       | Number of concurrent workers (for autoscale, this is the max workers) | `10`    |
-| `--duration <s>`     |       | Total test duration in seconds                                        | `10`    |
-| `--rps <n>`          |       | Target requests per second (ramps up to this value)                   |         |
-| `--ramp-up-time <s>` |       | Time in seconds to ramp up to the target Req/s                        |         |
-| `--autoscale`        |       | Enable autoscaling of workers (requires --rps)                        | `false` |
-| `--export [path]`    |       | Export results to Markdown, XLSX, and CSVs                            | `false` |
-| `--no-ui`            |       | Disable the interactive terminal UI (can improve performance)         | `false` |
+| Option                         | Alias | Description                                                           | Default                                 |
+| ------------------------------ | ----- | --------------------------------------------------------------------- | --------------------------------------- |
+| `--config <path>`              | `-c`  | Path to the configuration file (e.g., `tressi.config.json`)           |                                         |
+| `--workers <n>`                |       | Number of concurrent workers (for autoscale, this is the max workers) | `10`                                    |
+| `--concurrent-requests <n>`    |       | Maximum concurrent requests per worker                                | Dynamic calculation based on target RPS |
+| `--duration <s>`               |       | Total test duration in seconds                                        | `10`                                    |
+| `--rps <n>`                    |       | Target requests per second (ramps up to this value)                   |                                         |
+| `--ramp-up-time <s>`           |       | Time in seconds to ramp up to the target Req/s                        |                                         |
+| `--autoscale`                  |       | Enable autoscaling of workers (requires --rps)                        | `false`                                 |
+| `--export [path]`              |       | Export results to Markdown, XLSX, and CSVs                            | `false`                                 |
+| `--no-ui`                      |       | Disable the interactive terminal UI (can improve performance)         | `false`                                 |
+| `--early-exit-on-error`        |       | Enable early exit when error thresholds are exceeded                  | `false`                                 |
+| `--error-rate-threshold <n>`   |       | Exit when error rate exceeds this value (0.0-1.0)                     |                                         |
+| `--error-count-threshold <n>`  |       | Exit when total error count reaches this number                       |                                         |
+| `--error-status-codes <codes>` |       | Comma-separated list of status codes that trigger early exit          |                                         |
 
 ## 🧬 Programmatic Usage
 
@@ -265,3 +298,116 @@ async function myCustomScript() {
 
 myCustomScript();
 ```
+
+### Early Exit in Programmatic Usage
+
+You can also use early exit functionality programmatically to automatically stop tests when error conditions are met:
+
+```ts
+import { runLoadTest, TestSummary } from 'tressi';
+
+async function earlyExitTest() {
+  console.log('Starting load test with early exit...');
+
+  try {
+    const summary: TestSummary = await runLoadTest({
+      config: {
+        requests: [
+          { url: 'https://api.example.com/health', method: 'GET' },
+          {
+            url: 'https://api.example.com/users',
+            method: 'POST',
+            payload: { name: 'test' },
+          },
+        ],
+      },
+      workers: 10,
+      durationSec: 120,
+      rps: 100,
+      // Enable early exit with multiple conditions
+      earlyExitOnError: true,
+      errorRateThreshold: 0.05, // Exit if 5% of requests fail
+      errorCountThreshold: 50, // Exit after 50 total errors
+      errorStatusCodes: [500, 503], // Exit on server errors
+    });
+
+    console.log('Test completed successfully!');
+    console.log(`Total requests: ${summary.global.totalRequests}`);
+    console.log(`Failed requests: ${summary.global.failedRequests}`);
+    console.log(`Average latency: ${summary.global.avgLatencyMs.toFixed(2)}ms`);
+
+    // Check if test exited early
+    if (summary.global.failedRequests > 0) {
+      console.warn('⚠️  Test may have exited early due to errors');
+    }
+  } catch (error) {
+    console.error('Test failed:', error);
+  }
+}
+
+earlyExitTest();
+```
+
+### Advanced Early Exit Configuration
+
+For more complex scenarios, you can use different combinations of early exit conditions:
+
+```ts
+// Exit on high error rate for performance testing
+await runLoadTest({
+  config: {
+    requests: [{ url: 'https://api.example.com/load-test', method: 'GET' }],
+  },
+  workers: 20,
+  durationSec: 300,
+  rps: 200,
+  earlyExitOnError: true,
+  errorRateThreshold: 0.01, // Very strict: 1% error rate
+});
+
+// Exit on specific error count for reliability testing
+await runLoadTest({
+  config: {
+    requests: [{ url: 'https://api.example.com/reliability', method: 'GET' }],
+  },
+  workers: 5,
+  durationSec: 600,
+  rps: 50,
+  earlyExitOnError: true,
+  errorCountThreshold: 10, // Stop after 10 errors
+});
+
+// Exit on specific status codes for error handling validation
+await runLoadTest({
+  config: {
+    requests: [{ url: 'https://api.example.com/error-test', method: 'GET' }],
+  },
+  workers: 15,
+  durationSec: 180,
+  rps: 150,
+  earlyExitOnError: true,
+  errorStatusCodes: [429, 503], // Rate limiting or service unavailable
+});
+```
+
+## 🤝 Contributing
+
+**Current Status**: I'm currently not accepting external contributions to `tressi`.
+
+This project was built during late-night hours as a way to deepen my understanding of Node.js performance and CLI architecture. Keeping it as a solo effort allows me to iterate rapidly, make breaking changes without constraint, and focus narrowly on my own use cases.
+
+That said, I'm grateful for the community's interest and may open it up in the future. For more details, see [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## 🧭 Stability & Compatibility
+
+- 📚 **Documentation**  
+  The documentation will always reflect the latest release. All documented features are expected to work as described.
+
+- 🚀 **Release Quality**  
+  Each release is intended to be stable and functional. If issues arise, they will be addressed based on my availability and priorities.
+
+- 🔁 **Backwards Compatibility**  
+  Future enhancements will strive to maintain backwards compatibility. If breaking changes become necessary, they will be clearly documented with upgrade guidance.
+
+- 🧪 **Programmatic Usage Warning**  
+  While CLI usage is the recommended and stable interface, programmatic usage (via importing internal modules) is **not guaranteed to be stable** at this time. APIs may change without notice until the internal structure matures.

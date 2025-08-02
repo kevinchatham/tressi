@@ -1,29 +1,31 @@
-import { http, HttpResponse } from 'msw';
-import { setupServer } from 'msw/node';
+import { MockAgent, setGlobalDispatcher } from 'undici';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 import { loadConfig, TressiConfig } from '../src/config';
 
 const minimalConfig = {
-  requests: [{ url: 'http://localhost:8080/test' }],
+  requests: [{ url: 'http://localhost:8080/test', method: 'GET' as const }],
 };
 
 const expectedConfig: TressiConfig = {
   requests: [{ url: 'http://localhost:8080/test', method: 'GET' }],
 };
 
-const server = setupServer(
-  http.get('http://localhost:8080/remote-config', () => {
-    return HttpResponse.json(minimalConfig);
-  }),
-  http.get('http://localhost:8080/remote-config-failing', () => {
-    return new HttpResponse(null, { status: 500 });
-  }),
-);
+let mockAgent: MockAgent;
 
-beforeAll(() => server.listen());
-afterEach(() => server.resetHandlers());
-afterAll(() => server.close());
+beforeAll(() => {
+  mockAgent = new MockAgent();
+  mockAgent.disableNetConnect(); // prevent actual network requests
+  setGlobalDispatcher(mockAgent);
+});
+
+afterEach(() => {
+  mockAgent.assertNoPendingInterceptors();
+});
+
+afterAll(() => {
+  mockAgent.close();
+});
 
 /**
  * Test suite for the configuration loading logic.
@@ -47,6 +49,11 @@ describe('config', () => {
      * parse it, and return the validated configuration.
      */
     it('should load config from a remote URL', async () => {
+      const mockPool = mockAgent.get('http://localhost:8080');
+      mockPool
+        .intercept({ path: '/remote-config', method: 'GET' })
+        .reply(200, minimalConfig);
+
       const config = await loadConfig('http://localhost:8080/remote-config');
       expect(config).toEqual(expectedConfig);
     });
@@ -56,6 +63,11 @@ describe('config', () => {
      * (e.g., returns a non-2xx status code).
      */
     it('should throw an error for a failing remote URL', async () => {
+      const mockPool = mockAgent.get('http://localhost:8080');
+      mockPool
+        .intercept({ path: '/remote-config-failing', method: 'GET' })
+        .reply(500);
+
       await expect(
         loadConfig('http://localhost:8080/remote-config-failing'),
       ).rejects.toThrow('Remote config fetch failed: 500');
@@ -69,6 +81,7 @@ describe('config', () => {
         requests: [
           {
             url: 'http://localhost:8080/test',
+            method: 'GET' as const,
             headers: {
               'X-Request-ID': '123',
             },

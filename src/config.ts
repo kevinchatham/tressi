@@ -1,5 +1,6 @@
 import { promises as fs } from 'fs';
 import path from 'path';
+import { request } from 'undici';
 import { z } from 'zod';
 
 /**
@@ -42,11 +43,6 @@ export const TressiConfigSchema = z.object({
 export type TressiConfig = z.infer<typeof TressiConfigSchema>;
 
 /**
- * Type representing the input for a Tressi configuration.
- */
-export type TressiConfigInput = z.input<typeof TressiConfigSchema>;
-
-/**
  * Type representing a single request configuration.
  */
 export type RequestConfig = z.infer<typeof RequestConfigSchema>;
@@ -57,7 +53,7 @@ export type RequestConfig = z.infer<typeof RequestConfigSchema>;
  * @returns A promise that resolves to the validated Tressi configuration.
  */
 export async function loadConfig(
-  configInput: string | TressiConfigInput,
+  configInput: string | TressiConfig,
 ): Promise<TressiConfig> {
   if (typeof configInput === 'object') {
     return TressiConfigSchema.parse(configInput);
@@ -65,9 +61,11 @@ export async function loadConfig(
 
   let rawContent: unknown;
   if (configInput.startsWith('http://') || configInput.startsWith('https://')) {
-    const res = await fetch(configInput);
-    if (!res.ok) throw new Error(`Remote config fetch failed: ${res.status}`);
-    rawContent = await res.json();
+    const { statusCode, body } = await request(configInput);
+    if (statusCode >= 400) {
+      throw new Error(`Remote config fetch failed: ${statusCode}`);
+    }
+    rawContent = await body.json();
   } else {
     const absolutePath = path.resolve(configInput);
     const fileContent = await fs.readFile(absolutePath, 'utf-8');

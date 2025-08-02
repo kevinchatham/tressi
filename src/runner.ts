@@ -1,9 +1,12 @@
 import { EventEmitter } from 'events';
 import { build, Histogram } from 'hdr-histogram-js';
+import { performance } from 'perf_hooks';
+import { request } from 'undici';
 
 import { CircularBuffer } from './circular-buffer';
 import { RequestConfig } from './config';
 import { Distribution } from './distribution';
+import { globalAgentManager } from './http-agent';
 import { RunOptions } from './index';
 import { RequestResult } from './stats';
 
@@ -23,7 +26,7 @@ export class Runner extends EventEmitter {
   private histogram: Histogram;
   private distribution: Distribution;
   private endpointHistograms: Map<string, Histogram> = new Map();
-  private recentLatenciesForSpinner: number[] = [];
+  private recentLatenciesForSpinner: CircularBuffer<number>;
   private recentRequestTimestamps: CircularBuffer<number>;
   private statusCodeMap: Record<number, number> = {};
   private successfulRequestsByEndpoint: Map<string, number> = new Map();
@@ -31,13 +34,19 @@ export class Runner extends EventEmitter {
   private stopped = false;
   private startTime: number = 0;
   private currentTargetRps: number;
-  private sampledEndpointResponses: Map<string, Set<number>> = new Map();
   private successfulRequests = 0;
   private failedRequests = 0;
   private activeWorkers: { promise: Promise<void>; stop: () => void }[] = [];
   private testTimeout?: NodeJS.Timeout;
   private rampUpInterval?: NodeJS.Timeout;
   private autoscaleInterval?: NodeJS.Timeout;
+
+  // Object allocation optimizations
+  private headersPool: Record<string, string>[] = [];
+  private resultPool: RequestResult[] = [];
+  private endpointKeyCache = new Map<string, string>();
+  private responseSamplingSets = new Map<string, Set<number>>();
+  private maxPoolSize = 1000;
 
   /**
    * Creates a new Runner instance.
@@ -51,7 +60,10 @@ export class Runner extends EventEmitter {
     headers: Record<string, string>,
   ) {
     super();
-    this.options = options;
+
+    // Validate early exit options
+    const validatedOptions = this.validateEarlyExitOptions(options);
+    this.options = validatedOptions;
     this.requests = requests;
     this.headers = headers;
     this.histogram = build();
@@ -63,6 +75,81 @@ export class Runner extends EventEmitter {
     const maxRps = options.rps || 1000;
     const bufferSize = Math.max(10000, maxRps * 2);
     this.recentRequestTimestamps = new CircularBuffer<number>(bufferSize);
+    this.recentLatenciesForSpinner = new CircularBuffer<number>(1000);
+
+    // Initialize optimization pools with reasonable starting capacity
+    this.headersPool = [];
+    this.resultPool = [];
+    this.endpointKeyCache = new Map();
+    this.responseSamplingSets = new Map();
+  }
+
+  /**
+   * Validates early exit configuration options with proper defaults and constraints.
+   * @param options The raw RunOptions to validate
+   * @returns Validated RunOptions with defaults applied
+   */
+  private validateEarlyExitOptions(options: RunOptions): RunOptions {
+    const validated = { ...options };
+
+    // Set defaults for early exit options
+    validated.earlyExitOnError = options.earlyExitOnError ?? false;
+    validated.errorRateThreshold = options.errorRateThreshold;
+    validated.errorCountThreshold = options.errorCountThreshold;
+    validated.errorStatusCodes = options.errorStatusCodes;
+
+    // Validate constraints when early exit is enabled
+    if (validated.earlyExitOnError) {
+      // Validate error rate threshold (must be between 0.0 and 1.0)
+      if (validated.errorRateThreshold !== undefined) {
+        if (
+          typeof validated.errorRateThreshold !== 'number' ||
+          validated.errorRateThreshold < 0 ||
+          validated.errorRateThreshold > 1
+        ) {
+          throw new Error(
+            'errorRateThreshold must be a number between 0.0 and 1.0',
+          );
+        }
+      }
+
+      // Validate error count threshold (must be positive integer)
+      if (validated.errorCountThreshold !== undefined) {
+        if (
+          !Number.isInteger(validated.errorCountThreshold) ||
+          validated.errorCountThreshold < 0
+        ) {
+          throw new Error('errorCountThreshold must be a non-negative integer');
+        }
+      }
+
+      // Validate error status codes (must be array of valid HTTP status codes)
+      if (validated.errorStatusCodes !== undefined) {
+        if (!Array.isArray(validated.errorStatusCodes)) {
+          throw new Error('errorStatusCodes must be an array of numbers');
+        }
+        for (const code of validated.errorStatusCodes) {
+          if (!Number.isInteger(code) || code < 100 || code > 599) {
+            throw new Error(
+              `Invalid HTTP status code: ${code}. Must be between 100-599`,
+            );
+          }
+        }
+      }
+
+      // Ensure at least one threshold is provided when early exit is enabled
+      if (
+        validated.errorRateThreshold === undefined &&
+        validated.errorCountThreshold === undefined &&
+        validated.errorStatusCodes === undefined
+      ) {
+        throw new Error(
+          'When earlyExitOnError is enabled, at least one of errorRateThreshold, errorCountThreshold, or errorStatusCodes must be provided',
+        );
+      }
+    }
+
+    return validated;
   }
 
   /**
@@ -71,13 +158,14 @@ export class Runner extends EventEmitter {
    */
   public onResult(result: RequestResult): void {
     if (this.sampledResults.length < 1000) {
-      this.sampledResults.push(result);
+      // Create a shallow copy for sampled results to avoid pool contamination
+      this.sampledResults.push({ ...result });
     }
 
     this.histogram.recordValue(result.latencyMs);
     this.distribution.add(result.latencyMs);
 
-    const endpointKey = `${result.method} ${result.url}`;
+    const endpointKey = this.getEndpointKey(result.method, result.url);
     if (!this.endpointHistograms.has(endpointKey)) {
       this.endpointHistograms.set(endpointKey, build());
     }
@@ -85,13 +173,10 @@ export class Runner extends EventEmitter {
 
     // Keep a small, rotating log of recent latencies for the non-UI spinner
     if (!this.options.useUI) {
-      this.recentLatenciesForSpinner.push(result.latencyMs);
-      if (this.recentLatenciesForSpinner.length > 1000) {
-        this.recentLatenciesForSpinner.shift();
-      }
+      this.recentLatenciesForSpinner.add(result.latencyMs);
     }
 
-    this.recentRequestTimestamps.add(Date.now());
+    this.recentRequestTimestamps.add(performance.now());
     this.statusCodeMap[result.status] =
       (this.statusCodeMap[result.status] || 0) + 1;
 
@@ -108,6 +193,9 @@ export class Runner extends EventEmitter {
         (this.failedRequestsByEndpoint.get(endpointKey) || 0) + 1,
       );
     }
+
+    // Release result object back to pool
+    this.releaseResultObject(result);
   }
 
   /**
@@ -166,7 +254,7 @@ export class Runner extends EventEmitter {
    * @returns An array of latency numbers in milliseconds.
    */
   public getRecentLatencies(): number[] {
-    return this.recentLatenciesForSpinner;
+    return this.recentLatenciesForSpinner.getAll();
   }
 
   /**
@@ -231,7 +319,7 @@ export class Runner extends EventEmitter {
    * @returns The current actual Req/s.
    */
   public getCurrentRps(): number {
-    const now = Date.now();
+    const now = performance.now();
     const oneSecondAgo = now - 1000;
 
     const timestamps = this.recentRequestTimestamps.getAll();
@@ -264,7 +352,7 @@ export class Runner extends EventEmitter {
    * It sets up workers, timers, and ramp-up/autoscaling logic.
    */
   public async run(): Promise<void> {
-    this.startTime = Date.now();
+    this.startTime = performance.now();
 
     const {
       workers = 10,
@@ -281,7 +369,7 @@ export class Runner extends EventEmitter {
     // If ramp-up is enabled, start the governor
     if (rampUpTimeSec > 0) {
       this.rampUpInterval = setInterval(() => {
-        const elapsedTimeSec = (Date.now() - this.startTime) / 1000;
+        const elapsedTimeSec = (performance.now() - this.startTime) / 1000;
 
         if (this.stopped) {
           clearInterval(this.rampUpInterval as NodeJS.Timeout);
@@ -386,6 +474,15 @@ export class Runner extends EventEmitter {
       clearInterval(this.autoscaleInterval);
       this.autoscaleInterval = undefined;
     }
+
+    // Clear object pools and caches
+    this.headersPool.length = 0;
+    this.resultPool.length = 0;
+    this.endpointKeyCache.clear();
+    this.responseSamplingSets.clear();
+
+    // Close all HTTP agents to free up connections
+    globalAgentManager.closeAll();
   }
 
   /**
@@ -411,7 +508,229 @@ export class Runner extends EventEmitter {
   }
 
   /**
-   * The core worker function. It runs in a loop, making requests and respecting
+   * Gets a reusable headers object from the pool or creates a new one
+   */
+  private getHeadersObject(): Record<string, string> {
+    return this.headersPool.pop() || {};
+  }
+
+  /**
+   * Returns a headers object to the pool for reuse
+   */
+  private releaseHeadersObject(headers: Record<string, string>): void {
+    if (this.headersPool.length < this.maxPoolSize) {
+      // Clear the object for reuse
+      for (const key in headers) {
+        delete headers[key];
+      }
+      this.headersPool.push(headers);
+    }
+  }
+
+  /**
+   * Gets a RequestResult object from the pool or creates a new one
+   */
+  private getResultObject(): RequestResult {
+    return this.resultPool.pop() || ({} as RequestResult);
+  }
+
+  /**
+   * Returns a RequestResult object to the pool for reuse
+   */
+  private releaseResultObject(result: RequestResult): void {
+    if (this.resultPool.length < this.maxPoolSize) {
+      // Clear the object for reuse
+      result.method = '';
+      result.url = '';
+      result.status = 0;
+      result.latencyMs = 0;
+      result.success = false;
+      result.body = undefined;
+      result.error = undefined;
+      result.timestamp = 0;
+      this.resultPool.push(result);
+    }
+  }
+
+  /**
+   * Gets a cached endpoint key to avoid string concatenation
+   */
+  private getEndpointKey(method: string, url: string): string {
+    const cacheKey = `${method}|${url}`;
+    let endpointKey = this.endpointKeyCache.get(cacheKey);
+    if (!endpointKey) {
+      endpointKey = `${method} ${url}`;
+      this.endpointKeyCache.set(cacheKey, endpointKey);
+    }
+    return endpointKey;
+  }
+
+  /**
+   * Gets a reusable Set for response sampling
+   */
+  private getResponseSamplingSet(endpointKey: string): Set<number> {
+    let set = this.responseSamplingSets.get(endpointKey);
+    if (!set) {
+      set = new Set();
+      this.responseSamplingSets.set(endpointKey, set);
+    }
+    return set;
+  }
+
+  /**
+   * Checks if early exit conditions are met based on configured thresholds.
+   * This method is thread-safe as it only reads atomic counters and maps.
+   * @returns true if early exit conditions are met, false otherwise
+   */
+  private shouldEarlyExit(): boolean {
+    if (!this.options.earlyExitOnError) {
+      return false;
+    }
+
+    const totalRequests = this.successfulRequests + this.failedRequests;
+    if (totalRequests === 0) {
+      return false;
+    }
+
+    // Check error rate threshold
+    if (this.options.errorRateThreshold !== undefined) {
+      const errorRate = this.failedRequests / totalRequests;
+      if (errorRate >= this.options.errorRateThreshold) {
+        return true;
+      }
+    }
+
+    // Check error count threshold
+    if (this.options.errorCountThreshold !== undefined) {
+      if (this.failedRequests >= this.options.errorCountThreshold) {
+        return true;
+      }
+    }
+
+    // Check specific status codes threshold
+    if (this.options.errorStatusCodes !== undefined) {
+      for (const code of this.options.errorStatusCodes) {
+        if (this.statusCodeMap[code] > 0) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * Makes a single HTTP request and returns the result
+   * @param req The request configuration
+   * @returns Promise<RequestResult> The request result
+   */
+  private async makeSingleRequest(req: RequestConfig): Promise<RequestResult> {
+    const start = performance.now();
+    const headers = this.getHeadersObject();
+    const result = this.getResultObject();
+
+    try {
+      // Reuse headers object instead of creating new one
+      Object.assign(headers, this.headers, req.headers);
+
+      // Use per-endpoint agents in production, global dispatcher in tests
+      const dispatcher =
+        process.env.NODE_ENV !== 'test'
+          ? globalAgentManager.getAgent(req.url)
+          : undefined;
+
+      const { statusCode, body: responseBody } = await request(req.url, {
+        method: req.method || 'GET',
+        headers,
+        body:
+          req.payload === undefined ? undefined : JSON.stringify(req.payload),
+        dispatcher,
+      });
+
+      let body: string | undefined;
+      const method = req.method || 'GET';
+      const endpointKey = this.getEndpointKey(method, req.url);
+      const sampledCodesForEndpoint = this.getResponseSamplingSet(endpointKey);
+
+      // Check if we should sample this status code for this endpoint
+      if (!sampledCodesForEndpoint.has(statusCode)) {
+        try {
+          body = await responseBody.text();
+          sampledCodesForEndpoint.add(statusCode);
+        } catch (e) {
+          // Ignore body read errors, it might be empty.
+          body = `(Could not read body: ${(e as Error).message}`;
+        }
+      }
+
+      const latencyMs = Math.max(0, performance.now() - start);
+
+      // Populate result object from pool
+      result.method = method;
+      result.url = req.url;
+      result.status = statusCode;
+      result.latencyMs = latencyMs;
+      result.success = statusCode >= 200 && statusCode < 300;
+      result.body = body; // Will be undefined if not sampled
+      result.timestamp = performance.now();
+
+      return result;
+    } catch (err) {
+      const latencyMs = Math.max(0, performance.now() - start);
+
+      // Populate result object for error case
+      result.method = req.method || 'GET';
+      result.url = req.url;
+      result.status = 0;
+      result.latencyMs = latencyMs;
+      result.success = false;
+      result.error = (err as Error).message;
+      result.timestamp = performance.now();
+
+      return result;
+    } finally {
+      // Always release headers object back to pool
+      this.releaseHeadersObject(headers);
+      // Note: result object is released by onResult after it's processed
+    }
+  }
+
+  /**
+   * Calculates the optimal concurrency level for this worker based on target RPS and worker count
+   * @returns The number of concurrent requests this worker should make
+   */
+  private calculateOptimalConcurrency(): number {
+    const workerCount = this.getWorkerCount();
+    const targetRps = this.currentTargetRps;
+
+    if (targetRps <= 0 || workerCount <= 0) {
+      // Default concurrency when no RPS target or no workers
+      return this.options.concurrentRequestsPerWorker ?? 10;
+    }
+
+    // Calculate optimal concurrency based on target RPS per worker
+    const targetRpsPerWorker = targetRps / workerCount;
+
+    // Use configured value if provided, otherwise calculate dynamically
+    if (this.options.concurrentRequestsPerWorker !== undefined) {
+      return Math.min(
+        this.options.concurrentRequestsPerWorker,
+        Math.max(1, Math.ceil(targetRpsPerWorker)),
+      );
+    }
+
+    // Dynamic calculation: ensure we can meet target RPS with reasonable concurrency
+    // Allow up to 50 concurrent requests per worker, but at least 1
+    const dynamicConcurrency = Math.min(
+      50,
+      Math.max(1, Math.ceil(targetRpsPerWorker)),
+    );
+
+    return dynamicConcurrency;
+  }
+
+  /**
+   * The core worker function. It runs in a loop, making concurrent requests and respecting
    * the rate limit (RPS) until instructed to stop.
    * @param isStopped A function that returns true if the worker should stop.
    *                  Defaults to checking the main runner's stopped flag.
@@ -420,79 +739,63 @@ export class Runner extends EventEmitter {
     isStopped: () => boolean = () => this.stopped,
   ): Promise<void> {
     while (!isStopped()) {
-      const req =
-        this.requests[Math.floor(Math.random() * this.requests.length)];
-      const start = Date.now();
-
-      try {
-        const headers = { ...this.headers, ...req.headers };
-
-        const res = await fetch(req.url, {
-          method: req.method || 'GET',
-          headers,
-          body: req.payload ? JSON.stringify(req.payload) : undefined,
-        });
-
-        let body: string | undefined;
-        const endpointIdentifier = `${req.method || 'GET'} ${req.url}`;
-        if (!this.sampledEndpointResponses.has(endpointIdentifier)) {
-          this.sampledEndpointResponses.set(endpointIdentifier, new Set());
-        }
-        const sampledCodesForEndpoint =
-          this.sampledEndpointResponses.get(endpointIdentifier)!;
-
-        // Check if we should sample this status code for this endpoint
-        if (!sampledCodesForEndpoint.has(res.status)) {
-          try {
-            body = await res.text();
-            sampledCodesForEndpoint.add(res.status);
-          } catch (e) {
-            // Ignore body read errors, it might be empty.
-            body = `(Could not read body: ${(e as Error).message}`;
-          }
-        } else {
-          // We still need to consume the body to not leave the connection hanging
-          // and to get a more accurate latency measurement.
-          await res.text().catch(() => {});
-        }
-
-        const latencyMs = Math.max(0, Date.now() - start);
-        this.onResult({
-          method: req.method || 'GET',
-          url: req.url,
-          status: res.status,
-          latencyMs,
-          success: res.ok,
-          body, // Will be undefined if not sampled
-          timestamp: Date.now(),
-        });
-      } catch (err) {
-        const latencyMs = Math.max(0, Date.now() - start);
-        this.onResult({
-          method: req.method || 'GET',
-          url: req.url,
-          status: 0,
-          latencyMs,
-          success: false,
-          error: (err as Error).message,
-          timestamp: Date.now(),
-        });
+      // Check for early exit conditions before making requests
+      if (this.shouldEarlyExit()) {
+        this.stop();
+        return;
       }
 
-      // Rate limiting logic
-      // If a target RPS is set, calculate the necessary delay to maintain the rate.
-      // This distributes the requests evenly over time for all workers.
+      // Calculate optimal concurrency for this worker
+      const requestsToMake = this.calculateOptimalConcurrency();
+
+      // Select random requests for this batch
+      const batchRequests = Array.from(
+        { length: requestsToMake },
+        () => this.requests[Math.floor(Math.random() * this.requests.length)],
+      );
+
+      // Execute all requests concurrently
+      const requestPromises = batchRequests.map((req) =>
+        this.makeSingleRequest(req),
+      );
+      const results = await Promise.allSettled(requestPromises);
+
+      // Process all results
+      for (const result of results) {
+        if (result.status === 'fulfilled') {
+          this.onResult(result.value);
+        } else {
+          // Handle rejected promises (shouldn't normally happen with our implementation)
+          const errorResult = this.getResultObject();
+          errorResult.method = 'GET';
+          errorResult.url = 'unknown';
+          errorResult.status = 0;
+          errorResult.latencyMs = 0;
+          errorResult.success = false;
+          errorResult.error = result.reason?.toString() || 'Unknown error';
+          errorResult.timestamp = performance.now();
+          this.onResult(errorResult);
+        }
+      }
+
+      // Check for early exit conditions after processing all results
+      if (this.shouldEarlyExit()) {
+        this.stop();
+        return;
+      }
+
+      // Rate limiting for the batch
       if (this.currentTargetRps > 0) {
         const workerCount = this.getWorkerCount();
         if (workerCount > 0) {
-          // Calculate the delay needed for each worker to collectively meet the target RPS.
-          const delay = (1000 * workerCount) / this.currentTargetRps;
-          await sleep(delay);
+          // Calculate delay for the entire batch
+          const batchDelay = (1000 * workerCount) / this.currentTargetRps;
+          await sleep(batchDelay);
         } else {
-          await sleep(10); // Small delay if no workers are present
+          await sleep(10);
         }
       } else {
-        // If no RPS is set, yield to the event loop to avoid blocking it completely.
+        // If no RPS is set, yield to the event loop
         await sleep(0);
       }
     }

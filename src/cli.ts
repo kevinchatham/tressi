@@ -54,6 +54,7 @@ program
     'Number of concurrent workers, or max workers if autoscale is enabled',
     '10',
   )
+  .option('--concurrent-requests <n>', 'Maximum concurrent requests per worker')
   .option('--duration <s>', 'Duration in seconds', '10')
   .option('--ramp-up-time <s>', 'Time in seconds to ramp up to the target RPS')
   .option('--rps <n>', 'Target requests per second')
@@ -62,7 +63,20 @@ program
     '--export [path]',
     'Export a comprehensive report (Markdown, XLSX, CSVs) to a directory.',
   )
-  .option('--no-ui', 'Disable the interactive terminal UI');
+  .option('--no-ui', 'Disable the interactive terminal UI')
+  .option('--early-exit-on-error', 'Enable early exit on error conditions')
+  .option(
+    '--error-rate-threshold <n>',
+    'Error rate threshold (0.0-1.0) to trigger early exit',
+  )
+  .option(
+    '--error-count-threshold <n>',
+    'Absolute error count threshold to trigger early exit',
+  )
+  .option(
+    '--error-status-codes <codes>',
+    'Comma-separated list of HTTP status codes that should trigger early exit',
+  );
 
 program
   .command('init')
@@ -136,6 +150,18 @@ Examples:
   
   # Run a load test for 30 seconds
   $ tressi --duration 30
+
+  # Run a load test with 5 concurrent requests per worker
+  $ tressi --workers 10 --concurrent-requests 5
+
+  # Run a test that exits early if error rate exceeds 5%
+  $ tressi --early-exit-on-error --error-rate-threshold 0.05
+
+  # Run a test that exits early after 100 errors
+  $ tressi --early-exit-on-error --error-count-threshold 100
+
+  # Run a test that exits early on 500 or 503 errors
+  $ tressi --early-exit-on-error --error-status-codes 500,503
 `,
 );
 
@@ -174,10 +200,49 @@ program.action(async (opts) => {
     process.exit(1);
   }
 
+  // Parse early exit options
+  let errorStatusCodes: number[] | undefined;
+  if (opts.errorStatusCodes) {
+    try {
+      errorStatusCodes = opts.errorStatusCodes
+        .split(',')
+        .map((code: string) => {
+          const parsed = parseInt(code.trim(), 10);
+          if (isNaN(parsed) || parsed < 100 || parsed > 599) {
+            throw new Error(`Invalid HTTP status code: ${code.trim()}`);
+          }
+          return parsed;
+        });
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error(`Error: ${(err as Error).message}`);
+      process.exit(1);
+    }
+  }
+
+  // Validate early exit configuration
+  if (opts.earlyExitOnError) {
+    const hasThreshold =
+      opts.errorRateThreshold !== undefined ||
+      opts.errorCountThreshold !== undefined ||
+      errorStatusCodes !== undefined;
+
+    if (!hasThreshold) {
+      // eslint-disable-next-line no-console
+      console.error(
+        'Error: When --early-exit-on-error is enabled, at least one of --error-rate-threshold, --error-count-threshold, or --error-status-codes must be provided.',
+      );
+      process.exit(1);
+    }
+  }
+
   try {
     await runLoadTest({
       config: configPath,
       workers: opts.workers ? parseInt(opts.workers, 10) : undefined,
+      concurrentRequestsPerWorker: opts.concurrentRequests
+        ? parseInt(opts.concurrentRequests, 10)
+        : undefined,
       durationSec: opts.duration ? parseInt(opts.duration, 10) : undefined,
       rampUpTimeSec: opts.rampUpTime
         ? parseInt(opts.rampUpTime, 10)
@@ -186,6 +251,14 @@ program.action(async (opts) => {
       autoscale: opts.autoscale,
       exportPath: opts.export,
       useUI: opts.ui,
+      earlyExitOnError: opts.earlyExitOnError,
+      errorRateThreshold: opts.errorRateThreshold
+        ? parseFloat(opts.errorRateThreshold)
+        : undefined,
+      errorCountThreshold: opts.errorCountThreshold
+        ? parseInt(opts.errorCountThreshold, 10)
+        : undefined,
+      errorStatusCodes: errorStatusCodes,
     });
   } catch {
     // The runLoadTest function handles its own error logging.

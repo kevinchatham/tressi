@@ -1,6 +1,7 @@
 import blessed from 'blessed';
 import contrib from 'blessed-contrib';
 
+import { CircularBuffer } from './circular-buffer';
 import { Runner } from './runner';
 import { getStatusCodeDistributionByCategory } from './stats';
 
@@ -16,11 +17,11 @@ export class TUI {
   private latencyDistributionTable: contrib.Widgets.TableElement;
   private tressiVersion: string;
 
-  private successData: number[] = [];
-  private redirectData: number[] = [];
-  private clientErrorData: number[] = [];
-  private serverErrorData: number[] = [];
-  private avgLatencyData: number[] = [];
+  private successData: CircularBuffer<number>;
+  private redirectData: CircularBuffer<number>;
+  private clientErrorData: CircularBuffer<number>;
+  private serverErrorData: CircularBuffer<number>;
+  private avgLatencyData: CircularBuffer<number>;
 
   /**
    * Creates a new TUI instance.
@@ -30,6 +31,13 @@ export class TUI {
     this.screen = blessed.screen({ smartCSR: true });
     this.tressiVersion = tressiVersion;
     const grid = new contrib.grid({ rows: 12, cols: 12, screen: this.screen });
+
+    // Initialize CircularBuffers for UI data with 100 items capacity
+    this.successData = new CircularBuffer<number>(100);
+    this.redirectData = new CircularBuffer<number>(100);
+    this.clientErrorData = new CircularBuffer<number>(100);
+    this.serverErrorData = new CircularBuffer<number>(100);
+    this.avgLatencyData = new CircularBuffer<number>(100);
 
     this.latencyChart = grid.set(0, 0, 6, 6, contrib.line, {
       label: 'Avg Latency (ms)',
@@ -116,11 +124,7 @@ export class TUI {
     // Calculate average latency for the latest interval
     const avgLatencyForInterval = histogram.mean;
 
-    const maxDataPoints = 30; // Same as response codes
-    this.avgLatencyData.push(avgLatencyForInterval);
-    if (this.avgLatencyData.length > maxDataPoints) {
-      this.avgLatencyData.shift();
-    }
+    this.avgLatencyData.add(avgLatencyForInterval);
 
     const latencyDistribution = runner.getLatencyDistribution({
       count: 10,
@@ -138,19 +142,20 @@ export class TUI {
     const currentDistribution =
       getStatusCodeDistributionByCategory(statusCodeMap);
 
-    // Add new data points and trim old ones
-    const dataPointsCount = this.successData.length;
-    this.successData.push(currentDistribution['2xx']);
-    this.redirectData.push(currentDistribution['3xx']);
-    this.clientErrorData.push(currentDistribution['4xx']);
-    this.serverErrorData.push(currentDistribution['5xx']);
+    // Add new data points
+    this.successData.add(currentDistribution['2xx']);
+    this.redirectData.add(currentDistribution['3xx']);
+    this.clientErrorData.add(currentDistribution['4xx']);
+    this.serverErrorData.add(currentDistribution['5xx']);
 
-    if (this.successData.length > maxDataPoints) {
-      this.successData.shift();
-      this.redirectData.shift();
-      this.clientErrorData.shift();
-      this.serverErrorData.shift();
-    }
+    // Get data as arrays for chart rendering
+    const successArray = this.successData.getAll();
+    const redirectArray = this.redirectData.getAll();
+    const clientErrorArray = this.clientErrorData.getAll();
+    const serverErrorArray = this.serverErrorData.getAll();
+    const avgLatencyArray = this.avgLatencyData.getAll();
+
+    const dataPointsCount = successArray.length;
 
     const x_labels = Array.from({ length: dataPointsCount }, (_, i) => {
       const timeAgoSec = (dataPointsCount - 1 - i) * 0.5;
@@ -162,40 +167,40 @@ export class TUI {
       {
         title: 'Latency',
         x: x_labels,
-        y: this.avgLatencyData.map((x) => Math.round(x)),
+        y: avgLatencyArray.map((x: number) => Math.round(x)),
       },
     ]);
 
     const series = [];
-    if (this.successData.some((v) => v > 0)) {
+    if (successArray.some((v: number) => v > 0)) {
       series.push({
         title: '2xx',
         x: x_labels,
-        y: this.successData,
+        y: successArray,
         style: { line: 'green' },
       });
     }
-    if (this.redirectData.some((v) => v > 0)) {
+    if (redirectArray.some((v: number) => v > 0)) {
       series.push({
         title: '3xx',
         x: x_labels,
-        y: this.redirectData,
+        y: redirectArray,
         style: { line: 'yellow' },
       });
     }
-    if (this.clientErrorData.some((v) => v > 0)) {
+    if (clientErrorArray.some((v: number) => v > 0)) {
       series.push({
         title: '4xx',
         x: x_labels,
-        y: this.clientErrorData,
+        y: clientErrorArray,
         style: { line: 'red' },
       });
     }
-    if (this.serverErrorData.some((v) => v > 0)) {
+    if (serverErrorArray.some((v: number) => v > 0)) {
       series.push({
         title: '5xx',
         x: x_labels,
-        y: this.serverErrorData,
+        y: serverErrorArray,
         style: { line: 'magenta' },
       });
     }

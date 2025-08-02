@@ -3,6 +3,7 @@ import Table from 'cli-table3';
 import { promises as fs } from 'fs';
 import ora from 'ora';
 import path from 'path';
+import { performance } from 'perf_hooks';
 import { z } from 'zod';
 
 import pkg from '../package.json';
@@ -16,6 +17,7 @@ import {
   TestSummary,
 } from './summarizer';
 import { TUI } from './ui';
+import { getSafeDirectoryName } from './utils';
 
 export { RequestConfig, TestSummary, TressiConfig };
 
@@ -41,6 +43,16 @@ export interface RunOptions {
   useUI?: boolean;
   /** Suppress all console output. Defaults to false. */
   silent?: boolean;
+  /** Whether to enable early exit on error conditions. Defaults to false. */
+  earlyExitOnError?: boolean;
+  /** Error rate threshold (0.0-1.0) to trigger early exit. Requires earlyExitOnError=true. */
+  errorRateThreshold?: number;
+  /** Absolute error count threshold to trigger early exit. Requires earlyExitOnError=true. */
+  errorCountThreshold?: number;
+  /** Specific HTTP status codes that should trigger early exit. Requires earlyExitOnError=true. */
+  errorStatusCodes?: number[];
+  /** Number of concurrent requests per worker. Defaults to dynamic calculation based on target RPS. */
+  concurrentRequestsPerWorker?: number;
 }
 
 function printReportInfo(summary: TestSummary, options: RunOptions): void {
@@ -310,7 +322,8 @@ export async function runLoadTest(options: RunOptions): Promise<TestSummary> {
     const tui = new TUI(() => runner.stop(), pkg.version || 'unknown');
     const tuiInterval = setInterval(() => {
       const startTime = runner.getStartTime();
-      const elapsedSec = startTime > 0 ? (Date.now() - startTime) / 1000 : 0;
+      const elapsedSec =
+        startTime > 0 ? (performance.now() - startTime) / 1000 : 0;
       const totalSec = options.durationSec || 10;
 
       tui.update(runner, elapsedSec, totalSec, options.rps);
@@ -328,7 +341,8 @@ export async function runLoadTest(options: RunOptions): Promise<TestSummary> {
     }).start();
     const noUiInterval = setInterval(() => {
       const startTime = runner.getStartTime();
-      const elapsedSec = startTime > 0 ? (Date.now() - startTime) / 1000 : 0;
+      const elapsedSec =
+        startTime > 0 ? (performance.now() - startTime) / 1000 : 0;
       const totalSec = options.durationSec || 10;
 
       const rps = runner.getCurrentRps();
@@ -369,7 +383,8 @@ export async function runLoadTest(options: RunOptions): Promise<TestSummary> {
 
   await runner.run();
   const startTime = runner.getStartTime();
-  const actualDurationSec = startTime > 0 ? (Date.now() - startTime) / 1000 : 0;
+  const actualDurationSec =
+    startTime > 0 ? (performance.now() - startTime) / 1000 : 0;
   const summary = generateSummary(runner, options, actualDurationSec);
 
   if (options.exportPath) {
@@ -383,9 +398,10 @@ export async function runLoadTest(options: RunOptions): Promise<TestSummary> {
           ? options.exportPath
           : 'tressi-report';
       const runDate = new Date();
+
       const reportDir = path.resolve(
         process.cwd(),
-        `${baseExportName}-${runDate.toISOString()}`,
+        getSafeDirectoryName(`${baseExportName}-${runDate.toISOString()}`),
       );
       await fs.mkdir(reportDir, { recursive: true });
 
