@@ -1,0 +1,40 @@
+{
+  "$schema": "https://cdn.statically.io/gh/nguyenngoclongdev/cdn/main/schema/v11/terminal-keeper.json",
+  "theme": "chaos",
+  "active": "default",
+  "activateOnStartup": true,
+  "keepExistingTerminals": false,
+  "sessions": {
+    "default": [
+      {
+        "name": "terminal",
+        "icon": "terminal",
+        "color": "terminal.ansiBlue",
+        "focus": false,
+        "commands": []
+      },
+      {
+        "name": "start-server",
+        "autoExecuteCommands": true,
+        "icon": "server",
+        "color": "terminal.ansiRed",
+        "commands": ["npm run serve"]
+      },
+      {
+        "name": "lint-watch",
+        "icon": "search",
+        "color": "terminal.ansiYellow",
+        "autoExecuteCommands": true,
+        "commands": ["npm run lint:watch"]
+      },
+      {
+        "name": "format-watch",
+        "icon": "wrench",
+        "color": "terminal.ansiCyan",
+        "autoExecuteCommands": true,
+        "commands": ["npm run format:watch"]
+      }
+    ],
+    "single-commands": []
+  }
+}
