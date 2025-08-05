@@ -20,6 +20,7 @@
   "scripts": {
     "build": "tsup",
     "format": "prettier --write . --config .prettierrc --ignore-path .prettierignore",
+    "format:watch": "chokidar \"**/*.{ts,js,json,md}\" -c \"npm run format\" --ignore \"**/node_modules/**\"",
     "lint:inspect": "eslint --inspect-config",
     "lint:watch": "chokidar \"**/*.ts\" -c \"npm run lint\" --ignore \"**/node_modules/**\"",
     "lint": "eslint --fix --format unix --config ./eslint.config.mjs .",
