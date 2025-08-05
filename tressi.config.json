@@ -5,11 +5,11 @@
   },
   "requests": [
     {
-      "url": "https://jsonplaceholder.typicode.com/posts/1",
+      "url": "http://localhost:3000",
       "method": "GET"
     },
     {
-      "url": "https://jsonplaceholder.typicode.com/posts",
+      "url": "http://localhost:3000",
       "method": "POST",
       "payload": {
         "title": "foo",
