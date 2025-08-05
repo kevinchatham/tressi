@@ -396,7 +396,7 @@ await runLoadTest({
 
 This project was built during late-night hours as a way to deepen my understanding of Node.js performance and CLI architecture. Keeping it as a solo effort allows me to iterate rapidly, make breaking changes without constraint, and focus narrowly on my own use cases.
 
-That said, I'm grateful for the community's interest and may open it up in the future. For more details, see [CONTRIBUTING.md](CONTRIBUTING.md).
+That said, I'm grateful for the community's interest and may open it up in the future. For more details, see [CONTRIBUTING.md](docs/CONTRIBUTING.md).
 
 ## 🧭 Stability & Compatibility
 
