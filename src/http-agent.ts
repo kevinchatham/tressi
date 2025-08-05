@@ -1,5 +1,7 @@
 import { Agent, Dispatcher } from 'undici';
 
+import { PerformanceMonitor } from './perf-monitor';
+
 export interface AgentConfig {
   connections?: number;
   keepAliveTimeout?: number;
@@ -13,9 +15,85 @@ export interface EndpointAgent {
   agent: Dispatcher;
 }
 
+export interface ConnectionPoolStats {
+  activeConnections: number;
+  idleConnections: number;
+  totalConnections: number;
+  pendingRequests: number;
+}
+
+/**
+ * Extended Agent class with connection monitoring
+ */
+class MonitoredAgent extends Agent {
+  private endpointKey: string;
+  private perfMonitor: PerformanceMonitor;
+  private activeConnections = 0;
+  private totalConnections = 0;
+  private pendingRequests = 0;
+
+  constructor(
+    options: ConstructorParameters<typeof Agent>[0],
+    endpointKey: string,
+  ) {
+    super(options);
+    this.endpointKey = endpointKey;
+    this.perfMonitor = PerformanceMonitor.getInstance();
+  }
+
+  incrementActiveConnections(): void {
+    this.activeConnections++;
+    this.totalConnections++;
+    this.recordConnectionMetrics();
+  }
+
+  decrementActiveConnections(): void {
+    this.activeConnections = Math.max(0, this.activeConnections - 1);
+    this.recordConnectionMetrics();
+  }
+
+  incrementPendingRequests(): void {
+    this.pendingRequests++;
+    this.recordConnectionMetrics();
+  }
+
+  decrementPendingRequests(): void {
+    this.pendingRequests = Math.max(0, this.pendingRequests - 1);
+    this.recordConnectionMetrics();
+  }
+
+  private recordConnectionMetrics(): void {
+    this.perfMonitor.recordResourceMetrics(
+      { activeCount: 0, scalingEvents: 0, averageConcurrency: 0 },
+      {
+        activeConnections: this.activeConnections,
+        idleConnections: Math.max(
+          0,
+          this.totalConnections - this.activeConnections,
+        ),
+        totalConnections: this.totalConnections,
+        pendingRequests: this.pendingRequests,
+      },
+    );
+  }
+
+  getConnectionStats(): ConnectionPoolStats {
+    return {
+      activeConnections: this.activeConnections,
+      idleConnections: Math.max(
+        0,
+        this.totalConnections - this.activeConnections,
+      ),
+      totalConnections: this.totalConnections,
+      pendingRequests: this.pendingRequests,
+    };
+  }
+}
+
 export class HttpAgentManager {
-  private agents = new Map<string, Dispatcher>();
+  private agents = new Map<string, MonitoredAgent>();
   private defaultConfig: AgentConfig;
+  private perfMonitor: PerformanceMonitor;
 
   constructor(defaultConfig: AgentConfig = {}) {
     this.defaultConfig = {
@@ -26,6 +104,7 @@ export class HttpAgentManager {
       bodyTimeout: 30000,
       ...defaultConfig,
     };
+    this.perfMonitor = PerformanceMonitor.getInstance();
   }
 
   /**
@@ -44,13 +123,16 @@ export class HttpAgentManager {
 
     if (!this.agents.has(key)) {
       const mergedConfig = { ...this.defaultConfig, ...config };
-      const agent = new Agent({
-        connections: mergedConfig.connections,
-        keepAliveTimeout: mergedConfig.keepAliveTimeout,
-        keepAliveMaxTimeout: mergedConfig.keepAliveMaxTimeout,
-        headersTimeout: mergedConfig.headersTimeout,
-        bodyTimeout: mergedConfig.bodyTimeout,
-      });
+      const agent = new MonitoredAgent(
+        {
+          connections: mergedConfig.connections,
+          keepAliveTimeout: mergedConfig.keepAliveTimeout,
+          keepAliveMaxTimeout: mergedConfig.keepAliveMaxTimeout,
+          headersTimeout: mergedConfig.headersTimeout,
+          bodyTimeout: mergedConfig.bodyTimeout,
+        },
+        key,
+      );
 
       this.agents.set(key, agent);
     }
@@ -68,9 +150,7 @@ export class HttpAgentManager {
 
     if (agent) {
       // Close the agent gracefully
-      if ('close' in agent && typeof agent.close === 'function') {
-        agent.close();
-      }
+      agent.close();
       return this.agents.delete(key);
     }
 
@@ -89,13 +169,25 @@ export class HttpAgentManager {
   }
 
   /**
+   * Get connection pool statistics for all endpoints
+   * @returns Connection pool metrics by endpoint
+   */
+  getConnectionPoolStats(): Record<string, ConnectionPoolStats> {
+    const stats: Record<string, ConnectionPoolStats> = {};
+
+    for (const [url, agent] of this.agents.entries()) {
+      stats[url] = agent.getConnectionStats();
+    }
+
+    return stats;
+  }
+
+  /**
    * Close all agents and clear the cache
    */
   closeAll(): void {
     for (const [, agent] of this.agents.entries()) {
-      if ('close' in agent && typeof agent.close === 'function') {
-        agent.close();
-      }
+      agent.close();
     }
     this.agents.clear();
   }

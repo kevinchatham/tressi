@@ -1,7 +1,7 @@
-import { MockAgent, setGlobalDispatcher } from 'undici';
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { loadConfig, TressiConfig } from '../src/config';
+import { createMockAgent } from './setupTests';
 
 const minimalConfig = {
   requests: [{ url: 'http://localhost:8080/test', method: 'GET' as const }],
@@ -10,22 +10,6 @@ const minimalConfig = {
 const expectedConfig: TressiConfig = {
   requests: [{ url: 'http://localhost:8080/test', method: 'GET' }],
 };
-
-let mockAgent: MockAgent;
-
-beforeAll(() => {
-  mockAgent = new MockAgent();
-  mockAgent.disableNetConnect(); // prevent actual network requests
-  setGlobalDispatcher(mockAgent);
-});
-
-afterEach(() => {
-  mockAgent.assertNoPendingInterceptors();
-});
-
-afterAll(() => {
-  mockAgent.close();
-});
 
 /**
  * Test suite for the configuration loading logic.
@@ -49,6 +33,7 @@ describe('config', () => {
      * parse it, and return the validated configuration.
      */
     it('should load config from a remote URL', async () => {
+      const mockAgent = createMockAgent();
       const mockPool = mockAgent.get('http://localhost:8080');
       mockPool
         .intercept({ path: '/remote-config', method: 'GET' })
@@ -63,6 +48,7 @@ describe('config', () => {
      * (e.g., returns a non-2xx status code).
      */
     it('should throw an error for a failing remote URL', async () => {
+      const mockAgent = createMockAgent();
       const mockPool = mockAgent.get('http://localhost:8080');
       mockPool
         .intercept({ path: '/remote-config-failing', method: 'GET' })

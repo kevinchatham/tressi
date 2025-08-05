@@ -80,20 +80,14 @@ export function generateSummary(
     };
   }
 
-  const { durationSec = 10, rps } = options;
+  const { durationSec = 10 } = options;
   const totalRequests = histogram.totalCount;
   const effectiveDuration = actualDurationSec ?? durationSec;
   const actualRps =
     effectiveDuration > 0 ? totalRequests / effectiveDuration : 0;
   const avgLatency = histogram.mean;
-  const theoreticalMaxRps = rps
-    ? Math.min(
-        (1000 / (avgLatency || 1)) * (options.workers || 10),
-        options.rps || Infinity,
-      )
-    : 0;
-  const achievedPercentage =
-    rps && theoreticalMaxRps ? (actualRps / theoreticalMaxRps) * 100 : 0;
+  const theoreticalMaxRps = 0; // No longer calculated with global RPS
+  const achievedPercentage = 0; // No longer calculated with global RPS
 
   const endpointSummaries = Array.from(endpointHistograms.entries()).map(
     ([endpointKey, endpointHistogram]): EndpointSummary => {
@@ -157,7 +151,7 @@ export function generateMarkdownReport(
   const { global: g, endpoints: e } = summary;
 
   const distribution = runner.getDistribution();
-  const { workers = 10, durationSec = 10, rps, autoscale } = options;
+  const { workers = 10, durationSec = 10, autoscale } = options;
 
   let md = `# Tressi Load Test Report\n\n`;
 
@@ -172,20 +166,7 @@ export function generateMarkdownReport(
   }
   md += `\n`;
   const warnings: string[] = [];
-  if (rps && g.achievedPercentage && g.achievedPercentage < 80) {
-    const maxRpsPerWorker = 1000 / g.avgLatencyMs + 1;
-    const suggestedWorkers = Math.ceil(rps / maxRpsPerWorker) + 1; // at least 2
-
-    warnings.push(
-      `**Target RPS Unreachable**: The target of ${rps} RPS was not met. The test achieved ~${g.actualRps.toFixed(
-        0,
-      )} RPS (${g.achievedPercentage.toFixed(
-        0,
-      )}% of the target). Based on the average latency of ${g.avgLatencyMs.toFixed(
-        0,
-      )}ms, you would need at least **${suggestedWorkers}** workers to meet the target.`,
-    );
-  }
+  // RPS warnings are now handled per-endpoint via targetRps configuration
   for (const endpoint of e) {
     const failureRate =
       (endpoint.failedRequests / endpoint.totalRequests) * 100;
@@ -221,7 +202,6 @@ export function generateMarkdownReport(
   md += `|---|---|---|\n`;
   md += `| Workers | ${autoscale ? `Up to ${workers}` : workers} | \`--workers\` |\n`;
   md += `| Duration | ${durationSec}s | \`--duration\` |\n`;
-  if (rps) md += `| Target Req/s | ${rps} | \`--rps\` |\n`;
   if (autoscale) md += `| Autoscale | Enabled | \`--autoscale\` |\n\n`;
 
   // Global Summary
@@ -232,16 +212,8 @@ export function generateMarkdownReport(
   md += `| Total Requests | ${g.totalRequests} |\n`;
   md += `| Successful | ${g.successfulRequests} |\n`;
   md += `| Failed | ${g.failedRequests} |\n`;
-
-  if (options.rps && g.theoreticalMaxRps) {
-    md += `| Req/s (Actual/Target) | ${g.actualRps.toFixed(0)} / ${options.rps} |\n`;
-    md += `| Req/m (Actual/Target) | ${(g.actualRps * 60).toFixed(0)} / ${options.rps * 60} |\n`;
-    md += `| Theoretical Max Req/s | ${g.theoreticalMaxRps.toFixed(0)} |\n`;
-    md += `| Achieved % | ${g.achievedPercentage.toFixed(0)}% |\n`;
-  } else {
-    md += `| Req/s | ${g.actualRps.toFixed(0)} |\n`;
-    md += `| Req/m | ${(g.actualRps * 60).toFixed(0)} |\n`;
-  }
+  md += `| Req/s | ${g.actualRps.toFixed(0)} |\n`;
+  md += `| Req/m | ${(g.actualRps * 60).toFixed(0)} |\n`;
 
   md += `| Avg Latency | ${g.avgLatencyMs.toFixed(0)}ms |\n`;
   md += `| Min Latency | ${g.minLatencyMs.toFixed(0)}ms |\n`;

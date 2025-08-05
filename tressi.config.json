@@ -1,16 +1,18 @@
 {
-  "$schema": "./schemas/tressi.schema.v0.0.12.json",
-  "headers": {
-    "Content-Type": "application/json; charset=UTF-8"
-  },
+  "$schema": "./tressi.schema.json",
   "requests": [
     {
-      "url": "https://jsonplaceholder.typicode.com/posts/1",
-      "method": "GET"
+      "url": "http://localhost:3000",
+      "method": "GET",
+      "targetRps": 1
     },
     {
-      "url": "https://jsonplaceholder.typicode.com/posts",
+      "url": "http://localhost:3000",
       "method": "POST",
+      "targetRps": 100,
+      "headers": {
+        "Content-Type": "application/json; charset=UTF-8"
+      },
       "payload": {
         "title": "foo",
         "body": "bar",

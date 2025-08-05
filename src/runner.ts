@@ -8,7 +8,9 @@ import { RequestConfig } from './config';
 import { Distribution } from './distribution';
 import { globalAgentManager } from './http-agent';
 import { RunOptions } from './index';
+import { PerformanceMonitor, RequestPhase } from './perf-monitor';
 import { RequestResult } from './stats';
+import { TokenBucketManager } from './token-bucket-manager';
 
 async function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -40,6 +42,9 @@ export class Runner extends EventEmitter {
   private testTimeout?: NodeJS.Timeout;
   private rampUpInterval?: NodeJS.Timeout;
   private autoscaleInterval?: NodeJS.Timeout;
+  private tokenBucketManager: TokenBucketManager;
+  private globalTargetRps?: number;
+  private perfMonitor: PerformanceMonitor;
 
   // Object allocation optimizations
   private headersPool: Record<string, string>[] = [];
@@ -53,11 +58,13 @@ export class Runner extends EventEmitter {
    * @param options The run options.
    * @param requests An array of request configurations to be used in the test.
    * @param headers A record of global headers to be sent with each request.
+   * @param globalTargetRps Global target RPS from configuration
    */
   constructor(
     options: RunOptions,
     requests: RequestConfig[],
     headers: Record<string, string>,
+    globalTargetRps?: number,
   ) {
     super();
 
@@ -68,12 +75,19 @@ export class Runner extends EventEmitter {
     this.headers = headers;
     this.histogram = build();
     this.distribution = new Distribution();
-    this.currentTargetRps =
-      options.rampUpTimeSec && options.rps ? 0 : options.rps || 0;
+    this.currentTargetRps = 0;
+    this.globalTargetRps = globalTargetRps;
 
-    // Estimate buffer size: 2 seconds of requests at max RPS, or 10k, whichever is larger
-    const maxRps = options.rps || 1000;
-    const bufferSize = Math.max(10000, maxRps * 2);
+    // Initialize TokenBucketManager with default rate limit configuration
+    const defaultRateLimit = { capacity: 2, refillRate: 1 };
+    this.tokenBucketManager = new TokenBucketManager(defaultRateLimit);
+    this.perfMonitor = PerformanceMonitor.getInstance();
+
+    // Configure per-endpoint rate limits from request configurations
+    this.configureEndpointRateLimits();
+
+    // Estimate buffer size: 10k requests as default buffer
+    const bufferSize = 10000;
     this.recentRequestTimestamps = new CircularBuffer<number>(bufferSize);
     this.recentLatenciesForSpinner = new CircularBuffer<number>(1000);
 
@@ -82,6 +96,34 @@ export class Runner extends EventEmitter {
     this.resultPool = [];
     this.endpointKeyCache = new Map();
     this.responseSamplingSets = new Map();
+  }
+
+  /**
+   * Configures per-endpoint rate limits based on targetRps from request configurations
+   */
+  private configureEndpointRateLimits(): void {
+    for (const request of this.requests) {
+      const method = request.method || 'GET';
+      const endpointKey = this.getEndpointKey(method, request.url);
+
+      // Configure rate limits based on targetRps
+      const targetRps = (request as { targetRps?: number }).targetRps;
+      if (targetRps) {
+        // Use targetRps to configure rate limiting
+        // Capacity = targetRps * 2 (allow burst of 2 seconds)
+        // RefillRate = targetRps (sustained rate)
+        this.tokenBucketManager.configureEndpoint(endpointKey, {
+          capacity: Math.max(2, targetRps * 2),
+          refillRate: targetRps,
+        });
+      } else {
+        // Default rate limit when targetRps is not specified
+        this.tokenBucketManager.configureEndpoint(endpointKey, {
+          capacity: 2, // Burst capacity of 2
+          refillRate: 1, // 1 request per second
+        });
+      }
+    }
   }
 
   /**
@@ -315,6 +357,27 @@ export class Runner extends EventEmitter {
   }
 
   /**
+   * Calculates the total target RPS across all endpoints based on per-request targetRps
+   * @returns Total target RPS for autoscaling
+   */
+  private calculateTotalTargetRps(): number {
+    let totalTargetRps = 0;
+
+    // Check if global targetRps is specified
+    if (this.globalTargetRps && this.globalTargetRps > 0) {
+      return this.globalTargetRps;
+    }
+
+    for (const request of this.requests) {
+      // Use per-request targetRps if specified, otherwise use default
+      const targetRps = (request as { targetRps?: number }).targetRps || 100; // Default 100 RPS per endpoint
+      totalTargetRps += targetRps;
+    }
+
+    return totalTargetRps;
+  }
+
+  /**
    * Calculates the actual requests per second (Req/s) over the last second.
    * @returns The current actual Req/s.
    */
@@ -353,18 +416,21 @@ export class Runner extends EventEmitter {
    */
   public async run(): Promise<void> {
     this.startTime = performance.now();
+    this.perfMonitor.reset();
 
     const {
       workers = 10,
       durationSec = 10,
       rampUpTimeSec = 0,
-      rps = 0,
       autoscale = false,
     } = this.options;
 
     // The main timer for the total test duration starts now
     const durationMs = durationSec * 1000;
     this.testTimeout = setTimeout(() => this.stop(), durationMs);
+
+    // Start resource monitoring
+    this.startResourceMonitoring();
 
     // If ramp-up is enabled, start the governor
     if (rampUpTimeSec > 0) {
@@ -378,15 +444,10 @@ export class Runner extends EventEmitter {
 
         const rampUpProgress = Math.min(elapsedTimeSec / rampUpTimeSec, 1);
 
-        if (rps > 0) {
-          // If a target RPS is set, ramp up to that value
-          this.currentTargetRps = Math.round(rps * rampUpProgress);
-        } else {
-          // If no target RPS, ramp up to a theoretical max (e.g., 1k Req/s per worker)
-          // This creates a steady increase with no upper bound.
-          const arbitraryMaxRps = (this.options.workers || 10) * 1000;
-          this.currentTargetRps = Math.round(arbitraryMaxRps * rampUpProgress);
-        }
+        // Ramp up to a reasonable target based on per-endpoint configuration
+        // Use the calculated total target RPS as the maximum
+        const totalTargetRps = this.calculateTotalTargetRps();
+        this.currentTargetRps = Math.round(totalTargetRps * rampUpProgress);
       }, 1000); // Update every second
     }
 
@@ -408,14 +469,15 @@ export class Runner extends EventEmitter {
           return;
         }
 
-        const targetRps = this.options.rps;
-        if (!targetRps) return;
+        // Calculate per-endpoint target RPS for autoscaling
+        const totalTargetRps = this.calculateTotalTargetRps();
+        if (totalTargetRps <= 0) return;
 
-        const scaleUpThreshold = targetRps * 0.9;
-        const scaleDownThreshold = targetRps * 1.1;
+        const scaleUpThreshold = totalTargetRps * 0.9;
+        const scaleDownThreshold = totalTargetRps * 1.1;
 
         if (currentRps < scaleUpThreshold && currentWorkers < workers) {
-          const rpsDeficit = targetRps - currentRps;
+          const rpsDeficit = totalTargetRps - currentRps;
           const avgRpsPerWorker =
             currentWorkers > 0 ? currentRps / currentWorkers : 10;
           const workersNeeded = rpsDeficit / avgRpsPerWorker;
@@ -427,7 +489,7 @@ export class Runner extends EventEmitter {
             this.addWorker();
           }
         } else if (currentRps > scaleDownThreshold && currentWorkers > 1) {
-          const rpsSurplus = currentRps - targetRps;
+          const rpsSurplus = currentRps - totalTargetRps;
           const avgRpsPerWorker = currentRps / currentWorkers;
           const workersToCut = rpsSurplus / avgRpsPerWorker;
           let workersToRemove = Math.ceil(workersToCut * 0.25);
@@ -450,9 +512,35 @@ export class Runner extends EventEmitter {
     this.cleanup();
   }
 
+  /**
+   * Start resource monitoring
+   */
+  private startResourceMonitoring(): void {
+    const monitorInterval = setInterval(() => {
+      if (this.stopped) {
+        clearInterval(monitorInterval);
+        return;
+      }
+
+      this.perfMonitor.recordResourceMetrics({
+        activeCount: this.getWorkerCount(),
+        scalingEvents: this.activeWorkers.length,
+        averageConcurrency: this.calculateOptimalConcurrency(),
+      });
+    }, 1000);
+  }
+
   public stop(): void {
     if (this.stopped) return;
     this.stopped = true;
+
+    // Start shutdown analysis
+    this.perfMonitor.startShutdown();
+    this.perfMonitor.completeShutdown(
+      this.activeWorkers.length,
+      this.successfulRequests + this.failedRequests,
+    );
+
     this.activeWorkers.forEach((w) => w.stop());
     this.cleanup();
     this.emit('stop');
@@ -462,6 +550,8 @@ export class Runner extends EventEmitter {
    * Cleans up all active timers and intervals.
    */
   private cleanup(): void {
+    const cleanupStart = process.hrtime.bigint();
+
     if (this.testTimeout) {
       clearTimeout(this.testTimeout);
       this.testTimeout = undefined;
@@ -482,7 +572,16 @@ export class Runner extends EventEmitter {
     this.responseSamplingSets.clear();
 
     // Close all HTTP agents to free up connections
+    const connectionCleanupStart = process.hrtime.bigint();
     globalAgentManager.closeAll();
+    const connectionCleanupEnd = process.hrtime.bigint();
+
+    this.perfMonitor.recordConnectionCleanupDuration(
+      connectionCleanupEnd - connectionCleanupStart,
+    );
+    this.perfMonitor.recordResourceDeallocationDuration(
+      process.hrtime.bigint() - cleanupStart,
+    );
   }
 
   /**
@@ -628,8 +727,33 @@ export class Runner extends EventEmitter {
     const start = performance.now();
     const headers = this.getHeadersObject();
     const result = this.getResultObject();
+    const method = req.method || 'GET';
+    const endpointKey = this.getEndpointKey(method, req.url);
+
+    // Start performance tracking
+    const requestId = this.perfMonitor.startRequest(endpointKey);
+    this.perfMonitor.startPhase(requestId, RequestPhase.TOKEN_ACQUISITION);
 
     try {
+      // Apply per-endpoint rate limiting using TokenBucketManager with throttling
+      // Use throttling to intelligently pace requests instead of rejecting them
+      const delay = await this.tokenBucketManager.acquireWithDelay(
+        endpointKey,
+        1,
+      );
+
+      this.perfMonitor.endPhase(requestId, RequestPhase.TOKEN_ACQUISITION);
+      this.perfMonitor.startPhase(
+        requestId,
+        RequestPhase.CONNECTION_ACQUISITION,
+      );
+
+      // If we have a delay, account for it in the latency
+      if (delay > 0) {
+        // The delay is already included in the total time since we awaited
+        // No additional action needed
+      }
+
       // Reuse headers object instead of creating new one
       Object.assign(headers, this.headers, req.headers);
 
@@ -639,6 +763,9 @@ export class Runner extends EventEmitter {
           ? globalAgentManager.getAgent(req.url)
           : undefined;
 
+      this.perfMonitor.endPhase(requestId, RequestPhase.CONNECTION_ACQUISITION);
+      this.perfMonitor.startPhase(requestId, RequestPhase.REQUEST_EXECUTION);
+
       const { statusCode, body: responseBody } = await request(req.url, {
         method: req.method || 'GET',
         headers,
@@ -647,9 +774,10 @@ export class Runner extends EventEmitter {
         dispatcher,
       });
 
+      this.perfMonitor.endPhase(requestId, RequestPhase.REQUEST_EXECUTION);
+      this.perfMonitor.startPhase(requestId, RequestPhase.RESPONSE_PROCESSING);
+
       let body: string | undefined;
-      const method = req.method || 'GET';
-      const endpointKey = this.getEndpointKey(method, req.url);
       const sampledCodesForEndpoint = this.getResponseSamplingSet(endpointKey);
 
       // Check if we should sample this status code for this endpoint
@@ -665,6 +793,9 @@ export class Runner extends EventEmitter {
 
       const latencyMs = Math.max(0, performance.now() - start);
 
+      this.perfMonitor.endPhase(requestId, RequestPhase.RESPONSE_PROCESSING);
+      this.perfMonitor.completeRequest(requestId, true, statusCode);
+
       // Populate result object from pool
       result.method = method;
       result.url = req.url;
@@ -678,8 +809,16 @@ export class Runner extends EventEmitter {
     } catch (err) {
       const latencyMs = Math.max(0, performance.now() - start);
 
+      this.perfMonitor.endPhase(requestId, RequestPhase.REQUEST_EXECUTION);
+      this.perfMonitor.completeRequest(
+        requestId,
+        false,
+        0,
+        (err as Error).message,
+      );
+
       // Populate result object for error case
-      result.method = req.method || 'GET';
+      result.method = method;
       result.url = req.url;
       result.status = 0;
       result.latencyMs = latencyMs;
@@ -705,7 +844,7 @@ export class Runner extends EventEmitter {
 
     if (targetRps <= 0 || workerCount <= 0) {
       // Default concurrency when no RPS target or no workers
-      return this.options.concurrentRequestsPerWorker ?? 10;
+      return Math.max(1, this.options.concurrentRequestsPerWorker ?? 10);
     }
 
     // Calculate optimal concurrency based on target RPS per worker
@@ -713,17 +852,20 @@ export class Runner extends EventEmitter {
 
     // Use configured value if provided, otherwise calculate dynamically
     if (this.options.concurrentRequestsPerWorker !== undefined) {
-      return Math.min(
-        this.options.concurrentRequestsPerWorker,
-        Math.max(1, Math.ceil(targetRpsPerWorker)),
+      return Math.max(
+        1,
+        Math.min(
+          this.options.concurrentRequestsPerWorker,
+          Math.ceil(targetRpsPerWorker),
+        ),
       );
     }
 
     // Dynamic calculation: ensure we can meet target RPS with reasonable concurrency
     // Allow up to 50 concurrent requests per worker, but at least 1
-    const dynamicConcurrency = Math.min(
-      50,
-      Math.max(1, Math.ceil(targetRpsPerWorker)),
+    const dynamicConcurrency = Math.max(
+      1,
+      Math.min(50, Math.ceil(targetRpsPerWorker)),
     );
 
     return dynamicConcurrency;
@@ -784,16 +926,15 @@ export class Runner extends EventEmitter {
         return;
       }
 
-      // Rate limiting for the batch
+      // Rate limiting using TokenBucketManager
       if (this.currentTargetRps > 0) {
-        const workerCount = this.getWorkerCount();
-        if (workerCount > 0) {
-          // Calculate delay for the entire batch
-          const batchDelay = (1000 * workerCount) / this.currentTargetRps;
-          await sleep(batchDelay);
-        } else {
-          await sleep(10);
-        }
+        // Instead of global sleep, each request will use per-endpoint rate limiting
+        // in makeSingleRequest(). This allows different endpoints to have different
+        // rate limits while eliminating the global blocking delay.
+        // The token bucket approach is non-blocking and more efficient.
+
+        // Small yield to prevent event loop starvation
+        await sleep(0);
       } else {
         // If no RPS is set, yield to the event loop
         await sleep(0);

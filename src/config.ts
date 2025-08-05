@@ -3,6 +3,8 @@ import path from 'path';
 import { request } from 'undici';
 import { z } from 'zod';
 
+// Note: RateLimitConfigSchema has been removed as part of legacy rateLimit field removal
+
 /**
  * Zod schema for a single request configuration.
  */
@@ -23,6 +25,13 @@ const RequestConfigSchema = z.object({
     .default('GET'),
   /** Headers to be sent with this specific request. Merged with global headers. */
   headers: z.record(z.string(), z.string()).optional(),
+  /** Target requests per second for this specific endpoint */
+  targetRps: z
+    .number()
+    .positive()
+    .optional()
+    .describe('Target requests per second for this specific endpoint'),
+  // Note: legacy rateLimit field has been removed - use targetRps instead
 });
 
 /**
@@ -33,6 +42,12 @@ export const TressiConfigSchema = z.object({
   $schema: z.string().optional(),
   /** Global headers to be sent with every request. */
   headers: z.record(z.string(), z.string()).optional(),
+  /** Global target requests per second for all endpoints */
+  targetRps: z
+    .number()
+    .positive()
+    .optional()
+    .describe('Global target requests per second for all endpoints'),
   /** An array of request configurations. */
   requests: z.array(RequestConfigSchema),
 });
@@ -46,6 +61,8 @@ export type TressiConfig = z.infer<typeof TressiConfigSchema>;
  * Type representing a single request configuration.
  */
 export type RequestConfig = z.infer<typeof RequestConfigSchema>;
+
+// Note: RateLimitConfig type has been removed as part of legacy rateLimit field removal
 
 /**
  * Loads and validates a Tressi configuration from a file, URL, or direct object.

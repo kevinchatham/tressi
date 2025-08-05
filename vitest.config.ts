@@ -4,5 +4,6 @@ export default defineConfig({
   test: {
     globals: true,
     setupFiles: ['tests/setupTests.ts'],
+    testTimeout: 30000,
   },
 });

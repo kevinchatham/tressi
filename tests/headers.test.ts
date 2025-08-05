@@ -1,34 +1,19 @@
-import { MockAgent, setGlobalDispatcher } from 'undici';
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { RequestConfig } from '../src/config';
 import { RunOptions } from '../src/index';
 import { Runner } from '../src/runner';
-
-let mockAgent: MockAgent;
-
-beforeAll(() => {
-  mockAgent = new MockAgent();
-  mockAgent.disableNetConnect();
-  setGlobalDispatcher(mockAgent);
-});
-
-afterEach(() => {
-  mockAgent.assertNoPendingInterceptors();
-});
-
-afterAll(() => {
-  mockAgent.close();
-});
+import { createMockAgent } from './setupTests';
 
 const baseOptions: RunOptions = {
   config: { requests: [] },
   workers: 1,
-  durationSec: 1,
+  durationSec: 0.5,
 };
 
 describe('Headers Merging Tests', () => {
   it('should merge global and request headers', async () => {
+    const mockAgent = createMockAgent();
     const mockPool = mockAgent.get('http://localhost:8080');
 
     let actualHeaders: Record<string, string> = {};
@@ -69,6 +54,7 @@ describe('Headers Merging Tests', () => {
   });
 
   it('should handle empty global headers', async () => {
+    const mockAgent = createMockAgent();
     const mockPool = mockAgent.get('http://localhost:8080');
 
     let actualHeaders: Record<string, string> = {};
@@ -96,6 +82,7 @@ describe('Headers Merging Tests', () => {
   });
 
   it('should handle empty request headers', async () => {
+    const mockAgent = createMockAgent();
     const mockPool = mockAgent.get('http://localhost:8080');
 
     let actualHeaders: Record<string, string> = {};

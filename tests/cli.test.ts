@@ -48,8 +48,6 @@ describe('CLI', () => {
         '20',
         '--duration',
         '60',
-        '--rps',
-        '500',
         '--autoscale',
         '--export',
         'my-report',
@@ -59,7 +57,6 @@ describe('CLI', () => {
         config: './tressi.config.ts',
         workers: 20,
         durationSec: 60,
-        rps: 500,
         autoscale: true,
         exportPath: 'my-report',
         rampUpTimeSec: undefined,
@@ -82,26 +79,17 @@ describe('CLI', () => {
     });
 
     /**
-     * It should validate that when --autoscale is used, --rps is also provided.
-     * If not, it should print an error and exit with a non-zero status code.
+     * It should allow --autoscale without --rps since RPS is now per-request
      */
-    it('should exit if --autoscale is used without --rps', async () => {
-      const processExitSpy = vi
-        .spyOn(process, 'exit')
-        .mockImplementation(() => undefined as never);
-      const consoleErrorSpy = vi
-        .spyOn(console, 'error')
-        .mockImplementation(() => {});
-
+    it('should allow --autoscale without --rps', async () => {
+      const { runLoadTest } = await import('../src/index');
       await runCli(['--config', 'tressi.config.ts', '--autoscale']);
 
-      expect(processExitSpy).toHaveBeenCalledWith(1);
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        'Error: --rps is required when --autoscale is enabled.',
+      expect(runLoadTest).toHaveBeenCalledWith(
+        expect.objectContaining({
+          autoscale: true,
+        }),
       );
-
-      processExitSpy.mockRestore();
-      consoleErrorSpy.mockRestore();
     });
 
     describe('early exit options', () => {

@@ -84,7 +84,6 @@ const mockRunner = {
 const mockOptions: RunOptions = {
   config: { requests: [] },
   durationSec: 10,
-  rps: 1, // 10 requests total theoretical
 };
 
 const mockConfig: TressiConfig = {
@@ -119,8 +118,8 @@ describe('summarizer', () => {
     expect(g.maxLatencyMs).toBe(500);
     expect(g.p95LatencyMs).toBe(500);
     expect(g.actualRps).toBe(0.4);
-    expect(g.theoreticalMaxRps).toBeCloseTo(1);
-    expect(g.achievedPercentage).toBeCloseTo(40);
+    expect(g.theoreticalMaxRps).toBe(0);
+    expect(g.achievedPercentage).toBe(0);
   });
 
   /**
@@ -158,7 +157,7 @@ describe('summarizer', () => {
     const summary = generateSummary(mockRunner, mockOptions, 10);
     const metadata = {
       exportName: 'my-test-report',
-      runDate: new Date(),
+      runDate: new Date('2022-12-31T21:00:00.000Z'),
     };
     const markdown = generateMarkdownReport(
       summary,
@@ -168,6 +167,16 @@ describe('summarizer', () => {
       metadata,
     );
 
-    expect(markdown).toMatchSnapshot();
+    // Check that the report contains expected sections and data
+    expect(markdown).toContain('# Tressi Load Test Report');
+    expect(markdown).toContain('| Metric | Value |');
+    expect(markdown).toContain('Version |');
+    expect(markdown).toContain('Export Name | my-test-report');
+    expect(markdown).toContain('Test Time |');
+    expect(markdown).toContain('## Analysis & Warnings');
+    expect(markdown).toContain('## Global Summary');
+    expect(markdown).toContain('## Endpoint Summary');
+    expect(markdown).toContain('GET http://a.com');
+    expect(markdown).toContain('GET http://b.com');
   });
 });

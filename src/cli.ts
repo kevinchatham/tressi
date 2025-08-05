@@ -57,7 +57,6 @@ program
   .option('--concurrent-requests <n>', 'Maximum concurrent requests per worker')
   .option('--duration <s>', 'Duration in seconds', '10')
   .option('--ramp-up-time <s>', 'Time in seconds to ramp up to the target RPS')
-  .option('--rps <n>', 'Target requests per second')
   .option('--autoscale', 'Enable autoscaling of workers')
   .option(
     '--export [path]',
@@ -130,11 +129,11 @@ Examples:
   # Run a load test with a specific config file
   $ tressi --config ./path/to/your/tressi.config.json
   
-  # Run a ramp-up test to 500 RPS over 30 seconds
-  $ tressi --workers 20 --duration 60 --rps 500 --ramp-up-time 30
+  # Run a ramp-up test with 20 workers over 60 seconds
+  $ tressi --workers 20 --duration 60 --ramp-up-time 30
 
-  # Run an autoscaling test up to 50 workers with a target of 1000 RPS
-  $ tressi --autoscale --workers 50 --rps 1000 --duration 60
+  # Run an autoscaling test up to 50 workers
+  $ tressi --autoscale --workers 50 --duration 60
 
   # Export a complete report to a timestamped directory
   $ tressi --export
@@ -162,6 +161,41 @@ Examples:
 
   # Run a test that exits early on 500 or 503 errors
   $ tressi --early-exit-on-error --error-status-codes 500,503
+
+  # Run with per-endpoint rate limiting defined in config
+  $ tressi --config tressi.config.json
+
+Rate Limiting Examples:
+ # Per-endpoint rate limiting with target RPS
+ $ tressi --config examples/per-endpoint-rate-limiting.json
+
+ # Advanced rate limiting with different targets per operation
+ $ tressi --config examples/advanced-rate-limiting.json --duration 30
+
+Configuration Examples:
+ # Basic per-endpoint configuration with target RPS
+ {
+   "requests": [
+     {
+       "url": "https://api.example.com/users",
+       "method": "GET",
+       "targetRps": 100
+     }
+   ]
+ }
+
+ # Mixed configuration with global and per-endpoint targets
+ {
+   "targetRps": 50,
+   "requests": [
+     { "url": "https://api.example.com/default", "method": "GET" },
+     {
+       "url": "https://api.example.com/custom",
+       "method": "GET",
+       "targetRps": 200
+     }
+   ]
+ }
 `,
 );
 
@@ -194,11 +228,7 @@ program.action(async (opts) => {
     }
   }
 
-  if (opts.autoscale && !opts.rps) {
-    // eslint-disable-next-line no-console
-    console.error('Error: --rps is required when --autoscale is enabled.');
-    process.exit(1);
-  }
+  // No longer require --rps for autoscaling - will use per-endpoint targets
 
   // Parse early exit options
   let errorStatusCodes: number[] | undefined;
@@ -247,7 +277,6 @@ program.action(async (opts) => {
       rampUpTimeSec: opts.rampUpTime
         ? parseInt(opts.rampUpTime, 10)
         : undefined,
-      rps: opts.rps ? parseInt(opts.rps, 10) : undefined,
       autoscale: opts.autoscale,
       exportPath: opts.export,
       useUI: opts.ui,

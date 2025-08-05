@@ -1,25 +1,9 @@
-import { MockAgent, setGlobalDispatcher } from 'undici';
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { RequestConfig } from '../src/config';
 import { RunOptions } from '../src/index';
 import { Runner } from '../src/runner';
-
-let mockAgent: MockAgent;
-
-beforeAll(() => {
-  mockAgent = new MockAgent();
-  mockAgent.disableNetConnect();
-  setGlobalDispatcher(mockAgent);
-});
-
-afterEach(() => {
-  mockAgent.assertNoPendingInterceptors();
-});
-
-afterAll(() => {
-  mockAgent.close();
-});
+import { createMockAgent } from './setupTests';
 
 const baseOptions: RunOptions = {
   config: { requests: [] },
@@ -34,6 +18,7 @@ const baseRequests: RequestConfig[] = [
 describe('Object Allocation Optimizations', () => {
   describe('Endpoint Key Caching', () => {
     it('should handle multiple endpoints correctly', async () => {
+      const mockAgent = createMockAgent();
       const mockPool = mockAgent.get('http://localhost:8080');
       mockPool.intercept({ path: '/test1', method: 'GET' }).reply(200);
       mockPool.intercept({ path: '/test2', method: 'POST' }).reply(201);
@@ -58,12 +43,17 @@ describe('Object Allocation Optimizations', () => {
 
   describe('Response Sampling', () => {
     it('should sample different status codes per endpoint', async () => {
+      const mockAgent = createMockAgent();
       const mockPool = mockAgent.get('http://localhost:8080');
-      mockPool.intercept({ path: '/test', method: 'GET' }).reply(200);
-      mockPool.intercept({ path: '/test', method: 'GET' }).reply(404);
-      mockPool.intercept({ path: '/test', method: 'GET' }).reply(500);
+      mockPool.intercept({ path: '/test', method: 'GET' }).reply(200).persist();
+      mockPool.intercept({ path: '/test', method: 'GET' }).reply(404).persist();
+      mockPool.intercept({ path: '/test', method: 'GET' }).reply(500).persist();
 
-      const runner = new Runner(baseOptions, baseRequests, {});
+      const runner = new Runner(
+        { ...baseOptions, durationSec: 0.5, workers: 1 },
+        baseRequests,
+        {},
+      );
 
       await runner.run();
 
@@ -77,10 +67,15 @@ describe('Object Allocation Optimizations', () => {
 
   describe('Error Handling', () => {
     it('should handle error scenarios gracefully', async () => {
+      const mockAgent = createMockAgent();
       const mockPool = mockAgent.get('http://localhost:8080');
-      mockPool.intercept({ path: '/test', method: 'GET' }).reply(500);
+      mockPool.intercept({ path: '/test', method: 'GET' }).reply(500).persist();
 
-      const runner = new Runner(baseOptions, baseRequests, {});
+      const runner = new Runner(
+        { ...baseOptions, durationSec: 0.5, workers: 1 },
+        baseRequests,
+        {},
+      );
 
       await runner.run();
 
@@ -90,12 +85,18 @@ describe('Object Allocation Optimizations', () => {
     });
 
     it('should handle network errors gracefully', async () => {
+      const mockAgent = createMockAgent();
       const mockPool = mockAgent.get('http://localhost:8080');
       mockPool
         .intercept({ path: '/test', method: 'GET' })
-        .replyWithError(new Error('Network error'));
+        .replyWithError(new Error('Network error'))
+        .persist();
 
-      const runner = new Runner(baseOptions, baseRequests, {});
+      const runner = new Runner(
+        { ...baseOptions, durationSec: 0.5, workers: 1 },
+        baseRequests,
+        {},
+      );
 
       await runner.run();
 
@@ -107,10 +108,11 @@ describe('Object Allocation Optimizations', () => {
 
   describe('Concurrency and Thread Safety', () => {
     it('should handle multiple workers correctly', async () => {
+      const mockAgent = createMockAgent();
       const mockPool = mockAgent.get('http://localhost:8080');
-      mockPool.intercept({ path: '/test', method: 'GET' }).reply(200).times(20);
+      mockPool.intercept({ path: '/test', method: 'GET' }).reply(200).persist();
 
-      const options = { ...baseOptions, workers: 3 };
+      const options = { ...baseOptions, workers: 2, durationSec: 0.5 };
       const runner = new Runner(options, baseRequests, {});
 
       await runner.run();
@@ -120,14 +122,15 @@ describe('Object Allocation Optimizations', () => {
     });
 
     it('should handle high concurrency with optimizations', async () => {
+      const mockAgent = createMockAgent();
       const mockPool = mockAgent.get('http://localhost:8080');
-      mockPool.intercept({ path: '/test', method: 'GET' }).reply(200).times(50);
+      mockPool.intercept({ path: '/test', method: 'GET' }).reply(200).persist();
 
       const options = {
         ...baseOptions,
-        workers: 5,
-        durationSec: 2,
-        rps: 25,
+        workers: 2,
+        durationSec: 0.5,
+        rps: 5,
       };
 
       const runner = new Runner(options, baseRequests, {});
@@ -141,17 +144,15 @@ describe('Object Allocation Optimizations', () => {
 
   describe('Memory Management', () => {
     it('should complete test without memory leaks', async () => {
+      const mockAgent = createMockAgent();
       const mockPool = mockAgent.get('http://localhost:8080');
-      mockPool
-        .intercept({ path: '/test', method: 'GET' })
-        .reply(200)
-        .times(100);
+      mockPool.intercept({ path: '/test', method: 'GET' }).reply(200).persist();
 
       const options = {
         ...baseOptions,
-        workers: 2,
-        durationSec: 3,
-        rps: 50,
+        workers: 1,
+        durationSec: 0.5,
+        rps: 10,
       };
 
       const runner = new Runner(options, baseRequests, {});

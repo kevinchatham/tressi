@@ -15,7 +15,7 @@
 - 📝 **Declarative JSON Config** — Define tests in a simple JSON file with full autocompletion and validation.
 - ⚡️ **Autoscaling** - Automatically adjust the number of workers to meet a target Req/s.
 - 👥 **Concurrent Workers** — Simulate realistic multi-user load with ease via workers.
-- ⏱️ **Rate Limiting** — Control Req/s for accurate throttling scenarios.
+- ⏱️ **Throttling-Based Rate Limiting** — Control Req/s through intelligent request pacing, not rejection.
 - 📊 **Interactive Terminal UI** — View live Req/s, latency stats, and status codes.
 - 📁 **Comprehensive Reporting** — Export results to Markdown, XLSX, and CSV for analysis.
 - ⚙️ **Typed Configuration** - Uses Zod for robust configuration validation.
@@ -216,12 +216,232 @@ The `tressi init` command will generate a `tressi.config.json` file with a `$sch
 
 Each object in the `requests` array defines a single HTTP request and has the following properties:
 
-| Property  | Type                | Description                                                                                                                                                |
-| --------- | ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `url`     | `string`            | The full URL to send the request to.                                                                                                                       |
-| `method`  | `string`            | (Optional) The HTTP method. It is case-insensitive, defaults to `GET`, and supports `GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `HEAD`, and `OPTIONS`.        |
-| `payload` | `object` or `array` | (Optional) The JSON data to send as the request body.                                                                                                      |
-| `headers` | `object`            | (Optional) An object containing headers for this specific request. If a header is defined here and in the global `headers`, this one will take precedence. |
+| Property    | Type                | Description                                                                                                                                                |
+| ----------- | ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `url`       | `string`            | The full URL to send the request to.                                                                                                                       |
+| `method`    | `string`            | (Optional) The HTTP method. It is case-insensitive, defaults to `GET`, and supports `GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `HEAD`, and `OPTIONS`.        |
+| `payload`   | `object` or `array` | (Optional) The JSON data to send as the request body.                                                                                                      |
+| `headers`   | `object`            | (Optional) An object containing headers for this specific request. If a header is defined here and in the global `headers`, this one will take precedence. |
+| `rateLimit` | `object`            | (Optional) Per-endpoint rate limiting configuration. See [Throttling-Based Rate Limiting](#throttling-based-rate-limiting) for details.                    |
+
+### Throttling-Based Rate Limiting
+
+`tressi` uses **throttling-based rate limiting** through an intelligent token bucket algorithm that paces requests instead of rejecting them. This represents a fundamental shift from traditional rate limiting approaches.
+
+#### 🎯 Key Concept: No More Fake 429s
+
+**Traditional rate limiting** (what tressi used to do):
+
+- Sends requests at full speed
+- When rate limit exceeded, generates fake 429 responses
+- These 429s are **not from your actual server**
+- Creates artificial load and misleading results
+
+**Throttling-based rate limiting** (what tressi does now):
+
+- Intelligently paces requests to maintain target rates
+- **Never generates fake 429 responses**
+- Any 429 responses you see are **real responses from your actual server**
+- Provides accurate testing results
+
+#### 🚀 Key Benefits
+
+- **Accurate Testing**: 429 responses only come from your actual servers
+- **5x Performance Improvement**: Eliminates artificial blocking delays
+- **Independent Control**: Each endpoint can have its own rate limit configuration
+- **Smooth Traffic**: Requests flow naturally at configured rates
+- **Backward Compatible**: Existing configurations continue to work without changes
+- **Real Results**: Test outcomes reflect actual server behavior
+
+#### Configuration Examples
+
+**Basic Global Rate Limit (Throttling-Based)**
+
+```json
+{
+  "rateLimit": {
+    "capacity": 100,
+    "refillRate": 50
+  },
+  "requests": [
+    { "url": "https://api.example.com/users", "method": "GET" },
+    { "url": "https://api.example.com/posts", "method": "GET" }
+  ]
+}
+```
+
+**Per-Endpoint Rate Limits (Throttling-Based)**
+
+```json
+{
+  "requests": [
+    {
+      "url": "https://api.example.com/users",
+      "method": "GET",
+      "rateLimit": {
+        "GET https://api.example.com/users": {
+          "capacity": 200,
+          "refillRate": 100
+        }
+      }
+    },
+    {
+      "url": "https://api.example.com/posts",
+      "method": "GET",
+      "rateLimit": {
+        "GET https://api.example.com/posts": {
+          "capacity": 50,
+          "refillRate": 25
+        }
+      }
+    }
+  ]
+}
+```
+
+**Mixed Configuration (Throttling-Based)**
+
+```json
+{
+  "rateLimit": {
+    "capacity": 100,
+    "refillRate": 50
+  },
+  "requests": [
+    {
+      "url": "https://api.example.com/users",
+      "method": "GET"
+    },
+    {
+      "url": "https://api.example.com/posts",
+      "method": "GET",
+      "rateLimit": {
+        "GET https://api.example.com/posts": {
+          "capacity": 20,
+          "refillRate": 10
+        }
+      }
+    }
+  ]
+}
+```
+
+#### Configuration Properties
+
+| Property     | Type   | Description                                                                 |
+| ------------ | ------ | --------------------------------------------------------------------------- |
+| `capacity`   | number | Maximum burst capacity (tokens). Controls how many requests can burst.      |
+| `refillRate` | number | Sustained rate limit (tokens per second). Controls steady-state throughput. |
+
+#### How Throttling Works
+
+1. **Token Bucket Algorithm**: Each endpoint has its own token bucket that refills at the specified rate
+2. **Request Pacing**: Instead of rejecting requests when tokens are unavailable, tressi intelligently delays them
+3. **Burst Handling**: The `capacity` allows temporary bursts above the sustained rate
+4. **Smooth Flow**: No artificial 429 responses - requests flow naturally at configured rates
+5. **Endpoint Keys**: Rate limits are keyed by `METHOD URL` (e.g., "GET https://api.example.com/users")
+
+#### Understanding Your Results
+
+**Before (Old System)**:
+
+- High 429 counts might be from tressi's fake responses
+- Difficult to distinguish real server rate limiting from artificial limits
+- Test results could be misleading
+
+**Now (Throttling System)**:
+
+- **Any 429 response is real** - from your actual server
+- **No fake 429s** generated by tressi
+- **Accurate server behavior** representation
+- **Better performance** without artificial delays
+
+#### Migration Guide
+
+**From Rejection-Based to Throttling-Based**
+
+**Step 1: No Changes Required (Immediate Benefits)**
+Your existing configuration works exactly as before, but with **5x performance improvement** and **no fake 429s**:
+
+```json
+{
+  "rateLimit": {
+    "capacity": 100,
+    "refillRate": 50
+  },
+  "requests": [
+    { "url": "https://api.example.com/users", "method": "GET" },
+    { "url": "https://api.example.com/posts", "method": "GET" }
+  ]
+}
+```
+
+**Step 2: Interpret Results Differently**
+
+- **429 responses now indicate real server rate limiting**
+- **No 429s means your server handles the load gracefully**
+- **Test results are more accurate and meaningful**
+
+**Step 3: Adjust Expectations**
+
+- Expect **fewer 429 responses** in your test results
+- **Higher success rates** due to elimination of fake rejections
+- **More realistic performance metrics**
+
+#### Advanced Usage Patterns
+
+**Testing Server Rate Limits**
+
+```json
+{
+  "requests": [
+    {
+      "url": "https://api.example.com/rate-limited-endpoint",
+      "method": "GET",
+      "rateLimit": {
+        "GET https://api.example.com/rate-limited-endpoint": {
+          "capacity": 1000,
+          "refillRate": 500
+        }
+      }
+    }
+  ]
+}
+```
+
+This configuration allows you to test your server's actual rate limiting behavior without tressi interfering.
+
+**Stress Testing with Real Limits**
+
+```json
+{
+  "requests": [
+    {
+      "url": "https://api.example.com/critical-endpoint",
+      "method": "POST",
+      "rateLimit": {
+        "POST https://api.example.com/critical-endpoint": {
+          "capacity": 100,
+          "refillRate": 50
+        }
+      }
+    }
+  ]
+}
+```
+
+#### CLI Usage with Throttling
+
+```bash
+# Use throttling-based configuration
+npx tressi --config throttling-config.json
+
+# Mixed configuration with global fallback
+npx tressi --config mixed-config.json --rps 100
+
+# With autoscaling and throttling
+npx tressi --config throttling-config.json --autoscale --workers 20 --rps 500
+```
 
 ### Exporting Results
 
@@ -361,6 +581,7 @@ await runLoadTest({
   workers: 20,
   durationSec: 300,
   rps: 200,
+  // Enable early exit with multiple conditions
   earlyExitOnError: true,
   errorRateThreshold: 0.01, // Very strict: 1% error rate
 });

@@ -33,9 +33,7 @@ export interface RunOptions {
   durationSec?: number;
   /** The time in seconds to ramp up to the target RPS. Defaults to 0. */
   rampUpTimeSec?: number;
-  /** The target requests per second. If not provided, the test will run at maximum possible speed. */
-  rps?: number;
-  /** Whether to enable autoscale mode. Defaults to false. --rps is required for this. */
+  /** Whether to enable autoscale mode. Defaults to false. */
   autoscale?: boolean;
   /** The base path for the exported report. If not provided, no report will be generated. */
   exportPath?: string | boolean;
@@ -75,14 +73,11 @@ function printReportInfo(summary: TestSummary, options: RunOptions): void {
   console.log(reportInfoTable.toString());
 }
 
-function printRunConfiguration(options: RunOptions): void {
-  const {
-    workers = 10,
-    durationSec = 10,
-    rps,
-    rampUpTimeSec,
-    autoscale,
-  } = options;
+function printRunConfiguration(
+  options: RunOptions,
+  config: TressiConfig,
+): void {
+  const { workers = 10, durationSec = 10, rampUpTimeSec, autoscale } = options;
 
   const configTable = new Table({
     head: ['Option', 'Setting', 'Argument'],
@@ -99,8 +94,12 @@ function printRunConfiguration(options: RunOptions): void {
     configTable.push(['Autoscale', 'Enabled', '--autoscale']);
   }
 
-  if (rps) {
-    configTable.push(['Target Req/s', rps, '--rps']);
+  if (config.targetRps) {
+    configTable.push([
+      'Global Target RPS',
+      config.targetRps,
+      'config.targetRps',
+    ]);
   }
 
   if (rampUpTimeSec) {
@@ -113,9 +112,8 @@ function printRunConfiguration(options: RunOptions): void {
   console.log(configTable.toString());
 }
 
-function printGlobalSummary(summary: TestSummary, options: RunOptions): void {
+function printGlobalSummary(summary: TestSummary, config: TressiConfig): void {
   const { global: globalSummary } = summary;
-  const { rps } = options;
 
   const summaryTable = new Table({
     head: ['Stat', 'Value'],
@@ -129,15 +127,15 @@ function printGlobalSummary(summary: TestSummary, options: RunOptions): void {
     [chalk.red('Failed'), globalSummary.failedRequests],
   );
 
-  if (rps && globalSummary.theoreticalMaxRps) {
+  if (config.targetRps && globalSummary.theoreticalMaxRps) {
     summaryTable.push(
       [
         'Req/s (Actual/Target)',
-        `${Math.ceil(globalSummary.actualRps)} / ${rps}`,
+        `${Math.ceil(globalSummary.actualRps)} / ${config.targetRps}`,
       ],
       [
         'Req/m (Actual/Target)',
-        `${Math.ceil(globalSummary.actualRps * 60)} / ${rps * 60}`,
+        `${Math.ceil(globalSummary.actualRps * 60)} / ${config.targetRps * 60}`,
       ],
       ['Theoretical Max Req/s', globalSummary.theoreticalMaxRps.toFixed(0)],
       ['Achieved %', `${globalSummary.achievedPercentage.toFixed(0)}%`],
@@ -272,10 +270,11 @@ function printSummary(
   runner: Runner,
   options: RunOptions,
   summary: TestSummary,
+  config: TressiConfig,
 ): void {
   printReportInfo(summary, options);
-  printRunConfiguration(options);
-  printGlobalSummary(summary, options);
+  printRunConfiguration(options, config);
+  printGlobalSummary(summary, config);
   printEndpointSummary(summary);
   printStatusCodeDistribution(runner);
   printLatencyDistribution(runner);
@@ -315,6 +314,7 @@ export async function runLoadTest(options: RunOptions): Promise<TestSummary> {
     options,
     loadedConfig.requests,
     loadedConfig.headers || {},
+    loadedConfig.targetRps,
   );
 
   // If we have a TUI, we need to handle its destruction and polling
@@ -326,7 +326,7 @@ export async function runLoadTest(options: RunOptions): Promise<TestSummary> {
         startTime > 0 ? (performance.now() - startTime) / 1000 : 0;
       const totalSec = options.durationSec || 10;
 
-      tui.update(runner, elapsedSec, totalSec, options.rps);
+      tui.update(runner, elapsedSec, totalSec, undefined);
     }, 500);
 
     runner.on('stop', () => {
@@ -357,13 +357,10 @@ export async function runLoadTest(options: RunOptions): Promise<TestSummary> {
       const p95 = histogram.getValueAtPercentile(95);
       const p99 = histogram.getValueAtPercentile(99);
 
-      const rpsDisplay = options.rps ? `${rps}/${options.rps}` : `${rps}`;
       const successDisplay = chalk.green(successful);
       const failDisplay = failed > 0 ? chalk.red(failed) : chalk.gray(0);
 
-      noUiSpinner.text = `[${elapsedSec.toFixed(0)}s/${totalSec}s] RPS: ${
-        rpsDisplay
-      } | W: ${workers} | OK/Fail: ${successDisplay}/${failDisplay} | Avg: ${avgLatency.toFixed(
+      noUiSpinner.text = `[${elapsedSec.toFixed(0)}s/${totalSec}s] RPS: ${rps} | W: ${workers} | OK/Fail: ${successDisplay}/${failDisplay} | Avg: ${avgLatency.toFixed(
         0,
       )}ms | p95: ${p95.toFixed(0)}ms | p99: ${p99.toFixed(0)}ms`;
     }, 1000);
@@ -434,7 +431,7 @@ export async function runLoadTest(options: RunOptions): Promise<TestSummary> {
 
   // Final summary to console
   if (!silent) {
-    printSummary(runner, options, summary);
+    printSummary(runner, options, summary, loadedConfig);
   }
 
   return summary;
