@@ -1,0 +1,27 @@
+{
+  "$schema": "https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json",
+  "name": "Basic Load Test",
+  "description": "A straightforward test with fixed workers and target RPS",
+  "workers": 10,
+  "duration": 30,
+  "rps": 200,
+  "headers": {
+    "Content-Type": "application/json",
+    "User-Agent": "tressi/0.0.13"
+  },
+  "requests": [
+    {
+      "url": "https://jsonplaceholder.typicode.com/posts",
+      "method": "GET"
+    },
+    {
+      "url": "https://jsonplaceholder.typicode.com/posts",
+      "method": "POST",
+      "payload": {
+        "title": "Load Test Post",
+        "body": "This is a test post created during load testing",
+        "userId": 1
+      }
+    }
+  ]
+}

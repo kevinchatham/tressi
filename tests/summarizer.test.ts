@@ -1,7 +1,6 @@
 import { build, Histogram } from 'hdr-histogram-js';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
-import { RunOptions } from '../src';
 import { TressiConfig } from '../src/config';
 import { Distribution } from '../src/distribution';
 import { Runner } from '../src/runner';
@@ -81,13 +80,9 @@ const mockRunner = {
   },
 } as unknown as Runner;
 
-const mockOptions: RunOptions = {
-  config: { requests: [] },
-  durationSec: 10,
-  rps: 1, // 10 requests total theoretical
-};
-
 const mockConfig: TressiConfig = {
+  duration: 10,
+  rps: 1, // 10 requests total theoretical
   requests: [{ url: 'http://a.com', method: 'GET' }],
 };
 
@@ -108,7 +103,7 @@ describe('summarizer', () => {
    * It should correctly calculate all global statistics for a given set of results.
    */
   it('should generate an accurate global summary', () => {
-    const summary = generateSummary(mockRunner, mockOptions, 10);
+    const summary = generateSummary(mockRunner, mockConfig, 10);
     const { global: g } = summary;
 
     expect(g.totalRequests).toBe(4);
@@ -127,7 +122,7 @@ describe('summarizer', () => {
    * It should correctly aggregate results by URL and calculate statistics for each endpoint.
    */
   it('should generate an accurate summary for each endpoint', () => {
-    const summary = generateSummary(mockRunner, mockOptions);
+    const summary = generateSummary(mockRunner, mockConfig);
     const { endpoints: e } = summary;
 
     expect(e).toHaveLength(2);
@@ -155,16 +150,15 @@ describe('summarizer', () => {
    * It should generate a Markdown report containing all summary sections.
    */
   it('should generate a comprehensive Markdown report', () => {
-    const summary = generateSummary(mockRunner, mockOptions, 10);
+    const summary = generateSummary(mockRunner, mockConfig, 10);
     const metadata = {
       exportName: 'my-test-report',
       runDate: new Date(),
     };
     const markdown = generateMarkdownReport(
       summary,
-      mockOptions,
-      mockRunner,
       mockConfig,
+      mockRunner,
       metadata,
     );
 

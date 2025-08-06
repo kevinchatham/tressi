@@ -249,10 +249,9 @@ This file tracks the current status of **features**, **bug fixes**, **performanc
 
 ### Local Benchmarking Tools
 
-Added simple-server.json and simple-server.ts for local development and benchmarking:
+Added server.ts for local development and benchmarking:
 
-- **simple-server.ts**: A lightweight HTTP server for testing tressi locally
-- **simple-server.json**: Configuration file for local benchmarking scenarios
+- **server.ts**: A lightweight HTTP server for testing tressi locally
 
 These files provide a controlled environment for testing tressi's performance without external dependencies.
 

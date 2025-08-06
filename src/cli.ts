@@ -41,7 +41,9 @@ const program = new Command();
 
 program
   .name('tressi')
-  .description('A modern, simple load testing tool for APIs.')
+  .description(
+    'A modern, simple load testing tool for APIs. Uses JSON configuration files as the primary method for test configuration.',
+  )
   .version(pkg.version);
 
 program
@@ -49,34 +51,7 @@ program
     '-c, --config [path]',
     'Path or URL to JSON config file. Defaults to ./tressi.config.json',
   )
-  .option(
-    '--workers <n>',
-    'Number of concurrent workers, or max workers if autoscale is enabled',
-    '10',
-  )
-  .option('--concurrent-requests <n>', 'Maximum concurrent requests per worker')
-  .option('--duration <s>', 'Duration in seconds', '10')
-  .option('--ramp-up-time <s>', 'Time in seconds to ramp up to the target RPS')
-  .option('--rps <n>', 'Target requests per second')
-  .option('--autoscale', 'Enable autoscaling of workers')
-  .option(
-    '--export [path]',
-    'Export a comprehensive report (Markdown, XLSX, CSVs) to a directory.',
-  )
-  .option('--no-ui', 'Disable the interactive terminal UI')
-  .option('--early-exit-on-error', 'Enable early exit on error conditions')
-  .option(
-    '--error-rate-threshold <n>',
-    'Error rate threshold (0.0-1.0) to trigger early exit',
-  )
-  .option(
-    '--error-count-threshold <n>',
-    'Absolute error count threshold to trigger early exit',
-  )
-  .option(
-    '--error-status-codes <codes>',
-    'Comma-separated list of HTTP status codes that should trigger early exit',
-  );
+  .option('--no-ui', 'Disable the interactive terminal UI');
 
 program
   .command('init')
@@ -130,38 +105,8 @@ Examples:
   # Run a load test with a specific config file
   $ tressi --config ./path/to/your/tressi.config.json
   
-  # Run a ramp-up test to 500 RPS over 30 seconds
-  $ tressi --workers 20 --duration 60 --rps 500 --ramp-up-time 30
-
-  # Run an autoscaling test up to 50 workers with a target of 1000 RPS
-  $ tressi --autoscale --workers 50 --rps 1000 --duration 60
-
-  # Export a complete report to a timestamped directory
-  $ tressi --export
-
-  # Export a report to a custom-named, timestamped directory
-  $ tressi --export ./my-report
-  
   # Run a load test without the interactive terminal UI
   $ tressi --no-ui
-  
-  # Run a load test with 20 concurrent workers
-  $ tressi --workers 20
-  
-  # Run a load test for 30 seconds
-  $ tressi --duration 30
-
-  # Run a load test with 5 concurrent requests per worker
-  $ tressi --workers 10 --concurrent-requests 5
-
-  # Run a test that exits early if error rate exceeds 5%
-  $ tressi --early-exit-on-error --error-rate-threshold 0.05
-
-  # Run a test that exits early after 100 errors
-  $ tressi --early-exit-on-error --error-count-threshold 100
-
-  # Run a test that exits early on 500 or 503 errors
-  $ tressi --early-exit-on-error --error-status-codes 500,503
 `,
 );
 
@@ -194,71 +139,10 @@ program.action(async (opts) => {
     }
   }
 
-  if (opts.autoscale && !opts.rps) {
-    // eslint-disable-next-line no-console
-    console.error('Error: --rps is required when --autoscale is enabled.');
-    process.exit(1);
-  }
-
-  // Parse early exit options
-  let errorStatusCodes: number[] | undefined;
-  if (opts.errorStatusCodes) {
-    try {
-      errorStatusCodes = opts.errorStatusCodes
-        .split(',')
-        .map((code: string) => {
-          const parsed = parseInt(code.trim(), 10);
-          if (isNaN(parsed) || parsed < 100 || parsed > 599) {
-            throw new Error(`Invalid HTTP status code: ${code.trim()}`);
-          }
-          return parsed;
-        });
-    } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error(`Error: ${(err as Error).message}`);
-      process.exit(1);
-    }
-  }
-
-  // Validate early exit configuration
-  if (opts.earlyExitOnError) {
-    const hasThreshold =
-      opts.errorRateThreshold !== undefined ||
-      opts.errorCountThreshold !== undefined ||
-      errorStatusCodes !== undefined;
-
-    if (!hasThreshold) {
-      // eslint-disable-next-line no-console
-      console.error(
-        'Error: When --early-exit-on-error is enabled, at least one of --error-rate-threshold, --error-count-threshold, or --error-status-codes must be provided.',
-      );
-      process.exit(1);
-    }
-  }
-
   try {
     await runLoadTest({
       config: configPath,
-      workers: opts.workers ? parseInt(opts.workers, 10) : undefined,
-      concurrentRequestsPerWorker: opts.concurrentRequests
-        ? parseInt(opts.concurrentRequests, 10)
-        : undefined,
-      durationSec: opts.duration ? parseInt(opts.duration, 10) : undefined,
-      rampUpTimeSec: opts.rampUpTime
-        ? parseInt(opts.rampUpTime, 10)
-        : undefined,
-      rps: opts.rps ? parseInt(opts.rps, 10) : undefined,
-      autoscale: opts.autoscale,
-      exportPath: opts.export,
       useUI: opts.ui,
-      earlyExitOnError: opts.earlyExitOnError,
-      errorRateThreshold: opts.errorRateThreshold
-        ? parseFloat(opts.errorRateThreshold)
-        : undefined,
-      errorCountThreshold: opts.errorCountThreshold
-        ? parseInt(opts.errorCountThreshold, 10)
-        : undefined,
-      errorStatusCodes: errorStatusCodes,
     });
   } catch {
     // The runLoadTest function handles its own error logging.
@@ -269,5 +153,12 @@ program.action(async (opts) => {
 
 /**
  * Parses the command line arguments and runs the program.
+ * Only parse if this file is the main module (not imported for testing).
  */
-program.parseAsync(process.argv);
+export async function runCli(args: string[] = process.argv): Promise<void> {
+  await program.parseAsync(args);
+}
+
+if (require.main === module) {
+  runCli();
+}

@@ -1,0 +1,40 @@
+{
+  "$schema": "https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json",
+  "name": "Autoscaling Load Test",
+  "description": "Dynamically adjusts workers to meet target RPS with maximum worker limit",
+  "autoscale": true,
+  "workers": 50,
+  "duration": 60,
+  "rps": 1000,
+  "rampUpTime": 15,
+  "headers": {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer your-api-token"
+  },
+  "requests": [
+    {
+      "url": "https://api.example.com/api/v1/products",
+      "method": "GET",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    {
+      "url": "https://api.example.com/api/v1/products/search",
+      "method": "POST",
+      "payload": {
+        "query": "electronics",
+        "limit": 20,
+        "sort": "price_asc"
+      }
+    },
+    {
+      "url": "https://api.example.com/api/v1/cart",
+      "method": "POST",
+      "payload": {
+        "productId": "12345",
+        "quantity": 1
+      }
+    }
+  ]
+}

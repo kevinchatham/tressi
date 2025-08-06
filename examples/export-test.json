@@ -1,0 +1,57 @@
+{
+  "$schema": "https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json",
+  "name": "Export Results Test",
+  "description": "Headless test with comprehensive result export to Markdown, XLSX, and CSV",
+  "workers": 20,
+  "duration": 30,
+  "rps": 300,
+  "noUi": true,
+  "export": "load-test-results",
+  "headers": {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer your-api-token",
+    "User-Agent": "tressi-load-test"
+  },
+  "requests": [
+    {
+      "url": "https://api.example.com/api/v1/products",
+      "method": "GET",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    {
+      "url": "https://api.example.com/api/v1/products",
+      "method": "POST",
+      "payload": {
+        "name": "Load Test Product",
+        "price": 29.99,
+        "category": "electronics",
+        "description": "Product created during load testing"
+      }
+    },
+    {
+      "url": "https://api.example.com/api/v1/orders",
+      "method": "POST",
+      "payload": {
+        "items": [
+          {
+            "productId": "123",
+            "quantity": 2
+          }
+        ],
+        "customer": {
+          "name": "Test Customer",
+          "email": "test@example.com"
+        }
+      }
+    },
+    {
+      "url": "https://api.example.com/api/v1/analytics",
+      "method": "GET",
+      "headers": {
+        "Accept": "application/json"
+      }
+    }
+  ]
+}
