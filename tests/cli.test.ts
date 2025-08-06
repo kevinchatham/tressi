@@ -1,18 +1,63 @@
+import { spawn } from 'child_process';
+import { promises as fs } from 'fs';
+import path from 'path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Mock dependencies
-vi.mock('fs/promises', () => ({
-  access: vi.fn(),
-  writeFile: vi.fn(),
-}));
+/**
+ * Helper function to run the CLI as a separate process with timeout
+ * @param args Command line arguments
+ * @param options Additional options including timeout
+ * @returns Promise with exit code, stdout, and stderr
+ */
+const runCli = (
+  args: string[],
+  options: { timeout?: number; cwd?: string } = {},
+): Promise<{ exitCode: number; stdout: string; stderr: string }> => {
+  return new Promise((resolve, reject) => {
+    const cliPath = path.join(__dirname, '..', 'dist', 'cli.js');
+    const timeout = options.timeout || 10000; // 10 second default timeout
 
-vi.mock('../src/index', () => ({
-  runLoadTest: vi.fn(),
-}));
+    const child = spawn('node', [cliPath, ...args], {
+      stdio: 'pipe',
+      cwd: options.cwd || process.cwd(),
+      env: { ...process.env, NODE_ENV: 'test' },
+    });
 
-const runCli = async (args: string[]): Promise<void> => {
-  process.argv = ['node', 'tressi', ...args];
-  await import('../src/cli');
+    let stdout = '';
+    let stderr = '';
+
+    const timeoutId = setTimeout(() => {
+      child.kill('SIGTERM');
+      setTimeout(() => {
+        if (!child.killed) {
+          child.kill('SIGKILL');
+        }
+      }, 1000);
+      reject(new Error(`CLI process timed out after ${timeout}ms`));
+    }, timeout);
+
+    child.stdout?.on('data', (data) => {
+      stdout += data.toString();
+    });
+
+    child.stderr?.on('data', (data) => {
+      stderr += data.toString();
+    });
+
+    child.on('close', (exitCode) => {
+      clearTimeout(timeoutId);
+      resolve({
+        exitCode: exitCode || 0,
+        stdout: stdout.trim(),
+        stderr: stderr.trim(),
+      });
+    });
+
+    child.on('error', (error) => {
+      clearTimeout(timeoutId);
+      reject(error);
+    });
+  });
 };
 
 /**
@@ -20,233 +65,156 @@ const runCli = async (args: string[]): Promise<void> => {
  */
 describe('CLI', () => {
   beforeEach(() => {
-    vi.resetModules(); // Reset module cache before each test
-    vi.clearAllMocks(); // Clear mocks
+    vi.clearAllMocks();
   });
 
-  afterEach(() => {
-    // Restore original process.argv
-    process.argv = process.env.npm_config_user_agent
-      ? ['node', 'vitest', 'test']
-      : ['node'];
+  afterEach(async () => {
+    // Clean up any test files
+    const tempDirs = [
+      path.join(__dirname, 'temp-cli-test'),
+      path.join(__dirname, 'temp-cli-test-default'),
+      path.join(__dirname, 'temp-init-test'),
+      path.join(__dirname, 'temp-init-test-existing'),
+    ];
+
+    for (const dir of tempDirs) {
+      try {
+        await fs.rm(dir, { recursive: true, force: true });
+      } catch {
+        // Ignore cleanup errors
+      }
+    }
   });
 
-  /**
-   * Test suite for the main command of the CLI.
-   */
   describe('main command', () => {
-    /**
-     * It should correctly parse all the command-line arguments
-     * and call the main `runLoadTest` function with the expected options object.
-     */
-    it('should call runLoadTest with the correct options', async () => {
-      const { runLoadTest } = await import('../src/index');
-      await runCli([
-        '--config',
-        './tressi.config.ts',
-        '--workers',
-        '20',
-        '--duration',
-        '60',
-        '--rps',
-        '500',
-        '--autoscale',
-        '--export',
-        'my-report',
-      ]);
+    it('should show help when --help is provided', async () => {
+      const result = await runCli(['--help'], { timeout: 5000 });
 
-      expect(runLoadTest).toHaveBeenCalledWith({
-        config: './tressi.config.ts',
-        workers: 20,
-        durationSec: 60,
-        rps: 500,
-        autoscale: true,
-        exportPath: 'my-report',
-        rampUpTimeSec: undefined,
-        useUI: true,
-      });
-    });
-
-    /**
-     * It should pass `exportPath: true` when the --export flag is used without a value.
-     */
-    it('should handle the --export flag without a path', async () => {
-      const { runLoadTest } = await import('../src/index');
-      await runCli(['--config', './tressi.config.ts', '--export']);
-
-      expect(runLoadTest).toHaveBeenCalledWith(
-        expect.objectContaining({
-          exportPath: true,
-        }),
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).toContain(
+        'A modern, simple load testing tool for APIs',
       );
+      expect(result.stdout).toContain('Usage:');
+      expect(result.stdout).toContain('Options:');
     });
 
-    /**
-     * It should validate that when --autoscale is used, --rps is also provided.
-     * If not, it should print an error and exit with a non-zero status code.
-     */
-    it('should exit if --autoscale is used without --rps', async () => {
-      const processExitSpy = vi
-        .spyOn(process, 'exit')
-        .mockImplementation(() => undefined as never);
-      const consoleErrorSpy = vi
-        .spyOn(console, 'error')
-        .mockImplementation(() => {});
+    it('should show version when --version is provided', async () => {
+      const result = await runCli(['--version'], { timeout: 5000 });
 
-      await runCli(['--config', 'tressi.config.ts', '--autoscale']);
-
-      expect(processExitSpy).toHaveBeenCalledWith(1);
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        'Error: --rps is required when --autoscale is enabled.',
-      );
-
-      processExitSpy.mockRestore();
-      consoleErrorSpy.mockRestore();
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).toMatch(/^\d+\.\d+\.\d+$/);
     });
 
-    describe('early exit options', () => {
-      it('should parse early exit options correctly', async () => {
-        const { runLoadTest } = await import('../src/index');
-        await runCli([
-          '--config',
-          './tressi.config.ts',
-          '--early-exit-on-error',
-          '--error-rate-threshold',
-          '0.05',
-          '--error-count-threshold',
-          '100',
-          '--error-status-codes',
-          '500,503,404',
-        ]);
+    it('should exit with error when no config file is provided and default not found', async () => {
+      // Run CLI in a temp directory without tressi.config.json
+      const tempDir = path.join(__dirname, 'temp-cli-test');
+      await fs.mkdir(tempDir, { recursive: true });
 
-        expect(runLoadTest).toHaveBeenCalledWith(
-          expect.objectContaining({
-            earlyExitOnError: true,
-            errorRateThreshold: 0.05,
-            errorCountThreshold: 100,
-            errorStatusCodes: [500, 503, 404],
+      const result = await runCli([], { cwd: tempDir, timeout: 5000 });
+
+      expect(result.exitCode).toBe(1);
+      expect(result.stderr).toContain('No config file provided');
+      expect(result.stderr).toContain('tressi.config.json not found');
+    });
+
+    describe('JSON Configuration Support', () => {
+      it('should accept JSON configuration file path', async () => {
+        // Create a minimal config file that will fail quickly
+        const tempConfig = path.join(__dirname, 'temp-config.json');
+        const configContent = {
+          requests: [
+            { url: 'http://localhost:9999/nonexistent', method: 'GET' },
+          ],
+        };
+
+        await fs.writeFile(tempConfig, JSON.stringify(configContent));
+
+        try {
+          const result = await runCli(['--config', tempConfig, '--no-ui'], {
+            timeout: 15000,
+          });
+
+          // Should exit with error due to network issues, not argument parsing
+          expect(result.stderr).not.toContain('error:');
+          expect(result.stderr).not.toContain('invalid argument');
+        } finally {
+          // Clean up
+          await fs.unlink(tempConfig).catch(() => {});
+        }
+      });
+
+      it('should support HTTPS URLs for configuration', async () => {
+        // Test that HTTPS URLs are accepted as valid config paths
+        const result = await runCli(
+          ['--config', 'https://example.com/config.json', '--no-ui'],
+          { timeout: 5000 },
+        );
+
+        // Should fail due to network issues, not argument parsing
+        expect(result.stderr).not.toContain('error: invalid argument');
+      });
+
+      it('should support default config file discovery', async () => {
+        // Create a temporary directory with tressi.config.json
+        const tempDir = path.join(__dirname, 'temp-cli-test-default');
+        const configPath = path.join(tempDir, 'tressi.config.json');
+
+        await fs.mkdir(tempDir, { recursive: true });
+        await fs.writeFile(
+          configPath,
+          JSON.stringify({
+            requests: [
+              { url: 'http://localhost:9999/nonexistent', method: 'GET' },
+            ],
           }),
         );
+
+        try {
+          const result = await runCli(['--no-ui'], {
+            cwd: tempDir,
+            timeout: 15000,
+          });
+
+          // Should accept the default config without argument errors
+          expect(result.stderr).not.toContain('No config file provided');
+        } finally {
+          // Clean up
+          await fs.rm(tempDir, { recursive: true, force: true });
+        }
       });
+    });
 
-      it('should parse single error status code', async () => {
-        const { runLoadTest } = await import('../src/index');
-        await runCli([
-          '--config',
-          './tressi.config.ts',
-          '--early-exit-on-error',
-          '--error-status-codes',
-          '500',
-        ]);
-
-        expect(runLoadTest).toHaveBeenCalledWith(
-          expect.objectContaining({
-            earlyExitOnError: true,
-            errorStatusCodes: [500],
+    describe('Short flag support', () => {
+      it('should support short flags as aliases for long flags', async () => {
+        const tempConfig = path.join(__dirname, 'temp-config-short.json');
+        await fs.writeFile(
+          tempConfig,
+          JSON.stringify({
+            requests: [
+              { url: 'http://localhost:9999/nonexistent', method: 'GET' },
+            ],
           }),
         );
-      });
 
-      it('should exit with error when early exit is enabled but no thresholds provided', async () => {
-        const processExitSpy = vi
-          .spyOn(process, 'exit')
-          .mockImplementation(() => undefined as never);
-        const consoleErrorSpy = vi
-          .spyOn(console, 'error')
-          .mockImplementation(() => {});
+        try {
+          // Test both -c and --config work equivalently
+          const shortFlagResult = await runCli(['-c', tempConfig, '--no-ui'], {
+            timeout: 15000,
+          });
 
-        await runCli([
-          '--config',
-          './tressi.config.ts',
-          '--early-exit-on-error',
-        ]);
+          const longFlagResult = await runCli(
+            ['--config', tempConfig, '--no-ui'],
+            {
+              timeout: 15000,
+            },
+          );
 
-        expect(processExitSpy).toHaveBeenCalledWith(1);
-        expect(consoleErrorSpy).toHaveBeenCalledWith(
-          'Error: When --early-exit-on-error is enabled, at least one of --error-rate-threshold, --error-count-threshold, or --error-status-codes must be provided.',
-        );
-
-        processExitSpy.mockRestore();
-        consoleErrorSpy.mockRestore();
-      });
-
-      it('should exit with error when error status codes are invalid', async () => {
-        const processExitSpy = vi
-          .spyOn(process, 'exit')
-          .mockImplementation(() => undefined as never);
-        const consoleErrorSpy = vi
-          .spyOn(console, 'error')
-          .mockImplementation(() => {});
-
-        await runCli([
-          '--config',
-          './tressi.config.ts',
-          '--early-exit-on-error',
-          '--error-status-codes',
-          'invalid,500',
-        ]);
-
-        expect(processExitSpy).toHaveBeenCalledWith(1);
-        expect(consoleErrorSpy).toHaveBeenCalled();
-
-        processExitSpy.mockRestore();
-        consoleErrorSpy.mockRestore();
-      });
-
-      it('should exit with error when error rate threshold is invalid', async () => {
-        const { runLoadTest } = await import('../src/index');
-
-        await runCli([
-          '--config',
-          './tressi.config.ts',
-          '--early-exit-on-error',
-          '--error-rate-threshold',
-          'invalid',
-        ]);
-
-        expect(runLoadTest).toHaveBeenCalledWith(
-          expect.objectContaining({
-            earlyExitOnError: true,
-            errorRateThreshold: NaN,
-          }),
-        );
-      });
-
-      it('should exit with error when error count threshold is invalid', async () => {
-        const { runLoadTest } = await import('../src/index');
-
-        await runCli([
-          '--config',
-          './tressi.config.ts',
-          '--early-exit-on-error',
-          '--error-count-threshold',
-          'invalid',
-        ]);
-
-        expect(runLoadTest).toHaveBeenCalledWith(
-          expect.objectContaining({
-            earlyExitOnError: true,
-            errorCountThreshold: NaN,
-          }),
-        );
-      });
-
-      it('should handle edge case status codes correctly', async () => {
-        const { runLoadTest } = await import('../src/index');
-        await runCli([
-          '--config',
-          './tressi.config.ts',
-          '--early-exit-on-error',
-          '--error-status-codes',
-          '100,200,300,400,500',
-        ]);
-
-        expect(runLoadTest).toHaveBeenCalledWith(
-          expect.objectContaining({
-            earlyExitOnError: true,
-            errorStatusCodes: [100, 200, 300, 400, 500],
-          }),
-        );
+          // Both should handle config loading without argument parsing errors
+          expect(shortFlagResult.stderr).not.toContain('error: unknown option');
+          expect(longFlagResult.stderr).not.toContain('error: unknown option');
+        } finally {
+          await fs.unlink(tempConfig).catch(() => {});
+        }
       });
     });
   });

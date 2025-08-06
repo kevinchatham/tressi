@@ -1,8 +1,7 @@
 import { MockAgent, setGlobalDispatcher } from 'undici';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
-import { RequestConfig } from '../src/config';
-import { RunOptions } from '../src/index';
+import { RequestConfig, TressiConfig } from '../src/config';
 import { Runner } from '../src/runner';
 
 let mockAgent: MockAgent;
@@ -21,12 +20,6 @@ afterAll(() => {
   mockAgent.close();
 });
 
-const baseOptions: RunOptions = {
-  config: { requests: [] },
-  workers: 1,
-  durationSec: 1,
-};
-
 const baseRequests: RequestConfig[] = [
   { url: 'http://localhost:8080/test', method: 'GET' },
 ];
@@ -43,7 +36,13 @@ describe('Object Allocation Optimizations', () => {
         { url: 'http://localhost:8080/test2', method: 'POST' },
       ];
 
-      const runner = new Runner(baseOptions, requests, {});
+      const config: TressiConfig = {
+        requests,
+        workers: 1,
+        duration: 1,
+      };
+
+      const runner = new Runner(config, requests, {});
 
       await runner.run();
 
@@ -63,7 +62,13 @@ describe('Object Allocation Optimizations', () => {
       mockPool.intercept({ path: '/test', method: 'GET' }).reply(404);
       mockPool.intercept({ path: '/test', method: 'GET' }).reply(500);
 
-      const runner = new Runner(baseOptions, baseRequests, {});
+      const config: TressiConfig = {
+        requests: baseRequests,
+        workers: 1,
+        duration: 1,
+      };
+
+      const runner = new Runner(config, baseRequests, {});
 
       await runner.run();
 
@@ -80,7 +85,13 @@ describe('Object Allocation Optimizations', () => {
       const mockPool = mockAgent.get('http://localhost:8080');
       mockPool.intercept({ path: '/test', method: 'GET' }).reply(500);
 
-      const runner = new Runner(baseOptions, baseRequests, {});
+      const config: TressiConfig = {
+        requests: baseRequests,
+        workers: 1,
+        duration: 1,
+      };
+
+      const runner = new Runner(config, baseRequests, {});
 
       await runner.run();
 
@@ -95,7 +106,13 @@ describe('Object Allocation Optimizations', () => {
         .intercept({ path: '/test', method: 'GET' })
         .replyWithError(new Error('Network error'));
 
-      const runner = new Runner(baseOptions, baseRequests, {});
+      const config: TressiConfig = {
+        requests: baseRequests,
+        workers: 1,
+        duration: 1,
+      };
+
+      const runner = new Runner(config, baseRequests, {});
 
       await runner.run();
 
@@ -110,8 +127,13 @@ describe('Object Allocation Optimizations', () => {
       const mockPool = mockAgent.get('http://localhost:8080');
       mockPool.intercept({ path: '/test', method: 'GET' }).reply(200).times(20);
 
-      const options = { ...baseOptions, workers: 3 };
-      const runner = new Runner(options, baseRequests, {});
+      const config: TressiConfig = {
+        requests: baseRequests,
+        workers: 3,
+        duration: 1,
+      };
+
+      const runner = new Runner(config, baseRequests, {});
 
       await runner.run();
 
@@ -123,14 +145,14 @@ describe('Object Allocation Optimizations', () => {
       const mockPool = mockAgent.get('http://localhost:8080');
       mockPool.intercept({ path: '/test', method: 'GET' }).reply(200).times(50);
 
-      const options = {
-        ...baseOptions,
+      const config: TressiConfig = {
+        requests: baseRequests,
         workers: 5,
-        durationSec: 2,
+        duration: 2,
         rps: 25,
       };
 
-      const runner = new Runner(options, baseRequests, {});
+      const runner = new Runner(config, baseRequests, {});
 
       await runner.run();
 
@@ -147,14 +169,14 @@ describe('Object Allocation Optimizations', () => {
         .reply(200)
         .times(100);
 
-      const options = {
-        ...baseOptions,
+      const config: TressiConfig = {
+        requests: baseRequests,
         workers: 2,
-        durationSec: 3,
+        duration: 3,
         rps: 50,
       };
 
-      const runner = new Runner(options, baseRequests, {});
+      const runner = new Runner(config, baseRequests, {});
 
       await runner.run();
 

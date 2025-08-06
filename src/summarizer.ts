@@ -1,6 +1,5 @@
 import pkg from '../package.json';
 import { TressiConfig } from './config';
-import { RunOptions } from './index';
 import { Runner } from './runner';
 import { RequestResult } from './stats';
 import { getStatusCodeDistributionByCategory } from './stats';
@@ -47,12 +46,12 @@ export interface TestSummary {
 /**
  * Analyzes the results of a load test and generates a comprehensive summary.
  * @param runner The `Runner` instance from the test run.
- * @param options The original `RunOptions` used for the test.
+ * @param config The original `TressiConfig` used for the test.
  * @returns A `TestSummary` object containing the global and endpoint-specific summaries.
  */
 export function generateSummary(
   runner: Runner,
-  options: RunOptions,
+  config: TressiConfig,
   actualDurationSec?: number,
 ): TestSummary {
   const histogram = runner.getHistogram();
@@ -80,7 +79,7 @@ export function generateSummary(
     };
   }
 
-  const { durationSec = 10, rps } = options;
+  const { duration: durationSec = 10, rps } = config;
   const totalRequests = histogram.totalCount;
   const effectiveDuration = actualDurationSec ?? durationSec;
   const actualRps =
@@ -88,8 +87,8 @@ export function generateSummary(
   const avgLatency = histogram.mean;
   const theoreticalMaxRps = rps
     ? Math.min(
-        (1000 / (avgLatency || 1)) * (options.workers || 10),
-        options.rps || Infinity,
+        (1000 / (avgLatency || 1)) * (config.workers || 10),
+        config.rps || Infinity,
       )
     : 0;
   const achievedPercentage =
@@ -141,23 +140,21 @@ export function generateSummary(
 /**
  * Generates a Markdown report from a summary object.
  * @param summary The `TestSummary` object.
- * @param options The original `RunOptions` used for the test.
+ * @param config The original `TressiConfig` used for the test.
  * @param runner The `Runner` instance from the test run.
- * @param config The `TressiConfig` used for the run.
  * @param metadata Additional metadata for the report.
  * @returns A Markdown string representing the report.
  */
 export function generateMarkdownReport(
   summary: TestSummary,
-  options: RunOptions,
-  runner: Runner,
   config: TressiConfig,
+  runner: Runner,
   metadata?: ReportMetadata,
 ): string {
   const { global: g, endpoints: e } = summary;
 
   const distribution = runner.getDistribution();
-  const { workers = 10, durationSec = 10, rps, autoscale } = options;
+  const { workers = 10, duration = 10, rps, autoscale } = config;
 
   let md = `# Tressi Load Test Report\n\n`;
 
@@ -217,12 +214,12 @@ export function generateMarkdownReport(
   // Run Configuration
   md += `## Run Configuration\n\n`;
   md += `> *This table shows the main parameters used for the load test run.*\n\n`;
-  md += `| Option | Setting | Argument |\n`;
-  md += `|---|---|---|\n`;
-  md += `| Workers | ${autoscale ? `Up to ${workers}` : workers} | \`--workers\` |\n`;
-  md += `| Duration | ${durationSec}s | \`--duration\` |\n`;
-  if (rps) md += `| Target Req/s | ${rps} | \`--rps\` |\n`;
-  if (autoscale) md += `| Autoscale | Enabled | \`--autoscale\` |\n\n`;
+  md += `| Option | Setting |\n`;
+  md += `|---|---|\n`;
+  md += `| Workers | ${autoscale ? `Up to ${workers}` : workers} |\n`;
+  md += `| Duration | ${duration}s |\n`;
+  if (rps) md += `| Target Req/s | ${rps} |\n`;
+  if (autoscale) md += `| Autoscale | Enabled |\n\n`;
 
   // Global Summary
   md += `## Global Summary\n\n`;
@@ -233,9 +230,9 @@ export function generateMarkdownReport(
   md += `| Successful | ${g.successfulRequests} |\n`;
   md += `| Failed | ${g.failedRequests} |\n`;
 
-  if (options.rps && g.theoreticalMaxRps) {
-    md += `| Req/s (Actual/Target) | ${g.actualRps.toFixed(0)} / ${options.rps} |\n`;
-    md += `| Req/m (Actual/Target) | ${(g.actualRps * 60).toFixed(0)} / ${options.rps * 60} |\n`;
+  if (config.rps && g.theoreticalMaxRps) {
+    md += `| Req/s (Actual/Target) | ${g.actualRps.toFixed(0)} / ${config.rps} |\n`;
+    md += `| Req/m (Actual/Target) | ${(g.actualRps * 60).toFixed(0)} / ${config.rps * 60} |\n`;
     md += `| Theoretical Max Req/s | ${g.theoreticalMaxRps.toFixed(0)} |\n`;
     md += `| Achieved % | ${g.achievedPercentage.toFixed(0)}% |\n`;
   } else {
