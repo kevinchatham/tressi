@@ -20,6 +20,7 @@
             "properties": {
               "url": {
                 "type": "string",
+                "minLength": 1,
                 "format": "uri"
               },
               "payload": {
@@ -36,15 +37,7 @@
               },
               "method": {
                 "type": "string",
-                "enum": [
-                  "GET",
-                  "POST",
-                  "PUT",
-                  "PATCH",
-                  "DELETE",
-                  "HEAD",
-                  "OPTIONS"
-                ],
+                "enum": ["GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"],
                 "default": "GET"
               },
               "headers": {
@@ -56,6 +49,54 @@
             },
             "required": ["url"],
             "additionalProperties": false
+          },
+          "minItems": 1
+        },
+        "workers": {
+          "type": "integer",
+          "exclusiveMinimum": 0
+        },
+        "concurrentRequests": {
+          "type": "integer",
+          "exclusiveMinimum": 0
+        },
+        "duration": {
+          "type": "integer",
+          "exclusiveMinimum": 0
+        },
+        "rampUpTime": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "rps": {
+          "type": "integer",
+          "exclusiveMinimum": 0
+        },
+        "autoscale": {
+          "type": "boolean"
+        },
+        "export": {
+          "type": "string",
+          "minLength": 1
+        },
+        "earlyExitOnError": {
+          "type": "boolean"
+        },
+        "errorRateThreshold": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "errorCountThreshold": {
+          "type": "integer",
+          "exclusiveMinimum": 0
+        },
+        "errorStatusCodes": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 100,
+            "maximum": 599
           }
         }
       },

@@ -1,0 +1,42 @@
+{
+  "$schema": "https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json",
+  "name": "Error Handling Load Test",
+  "description": "Test with early exit conditions for error rate, count, and specific status codes",
+  "workers": 15,
+  "duration": 90,
+  "rps": 150,
+  "earlyExitOnError": true,
+  "errorRateThreshold": 0.05,
+  "errorCountThreshold": 50,
+  "errorStatusCodes": [500, 502, 503, 504],
+  "headers": {
+    "Content-Type": "application/json",
+    "Accept": "application/json"
+  },
+  "requests": [
+    {
+      "url": "https://api.example.com/api/v1/health",
+      "method": "GET"
+    },
+    {
+      "url": "https://api.example.com/api/v1/users",
+      "method": "GET"
+    },
+    {
+      "url": "https://api.example.com/api/v1/users",
+      "method": "POST",
+      "payload": {
+        "name": "Test User",
+        "email": "test@example.com"
+      }
+    },
+    {
+      "url": "https://api.example.com/api/v1/data",
+      "method": "PUT",
+      "payload": {
+        "id": "test-id",
+        "value": "test-data"
+      }
+    }
+  ]
+}

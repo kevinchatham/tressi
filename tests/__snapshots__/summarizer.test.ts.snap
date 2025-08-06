@@ -5,7 +5,7 @@ exports[`summarizer > should generate a comprehensive Markdown report 1`] = `
 
 | Metric | Value |
 |---|---|
-| Version | 0.0.12 |
+| Version | 0.0.13 |
 | Export Name | my-test-report |
 | Test Time | 12/31/2022, 9:00:00 PM |
 
@@ -21,6 +21,8 @@ exports[`summarizer > should generate a comprehensive Markdown report 1`] = `
 
 \`\`\`json
 {
+  "duration": 10,
+  "rps": 1,
   "requests": [
     {
       "url": "http://a.com",
@@ -36,11 +38,11 @@ exports[`summarizer > should generate a comprehensive Markdown report 1`] = `
 
 > *This table shows the main parameters used for the load test run.*
 
-| Option | Setting | Argument |
-|---|---|---|
-| Workers | 10 | \`--workers\` |
-| Duration | 10s | \`--duration\` |
-| Target Req/s | 1 | \`--rps\` |
+| Option | Setting |
+|---|---|
+| Workers | 10 |
+| Duration | 10s |
+| Target Req/s | 1 |
 ## Global Summary
 
 > *A high-level overview of the entire test performance across all endpoints.*

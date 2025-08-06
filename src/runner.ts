@@ -4,10 +4,9 @@ import { performance } from 'perf_hooks';
 import { request } from 'undici';
 
 import { CircularBuffer } from './circular-buffer';
-import { RequestConfig } from './config';
+import { RequestConfig, TressiConfig } from './config';
 import { Distribution } from './distribution';
 import { globalAgentManager } from './http-agent';
-import { RunOptions } from './index';
 import { RequestResult } from './stats';
 
 async function sleep(ms: number): Promise<void> {
@@ -19,7 +18,7 @@ async function sleep(ms: number): Promise<void> {
  * and collects results. It extends EventEmitter to provide hooks into its lifecycle.
  */
 export class Runner extends EventEmitter {
-  private options: RunOptions;
+  private config: TressiConfig;
   private requests: RequestConfig[];
   private headers: Record<string, string>;
   private sampledResults: RequestResult[] = [];
@@ -40,6 +39,7 @@ export class Runner extends EventEmitter {
   private testTimeout?: NodeJS.Timeout;
   private rampUpInterval?: NodeJS.Timeout;
   private autoscaleInterval?: NodeJS.Timeout;
+  private useUI: boolean;
 
   // Object allocation optimizations
   private headersPool: Record<string, string>[] = [];
@@ -50,29 +50,32 @@ export class Runner extends EventEmitter {
 
   /**
    * Creates a new Runner instance.
-   * @param options The run options.
+   * @param config The Tressi configuration.
    * @param requests An array of request configurations to be used in the test.
    * @param headers A record of global headers to be sent with each request.
+   * @param useUI Whether to use the terminal UI.
    */
   constructor(
-    options: RunOptions,
+    config: TressiConfig,
     requests: RequestConfig[],
     headers: Record<string, string>,
+    useUI: boolean = true,
   ) {
     super();
 
     // Validate early exit options
-    const validatedOptions = this.validateEarlyExitOptions(options);
-    this.options = validatedOptions;
+    const validatedConfig = this.validateEarlyExitOptions(config);
+    this.config = validatedConfig;
     this.requests = requests;
     this.headers = headers;
+    this.useUI = useUI;
     this.histogram = build();
     this.distribution = new Distribution();
     this.currentTargetRps =
-      options.rampUpTimeSec && options.rps ? 0 : options.rps || 0;
+      config.rampUpTime && config.rps ? 0 : config.rps || 0;
 
     // Estimate buffer size: 2 seconds of requests at max RPS, or 10k, whichever is larger
-    const maxRps = options.rps || 1000;
+    const maxRps = config.rps || 1000;
     const bufferSize = Math.max(10000, maxRps * 2);
     this.recentRequestTimestamps = new CircularBuffer<number>(bufferSize);
     this.recentLatenciesForSpinner = new CircularBuffer<number>(1000);
@@ -86,17 +89,17 @@ export class Runner extends EventEmitter {
 
   /**
    * Validates early exit configuration options with proper defaults and constraints.
-   * @param options The raw RunOptions to validate
-   * @returns Validated RunOptions with defaults applied
+   * @param config The TressiConfig to validate
+   * @returns Validated TressiConfig with defaults applied
    */
-  private validateEarlyExitOptions(options: RunOptions): RunOptions {
-    const validated = { ...options };
+  private validateEarlyExitOptions(config: TressiConfig): TressiConfig {
+    const validated = { ...config };
 
     // Set defaults for early exit options
-    validated.earlyExitOnError = options.earlyExitOnError ?? false;
-    validated.errorRateThreshold = options.errorRateThreshold;
-    validated.errorCountThreshold = options.errorCountThreshold;
-    validated.errorStatusCodes = options.errorStatusCodes;
+    validated.earlyExitOnError = config.earlyExitOnError ?? false;
+    validated.errorRateThreshold = config.errorRateThreshold;
+    validated.errorCountThreshold = config.errorCountThreshold;
+    validated.errorStatusCodes = config.errorStatusCodes;
 
     // Validate constraints when early exit is enabled
     if (validated.earlyExitOnError) {
@@ -172,7 +175,7 @@ export class Runner extends EventEmitter {
     this.endpointHistograms.get(endpointKey)!.recordValue(result.latencyMs);
 
     // Keep a small, rotating log of recent latencies for the non-UI spinner
-    if (!this.options.useUI) {
+    if (!this.useUI) {
       this.recentLatenciesForSpinner.add(result.latencyMs);
     }
 
@@ -341,10 +344,10 @@ export class Runner extends EventEmitter {
    * @returns The number of workers.
    */
   public getWorkerCount(): number {
-    if (this.options.autoscale) {
+    if (this.config.autoscale) {
       return this.activeWorkers.length;
     }
-    return this.options.workers ?? 10;
+    return this.config.workers ?? 10;
   }
 
   /**
@@ -356,18 +359,18 @@ export class Runner extends EventEmitter {
 
     const {
       workers = 10,
-      durationSec = 10,
-      rampUpTimeSec = 0,
+      duration = 10,
+      rampUpTime = 0,
       rps = 0,
       autoscale = false,
-    } = this.options;
+    } = this.config;
 
     // The main timer for the total test duration starts now
-    const durationMs = durationSec * 1000;
+    const durationMs = duration * 1000;
     this.testTimeout = setTimeout(() => this.stop(), durationMs);
 
     // If ramp-up is enabled, start the governor
-    if (rampUpTimeSec > 0) {
+    if (rampUpTime > 0) {
       this.rampUpInterval = setInterval(() => {
         const elapsedTimeSec = (performance.now() - this.startTime) / 1000;
 
@@ -376,7 +379,7 @@ export class Runner extends EventEmitter {
           return;
         }
 
-        const rampUpProgress = Math.min(elapsedTimeSec / rampUpTimeSec, 1);
+        const rampUpProgress = Math.min(elapsedTimeSec / rampUpTime, 1);
 
         if (rps > 0) {
           // If a target RPS is set, ramp up to that value
@@ -384,7 +387,7 @@ export class Runner extends EventEmitter {
         } else {
           // If no target RPS, ramp up to a theoretical max (e.g., 1k Req/s per worker)
           // This creates a steady increase with no upper bound.
-          const arbitraryMaxRps = (this.options.workers || 10) * 1000;
+          const arbitraryMaxRps = (this.config.workers || 10) * 1000;
           this.currentTargetRps = Math.round(arbitraryMaxRps * rampUpProgress);
         }
       }, 1000); // Update every second
@@ -408,7 +411,7 @@ export class Runner extends EventEmitter {
           return;
         }
 
-        const targetRps = this.options.rps;
+        const targetRps = this.config.rps;
         if (!targetRps) return;
 
         const scaleUpThreshold = targetRps * 0.9;
@@ -583,7 +586,7 @@ export class Runner extends EventEmitter {
    * @returns true if early exit conditions are met, false otherwise
    */
   private shouldEarlyExit(): boolean {
-    if (!this.options.earlyExitOnError) {
+    if (!this.config.earlyExitOnError) {
       return false;
     }
 
@@ -593,23 +596,23 @@ export class Runner extends EventEmitter {
     }
 
     // Check error rate threshold
-    if (this.options.errorRateThreshold !== undefined) {
+    if (this.config.errorRateThreshold !== undefined) {
       const errorRate = this.failedRequests / totalRequests;
-      if (errorRate >= this.options.errorRateThreshold) {
+      if (errorRate >= this.config.errorRateThreshold) {
         return true;
       }
     }
 
     // Check error count threshold
-    if (this.options.errorCountThreshold !== undefined) {
-      if (this.failedRequests >= this.options.errorCountThreshold) {
+    if (this.config.errorCountThreshold !== undefined) {
+      if (this.failedRequests >= this.config.errorCountThreshold) {
         return true;
       }
     }
 
     // Check specific status codes threshold
-    if (this.options.errorStatusCodes !== undefined) {
-      for (const code of this.options.errorStatusCodes) {
+    if (this.config.errorStatusCodes !== undefined) {
+      for (const code of this.config.errorStatusCodes) {
         if (this.statusCodeMap[code] > 0) {
           return true;
         }
@@ -705,16 +708,16 @@ export class Runner extends EventEmitter {
 
     if (targetRps <= 0 || workerCount <= 0) {
       // Default concurrency when no RPS target or no workers
-      return this.options.concurrentRequestsPerWorker ?? 10;
+      return this.config.concurrentRequests ?? 10;
     }
 
     // Calculate optimal concurrency based on target RPS per worker
     const targetRpsPerWorker = targetRps / workerCount;
 
     // Use configured value if provided, otherwise calculate dynamically
-    if (this.options.concurrentRequestsPerWorker !== undefined) {
+    if (this.config.concurrentRequests !== undefined) {
       return Math.min(
-        this.options.concurrentRequestsPerWorker,
+        this.config.concurrentRequests,
         Math.max(1, Math.ceil(targetRpsPerWorker)),
       );
     }

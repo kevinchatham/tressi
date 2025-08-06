@@ -1,0 +1,119 @@
+{
+  "$schema": "https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json",
+  "name": "Comprehensive Load Test Suite",
+  "description": "Complete configuration showcasing all tressi features including autoscaling, error handling, export, and advanced request patterns",
+  "autoscale": true,
+  "workers": 100,
+  "duration": 120,
+  "rps": 2000,
+  "rampUpTime": 30,
+  "noUi": false,
+  "export": "comprehensive-test-results",
+  "earlyExitOnError": true,
+  "errorRateThreshold": 0.02,
+  "errorCountThreshold": 100,
+  "errorStatusCodes": [500, 502, 503, 504, 429],
+  "headers": {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer your-api-token",
+    "User-Agent": "tressi-comprehensive-test",
+    "Accept": "application/json",
+    "Accept-Encoding": "gzip, deflate, br"
+  },
+  "requests": [
+    {
+      "url": "https://api.example.com/api/v1/health",
+      "method": "GET",
+      "headers": {
+        "Cache-Control": "no-cache"
+      }
+    },
+    {
+      "url": "https://api.example.com/api/v1/users",
+      "method": "GET",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    {
+      "url": "https://api.example.com/api/v1/users",
+      "method": "POST",
+      "payload": {
+        "name": "Comprehensive Test User",
+        "email": "test-{{$randomInt}}@example.com",
+        "role": "standard",
+        "preferences": {
+          "notifications": true,
+          "theme": "dark"
+        }
+      },
+      "headers": {
+        "Content-Type": "application/vnd.api+json"
+      }
+    },
+    {
+      "url": "https://api.example.com/api/v1/products",
+      "method": "GET",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    {
+      "url": "https://api.example.com/api/v1/products",
+      "method": "POST",
+      "payload": {
+        "name": "Load Test Product {{$randomInt}}",
+        "price": "{{$randomFloat}}",
+        "category": "electronics",
+        "description": "Product created during comprehensive load testing",
+        "tags": ["load-test", "automated", "performance"],
+        "metadata": {
+          "testRun": "{{$timestamp}}",
+          "testType": "comprehensive"
+        }
+      }
+    },
+    {
+      "url": "https://api.example.com/api/v1/orders",
+      "method": "POST",
+      "payload": {
+        "items": [
+          {
+            "productId": "{{$randomInt}}",
+            "quantity": "{{$randomIntRange 1 5}}",
+            "price": "{{$randomFloat}}"
+          },
+          {
+            "productId": "{{$randomInt}}",
+            "quantity": "{{$randomIntRange 1 3}}",
+            "price": "{{$randomFloat}}"
+          }
+        ],
+        "customer": {
+          "id": "{{$randomInt}}",
+          "email": "customer-{{$randomInt}}@example.com"
+        },
+        "shipping": {
+          "method": "standard",
+          "address": {
+            "street": "123 Test Street",
+            "city": "Test City",
+            "zip": "12345"
+          }
+        }
+      }
+    },
+    {
+      "url": "https://api.example.com/api/v1/analytics/events",
+      "method": "POST",
+      "payload": {
+        "event": "load_test_action",
+        "properties": {
+          "test_type": "comprehensive",
+          "timestamp": "{{$timestamp}}",
+          "user_agent": "tressi"
+        }
+      }
+    }
+  ]
+}

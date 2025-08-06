@@ -9,8 +9,7 @@ import {
   vi,
 } from 'vitest';
 
-import { RequestConfig } from '../src/config';
-import { RunOptions } from '../src/index';
+import { RequestConfig, TressiConfig } from '../src/config';
 import { Runner } from '../src/runner';
 
 let mockAgent: MockAgent;
@@ -30,10 +29,10 @@ afterAll(() => {
   mockAgent.close();
 });
 
-const baseOptions: RunOptions = {
-  config: { requests: [] },
+const baseConfig: TressiConfig = {
   workers: 1,
-  durationSec: 1,
+  duration: 1,
+  requests: [],
 };
 
 const baseRequests: RequestConfig[] = [
@@ -52,8 +51,11 @@ describe('Runner', () => {
     const mockPool = mockAgent.get('http://localhost:8080');
     mockPool.intercept({ path: '/test', method: 'GET' }).reply(200);
 
-    const options: RunOptions = { ...baseOptions };
-    const runner = new Runner(options, baseRequests, {});
+    const config: TressiConfig = {
+      ...baseConfig,
+      requests: baseRequests,
+    };
+    const runner = new Runner(config, baseRequests, {});
 
     await runner.run();
     const results = runner.getSampledResults();
@@ -75,14 +77,14 @@ describe('Runner', () => {
     const requests: RequestConfig[] = [
       { url: 'http://localhost:8080/slow', method: 'GET' },
     ];
-    const options: RunOptions = {
-      ...baseOptions,
-      rps: 50,
-      durationSec: 3,
-      autoscale: true,
+    const config: TressiConfig = {
       workers: 5, // Max workers
+      duration: 3,
+      rps: 50,
+      autoscale: true,
+      requests,
     };
-    const runner = new Runner(options, requests, {});
+    const runner = new Runner(config, requests, {});
 
     const runPromise = runner.run();
 
@@ -102,8 +104,12 @@ describe('Runner', () => {
    */
   it('should stop the test run when stop() is called', async () => {
     vi.useFakeTimers();
-    const options: RunOptions = { ...baseOptions, durationSec: 10 };
-    const runner = new Runner(options, baseRequests, {});
+    const config: TressiConfig = {
+      ...baseConfig,
+      duration: 10,
+      requests: baseRequests,
+    };
+    const runner = new Runner(config, baseRequests, {});
 
     const runPromise = runner.run();
 
@@ -131,14 +137,15 @@ describe('Runner', () => {
     // Set initial time to 0
     mockNow.mockReturnValue(0);
 
-    const options: RunOptions = {
-      ...baseOptions,
-      durationSec: 10,
+    const config: TressiConfig = {
+      ...baseConfig,
+      duration: 10,
       rps: 100,
-      rampUpTimeSec: 5, // Ramp up to 100 Req/s over 5 seconds
+      rampUpTime: 5, // Ramp up to 100 Req/s over 5 seconds
+      requests: baseRequests,
     };
 
-    const runner = new Runner(options, baseRequests, {});
+    const runner = new Runner(config, baseRequests, {});
     const runPromise = runner.run();
 
     // At 0s, RPS should be 0
@@ -173,40 +180,19 @@ describe('Runner', () => {
     vi.useRealTimers();
   });
 
-  it('should merge global and request-specific headers correctly', async () => {
-    const mockPool = mockAgent.get('http://localhost:8080');
-    mockPool.intercept({ path: '/test', method: 'GET' }).reply(200);
-
-    const globalHeaders = { Authorization: 'Bearer global-token' };
-    const requestHeaders = { 'X-Request-ID': '456' };
-    const requests: RequestConfig[] = [
-      {
-        url: 'http://localhost:8080/test',
-        method: 'GET',
-        headers: requestHeaders,
-      },
-    ];
-
-    const runner = new Runner(baseOptions, requests, globalHeaders);
-
-    await runner.run();
-
-    const results = runner.getSampledResults();
-    expect(results.length).toBeGreaterThan(0);
-    expect(results[0].status).toBe(200);
-    expect(results[0].success).toBe(true);
-  });
+  // Header merging tests moved to headers.test.ts to avoid duplication
 
   it('should run normally with early exit disabled (default behavior)', async () => {
     const mockPool = mockAgent.get('http://localhost:8080');
     mockPool.intercept({ path: '/test', method: 'GET' }).reply(200);
 
-    const options: RunOptions = {
-      ...baseOptions,
-      durationSec: 2,
+    const config: TressiConfig = {
+      ...baseConfig,
+      duration: 2,
+      requests: baseRequests,
       // earlyExitOnError defaults to false
     };
-    const runner = new Runner(options, baseRequests, {});
+    const runner = new Runner(config, baseRequests, {});
 
     const startTime = Date.now();
     await runner.run();
@@ -226,12 +212,13 @@ describe('Runner', () => {
     const mockPool = mockAgent.get('http://localhost:8080');
     mockPool.intercept({ path: '/test', method: 'GET' }).reply(200).persist();
 
-    const options: RunOptions = {
-      ...baseOptions,
+    const config: TressiConfig = {
+      ...baseConfig,
       workers: 1, // Use 1 worker instead of 0 to avoid issues
-      durationSec: 1,
+      duration: 1,
+      requests: baseRequests,
     };
-    const runner = new Runner(options, baseRequests, {});
+    const runner = new Runner(config, baseRequests, {});
 
     // Should not throw error
     await expect(runner.run()).resolves.toBeUndefined();

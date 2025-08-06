@@ -1,8 +1,7 @@
 import { MockAgent, setGlobalDispatcher } from 'undici';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
-import { RequestConfig } from '../src/config';
-import { RunOptions } from '../src/index';
+import { RequestConfig, TressiConfig } from '../src/config';
 import { Runner } from '../src/runner';
 
 let mockAgent: MockAgent;
@@ -20,12 +19,6 @@ afterEach(() => {
 afterAll(() => {
   mockAgent.close();
 });
-
-const baseOptions: RunOptions = {
-  config: { requests: [] },
-  workers: 1,
-  durationSec: 1,
-};
 
 describe('Headers Merging Tests', () => {
   it('should merge global and request headers', async () => {
@@ -55,7 +48,13 @@ describe('Headers Merging Tests', () => {
       },
     ];
 
-    const runner = new Runner(baseOptions, requests, globalHeaders);
+    const config: TressiConfig = {
+      requests,
+      workers: 1,
+      duration: 1,
+    };
+
+    const runner = new Runner(config, requests, globalHeaders);
     await runner.run();
 
     // Convert to lowercase for comparison
@@ -85,7 +84,13 @@ describe('Headers Merging Tests', () => {
       },
     ];
 
-    const runner = new Runner(baseOptions, requests, {});
+    const config: TressiConfig = {
+      requests,
+      workers: 1,
+      duration: 1,
+    };
+
+    const runner = new Runner(config, requests, {});
     await runner.run();
 
     const lowerHeaders = Object.fromEntries(
@@ -111,7 +116,13 @@ describe('Headers Merging Tests', () => {
       },
     ];
 
-    const runner = new Runner(baseOptions, requests, {
+    const config: TressiConfig = {
+      requests,
+      workers: 1,
+      duration: 1,
+    };
+
+    const runner = new Runner(config, requests, {
       'X-Global': 'global-value',
     });
     await runner.run();
