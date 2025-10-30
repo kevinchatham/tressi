@@ -1,48 +1,14 @@
 import pkg from '../package.json';
-import { TressiConfig } from './config';
-import { RunOptions } from './index';
 import { Runner } from './runner';
-import { RequestResult } from './stats';
 import { getStatusCodeDistributionByCategory } from './stats';
-
-export interface ReportMetadata {
-  exportName?: string;
-  runDate?: Date;
-}
-
-export interface EndpointSummary {
-  method: string;
-  url: string;
-  totalRequests: number;
-  successfulRequests: number;
-  failedRequests: number;
-  avgLatencyMs: number;
-  minLatencyMs: number;
-  maxLatencyMs: number;
-  p95LatencyMs: number;
-  p99LatencyMs: number;
-}
-
-export interface GlobalSummary {
-  totalRequests: number;
-  successfulRequests: number;
-  failedRequests: number;
-  avgLatencyMs: number;
-  minLatencyMs: number;
-  maxLatencyMs: number;
-  p95LatencyMs: number;
-  p99LatencyMs: number;
-  actualRps: number;
-  theoreticalMaxRps: number;
-  achievedPercentage: number;
-  duration: number;
-}
-
-export interface TestSummary {
-  tressiVersion: string;
-  global: GlobalSummary;
-  endpoints: EndpointSummary[];
-}
+import type {
+  EndpointSummary,
+  ReportMetadata,
+  RequestResult,
+  RunOptions,
+  TestSummary,
+  TressiConfig,
+} from './types';
 
 /**
  * Analyzes the results of a load test and generates a comprehensive summary.

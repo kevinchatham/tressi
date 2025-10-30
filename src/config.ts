@@ -3,10 +3,12 @@ import path from 'path';
 import { request } from 'undici';
 import { z } from 'zod';
 
+import type { TressiConfig } from './types';
+
 /**
  * Zod schema for a single request configuration.
  */
-const RequestConfigSchema = z.object({
+export const RequestConfigSchema = z.object({
   /** The URL to send the request to. */
   url: z.string().url(),
   /** The request payload. Can be a JSON object or an array. */
@@ -36,16 +38,6 @@ export const TressiConfigSchema = z.object({
   /** An array of request configurations. */
   requests: z.array(RequestConfigSchema),
 });
-
-/**
- * Type representing the Tressi configuration.
- */
-export type TressiConfig = z.infer<typeof TressiConfigSchema>;
-
-/**
- * Type representing a single request configuration.
- */
-export type RequestConfig = z.infer<typeof RequestConfigSchema>;
 
 /**
  * Loads and validates a Tressi configuration from a file, URL, or direct object.

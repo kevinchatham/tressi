@@ -7,53 +7,21 @@ import { performance } from 'perf_hooks';
 import { z } from 'zod';
 
 import pkg from '../package.json';
-import { loadConfig, RequestConfig, TressiConfig } from './config';
+import { loadConfig } from './config';
 import { exportDataFiles } from './exporter';
 import { Runner } from './runner';
 import { getStatusCodeDistributionByCategory } from './stats';
-import {
-  generateMarkdownReport,
-  generateSummary,
+import { generateMarkdownReport, generateSummary } from './summarizer';
+import type {
+  RequestConfig,
+  RunOptions,
   TestSummary,
-} from './summarizer';
+  TressiConfig,
+} from './types';
 import { TUI } from './ui';
 import { getSafeDirectoryName } from './utils';
 
 export { RequestConfig, TestSummary, TressiConfig };
-
-/**
- * Defines the options for a Tressi load test run.
- */
-export interface RunOptions {
-  /** The configuration for the test. Can be a path to a file, a URL, or a configuration object. */
-  config: string | TressiConfig;
-  /** The number of concurrent workers to use. Defaults to 10. For autoscale, this is the max workers. */
-  workers?: number;
-  /** The total duration of the test in seconds. Defaults to 10. */
-  durationSec?: number;
-  /** The time in seconds to ramp up to the target RPS. Defaults to 0. */
-  rampUpTimeSec?: number;
-  /** The target requests per second. If not provided, the test will run at maximum possible speed. */
-  rps?: number;
-  /** Whether to enable autoscale mode. Defaults to false. --rps is required for this. */
-  autoscale?: boolean;
-  /** The base path for the exported report. If not provided, no report will be generated. */
-  exportPath?: string | boolean;
-  /** Whether to use the terminal UI. Defaults to true. */
-  useUI?: boolean;
-  /** Suppress all console output. Defaults to false. */
-  silent?: boolean;
-  /** Whether to enable early exit on error conditions. Defaults to false. */
-  earlyExitOnError?: boolean;
-  /** Error rate threshold (0.0-1.0) to trigger early exit. Requires earlyExitOnError=true. */
-  errorRateThreshold?: number;
-  /** Absolute error count threshold to trigger early exit. Requires earlyExitOnError=true. */
-  errorCountThreshold?: number;
-  /** Specific HTTP status codes that should trigger early exit. Requires earlyExitOnError=true. */
-  errorStatusCodes?: number[];
-  /** Number of concurrent requests per worker. Defaults to dynamic calculation based on target RPS. */
-  concurrentRequestsPerWorker?: number;
-}
 
 function printReportInfo(summary: TestSummary, options: RunOptions): void {
   const reportInfoTable = new Table({

@@ -4,11 +4,9 @@ import { performance } from 'perf_hooks';
 import { request } from 'undici';
 
 import { CircularBuffer } from './circular-buffer';
-import { RequestConfig } from './config';
 import { Distribution } from './distribution';
 import { globalAgentManager } from './http-agent';
-import { RunOptions } from './index';
-import { RequestResult } from './stats';
+import type { RequestConfig, RequestResult, RunOptions } from './types';
 
 async function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
