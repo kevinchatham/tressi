@@ -5,34 +5,12 @@ import path from 'path';
 
 import pkg from '../package.json';
 import { runLoadTest } from '.';
-
-/**
- * Template for a JSON-based tressi configuration file.
- */
-const jsonConfigTemplate = `{
-  "$schema": "https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v${pkg.version}.json",
-  "headers": {
-    "Content-Type": "application/json",
-    "Authorization": "Bearer <your-token>"
-  },
-  "requests": [
-    {
-      "url": "https://jsonplaceholder.typicode.com/posts/1",
-      "method": "GET"
-    },
-    {
-      "url": "https://jsonplaceholder.typicode.com/posts",
-      "method": "POST",
-      "payload": {
-        "name": "Tressi Post"
-      },
-      "headers": {
-        "X-Custom-Header": "custom-value"
-      }
-    }
-  ]
-}
-`;
+import {
+  generateFullConfig,
+  generateMinimalConfig,
+  loadConfig,
+} from './config';
+import { displayConfig } from './config-display';
 
 /**
  * The main commander program instance.
@@ -44,53 +22,38 @@ program
   .description('A modern, simple load testing tool for APIs.')
   .version(pkg.version);
 
-program
-  .option(
-    '-c, --config [path]',
-    'Path or URL to JSON config file. Defaults to ./tressi.config.json',
-  )
-  .option(
-    '--workers <n>',
-    'Number of concurrent workers, or max workers if autoscale is enabled',
-    '10',
-  )
-  .option('--concurrent-requests <n>', 'Maximum concurrent requests per worker')
-  .option('--duration <s>', 'Duration in seconds', '10')
-  .option('--ramp-up-time <s>', 'Time in seconds to ramp up to the target RPS')
-  .option('--rps <n>', 'Target requests per second')
-  .option('--autoscale', 'Enable autoscaling of workers')
-  .option(
-    '--export [path]',
-    'Export a comprehensive report (Markdown, XLSX, CSVs) to a directory.',
-  )
-  .option('--no-ui', 'Disable the interactive terminal UI')
-  .option('--early-exit-on-error', 'Enable early exit on error conditions')
-  .option(
-    '--error-rate-threshold <n>',
-    'Error rate threshold (0.0-1.0) to trigger early exit',
-  )
-  .option(
-    '--error-count-threshold <n>',
-    'Absolute error count threshold to trigger early exit',
-  )
-  .option(
-    '--error-status-codes <codes>',
-    'Comma-separated list of HTTP status codes that should trigger early exit',
-  );
+program.option(
+  '-c, --config [path]',
+  'Path or URL to JSON configuration file (local file path or remote URL). Defaults to ./tressi.config.json',
+);
 
 program
   .command('init')
   .summary('Create a tressi.config.json file')
-  .description('Create a boilerplate tressi configuration file')
-  .action(async () => {
+  .description(
+    `Create a tressi configuration file to define your load testing scenarios.
+
+This command generates a JSON configuration file that specifies:
+- Target URLs and endpoints to test
+- Request methods, headers, and payloads
+- Load patterns (concurrent users, duration, ramp-up)
+- Performance thresholds and success criteria
+- Output formats and reporting options
+
+By default, a minimal configuration is created with essential settings for quick start. Use --full to generate a comprehensive configuration with all available options, including advanced features like custom distributions, detailed assertions, and multiple test phases.
+
+After creation, edit the configuration file to match your API testing requirements, then run 'tressi' to execute your load tests.`,
+  )
+  .option(
+    '--full',
+    'Generate a full configuration with all available options and advanced features',
+  )
+  .action(async (options) => {
     const fileName = `tressi.config.json`;
     const filePath = path.resolve(process.cwd(), fileName);
 
     try {
       await fs.access(filePath);
-      // If the file exists, we shouldn't overwrite it without permission,
-      // but for simplicity, we'll just log a message. In a real-world
-      // scenario, you'd prompt the user.
       // eslint-disable-next-line no-console
       console.log(
         chalk.yellow(
@@ -99,20 +62,83 @@ program
       );
       return;
     } catch {
-      // File does not exist, continue
+      try {
+        const config = options.full
+          ? generateFullConfig()
+          : generateMinimalConfig();
+        await fs.writeFile(filePath, JSON.stringify(config, null, 2));
+        // eslint-disable-next-line no-console
+        console.log(
+          chalk.green(`Successfully created ${fileName} at ${filePath}`),
+        );
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.error(
+          chalk.red(`Failed to create config file: ${(err as Error).message}`),
+        );
+        process.exit(1);
+      }
+    }
+  });
+
+program
+  .command('config')
+  .summary('Display current configuration')
+  .description(
+    'Display the current configuration including all resolved values, defaults, and request definitions. Shows configuration source and schema version being used.',
+  )
+  .option('--json', 'Output configuration as JSON')
+  .option('--raw', 'Show raw configuration without defaults filled in')
+  .action(async (options) => {
+    let configPath = program.opts().config;
+
+    if (!configPath) {
+      const defaultConfigPath = path.resolve(
+        process.cwd(),
+        'tressi.config.json',
+      );
+      try {
+        await fs.access(defaultConfigPath);
+        configPath = defaultConfigPath;
+      } catch {
+        // eslint-disable-next-line no-console
+        console.error(
+          chalk.red(
+            'Error: No config file provided and tressi.config.json not found in the current directory.',
+          ),
+        );
+        // eslint-disable-next-line no-console
+        console.log(
+          chalk.yellow(
+            'Please specify a config file using --config or run `tressi init` to create one.',
+          ),
+        );
+        process.exit(1);
+      }
     }
 
     try {
-      await fs.writeFile(filePath, jsonConfigTemplate);
-      // eslint-disable-next-line no-console
-      console.log(
-        chalk.green(`Successfully created ${fileName} at ${filePath}`),
-      );
-    } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error(
-        chalk.red(`Failed to create config file: ${(err as Error).message}`),
-      );
+      const config = await loadConfig(configPath);
+      displayConfig(config, {
+        json: options.json,
+        raw: options.raw,
+        source: configPath,
+      });
+    } catch (error) {
+      if (error instanceof Error) {
+        if (error.message.includes('ENOENT')) {
+          // eslint-disable-next-line no-console
+          console.error(
+            chalk.red(`Configuration file not found: ${configPath}`),
+          );
+        } else if (error.message.includes('JSON')) {
+          // eslint-disable-next-line no-console
+          console.error(chalk.red('Invalid JSON in configuration file'));
+        } else {
+          // eslint-disable-next-line no-console
+          console.error(chalk.red(`Configuration error: ${error.message}`));
+        }
+      }
       process.exit(1);
     }
   });
@@ -120,48 +146,41 @@ program
 program.addHelpText(
   'after',
   `
+Commands:
+  init    Create a tressi.config.json file
+  config  Display current configuration
+
+Options:
+  -c, --config <path>  Path or URL to JSON configuration file (local file path or remote URL)
+                       Defaults to ./tressi.config.json if not specified
+
 Examples:
-  # Create a tressi.config.json file
+  # Create a minimal tressi.config.json file in current directory
   $ tressi init
 
-  # Run a load test using the tressi.config.json in the current directory
+  # Create a comprehensive configuration with all available options
+  $ tressi init --full
+
+  # View current configuration with resolved values and defaults
+  $ tressi config
+
+  # View configuration as JSON for programmatic use
+  $ tressi config --json
+
+  # View raw configuration without defaults filled in
+  $ tressi config --raw
+
+  # Run a load test using default tressi.config.json in current directory
   $ tressi
 
-  # Run a load test with a specific config file
+  # Run a load test with a specific local configuration file
   $ tressi --config ./path/to/your/tressi.config.json
-  
-  # Run a ramp-up test to 500 RPS over 30 seconds
-  $ tressi --workers 20 --duration 60 --rps 500 --ramp-up-time 30
 
-  # Run an autoscaling test up to 50 workers with a target of 1000 RPS
-  $ tressi --autoscale --workers 50 --rps 1000 --duration 60
+  # Run a load test with a remote configuration file
+  $ tressi --config https://example.com/tressi.config.json
 
-  # Export a complete report to a timestamped directory
-  $ tressi --export
-
-  # Export a report to a custom-named, timestamped directory
-  $ tressi --export ./my-report
-  
-  # Run a load test without the interactive terminal UI
-  $ tressi --no-ui
-  
-  # Run a load test with 20 concurrent workers
-  $ tressi --workers 20
-  
-  # Run a load test for 30 seconds
-  $ tressi --duration 30
-
-  # Run a load test with 5 concurrent requests per worker
-  $ tressi --workers 10 --concurrent-requests 5
-
-  # Run a test that exits early if error rate exceeds 5%
-  $ tressi --early-exit-on-error --error-rate-threshold 0.05
-
-  # Run a test that exits early after 100 errors
-  $ tressi --early-exit-on-error --error-count-threshold 100
-
-  # Run a test that exits early on 500 or 503 errors
-  $ tressi --early-exit-on-error --error-status-codes 500,503
+  # View configuration from a specific file
+  $ tressi --config ./my-config.json config
 `,
 );
 
@@ -194,80 +213,12 @@ program.action(async (opts) => {
     }
   }
 
-  if (opts.autoscale && !opts.rps) {
-    // eslint-disable-next-line no-console
-    console.error('Error: --rps is required when --autoscale is enabled.');
-    process.exit(1);
-  }
-
-  // Parse early exit options
-  let errorStatusCodes: number[] | undefined;
-  if (opts.errorStatusCodes) {
-    try {
-      errorStatusCodes = opts.errorStatusCodes
-        .split(',')
-        .map((code: string) => {
-          const parsed = parseInt(code.trim(), 10);
-          if (isNaN(parsed) || parsed < 100 || parsed > 599) {
-            throw new Error(`Invalid HTTP status code: ${code.trim()}`);
-          }
-          return parsed;
-        });
-    } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error(`Error: ${(err as Error).message}`);
-      process.exit(1);
-    }
-  }
-
-  // Validate early exit configuration
-  if (opts.earlyExitOnError) {
-    const hasThreshold =
-      opts.errorRateThreshold !== undefined ||
-      opts.errorCountThreshold !== undefined ||
-      errorStatusCodes !== undefined;
-
-    if (!hasThreshold) {
-      // eslint-disable-next-line no-console
-      console.error(
-        'Error: When --early-exit-on-error is enabled, at least one of --error-rate-threshold, --error-count-threshold, or --error-status-codes must be provided.',
-      );
-      process.exit(1);
-    }
-  }
-
   try {
-    await runLoadTest({
-      config: configPath,
-      workers: opts.workers ? parseInt(opts.workers, 10) : undefined,
-      concurrentRequestsPerWorker: opts.concurrentRequests
-        ? parseInt(opts.concurrentRequests, 10)
-        : undefined,
-      durationSec: opts.duration ? parseInt(opts.duration, 10) : undefined,
-      rampUpTimeSec: opts.rampUpTime
-        ? parseInt(opts.rampUpTime, 10)
-        : undefined,
-      rps: opts.rps ? parseInt(opts.rps, 10) : undefined,
-      autoscale: opts.autoscale,
-      exportPath: opts.export,
-      useUI: opts.ui,
-      earlyExitOnError: opts.earlyExitOnError,
-      errorRateThreshold: opts.errorRateThreshold
-        ? parseFloat(opts.errorRateThreshold)
-        : undefined,
-      errorCountThreshold: opts.errorCountThreshold
-        ? parseInt(opts.errorCountThreshold, 10)
-        : undefined,
-      errorStatusCodes: errorStatusCodes,
-    });
+    const config = await loadConfig(configPath);
+    await runLoadTest(config);
   } catch {
-    // The runLoadTest function handles its own error logging.
-    // We just need to ensure the process exits with an error code.
     process.exit(1);
   }
 });
 
-/**
- * Parses the command line arguments and runs the program.
- */
 program.parseAsync(process.argv);

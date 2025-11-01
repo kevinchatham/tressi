@@ -1,7 +1,11 @@
 {
-  "$schema": "./schemas/tressi.schema.v0.0.12.json",
-  "headers": {
-    "Content-Type": "application/json; charset=UTF-8"
+  "$schema": "./schemas/tressi.schema.v0.0.13.json",
+  "options": {
+    "workers": 1,
+    "durationSec": 10,
+    "rps": 1,
+    "autoscale": true,
+    "useUI": true
   },
   "requests": [
     {
@@ -12,9 +16,7 @@
       "url": "https://jsonplaceholder.typicode.com/posts",
       "method": "POST",
       "payload": {
-        "title": "foo",
-        "body": "bar",
-        "userId": 1
+        "name": "Tressi Post"
       }
     }
   ]

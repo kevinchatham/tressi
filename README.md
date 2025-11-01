@@ -54,7 +54,21 @@ npm install -g tressi
 npx tressi init
 ```
 
-2. **Run the test**
+For a full configuration with all options:
+
+```bash
+npx tressi init --full
+```
+
+2. **View your configuration**
+
+Before running tests, you can verify your configuration:
+
+```bash
+npx tressi config
+```
+
+3. **Run the test**
 
 If you have a `tressi.config.json` file in your current directory, you can simply run:
 
@@ -97,54 +111,141 @@ When you run `tressi` (without the `--no-ui` flag), it displays a live dashboard
 
 ### Test Scenarios
 
-`tressi` can be configured to simulate a variety of load testing scenarios. Here are a few examples:
+`tressi` can be configured to simulate a variety of load testing scenarios. All configuration is done through your JSON config file. Here are examples for different test types:
 
 #### Basic Load Test
 
-A straightforward test with a fixed number of workers and a target Req/s. This command assumes a `tressi.config.json` file exists in the current directory.
+A straightforward test with a fixed number of workers and a target Req/s:
+
+```json
+{
+  "$schema": "https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json",
+  "options": {
+    "workers": 10,
+    "durationSec": 30,
+    "rps": 200
+  },
+  "requests": [
+    {
+      "url": "https://api.example.com/endpoint",
+      "method": "GET"
+    }
+  ]
+}
+```
+
+Run with:
 
 ```bash
-npx tressi --workers 10 --duration 30 --rps 200
+npx tressi
 ```
 
 #### Ramp-up Load Test
 
-Gradually increases the load to a target Req/s over a specified duration. This is useful for understanding how your system behaves as traffic increases.
+Gradually increases the load to a target Req/s over a specified duration:
 
-```bash
-npx tressi --config tressi.config.json --workers 20 --duration 60 --rps 500 --ramp-up-time 30
+```json
+{
+  "$schema": "https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json",
+  "options": {
+    "workers": 20,
+    "durationSec": 60,
+    "rps": 500,
+    "rampUpTimeSec": 30
+  },
+  "requests": [
+    {
+      "url": "https://api.example.com/endpoint",
+      "method": "GET"
+    }
+  ]
+}
 ```
 
 #### Spike Test
 
-A short, intense burst of traffic to test your system's ability to handle sudden surges.
+A short, intense burst of traffic to test your system's ability to handle sudden surges:
 
-```bash
-npx tressi --config tressi.config.json --workers 100 --duration 10
+```json
+{
+  "$schema": "https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json",
+  "options": {
+    "workers": 100,
+    "durationSec": 10
+  },
+  "requests": [
+    {
+      "url": "https://api.example.com/endpoint",
+      "method": "GET"
+    }
+  ]
+}
 ```
 
 #### Soak Test (Endurance Test)
 
-A long-running test to check for performance degradation, memory leaks, or other issues over an extended period.
+A long-running test to check for performance degradation, memory leaks, or other issues over an extended period:
 
-```bash
-npx tressi --config tressi.config.json --workers 5 --duration 300 --rps 50
+```json
+{
+  "$schema": "https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json",
+  "options": {
+    "workers": 5,
+    "durationSec": 300,
+    "rps": 50
+  },
+  "requests": [
+    {
+      "url": "https://api.example.com/endpoint",
+      "method": "GET"
+    }
+  ]
+}
 ```
 
 #### Autoscaling Load Test
 
-Dynamically adjusts the number of workers to meet a target Req/s, up to a specified maximum.
+Dynamically adjusts the number of workers to meet a target Req/s, up to a specified maximum:
 
-```bash
-npx tressi --config tressi.config.json --autoscale --workers 50 --rps 1000 --duration 60
+```json
+{
+  "$schema": "https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json",
+  "options": {
+    "workers": 50,
+    "durationSec": 60,
+    "rps": 1000,
+    "autoscale": true
+  },
+  "requests": [
+    {
+      "url": "https://api.example.com/endpoint",
+      "method": "GET"
+    }
+  ]
+}
 ```
 
 #### Headless & Export Test
 
-Runs a test without the UI and exports the results to a specified directory.
+Runs a test without the UI and exports the results to a specified directory:
 
-```bash
-npx tressi --config tressi.config.json --workers 20 --duration 30 --rps 300 --no-ui --export
+```json
+{
+  "$schema": "https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json",
+  "options": {
+    "workers": 20,
+    "durationSec": 30,
+    "rps": 300,
+    "useUI": false,
+    "exportPath": "my-test-results"
+  },
+  "requests": [
+    {
+      "url": "https://api.example.com/endpoint",
+      "method": "GET"
+    }
+  ]
+}
 ```
 
 #### Early Exit Tests
@@ -153,40 +254,137 @@ Stop tests automatically when error thresholds are exceeded to save time and res
 
 **Exit on error rate threshold (5%):**
 
-```bash
-npx tressi --config tressi.config.json --workers 10 --duration 60 --rps 100 --early-exit-on-error --error-rate-threshold 0.05
+```json
+{
+  "$schema": "https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json",
+  "options": {
+    "workers": 10,
+    "durationSec": 60,
+    "rps": 100,
+    "earlyExitOnError": true,
+    "errorRateThreshold": 0.05
+  },
+  "requests": [
+    {
+      "url": "https://api.example.com/endpoint",
+      "method": "GET"
+    }
+  ]
+}
 ```
 
 **Exit on error count threshold (50 errors):**
 
-```bash
-npx tressi --config tressi.config.json --workers 20 --duration 120 --rps 200 --early-exit-on-error --error-count-threshold 50
+```json
+{
+  "$schema": "https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json",
+  "options": {
+    "workers": 20,
+    "durationSec": 120,
+    "rps": 200,
+    "earlyExitOnError": true,
+    "errorCountThreshold": 50
+  },
+  "requests": [
+    {
+      "url": "https://api.example.com/endpoint",
+      "method": "GET"
+    }
+  ]
+}
 ```
 
 **Exit on specific status codes:**
 
-```bash
-npx tressi --config tressi.config.json --workers 15 --duration 90 --rps 150 --early-exit-on-error --error-status-codes 500,503,404
+```json
+{
+  "$schema": "https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json",
+  "options": {
+    "workers": 15,
+    "durationSec": 90,
+    "rps": 150,
+    "earlyExitOnError": true,
+    "errorStatusCodes": [500, 503, 404]
+  },
+  "requests": [
+    {
+      "url": "https://api.example.com/endpoint",
+      "method": "GET"
+    }
+  ]
+}
 ```
 
 **Combined early exit conditions:**
 
-```bash
-npx tressi --config tressi.config.json --workers 25 --duration 180 --rps 300 --early-exit-on-error --error-rate-threshold 0.1 --error-count-threshold 100 --error-status-codes 500,503
+```json
+{
+  "$schema": "https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json",
+  "options": {
+    "workers": 25,
+    "durationSec": 180,
+    "rps": 300,
+    "earlyExitOnError": true,
+    "errorRateThreshold": 0.1,
+    "errorCountThreshold": 100,
+    "errorStatusCodes": [500, 503]
+  },
+  "requests": [
+    {
+      "url": "https://api.example.com/endpoint",
+      "method": "GET"
+    }
+  ]
+}
 ```
 
 ### Configuration Reference
 
 The `tressi init` command will generate a `tressi.config.json` file with a `$schema` property. This property points to a JSON Schema file that provides autocompletion and validation in supported editors (like VS Code), making it easier to write valid configurations.
 
-#### Example `tressi.config.json`
+#### Example Configurations
+
+**Minimal Configuration** (created by `tressi init`):
 
 ```json
 {
-  "$schema": "https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.8.json",
-  "headers": {
-    "Content-Type": "application/json",
-    "Authorization": "Bearer <your-token>"
+  "$schema": "https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json",
+  "requests": [
+    {
+      "url": "https://api.example.com/users",
+      "method": "GET"
+    },
+    {
+      "url": "https://api.example.com/users",
+      "method": "POST",
+      "payload": { "name": "Tressi" }
+    }
+  ]
+}
+```
+
+**Full Configuration** (created by `tressi init --full`):
+
+```json
+{
+  "$schema": "https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json",
+  "options": {
+    "workers": 10,
+    "durationSec": 30,
+    "rampUpTimeSec": 0,
+    "rps": 200,
+    "autoscale": false,
+    "exportPath": null,
+    "useUI": true,
+    "silent": false,
+    "earlyExitOnError": false,
+    "errorRateThreshold": null,
+    "errorCountThreshold": null,
+    "errorStatusCodes": [],
+    "headers": {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer <your-token>"
+    }
   },
   "requests": [
     {
@@ -205,11 +403,31 @@ The `tressi init` command will generate a `tressi.config.json` file with a `$sch
 }
 ```
 
+#### Configuration Options
+
+All test configuration is now done through the JSON configuration file. The `options` object supports the following properties:
+
+| Property              | Type                  | Description                                                                          | Default |
+| --------------------- | --------------------- | ------------------------------------------------------------------------------------ | ------- |
+| `workers`             | `integer`             | Number of concurrent workers (for autoscale, this is the max workers)                | `10`    |
+| `durationSec`         | `integer`             | Total test duration in seconds                                                       | `10`    |
+| `rampUpTimeSec`       | `integer`             | Time in seconds to ramp up to the target Req/s                                       | `0`     |
+| `rps`                 | `number`              | Target requests per second (ramps up to this value)                                  |         |
+| `autoscale`           | `boolean`             | Enable autoscaling of workers (requires rps)                                         | `false` |
+| `exportPath`          | `string` or `boolean` | Export results to Markdown, XLSX, and CSVs. Use `true` for default or specify a path |         |
+| `useUI`               | `boolean`             | Enable the interactive terminal UI                                                   | `true`  |
+| `silent`              | `boolean`             | Suppress all console output                                                          | `false` |
+| `earlyExitOnError`    | `boolean`             | Enable early exit when error thresholds are exceeded                                 | `false` |
+| `errorRateThreshold`  | `number`              | Exit when error rate exceeds this value (0.0-1.0)                                    |         |
+| `errorCountThreshold` | `integer`             | Exit when total error count reaches this number                                      |         |
+| `errorStatusCodes`    | `array`               | Array of status codes that trigger early exit                                        | `[]`    |
+| `headers`             | `object`              | Global headers to be sent with every request                                         | `{}`    |
+
 #### Root Properties
 
 | Property   | Type     | Description                                                                        |
 | ---------- | -------- | ---------------------------------------------------------------------------------- |
-| `headers`  | `object` | (Optional) An object containing global headers to be sent with every request.      |
+| `options`  | `object` | Configuration options for the test runner                                          |
 | `requests` | `array`  | A required array of one or more request objects to be executed by the test runner. |
 
 #### Request Properties
@@ -225,59 +443,127 @@ Each object in the `requests` array defines a single HTTP request and has the fo
 
 ### Exporting Results
 
-The `--export` flag will generate a unique, timestamped directory containing a comprehensive set of data files:
+Configure export settings in your JSON configuration file using the `exportPath` option:
+
+```json
+{
+  "$schema": "https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json",
+  "options": {
+    "workers": 20,
+    "durationSec": 30,
+    "rps": 300,
+    "useUI": false,
+    "exportPath": "my-test-results"
+  },
+  "requests": [
+    {
+      "url": "https://api.example.com/endpoint",
+      "method": "GET"
+    }
+  ]
+}
+```
+
+When `exportPath` is set to `true` or a string value, tressi will generate a unique, timestamped directory containing:
 
 - **📝 `report.md`**: A clean, readable Markdown summary of the test results. It includes a "Sampled Responses" section that provides a response body for each unique status code received _per endpoint_, making it easy to debug different outcomes for the same URL.
 - **📊 `report.xlsx`**: A multi-sheet Excel file with the global summary, per-endpoint summary, a raw request log, and a dedicated "Sampled Responses" sheet that lists one sample for each status code received per endpoint.
 - **📈 `results.csv`**: A raw log of all requests made during the test.
 
-You can also provide a path to the `--export` flag to customize the base name of the output directory:
-
-```bash
-npx tressi --config tressi.config.json --workers 20 --duration 30 --rps 300 --no-ui --export my-test-results
-```
-
-This will create a uniquely named, timestamped directory, such as `my-test-results-2025-07-06T10:00:00.000Z`.
+The directory will be named with a timestamp, such as `my-test-results-2025-07-06T10:00:00.000Z`.
 
 ### CLI Options
 
-| Option                         | Alias | Description                                                           | Default                                 |
-| ------------------------------ | ----- | --------------------------------------------------------------------- | --------------------------------------- |
-| `--config <path>`              | `-c`  | Path to the configuration file (e.g., `tressi.config.json`)           |                                         |
-| `--workers <n>`                |       | Number of concurrent workers (for autoscale, this is the max workers) | `10`                                    |
-| `--concurrent-requests <n>`    |       | Maximum concurrent requests per worker                                | Dynamic calculation based on target RPS |
-| `--duration <s>`               |       | Total test duration in seconds                                        | `10`                                    |
-| `--rps <n>`                    |       | Target requests per second (ramps up to this value)                   |                                         |
-| `--ramp-up-time <s>`           |       | Time in seconds to ramp up to the target Req/s                        |                                         |
-| `--autoscale`                  |       | Enable autoscaling of workers (requires --rps)                        | `false`                                 |
-| `--export [path]`              |       | Export results to Markdown, XLSX, and CSVs                            | `false`                                 |
-| `--no-ui`                      |       | Disable the interactive terminal UI (can improve performance)         | `false`                                 |
-| `--early-exit-on-error`        |       | Enable early exit when error thresholds are exceeded                  | `false`                                 |
-| `--error-rate-threshold <n>`   |       | Exit when error rate exceeds this value (0.0-1.0)                     |                                         |
-| `--error-count-threshold <n>`  |       | Exit when total error count reaches this number                       |                                         |
-| `--error-status-codes <codes>` |       | Comma-separated list of status codes that trigger early exit          |                                         |
+| Option            | Alias | Description                                                                                              | Default |
+| ----------------- | ----- | -------------------------------------------------------------------------------------------------------- | ------- |
+| `--config <path>` | `-c`  | Path or URL to JSON configuration file (local file path or remote URL). Defaults to ./tressi.config.json |         |
+
+#### Init Command Options
+
+| Option   | Description                                    |
+| -------- | ---------------------------------------------- |
+| `--full` | Generate a full configuration with all options |
+
+#### Config Command Options
+
+| Option   | Description                                    |
+| -------- | ---------------------------------------------- |
+| `--json` | Output configuration as JSON                   |
+| `--raw`  | Show raw configuration without defaults filled |
+
+### Configuration Commands
+
+#### Display Current Configuration
+
+View your current configuration including all resolved values and defaults:
+
+```bash
+# Show current configuration
+tressi config
+
+# Show configuration from specific file
+tressi --config ./my-config.json config
+
+# Show as JSON for programmatic use
+tressi config --json
+
+# Show raw configuration without defaults
+tressi config --raw
+```
+
+The `config` command displays:
+
+- Configuration source (file path or URL)
+- All options with their current values
+- Which values are defaults vs explicitly set
+- Request configurations
+- Schema version being used
+
+#### Example Output
+
+```
+📋 Current Tressi Configuration
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔧 Configuration Source: ./tressi.config.json
+📄 Schema: https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json
+
+🎯 Options:
+  • workers: 10 (default)
+  • durationSec: 30 (explicit)
+  • rps: 100 (explicit)
+  • autoscale: false (default)
+
+🌐 Requests (2 total):
+  1. GET https://api.example.com/users
+  2. POST https://api.example.com/users
+```
+
+Starting in `0.0.13`, `tressi` now uses a simplified CLI interface. All configuration options have been moved to the JSON configuration file for better maintainability and validation. Use `tressi init` to create a minimal configuration file, or `tressi init --full` for a complete configuration with all options.
 
 ## 🧬 Programmatic Usage
 
-`tressi` can be used as a library to run load tests from your own Node.js scripts. The `runLoadTest` function accepts an `options` object and returns a `Promise` that resolves with a `TestSummary` object containing detailed results.
+`tressi` can be used as a library to run load tests from your own Node.js scripts. The `runLoadTest` function accepts a `TressiConfig` object and returns a `Promise` that resolves with a `TestSummary` object containing detailed results.
 
 ```ts
-import { runLoadTest, TestSummary } from 'tressi';
+import { runLoadTest, TestSummary, TressiConfig } from 'tressi';
 
 async function myCustomScript() {
   console.log('Starting custom load test...');
 
-  const summary: TestSummary = await runLoadTest({
-    // Suppress all console output from tressi. Defaults to false.
-    silent: true,
-    // Define the test configuration directly
-    config: {
-      requests: [{ url: 'https://api.example.com/health', method: 'GET' }],
+  const config: TressiConfig = {
+    $schema:
+      'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json',
+    options: {
+      workers: 5,
+      durationSec: 10,
+      rps: 100, // Target 100 requests/second
+      silent: true, // Suppress all console output from tressi
     },
-    workers: 5,
-    durationSec: 10,
-    rps: 100, // Target 100 requests/second
-  });
+    requests: [{ url: 'https://api.example.com/health', method: 'GET' }],
+  };
+
+  const summary: TestSummary = await runLoadTest(config);
 
   console.log('Test complete. Analyzing results...');
 
@@ -304,32 +590,36 @@ myCustomScript();
 You can also use early exit functionality programmatically to automatically stop tests when error conditions are met:
 
 ```ts
-import { runLoadTest, TestSummary } from 'tressi';
+import { runLoadTest, TestSummary, TressiConfig } from 'tressi';
 
 async function earlyExitTest() {
   console.log('Starting load test with early exit...');
 
   try {
-    const summary: TestSummary = await runLoadTest({
-      config: {
-        requests: [
-          { url: 'https://api.example.com/health', method: 'GET' },
-          {
-            url: 'https://api.example.com/users',
-            method: 'POST',
-            payload: { name: 'test' },
-          },
-        ],
+    const config: TressiConfig = {
+      $schema:
+        'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json',
+      options: {
+        workers: 10,
+        durationSec: 120,
+        rps: 100,
+        // Enable early exit with multiple conditions
+        earlyExitOnError: true,
+        errorRateThreshold: 0.05, // Exit if 5% of requests fail
+        errorCountThreshold: 50, // Exit after 50 total errors
+        errorStatusCodes: [500, 503], // Exit on server errors
       },
-      workers: 10,
-      durationSec: 120,
-      rps: 100,
-      // Enable early exit with multiple conditions
-      earlyExitOnError: true,
-      errorRateThreshold: 0.05, // Exit if 5% of requests fail
-      errorCountThreshold: 50, // Exit after 50 total errors
-      errorStatusCodes: [500, 503], // Exit on server errors
-    });
+      requests: [
+        { url: 'https://api.example.com/health', method: 'GET' },
+        {
+          url: 'https://api.example.com/users',
+          method: 'POST',
+          payload: { name: 'test' },
+        },
+      ],
+    };
+
+    const summary: TestSummary = await runLoadTest(config);
 
     console.log('Test completed successfully!');
     console.log(`Total requests: ${summary.global.totalRequests}`);
@@ -355,38 +645,44 @@ For more complex scenarios, you can use different combinations of early exit con
 ```ts
 // Exit on high error rate for performance testing
 await runLoadTest({
-  config: {
-    requests: [{ url: 'https://api.example.com/load-test', method: 'GET' }],
+  $schema:
+    'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json',
+  options: {
+    workers: 20,
+    durationSec: 300,
+    rps: 200,
+    earlyExitOnError: true,
+    errorRateThreshold: 0.01, // Very strict: 1% error rate
   },
-  workers: 20,
-  durationSec: 300,
-  rps: 200,
-  earlyExitOnError: true,
-  errorRateThreshold: 0.01, // Very strict: 1% error rate
+  requests: [{ url: 'https://api.example.com/load-test', method: 'GET' }],
 });
 
 // Exit on specific error count for reliability testing
 await runLoadTest({
-  config: {
-    requests: [{ url: 'https://api.example.com/reliability', method: 'GET' }],
+  $schema:
+    'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json',
+  options: {
+    workers: 5,
+    durationSec: 600,
+    rps: 50,
+    earlyExitOnError: true,
+    errorCountThreshold: 10, // Stop after 10 errors
   },
-  workers: 5,
-  durationSec: 600,
-  rps: 50,
-  earlyExitOnError: true,
-  errorCountThreshold: 10, // Stop after 10 errors
+  requests: [{ url: 'https://api.example.com/reliability', method: 'GET' }],
 });
 
 // Exit on specific status codes for error handling validation
 await runLoadTest({
-  config: {
-    requests: [{ url: 'https://api.example.com/error-test', method: 'GET' }],
+  $schema:
+    'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json',
+  options: {
+    workers: 15,
+    durationSec: 180,
+    rps: 150,
+    earlyExitOnError: true,
+    errorStatusCodes: [429, 503], // Rate limiting or service unavailable
   },
-  workers: 15,
-  durationSec: 180,
-  rps: 150,
-  earlyExitOnError: true,
-  errorStatusCodes: [429, 503], // Rate limiting or service unavailable
+  requests: [{ url: 'https://api.example.com/error-test', method: 'GET' }],
 });
 ```
 

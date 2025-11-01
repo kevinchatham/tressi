@@ -1,7 +1,11 @@
 import type { Dispatcher } from 'undici';
 import z from 'zod';
 
-import { RequestConfigSchema, TressiConfigSchema } from './config';
+import {
+  TressiConfigSchema,
+  TressiOptionsConfigSchema,
+  TressiRequestConfigSchema,
+} from './config';
 
 /**
  * Represents the result of a single request made during the load test.
@@ -129,38 +133,10 @@ export type TestSummary = {
   endpoints: EndpointSummary[];
 };
 
-/**
- * Defines the options for a Tressi load test run.
- */
-export type RunOptions = {
-  /** The configuration for the test. Can be a path to a file, a URL, or a configuration object. */
-  config: string | TressiConfig;
-  /** The number of concurrent workers to use. Defaults to 10. For autoscale, this is the max workers. */
-  workers?: number;
-  /** The total duration of the test in seconds. Defaults to 10. */
-  durationSec?: number;
-  /** The time in seconds to ramp up to the target RPS. Defaults to 0. */
-  rampUpTimeSec?: number;
-  /** The target requests per second. If not provided, the test will run at maximum possible speed. */
-  rps?: number;
-  /** Whether to enable autoscale mode. Defaults to false. --rps is required for this. */
-  autoscale?: boolean;
-  /** The base path for the exported report. If not provided, no report will be generated. */
-  exportPath?: string | boolean;
-  /** Whether to use the terminal UI. Defaults to true. */
-  useUI?: boolean;
-  /** Suppress all console output. Defaults to false. */
-  silent?: boolean;
-  /** Whether to enable early exit on error conditions. Defaults to false. */
-  earlyExitOnError?: boolean;
-  /** Error rate threshold (0.0-1.0) to trigger early exit. Requires earlyExitOnError=true. */
-  errorRateThreshold?: number;
-  /** Absolute error count threshold to trigger early exit. Requires earlyExitOnError=true. */
-  errorCountThreshold?: number;
-  /** Specific HTTP status codes that should trigger early exit. Requires earlyExitOnError=true. */
-  errorStatusCodes?: number[];
-  /** Number of concurrent requests per worker. Defaults to dynamic calculation based on target RPS. */
-  concurrentRequestsPerWorker?: number;
+export type DisplayOptions = {
+  json?: boolean;
+  raw?: boolean;
+  source?: string;
 };
 
 /**
@@ -169,6 +145,20 @@ export type RunOptions = {
 export type TressiConfig = z.infer<typeof TressiConfigSchema>;
 
 /**
+ * Safe type that guarantees the presence of options configuration.
+ * This type represents a validated Tressi configuration that is guaranteed to have
+ * the options property populated, making it safe for internal use where options
+ * are required. In contrast, {@link TressiConfig} is the true external interface
+ * type that may have optional or missing options.
+ */
+export type SafeTressiConfig = TressiConfig & { options: TressiOptionsConfig };
+
+/**
+ * Type representing the options configuration.
+ */
+export type TressiOptionsConfig = z.infer<typeof TressiOptionsConfigSchema>;
+
+/**
  * Type representing a single request configuration.
  */
-export type RequestConfig = z.infer<typeof RequestConfigSchema>;
+export type TressiRequestConfig = z.infer<typeof TressiRequestConfigSchema>;

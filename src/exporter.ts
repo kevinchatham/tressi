@@ -3,9 +3,7 @@ import { writeFile } from 'fs/promises';
 import ora from 'ora';
 import * as xlsx from 'xlsx';
 
-import { RequestResult } from './stats';
 import { getStatusCodeDistributionByCategory } from './stats';
-import { TestSummary } from './summarizer';
 
 async function exportRawLog(
   path: string,
@@ -45,7 +43,7 @@ async function exportXlsx(
   // Global Summary Sheet
   const globalArray = Object.entries(globalSummary).map(([key, value]) => ({
     Stat: key,
-    Value: typeof value === 'number' ? Math.round(value) : value,
+    Value: typeof value === 'number' ? Math.round(value) : String(value),
   }));
   globalArray.unshift({ Stat: 'Tressi Version', Value: summary.tressiVersion });
   const wsGlobal = xlsx.utils.json_to_sheet(globalArray);
@@ -103,7 +101,7 @@ async function exportXlsx(
     }
   }
 
-  await xlsx.writeFile(wb, path);
+  xlsx.writeFile(wb, path);
 }
 
 /**
@@ -113,6 +111,7 @@ async function exportXlsx(
  * @param outputDir The directory to save the files in.
  */
 import { Runner } from './runner';
+import { RequestResult, TestSummary } from './types';
 
 export async function exportDataFiles(
   summary: TestSummary,
