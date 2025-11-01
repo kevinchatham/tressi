@@ -8,6 +8,7 @@ export default defineConfig([
     dts: true,
     sourcemap: true,
     clean: true,
+    tsconfig: 'tsconfig.json',
   },
   {
     entry: ['src/cli.ts'],
@@ -18,5 +19,7 @@ export default defineConfig([
     banner: {
       js: '#!/usr/bin/env node',
     },
+    // Enable TypeScript strict checking to match tsconfig.json
+    tsconfig: 'tsconfig.json',
   },
 ]);

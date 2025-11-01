@@ -1,48 +1,14 @@
 import pkg from '../package.json';
-import { TressiConfig } from './config';
-import { RunOptions } from './index';
 import { Runner } from './runner';
-import { RequestResult } from './stats';
 import { getStatusCodeDistributionByCategory } from './stats';
-
-export interface ReportMetadata {
-  exportName?: string;
-  runDate?: Date;
-}
-
-export interface EndpointSummary {
-  method: string;
-  url: string;
-  totalRequests: number;
-  successfulRequests: number;
-  failedRequests: number;
-  avgLatencyMs: number;
-  minLatencyMs: number;
-  maxLatencyMs: number;
-  p95LatencyMs: number;
-  p99LatencyMs: number;
-}
-
-export interface GlobalSummary {
-  totalRequests: number;
-  successfulRequests: number;
-  failedRequests: number;
-  avgLatencyMs: number;
-  minLatencyMs: number;
-  maxLatencyMs: number;
-  p95LatencyMs: number;
-  p99LatencyMs: number;
-  actualRps: number;
-  theoreticalMaxRps: number;
-  achievedPercentage: number;
-  duration: number;
-}
-
-export interface TestSummary {
-  tressiVersion: string;
-  global: GlobalSummary;
-  endpoints: EndpointSummary[];
-}
+import type {
+  EndpointSummary,
+  ReportMetadata,
+  RequestResult,
+  SafeTressiConfig,
+  TestSummary,
+  TressiOptionsConfig,
+} from './types';
 
 /**
  * Analyzes the results of a load test and generates a comprehensive summary.
@@ -52,7 +18,7 @@ export interface TestSummary {
  */
 export function generateSummary(
   runner: Runner,
-  options: RunOptions,
+  options: TressiOptionsConfig,
   actualDurationSec?: number,
 ): TestSummary {
   const histogram = runner.getHistogram();
@@ -143,21 +109,20 @@ export function generateSummary(
  * @param summary The `TestSummary` object.
  * @param options The original `RunOptions` used for the test.
  * @param runner The `Runner` instance from the test run.
- * @param config The `TressiConfig` used for the run.
+ * @param config The `SafeTressiConfig` used for the run.
  * @param metadata Additional metadata for the report.
  * @returns A Markdown string representing the report.
  */
 export function generateMarkdownReport(
   summary: TestSummary,
-  options: RunOptions,
   runner: Runner,
-  config: TressiConfig,
+  config: SafeTressiConfig,
   metadata?: ReportMetadata,
 ): string {
   const { global: g, endpoints: e } = summary;
 
   const distribution = runner.getDistribution();
-  const { workers = 10, durationSec = 10, rps, autoscale } = options;
+  const { workers, durationSec, rps, autoscale } = config.options;
 
   let md = `# Tressi Load Test Report\n\n`;
 
@@ -233,9 +198,9 @@ export function generateMarkdownReport(
   md += `| Successful | ${g.successfulRequests} |\n`;
   md += `| Failed | ${g.failedRequests} |\n`;
 
-  if (options.rps && g.theoreticalMaxRps) {
-    md += `| Req/s (Actual/Target) | ${g.actualRps.toFixed(0)} / ${options.rps} |\n`;
-    md += `| Req/m (Actual/Target) | ${(g.actualRps * 60).toFixed(0)} / ${options.rps * 60} |\n`;
+  if (rps && g.theoreticalMaxRps) {
+    md += `| Req/s (Actual/Target) | ${g.actualRps.toFixed(0)} / ${rps} |\n`;
+    md += `| Req/m (Actual/Target) | ${(g.actualRps * 60).toFixed(0)} / ${rps * 60} |\n`;
     md += `| Theoretical Max Req/s | ${g.theoreticalMaxRps.toFixed(0)} |\n`;
     md += `| Achieved % | ${g.achievedPercentage.toFixed(0)}% |\n`;
   } else {

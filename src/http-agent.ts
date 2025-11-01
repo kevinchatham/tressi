@@ -1,17 +1,6 @@
 import { Agent, Dispatcher } from 'undici';
 
-export interface AgentConfig {
-  connections?: number;
-  keepAliveTimeout?: number;
-  keepAliveMaxTimeout?: number;
-  headersTimeout?: number;
-  bodyTimeout?: number;
-}
-
-export interface EndpointAgent {
-  url: string;
-  agent: Dispatcher;
-}
+import type { AgentConfig, EndpointAgent } from './types';
 
 export class HttpAgentManager {
   private agents = new Map<string, Dispatcher>();

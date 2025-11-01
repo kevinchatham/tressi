@@ -12,7 +12,6 @@ export class TUI {
   private screen: blessed.Widgets.Screen;
   private latencyChart: contrib.Widgets.LineElement;
   private responseCodeChart: contrib.Widgets.LineElement;
-  private responseCodeLegend: blessed.Widgets.LineElement;
   private statsTable: contrib.Widgets.TableElement;
   private latencyDistributionTable: contrib.Widgets.TableElement;
   private tressiVersion: string;
@@ -51,15 +50,6 @@ export class TUI {
       showLegend: false,
       valign: 'bottom',
       wholeNumbersOnly: true,
-    });
-
-    this.responseCodeLegend = grid.set(0, 11, 6, 1, blessed.box, {
-      content:
-        `{green-fg}■ 2xx{/}\n` +
-        `{yellow-fg}■ 3xx{/}\n` +
-        `{red-fg}■ 4xx{/}\n` +
-        `{magenta-fg}■ 5xx{/}`,
-      tags: true,
     });
 
     this.statsTable = grid.set(6, 0, 6, 6, contrib.table, {
