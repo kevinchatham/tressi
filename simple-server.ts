@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 import { createServer } from 'http';
 
-const PORT = 3000;
+const PORT = 5000;
 
 const server = createServer((req, res) => {
   // Handle only GET requests to "/"
