@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { getSafeDirectoryName, isValidDirectoryName } from '../src/utils.js';
+import { getSafeDirectoryName, isValidDirectoryName } from '../src/utils';
 
 describe('getSafeDirectoryName', () => {
   describe('basic functionality', () => {

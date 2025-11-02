@@ -6,8 +6,8 @@
  * and handling reserved names. Path separators (forward slashes and backslashes)
  * are preserved in the output as they may be part of nested directory structures.
  *
- * @param {string} input - The input string to convert to a safe directory name
- * @returns {string} A safe directory name compatible with Windows, macOS, and Linux
+ * @param input - The input string to convert to a safe directory name
+ * @returns A safe directory name compatible with Windows, macOS, and Linux
  *
  * @example
  * // Basic usage
@@ -116,8 +116,8 @@ export function getSafeDirectoryName(input: string): string {
 /**
  * Checks if a given string is a valid directory name across all platforms.
  *
- * @param {string} name - The directory name to validate
- * @returns {boolean} True if the name is valid on all platforms, false otherwise
+ * @param name - The directory name to validate
+ * @returns True if the name is valid on all platforms, false otherwise
  *
  * @example
  * isValidDirectoryName("my-folder")
@@ -134,4 +134,107 @@ export function isValidDirectoryName(name: string): boolean {
 
   const safeName = getSafeDirectoryName(name);
   return safeName === name;
+}
+
+/**
+ * Sanitizes a file name to be safe across all platforms.
+ * This is similar to getSafeDirectoryName but optimized for files rather than directories.
+ *
+ * @param filename - The file name to sanitize
+ * @returns A sanitized file name safe for all platforms
+ */
+export function getSafeFileName(filename: string): string {
+  if (!filename || typeof filename !== 'string') {
+    return '_unnamed_file';
+  }
+
+  // Start with directory name sanitization
+  let safeName = getSafeDirectoryName(filename);
+
+  // Additional file-specific sanitizations
+  safeName = safeName
+    // Remove path separators for files (they're allowed for directories)
+    .replace(/[\/\\]/g, '_')
+
+    // Ensure it has some kind of extension marker if it looks like it should
+    .replace(/\.+$/, '')
+
+    // Handle multiple dots
+    .replace(/\.{2,}/g, '.');
+
+  // Ensure we still have a valid name
+  if (!safeName || safeName === '_' || safeName === '-') {
+    return '_unnamed_file';
+  }
+
+  return safeName;
+}
+
+/**
+ * Extracts the file extension from a file name, handling edge cases.
+ *
+ * @param filename - The file name to extract extension from
+ * @returns The file extension (including the dot) or empty string if no extension
+ */
+export function getFileExtension(filename: string): string {
+  if (!filename || typeof filename !== 'string') {
+    return '';
+  }
+
+  const lastDotIndex = filename.lastIndexOf('.');
+
+  // No dot found, or dot is at the beginning (hidden file)
+  if (lastDotIndex <= 0) {
+    return '';
+  }
+
+  // Dot is at the end (file ends with dot)
+  if (lastDotIndex === filename.length - 1) {
+    return '';
+  }
+
+  return filename.substring(lastDotIndex);
+}
+
+/**
+ * Removes the file extension from a file name.
+ *
+ * @param filename - The file name to remove extension from
+ * @returns The file name without extension
+ */
+export function removeFileExtension(filename: string): string {
+  if (!filename || typeof filename !== 'string') {
+    return '';
+  }
+
+  const lastDotIndex = filename.lastIndexOf('.');
+
+  // No dot found, or dot is at the beginning (hidden file)
+  if (lastDotIndex <= 0) {
+    return filename;
+  }
+
+  return filename.substring(0, lastDotIndex);
+}
+
+/**
+ * Combines a base name with an extension to create a safe file name.
+ *
+ * @param baseName - The base name (without extension)
+ * @param extension - The file extension (with or without leading dot)
+ * @returns A safe file name with extension
+ */
+export function combineSafeFileName(
+  baseName: string,
+  extension: string,
+): string {
+  const safeBase = getSafeFileName(baseName);
+  const cleanExtension = extension.startsWith('.')
+    ? extension
+    : `.${extension}`;
+
+  // Remove any existing extension from base name
+  const baseWithoutExt = removeFileExtension(safeBase);
+
+  return `${baseWithoutExt}${cleanExtension}`;
 }

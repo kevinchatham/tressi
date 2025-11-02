@@ -9,7 +9,7 @@ import {
   vi,
 } from 'vitest';
 
-import { Runner } from '../src/runner';
+import { CoreRunner } from '../src/core/runner/core-runner';
 import type { SafeTressiConfig } from '../src/types';
 
 let mockAgent: MockAgent;
@@ -47,7 +47,7 @@ const createTestConfig = (
 });
 
 /**
- * Test suite for the early exit feature in the Runner class.
+ * Test suite for the early exit feature in the CoreRunner class.
  */
 describe('Early Exit Feature', () => {
   describe('Configuration Validation', () => {
@@ -66,7 +66,7 @@ describe('Early Exit Feature', () => {
       });
 
       expect(() => {
-        new Runner(config);
+        new CoreRunner(config);
       }).toThrow('errorRateThreshold must be a number between 0.0 and 1.0');
     });
 
@@ -85,7 +85,7 @@ describe('Early Exit Feature', () => {
       });
 
       expect(() => {
-        new Runner(config);
+        new CoreRunner(config);
       }).toThrow('errorRateThreshold must be a number between 0.0 and 1.0');
     });
 
@@ -104,7 +104,7 @@ describe('Early Exit Feature', () => {
       });
 
       expect(() => {
-        new Runner(config);
+        new CoreRunner(config);
       }).toThrow('errorCountThreshold must be a non-negative integer');
     });
 
@@ -123,7 +123,7 @@ describe('Early Exit Feature', () => {
       });
 
       expect(() => {
-        new Runner(config);
+        new CoreRunner(config);
       }).toThrow('errorCountThreshold must be a non-negative integer');
     });
 
@@ -142,7 +142,7 @@ describe('Early Exit Feature', () => {
       });
 
       expect(() => {
-        new Runner(config);
+        new CoreRunner(config);
       }).toThrow('Invalid HTTP status code: 99. Must be between 100-599');
     });
 
@@ -161,7 +161,7 @@ describe('Early Exit Feature', () => {
       });
 
       expect(() => {
-        new Runner(config);
+        new CoreRunner(config);
       }).toThrow(
         'When earlyExitOnError is enabled, at least one of errorRateThreshold, errorCountThreshold, or errorStatusCodes must be provided',
       );
@@ -184,7 +184,7 @@ describe('Early Exit Feature', () => {
       });
 
       expect(() => {
-        new Runner(config);
+        new CoreRunner(config);
       }).not.toThrow();
     });
   });
@@ -209,11 +209,12 @@ describe('Early Exit Feature', () => {
         },
       });
 
-      const runner = new Runner(config);
+      const runner = new CoreRunner(config);
 
       await runner.run();
 
-      const results = runner.getSampledResults();
+      const resultAggregator = runner.getResultAggregator();
+      const results = resultAggregator.getSampledResults();
 
       // Verify early exit by checking we have fewer results than expected for full duration
       // With 10 RPS for 5 seconds, we'd expect ~50 requests, but should exit much earlier
@@ -239,43 +240,62 @@ describe('Early Exit Feature', () => {
         },
       });
 
-      const runner = new Runner(config);
+      const runner = new CoreRunner(config);
 
       await runner.run();
 
-      const results = runner.getSampledResults();
+      const resultAggregator = runner.getResultAggregator();
+      const results = resultAggregator.getSampledResults();
 
       // Verify early exit by checking we have significantly fewer results than expected
       // With 10 RPS for 5 seconds, we'd expect ~50 requests, but should exit much earlier
       expect(results.length).toBeLessThan(25);
     });
 
-    it('should exit early when specific status code is encountered', async () => {
-      const mockPool = mockAgent.get('http://localhost:8080');
+    it('should handle specific status code early exit configuration', async () => {
+      // Create a fresh mock agent for this test to avoid interference
+      const testMockAgent = new MockAgent();
+      testMockAgent.disableNetConnect();
+      setGlobalDispatcher(testMockAgent);
 
-      // Create persistent interceptors
-      mockPool.intercept({ path: '/test', method: 'GET' }).reply(503).persist();
+      const mockPool = testMockAgent.get('http://localhost:8080');
+
+      // Create interceptors - all requests return 503
+      mockPool.intercept({ path: '/test', method: 'GET' }).reply(503).times(20);
 
       const config = createTestConfig({
         options: {
           earlyExitOnError: true,
           errorStatusCodes: [503],
-          durationSec: 2, // Reduced duration to prevent timeout
+          durationSec: 2, // Shorter duration for this test
           workers: 1,
           rampUpTimeSec: 0,
-          rps: 10,
+          rps: 5, // Lower RPS
           useUI: true,
           silent: false,
         },
       });
 
-      const runner = new Runner(config);
+      const runner = new CoreRunner(config);
 
-      await runner.run();
+      try {
+        // Should complete without throwing errors
+        await expect(runner.run()).resolves.toBeUndefined();
 
-      // Should complete successfully - timing is less critical than functionality
-      const results = runner.getSampledResults();
-      expect(results.length).toBeGreaterThan(0);
+        // Should have made some requests
+        const resultAggregator = runner.getResultAggregator();
+        const results = resultAggregator.getSampledResults();
+        expect(results.length).toBeGreaterThan(0);
+
+        // Should have 503 status codes
+        const status503Results = results.filter((r) => r.status === 503);
+        expect(status503Results.length).toBeGreaterThan(0);
+      } finally {
+        // Clean up the test-specific mock agent
+        testMockAgent.close();
+        // Restore the original mock agent
+        setGlobalDispatcher(mockAgent);
+      }
     }, 10000); // Increase timeout to 10 seconds
   });
 
@@ -299,7 +319,7 @@ describe('Early Exit Feature', () => {
         },
       });
 
-      const runner = new Runner(config);
+      const runner = new CoreRunner(config);
       const startTime = Date.now();
 
       await runner.run();
@@ -330,12 +350,13 @@ describe('Early Exit Feature', () => {
         },
       });
 
-      const runner = new Runner(config);
+      const runner = new CoreRunner(config);
 
       await runner.run();
 
       // Should complete successfully
-      const results = runner.getSampledResults();
+      const resultAggregator = runner.getResultAggregator();
+      const results = resultAggregator.getSampledResults();
       expect(results.length).toBeGreaterThan(0);
     });
   });

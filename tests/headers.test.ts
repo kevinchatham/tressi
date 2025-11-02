@@ -9,7 +9,7 @@ import {
   vi,
 } from 'vitest';
 
-import { Runner } from '../src/runner';
+import { CoreRunner } from '../src/core/runner/core-runner';
 import type { SafeTressiConfig } from '../src/types';
 
 let mockAgent: MockAgent;
@@ -47,7 +47,7 @@ const createTestConfig = (
 });
 
 /**
- * Test suite for headers merging functionality in the Runner class.
+ * Test suite for headers merging functionality in the CoreRunner class.
  */
 describe('Headers Merging Tests', () => {
   it('should merge global and request headers', async () => {
@@ -77,11 +77,12 @@ describe('Headers Merging Tests', () => {
       },
     });
 
-    const runner = new Runner(config);
+    const runner = new CoreRunner(config);
 
     await runner.run();
 
-    const results = runner.getSampledResults();
+    const resultAggregator = runner.getResultAggregator();
+    const results = resultAggregator.getSampledResults();
     expect(results.length).toBeGreaterThan(0);
     expect(results[0].status).toBe(200);
     expect(results[0].success).toBe(true);
@@ -113,11 +114,12 @@ describe('Headers Merging Tests', () => {
       },
     });
 
-    const runner = new Runner(config);
+    const runner = new CoreRunner(config);
 
     await runner.run();
 
-    const results = runner.getSampledResults();
+    const resultAggregator = runner.getResultAggregator();
+    const results = resultAggregator.getSampledResults();
     expect(results.length).toBeGreaterThan(0);
     expect(results[0].status).toBe(200);
     expect(results[0].success).toBe(true);
@@ -149,11 +151,12 @@ describe('Headers Merging Tests', () => {
       },
     });
 
-    const runner = new Runner(config);
+    const runner = new CoreRunner(config);
 
     await runner.run();
 
-    const results = runner.getSampledResults();
+    const resultAggregator = runner.getResultAggregator();
+    const results = resultAggregator.getSampledResults();
     expect(results.length).toBeGreaterThan(0);
     expect(results[0].status).toBe(200);
     expect(results[0].success).toBe(true);

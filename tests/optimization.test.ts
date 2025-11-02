@@ -9,7 +9,7 @@ import {
   vi,
 } from 'vitest';
 
-import { Runner } from '../src/runner';
+import { CoreRunner } from '../src/core/runner/core-runner';
 import type { SafeTressiConfig } from '../src/types';
 
 let mockAgent: MockAgent;
@@ -47,7 +47,7 @@ const createTestConfig = (
 });
 
 /**
- * Test suite for object allocation optimizations in the Runner class.
+ * Test suite for object allocation optimizations in the CoreRunner class.
  */
 describe('Object Allocation Optimizations', () => {
   describe('Response Sampling', () => {
@@ -71,11 +71,12 @@ describe('Object Allocation Optimizations', () => {
         },
       });
 
-      const runner = new Runner(config);
+      const runner = new CoreRunner(config);
 
       await runner.run();
 
-      const results = runner.getSampledResults();
+      const resultAggregator = runner.getResultAggregator();
+      const results = resultAggregator.getSampledResults();
       expect(results.length).toBeGreaterThan(0);
 
       // Check that we have results for the endpoint
@@ -109,11 +110,12 @@ describe('Object Allocation Optimizations', () => {
         },
       });
 
-      const runner = new Runner(config);
+      const runner = new CoreRunner(config);
 
       await runner.run();
 
-      const results = runner.getSampledResults();
+      const resultAggregator = runner.getResultAggregator();
+      const results = resultAggregator.getSampledResults();
       expect(results.length).toBeGreaterThan(0);
 
       // Should have both successful and failed requests
@@ -147,11 +149,12 @@ describe('Object Allocation Optimizations', () => {
         },
       });
 
-      const runner = new Runner(config);
+      const runner = new CoreRunner(config);
 
       await runner.run();
 
-      const results = runner.getSampledResults();
+      const resultAggregator = runner.getResultAggregator();
+      const results = resultAggregator.getSampledResults();
       expect(results.length).toBeGreaterThan(0);
 
       // Should have network error results
@@ -177,11 +180,12 @@ describe('Object Allocation Optimizations', () => {
         },
       });
 
-      const runner = new Runner(config);
+      const runner = new CoreRunner(config);
 
       await runner.run();
 
-      const results = runner.getSampledResults();
+      const resultAggregator = runner.getResultAggregator();
+      const results = resultAggregator.getSampledResults();
       expect(results.length).toBeGreaterThan(0);
 
       // Should have results from multiple workers
@@ -205,11 +209,12 @@ describe('Object Allocation Optimizations', () => {
         },
       });
 
-      const runner = new Runner(config);
+      const runner = new CoreRunner(config);
 
       await runner.run();
 
-      const results = runner.getSampledResults();
+      const resultAggregator = runner.getResultAggregator();
+      const results = resultAggregator.getSampledResults();
       expect(results.length).toBeGreaterThan(0);
 
       // Should handle high concurrency without issues
@@ -238,11 +243,12 @@ describe('Object Allocation Optimizations', () => {
         },
       });
 
-      const runner = new Runner(config);
+      const runner = new CoreRunner(config);
 
       await runner.run();
 
-      const results = runner.getSampledResults();
+      const resultAggregator = runner.getResultAggregator();
+      const results = resultAggregator.getSampledResults();
       expect(results.length).toBeGreaterThan(0);
 
       // Should complete without memory issues

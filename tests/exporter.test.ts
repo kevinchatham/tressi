@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, Mock, vi } from 'vitest';
 import * as xlsx from 'xlsx';
 
 import { TestSummary } from '../src';
-import { exportDataFiles } from '../src/exporter';
+import { DataExporter } from '../src/reporting/exporters/data-exporter';
 import { EndpointSummary, GlobalSummary, RequestResult } from '../src/types';
 
 // Mock file system and external libraries
@@ -86,7 +86,7 @@ const mockSummary: TestSummary = {
 };
 
 /**
- * Test suite for the multi-file data exporter functionality.
+ * Test suite for the multi-file data exporter functionality using the new architecture.
  */
 describe('exporter', () => {
   interface GlobalSheetRow {
@@ -98,7 +98,7 @@ describe('exporter', () => {
   let xlsxWriteFileMock: Mock;
   let jsonToSheetMock: Mock;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let mockRunner: any;
+  let mockResultAggregator: any;
 
   beforeEach(async () => {
     // Dynamically import the mocked module to get the mock function
@@ -109,8 +109,9 @@ describe('exporter', () => {
     writeFileMock.mockClear();
     xlsxWriteFileMock.mockClear();
 
-    mockRunner = {
+    mockResultAggregator = {
       getStatusCodeMap: vi.fn(() => ({ 200: 3, 500: 1 })),
+      getSampledResults: vi.fn(() => mockResults),
     };
   });
 
@@ -119,11 +120,12 @@ describe('exporter', () => {
    * with the correctly formatted data and file paths.
    */
   it('should export all data files and round numbers for reports', async () => {
-    await exportDataFiles(
+    const dataExporter = new DataExporter();
+    await dataExporter.exportDataFiles(
       mockSummary,
       mockResults,
       './test-output',
-      mockRunner,
+      mockResultAggregator,
     );
 
     // Should be called 1 time for the raw CSV
@@ -150,7 +152,7 @@ describe('exporter', () => {
       'timestamp,url,status,latencyMs,success,error',
     );
     // Check that 100.45 was rounded to 100
-    expect(rawCsvCall![1]).toContain('1,"http://a.com",200,100,true,""');
+    expect(rawCsvCall![1]).toContain('1,http://a.com,200,100,true,,GET');
 
     // Check that data passed to XLSX generator is rounded
     // 1. Global Summary
@@ -171,11 +173,11 @@ describe('exporter', () => {
     // 3. Status Code Distribution
     const statusCodeSheetData = jsonToSheetMock.mock.calls[2][0];
     expect(statusCodeSheetData).toEqual([
+      { 'Status Code Category': '1xx', Count: 0 },
       { 'Status Code Category': '2xx', Count: 3 },
       { 'Status Code Category': '3xx', Count: 0 },
       { 'Status Code Category': '4xx', Count: 0 },
       { 'Status Code Category': '5xx', Count: 1 },
-      { 'Status Code Category': 'other', Count: 0 },
     ]);
   });
 });

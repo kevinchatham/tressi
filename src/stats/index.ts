@@ -1,3 +1,4 @@
+// Original stats functionality (moved from src/stats.ts)
 /**
  * Aggregates a status code map into standard categories (2xx, 3xx, 4xx, 5xx).
  * @param statusCodeMap A record where keys are status codes and values are their counts.
@@ -37,3 +38,18 @@ export function getStatusCodeDistributionByCategory(
 
   return distribution;
 }
+
+// Export collectors
+export { LatencyCollector } from './collectors/latency-collector';
+export { StatusCodeCollector } from './collectors/status-code-collector';
+export { EndpointCollector } from './collectors/endpoint-collector';
+
+// Export calculators
+export { RpsCalculator } from './calculators/rps-calculator';
+export { LatencyCalculator } from './calculators/latency-calculator';
+
+// Export aggregators
+export { ResultAggregator } from './aggregators/result-aggregator';
+
+// Export distribution
+export { Distribution } from './distribution';

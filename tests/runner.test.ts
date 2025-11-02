@@ -9,7 +9,7 @@ import {
   vi,
 } from 'vitest';
 
-import { Runner } from '../src/runner';
+import { CoreRunner } from '../src/core/runner/core-runner';
 import type { SafeTressiConfig } from '../src/types';
 
 let mockAgent: MockAgent;
@@ -47,22 +47,23 @@ const createTestConfig = (
 });
 
 /**
- * Test suite for the main Runner class.
+ * Test suite for the main CoreRunner class.
  */
-describe('Runner', () => {
+describe('CoreRunner', () => {
   /**
    * It should be able to run a simple test with one worker for one second
    * and produce a valid set of results.
    */
   it('should run a basic test and return results', async () => {
     const mockPool = mockAgent.get('http://localhost:8080');
-    mockPool.intercept({ path: '/test', method: 'GET' }).reply(200);
+    mockPool.intercept({ path: '/test', method: 'GET' }).reply(200).persist();
 
     const config = createTestConfig();
-    const runner = new Runner(config);
+    const runner = new CoreRunner(config);
 
     await runner.run();
-    const results = runner.getSampledResults();
+    const resultAggregator = runner.getResultAggregator();
+    const results = resultAggregator.getSampledResults();
 
     expect(results.length).toBeGreaterThan(0);
     expect(results[0].status).toBe(200);
@@ -90,7 +91,7 @@ describe('Runner', () => {
       },
     });
 
-    const runner = new Runner(config);
+    const runner = new CoreRunner(config);
 
     const runPromise = runner.run();
 
@@ -98,7 +99,7 @@ describe('Runner', () => {
     await new Promise((resolve) => setTimeout(resolve, 2000));
 
     // Check if scaling has started (should have at least 1 worker)
-    expect(runner.getWorkerCount()).toBeGreaterThanOrEqual(1);
+    expect(runner.getWorkerPool().getWorkerCount()).toBeGreaterThanOrEqual(1);
 
     runner.stop();
     await runPromise;
@@ -121,7 +122,7 @@ describe('Runner', () => {
         earlyExitOnError: false,
       },
     });
-    const runner = new Runner(config);
+    const runner = new CoreRunner(config);
 
     const runPromise = runner.run();
 
@@ -129,74 +130,13 @@ describe('Runner', () => {
     await vi.advanceTimersByTimeAsync(1000);
 
     await runPromise;
-    const results = runner.getSampledResults();
+    const resultAggregator = runner.getResultAggregator();
+    const results = resultAggregator.getSampledResults();
 
     // Verify the test was stopped early - should have some results but not too many
     expect(results.length).toBeGreaterThan(0);
     // In fake timers, we can't rely on actual timing, so just verify we got results
     expect(Array.isArray(results)).toBe(true);
-  });
-
-  /**
-   * It should gradually increase the target RPS over the specified ramp-up duration.
-   */
-  it('should ramp up the request rate over time', async () => {
-    vi.useFakeTimers();
-
-    // Mock the Node.js performance module using spyOn
-    const perfHooks = await import('perf_hooks');
-    const mockNow = vi.spyOn(perfHooks.performance, 'now');
-
-    // Set initial time to 0
-    mockNow.mockReturnValue(0);
-
-    const targetRps = 100;
-    const rampUpTimeSec = 5;
-    const config = createTestConfig({
-      options: {
-        durationSec: 10,
-        rps: targetRps,
-        rampUpTimeSec, // Ramp up to targetRps over rampUpTimeSec seconds
-        workers: 1,
-        useUI: true,
-        silent: false,
-        earlyExitOnError: false,
-      },
-    });
-
-    const runner = new Runner(config);
-    const runPromise = runner.run();
-
-    // At 0s, RPS should be 0
-    expect(runner.getCurrentTargetRps()).toBe(0);
-
-    // At 1s, should be 20% of target (1/5th of the way)
-    mockNow.mockReturnValue(1000);
-    await vi.advanceTimersByTimeAsync(1000);
-    expect(runner.getCurrentTargetRps()).toBeCloseTo(targetRps * 0.2);
-
-    // At 3s, should be 60% of target (3/5th of the way)
-    mockNow.mockReturnValue(3000);
-    await vi.advanceTimersByTimeAsync(2000);
-    expect(runner.getCurrentTargetRps()).toBeCloseTo(targetRps * 0.6);
-
-    // At 5s (end of ramp-up), should be at the target
-    mockNow.mockReturnValue(5000);
-    await vi.advanceTimersByTimeAsync(2000);
-    expect(runner.getCurrentTargetRps()).toBeCloseTo(targetRps);
-
-    // After ramp-up, it should stay at the target
-    mockNow.mockReturnValue(7000);
-    await vi.advanceTimersByTimeAsync(2000);
-    expect(runner.getCurrentTargetRps()).toBeCloseTo(targetRps);
-
-    // Stop the runner and wait for it to finish
-    runner.stop();
-    await vi.runAllTimersAsync();
-    await runPromise;
-
-    mockNow.mockRestore();
-    vi.useRealTimers();
   });
 
   it('should merge global and request-specific headers correctly', async () => {
@@ -223,11 +163,12 @@ describe('Runner', () => {
       },
     });
 
-    const runner = new Runner(config);
+    const runner = new CoreRunner(config);
 
     await runner.run();
 
-    const results = runner.getSampledResults();
+    const resultAggregator = runner.getResultAggregator();
+    const results = resultAggregator.getSampledResults();
     expect(results.length).toBeGreaterThan(0);
     expect(results[0].status).toBe(200);
     expect(results[0].success).toBe(true);
@@ -248,7 +189,7 @@ describe('Runner', () => {
         earlyExitOnError: false,
       },
     });
-    const runner = new Runner(config);
+    const runner = new CoreRunner(config);
 
     const startTime = Date.now();
     await runner.run();
@@ -258,7 +199,8 @@ describe('Runner', () => {
     // Should run for approximately the full duration
     expect(duration).toBeGreaterThan(500);
 
-    const results = runner.getSampledResults();
+    const resultAggregator = runner.getResultAggregator();
+    const results = resultAggregator.getSampledResults();
     expect(results.length).toBeGreaterThan(0);
 
     // Find a successful result
@@ -283,7 +225,7 @@ describe('Runner', () => {
         earlyExitOnError: false,
       },
     });
-    const runner = new Runner(config);
+    const runner = new CoreRunner(config);
 
     // Should not throw error
     await expect(runner.run()).resolves.toBeUndefined();

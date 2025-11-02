@@ -5,12 +5,12 @@ import path from 'path';
 
 import pkg from '../package.json';
 import { runLoadTest } from '.';
+import { displayConfig } from './cli/display/config-display';
 import {
   generateFullConfig,
   generateMinimalConfig,
   loadConfig,
 } from './config';
-import { displayConfig } from './config-display';
 
 /**
  * The main commander program instance.
