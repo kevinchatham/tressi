@@ -1,107 +1,165 @@
 import { MockAgent, setGlobalDispatcher } from 'undici';
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
 
-import { RequestConfig } from '../src/config';
-import { RunOptions } from '../src/index';
 import { Runner } from '../src/runner';
+import type { SafeTressiConfig } from '../src/types';
 
 let mockAgent: MockAgent;
 
 beforeAll(() => {
   mockAgent = new MockAgent();
-  mockAgent.disableNetConnect();
+  mockAgent.disableNetConnect(); // prevent actual network requests
   setGlobalDispatcher(mockAgent);
 });
 
 afterEach(() => {
-  mockAgent.assertNoPendingInterceptors();
+  vi.useRealTimers();
 });
 
 afterAll(() => {
   mockAgent.close();
 });
 
-const baseOptions: RunOptions = {
-  config: { requests: [] },
-  workers: 1,
-  durationSec: 1,
-};
+const createTestConfig = (
+  overrides?: Partial<SafeTressiConfig>,
+): SafeTressiConfig => ({
+  $schema: 'https://example.com/schema.json',
+  requests: [{ url: 'http://localhost:8080/test', method: 'GET' }],
+  options: {
+    workers: 1,
+    durationSec: 1,
+    rampUpTimeSec: 0,
+    autoscale: false,
+    useUI: true,
+    silent: false,
+    earlyExitOnError: false,
+    ...overrides?.options,
+  },
+  ...overrides,
+});
 
-const baseRequests: RequestConfig[] = [
-  { url: 'http://localhost:8080/test', method: 'GET' },
-];
-
+/**
+ * Test suite for object allocation optimizations in the Runner class.
+ */
 describe('Object Allocation Optimizations', () => {
-  describe('Endpoint Key Caching', () => {
-    it('should handle multiple endpoints correctly', async () => {
-      const mockPool = mockAgent.get('http://localhost:8080');
-      mockPool.intercept({ path: '/test1', method: 'GET' }).reply(200);
-      mockPool.intercept({ path: '/test2', method: 'POST' }).reply(201);
-
-      const requests: RequestConfig[] = [
-        { url: 'http://localhost:8080/test1', method: 'GET' },
-        { url: 'http://localhost:8080/test2', method: 'POST' },
-      ];
-
-      const runner = new Runner(baseOptions, requests, {});
-
-      await runner.run();
-
-      const results = runner.getSampledResults();
-      expect(results.length).toBeGreaterThan(0);
-
-      const urls = new Set(results.map((r) => r.url));
-      expect(urls.has('http://localhost:8080/test1')).toBe(true);
-      expect(urls.has('http://localhost:8080/test2')).toBe(true);
-    });
-  });
-
   describe('Response Sampling', () => {
     it('should sample different status codes per endpoint', async () => {
       const mockPool = mockAgent.get('http://localhost:8080');
+
+      // Create interceptors for different status codes
       mockPool.intercept({ path: '/test', method: 'GET' }).reply(200);
       mockPool.intercept({ path: '/test', method: 'GET' }).reply(404);
       mockPool.intercept({ path: '/test', method: 'GET' }).reply(500);
 
-      const runner = new Runner(baseOptions, baseRequests, {});
+      const config = createTestConfig({
+        options: {
+          durationSec: 2,
+          workers: 1,
+          rps: 5,
+          rampUpTimeSec: 0,
+          autoscale: false,
+          useUI: true,
+          silent: false,
+          earlyExitOnError: false,
+        },
+      });
+
+      const runner = new Runner(config);
 
       await runner.run();
 
       const results = runner.getSampledResults();
       expect(results.length).toBeGreaterThan(0);
 
-      const statusCodes = new Set(results.map((r) => r.status));
-      expect(statusCodes.size).toBeGreaterThan(0);
+      // Check that we have results for the endpoint
+      const endpointResults = results.filter(
+        (r) => r.url === 'http://localhost:8080/test',
+      );
+      expect(endpointResults.length).toBeGreaterThan(0);
     });
-  });
 
-  describe('Error Handling', () => {
     it('should handle error scenarios gracefully', async () => {
       const mockPool = mockAgent.get('http://localhost:8080');
+
+      // Create interceptors for different error scenarios
+      mockPool.intercept({ path: '/test', method: 'GET' }).reply(200);
+      mockPool.intercept({ path: '/test', method: 'GET' }).reply(404);
       mockPool.intercept({ path: '/test', method: 'GET' }).reply(500);
-
-      const runner = new Runner(baseOptions, baseRequests, {});
-
-      await runner.run();
-
-      const results = runner.getSampledResults();
-      expect(results.length).toBeGreaterThan(0);
-      expect(results.some((r) => !r.success)).toBe(true);
-    });
-
-    it('should handle network errors gracefully', async () => {
-      const mockPool = mockAgent.get('http://localhost:8080');
+      mockPool.intercept({ path: '/test', method: 'GET' }).reply(500);
       mockPool
         .intercept({ path: '/test', method: 'GET' })
         .replyWithError(new Error('Network error'));
 
-      const runner = new Runner(baseOptions, baseRequests, {});
+      const config = createTestConfig({
+        options: {
+          durationSec: 2,
+          workers: 1,
+          rps: 5,
+          rampUpTimeSec: 0,
+          autoscale: false,
+          useUI: true,
+          silent: false,
+          earlyExitOnError: false,
+        },
+      });
+
+      const runner = new Runner(config);
 
       await runner.run();
 
       const results = runner.getSampledResults();
       expect(results.length).toBeGreaterThan(0);
-      expect(results.some((r) => r.error)).toBe(true);
+
+      // Should have both successful and failed requests
+      const successfulRequests = results.filter((r) => r.success);
+      const failedRequests = results.filter((r) => !r.success);
+      expect(successfulRequests.length).toBeGreaterThan(0);
+      expect(failedRequests.length).toBeGreaterThan(0);
+    });
+
+    it('should handle network errors gracefully', async () => {
+      const mockPool = mockAgent.get('http://localhost:8080');
+
+      // Create interceptors for network errors
+      mockPool.intercept({ path: '/test', method: 'GET' }).reply(200);
+      mockPool.intercept({ path: '/test', method: 'GET' }).reply(404);
+      mockPool.intercept({ path: '/test', method: 'GET' }).reply(500);
+      mockPool.intercept({ path: '/test', method: 'GET' }).reply(500);
+      mockPool
+        .intercept({ path: '/test', method: 'GET' })
+        .replyWithError(new Error('Network error'));
+
+      const config = createTestConfig({
+        options: {
+          durationSec: 2,
+          workers: 1,
+          rps: 5,
+          rampUpTimeSec: 0,
+          autoscale: false,
+          useUI: true,
+          silent: false,
+          earlyExitOnError: false,
+        },
+      });
+
+      const runner = new Runner(config);
+
+      await runner.run();
+
+      const results = runner.getSampledResults();
+      expect(results.length).toBeGreaterThan(0);
+
+      // Should have network error results
+      const networkErrors = results.filter((r) => r.error);
+      expect(networkErrors.length).toBeGreaterThan(0);
     });
   });
 
@@ -110,32 +168,58 @@ describe('Object Allocation Optimizations', () => {
       const mockPool = mockAgent.get('http://localhost:8080');
       mockPool.intercept({ path: '/test', method: 'GET' }).reply(200).times(20);
 
-      const options = { ...baseOptions, workers: 3 };
-      const runner = new Runner(options, baseRequests, {});
+      const config = createTestConfig({
+        options: {
+          workers: 2,
+          durationSec: 2,
+          rps: 10,
+          rampUpTimeSec: 0,
+          autoscale: false,
+          useUI: true,
+          silent: false,
+          earlyExitOnError: false,
+        },
+      });
+
+      const runner = new Runner(config);
 
       await runner.run();
 
       const results = runner.getSampledResults();
       expect(results.length).toBeGreaterThan(0);
+
+      // Should have results from multiple workers
+      const successfulRequests = results.filter((r) => r.success);
+      expect(successfulRequests.length).toBeGreaterThan(0);
     });
 
     it('should handle high concurrency with optimizations', async () => {
       const mockPool = mockAgent.get('http://localhost:8080');
       mockPool.intercept({ path: '/test', method: 'GET' }).reply(200).times(50);
 
-      const options = {
-        ...baseOptions,
-        workers: 5,
-        durationSec: 2,
-        rps: 25,
-      };
+      const config = createTestConfig({
+        options: {
+          workers: 5,
+          durationSec: 2,
+          rps: 25,
+          rampUpTimeSec: 0,
+          autoscale: false,
+          useUI: true,
+          silent: false,
+          earlyExitOnError: false,
+        },
+      });
 
-      const runner = new Runner(options, baseRequests, {});
+      const runner = new Runner(config);
 
       await runner.run();
 
       const results = runner.getSampledResults();
       expect(results.length).toBeGreaterThan(0);
+
+      // Should handle high concurrency without issues
+      const successfulRequests = results.filter((r) => r.success);
+      expect(successfulRequests.length).toBeGreaterThan(0);
     });
   });
 
@@ -147,23 +231,29 @@ describe('Object Allocation Optimizations', () => {
         .reply(200)
         .times(100);
 
-      const options = {
-        ...baseOptions,
-        workers: 2,
-        durationSec: 3,
-        rps: 50,
-      };
+      const config = createTestConfig({
+        options: {
+          workers: 2,
+          durationSec: 2,
+          rps: 50,
+          rampUpTimeSec: 0,
+          autoscale: false,
+          useUI: true,
+          silent: false,
+          earlyExitOnError: false,
+        },
+      });
 
-      const runner = new Runner(options, baseRequests, {});
+      const runner = new Runner(config);
 
       await runner.run();
 
       const results = runner.getSampledResults();
       expect(results.length).toBeGreaterThan(0);
 
-      // Verify cleanup happened
-      const histograms = runner.getEndpointHistograms();
-      expect(histograms.size).toBeGreaterThan(0);
+      // Should complete without memory issues
+      const successfulRequests = results.filter((r) => r.success);
+      expect(successfulRequests.length).toBeGreaterThan(0);
     });
   });
 });

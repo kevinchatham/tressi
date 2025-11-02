@@ -1,11 +1,10 @@
 import { build, Histogram } from 'hdr-histogram-js';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
-import { RunOptions } from '../src';
-import { TressiConfig } from '../src/config';
 import { Distribution } from '../src/distribution';
 import { Runner } from '../src/runner';
 import { generateMarkdownReport, generateSummary } from '../src/summarizer';
+import type { SafeTressiConfig, TressiOptionsConfig } from '../src/types';
 
 const createHistogram = (latencies: number[]): Histogram => {
   const histogram = build();
@@ -81,14 +80,21 @@ const mockRunner = {
   },
 } as unknown as Runner;
 
-const mockOptions: RunOptions = {
-  config: { requests: [] },
+const mockOptions: TressiOptionsConfig = {
   durationSec: 10,
   rps: 1, // 10 requests total theoretical
+  workers: 10,
+  rampUpTimeSec: 0,
+  autoscale: false,
+  useUI: true,
+  silent: false,
+  earlyExitOnError: false,
 };
 
-const mockConfig: TressiConfig = {
+const mockConfig: SafeTressiConfig = {
+  $schema: 'https://example.com/schema.json',
   requests: [{ url: 'http://a.com', method: 'GET' }],
+  options: mockOptions,
 };
 
 /**
@@ -162,7 +168,6 @@ describe('summarizer', () => {
     };
     const markdown = generateMarkdownReport(
       summary,
-      mockOptions,
       mockRunner,
       mockConfig,
       metadata,

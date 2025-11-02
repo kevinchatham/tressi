@@ -5,7 +5,7 @@ exports[`summarizer > should generate a comprehensive Markdown report 1`] = `
 
 | Metric | Value |
 |---|---|
-| Version | 0.0.12 |
+| Version | 0.0.13 |
 | Export Name | my-test-report |
 | Test Time | 12/31/2022, 9:00:00 PM |
 
@@ -21,12 +21,23 @@ exports[`summarizer > should generate a comprehensive Markdown report 1`] = `
 
 \`\`\`json
 {
+  "$schema": "https://example.com/schema.json",
   "requests": [
     {
       "url": "http://a.com",
       "method": "GET"
     }
-  ]
+  ],
+  "options": {
+    "durationSec": 10,
+    "rps": 1,
+    "workers": 10,
+    "rampUpTimeSec": 0,
+    "autoscale": false,
+    "useUI": true,
+    "silent": false,
+    "earlyExitOnError": false
+  }
 }
 \`\`\`
 
