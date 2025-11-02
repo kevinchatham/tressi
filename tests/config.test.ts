@@ -1,14 +1,25 @@
 import { MockAgent, setGlobalDispatcher } from 'undici';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
-import { loadConfig, TressiConfig } from '../src/config';
+import { loadConfig } from '../src/config';
 
 const minimalConfig = {
+  $schema: 'https://example.com/schema.json',
   requests: [{ url: 'http://localhost:8080/test', method: 'GET' as const }],
 };
 
-const expectedConfig: TressiConfig = {
+const expectedConfig = {
+  $schema: 'https://example.com/schema.json',
   requests: [{ url: 'http://localhost:8080/test', method: 'GET' }],
+  options: expect.objectContaining({
+    workers: 10,
+    durationSec: 10,
+    rampUpTimeSec: 0,
+    autoscale: false,
+    useUI: true,
+    silent: false,
+    earlyExitOnError: false,
+  }),
 };
 
 let mockAgent: MockAgent;
@@ -75,8 +86,18 @@ describe('config', () => {
 
     it('should correctly parse a config with per-request headers', async () => {
       const configWithHeaders = {
-        headers: {
-          Authorization: 'Bearer global-token',
+        $schema: 'https://example.com/schema.json',
+        options: {
+          headers: {
+            Authorization: 'Bearer global-token',
+          },
+          workers: 1,
+          durationSec: 1,
+          rampUpTimeSec: 0,
+          autoscale: false,
+          useUI: true,
+          silent: false,
+          earlyExitOnError: false,
         },
         requests: [
           {
@@ -94,7 +115,7 @@ describe('config', () => {
       expect(parsedConfig.requests[0].headers).toEqual({
         'X-Request-ID': '123',
       });
-      expect(parsedConfig.headers).toEqual({
+      expect(parsedConfig.options.headers).toEqual({
         Authorization: 'Bearer global-token',
       });
     });

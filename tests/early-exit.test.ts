@@ -9,9 +9,8 @@ import {
   vi,
 } from 'vitest';
 
-import { RequestConfig } from '../src/config';
-import { RunOptions } from '../src/index';
 import { Runner } from '../src/runner';
+import type { SafeTressiConfig } from '../src/types';
 
 let mockAgent: MockAgent;
 
@@ -23,23 +22,29 @@ beforeAll(() => {
 
 afterEach(() => {
   vi.useRealTimers();
-  // Skip interceptor assertions to focus on functionality
-  // mockAgent.assertNoPendingInterceptors();
 });
 
 afterAll(() => {
   mockAgent.close();
 });
 
-const baseOptions: RunOptions = {
-  config: { requests: [] },
-  workers: 1,
-  durationSec: 10,
-};
-
-const baseRequests: RequestConfig[] = [
-  { url: 'http://localhost:8080/test', method: 'GET' },
-];
+const createTestConfig = (
+  overrides?: Partial<SafeTressiConfig>,
+): SafeTressiConfig => ({
+  $schema: 'https://example.com/schema.json',
+  requests: [{ url: 'http://localhost:8080/test', method: 'GET' }],
+  options: {
+    workers: 1,
+    durationSec: 10,
+    rampUpTimeSec: 0,
+    autoscale: false,
+    useUI: true,
+    silent: false,
+    earlyExitOnError: false,
+    ...overrides?.options,
+  },
+  ...overrides,
+});
 
 /**
  * Test suite for the early exit feature in the Runner class.
@@ -47,90 +52,139 @@ const baseRequests: RequestConfig[] = [
 describe('Early Exit Feature', () => {
   describe('Configuration Validation', () => {
     it('should throw error when error rate threshold is out of range', () => {
-      const options: RunOptions = {
-        ...baseOptions,
-        earlyExitOnError: true,
-        errorRateThreshold: 1.5, // Invalid: > 1.0
-      };
+      const config = createTestConfig({
+        options: {
+          earlyExitOnError: true,
+          errorRateThreshold: 1.5, // Invalid: > 1.0
+          workers: 1,
+          durationSec: 1,
+          rampUpTimeSec: 0,
+          autoscale: false,
+          useUI: true,
+          silent: false,
+        },
+      });
 
       expect(() => {
-        new Runner(options, baseRequests, {});
+        new Runner(config);
       }).toThrow('errorRateThreshold must be a number between 0.0 and 1.0');
     });
 
     it('should throw error when error rate threshold is negative', () => {
-      const options: RunOptions = {
-        ...baseOptions,
-        earlyExitOnError: true,
-        errorRateThreshold: -0.1, // Invalid: < 0.0
-      };
+      const config = createTestConfig({
+        options: {
+          earlyExitOnError: true,
+          errorRateThreshold: -0.1, // Invalid: < 0.0
+          workers: 1,
+          durationSec: 1,
+          rampUpTimeSec: 0,
+          autoscale: false,
+          useUI: true,
+          silent: false,
+        },
+      });
 
       expect(() => {
-        new Runner(options, baseRequests, {});
+        new Runner(config);
       }).toThrow('errorRateThreshold must be a number between 0.0 and 1.0');
     });
 
     it('should throw error when error count threshold is negative', () => {
-      const options: RunOptions = {
-        ...baseOptions,
-        earlyExitOnError: true,
-        errorCountThreshold: -5, // Invalid: negative
-      };
+      const config = createTestConfig({
+        options: {
+          earlyExitOnError: true,
+          errorCountThreshold: -5, // Invalid: negative
+          workers: 1,
+          durationSec: 1,
+          rampUpTimeSec: 0,
+          autoscale: false,
+          useUI: true,
+          silent: false,
+        },
+      });
 
       expect(() => {
-        new Runner(options, baseRequests, {});
+        new Runner(config);
       }).toThrow('errorCountThreshold must be a non-negative integer');
     });
 
     it('should throw error when error count threshold is not an integer', () => {
-      const options: RunOptions = {
-        ...baseOptions,
-        earlyExitOnError: true,
-        errorCountThreshold: 3.5, // Invalid: not integer
-      };
+      const config = createTestConfig({
+        options: {
+          earlyExitOnError: true,
+          errorCountThreshold: 3.5, // Invalid: not integer
+          workers: 1,
+          durationSec: 1,
+          rampUpTimeSec: 0,
+          autoscale: false,
+          useUI: true,
+          silent: false,
+        },
+      });
 
       expect(() => {
-        new Runner(options, baseRequests, {});
+        new Runner(config);
       }).toThrow('errorCountThreshold must be a non-negative integer');
     });
 
     it('should throw error when error status codes contain invalid values', () => {
-      const options: RunOptions = {
-        ...baseOptions,
-        earlyExitOnError: true,
-        errorStatusCodes: [99, 200, 600], // Invalid: 99 and 600
-      };
+      const config = createTestConfig({
+        options: {
+          earlyExitOnError: true,
+          errorStatusCodes: [99, 200, 600], // Invalid: 99 and 600
+          workers: 1,
+          durationSec: 1,
+          rampUpTimeSec: 0,
+          autoscale: false,
+          useUI: true,
+          silent: false,
+        },
+      });
 
       expect(() => {
-        new Runner(options, baseRequests, {});
+        new Runner(config);
       }).toThrow('Invalid HTTP status code: 99. Must be between 100-599');
     });
 
     it('should throw error when no thresholds are provided with early exit enabled', () => {
-      const options: RunOptions = {
-        ...baseOptions,
-        earlyExitOnError: true,
-        // No thresholds provided
-      };
+      const config = createTestConfig({
+        options: {
+          earlyExitOnError: true,
+          workers: 1,
+          durationSec: 1,
+          rampUpTimeSec: 0,
+          autoscale: false,
+          useUI: true,
+          silent: false,
+          // No thresholds provided
+        },
+      });
 
       expect(() => {
-        new Runner(options, baseRequests, {});
+        new Runner(config);
       }).toThrow(
         'When earlyExitOnError is enabled, at least one of errorRateThreshold, errorCountThreshold, or errorStatusCodes must be provided',
       );
     });
 
     it('should accept valid configuration with all thresholds', () => {
-      const options: RunOptions = {
-        ...baseOptions,
-        earlyExitOnError: true,
-        errorRateThreshold: 0.5,
-        errorCountThreshold: 10,
-        errorStatusCodes: [500, 503],
-      };
+      const config = createTestConfig({
+        options: {
+          earlyExitOnError: true,
+          errorRateThreshold: 0.5,
+          errorCountThreshold: 10,
+          errorStatusCodes: [500, 503],
+          workers: 1,
+          durationSec: 1,
+          rampUpTimeSec: 0,
+          autoscale: false,
+          useUI: true,
+          silent: false,
+        },
+      });
 
       expect(() => {
-        new Runner(options, baseRequests, {});
+        new Runner(config);
       }).not.toThrow();
     });
   });
@@ -142,25 +196,29 @@ describe('Early Exit Feature', () => {
       // Create persistent interceptors
       mockPool.intercept({ path: '/test', method: 'GET' }).reply(500).persist();
 
-      const options: RunOptions = {
-        ...baseOptions,
-        earlyExitOnError: true,
-        errorRateThreshold: 0.1, // Very low threshold
-        durationSec: 5,
-        workers: 1,
-        rps: 10,
-      };
+      const config = createTestConfig({
+        options: {
+          earlyExitOnError: true,
+          errorRateThreshold: 0.1, // Very low threshold
+          durationSec: 5,
+          workers: 1,
+          rps: 10,
+          rampUpTimeSec: 0,
+          autoscale: false,
+          useUI: true,
+          silent: false,
+        },
+      });
 
-      const runner = new Runner(options, baseRequests, {});
-      const startTime = Date.now();
+      const runner = new Runner(config);
 
       await runner.run();
 
-      const endTime = Date.now();
-      const duration = endTime - startTime;
+      const results = runner.getSampledResults();
 
-      // Should exit much earlier than 5 seconds
-      expect(duration).toBeLessThan(4000);
+      // Verify early exit by checking we have fewer results than expected for full duration
+      // With 10 RPS for 5 seconds, we'd expect ~50 requests, but should exit much earlier
+      expect(results.length).toBeLessThan(30);
     });
 
     it('should exit early when error count threshold is reached', async () => {
@@ -169,25 +227,29 @@ describe('Early Exit Feature', () => {
       // Create persistent interceptors
       mockPool.intercept({ path: '/test', method: 'GET' }).reply(500).persist();
 
-      const options: RunOptions = {
-        ...baseOptions,
-        earlyExitOnError: true,
-        errorCountThreshold: 1, // Exit after 1 error
-        durationSec: 5,
-        workers: 1,
-        rps: 10,
-      };
+      const config = createTestConfig({
+        options: {
+          earlyExitOnError: true,
+          errorCountThreshold: 1, // Exit after 1 error
+          durationSec: 5,
+          workers: 1,
+          rps: 10,
+          rampUpTimeSec: 0,
+          autoscale: false,
+          useUI: true,
+          silent: false,
+        },
+      });
 
-      const runner = new Runner(options, baseRequests, {});
-      const startTime = Date.now();
+      const runner = new Runner(config);
 
       await runner.run();
 
-      const endTime = Date.now();
-      const duration = endTime - startTime;
+      const results = runner.getSampledResults();
 
-      // Should exit much earlier than 5 seconds
-      expect(duration).toBeLessThan(4000);
+      // Verify early exit by checking we have significantly fewer results than expected
+      // With 10 RPS for 5 seconds, we'd expect ~50 requests, but should exit much earlier
+      expect(results.length).toBeLessThan(25);
     });
 
     it('should exit early when specific status code is encountered', async () => {
@@ -196,16 +258,21 @@ describe('Early Exit Feature', () => {
       // Create persistent interceptors
       mockPool.intercept({ path: '/test', method: 'GET' }).reply(503).persist();
 
-      const options: RunOptions = {
-        ...baseOptions,
-        earlyExitOnError: true,
-        errorStatusCodes: [503],
-        durationSec: 2, // Reduced duration to prevent timeout
-        workers: 1,
-        rps: 10,
-      };
+      const config = createTestConfig({
+        options: {
+          earlyExitOnError: true,
+          errorStatusCodes: [503],
+          durationSec: 2, // Reduced duration to prevent timeout
+          workers: 1,
+          rps: 10,
+          rampUpTimeSec: 0,
+          autoscale: false,
+          useUI: true,
+          silent: false,
+        },
+      });
 
-      const runner = new Runner(options, baseRequests, {});
+      const runner = new Runner(config);
 
       await runner.run();
 
@@ -222,16 +289,21 @@ describe('Early Exit Feature', () => {
       // All requests fail
       mockPool.intercept({ path: '/test', method: 'GET' }).reply(500).persist();
 
-      const options: RunOptions = {
-        ...baseOptions,
-        earlyExitOnError: false, // Disabled
-        errorRateThreshold: 0.1, // Would trigger if enabled
-        durationSec: 1, // Short duration
-        workers: 1,
-        rps: 5,
-      };
+      const config = createTestConfig({
+        options: {
+          earlyExitOnError: false, // Disabled
+          errorRateThreshold: 0.1, // Would trigger if enabled
+          durationSec: 1, // Short duration
+          workers: 1,
+          rps: 5,
+          rampUpTimeSec: 0,
+          autoscale: false,
+          useUI: true,
+          silent: false,
+        },
+      });
 
-      const runner = new Runner(options, baseRequests, {});
+      const runner = new Runner(config);
       const startTime = Date.now();
 
       await runner.run();
@@ -249,16 +321,21 @@ describe('Early Exit Feature', () => {
       // All requests succeed
       mockPool.intercept({ path: '/test', method: 'GET' }).reply(200).persist();
 
-      const options: RunOptions = {
-        ...baseOptions,
-        earlyExitOnError: true,
-        errorRateThreshold: 0.0, // Zero threshold
-        durationSec: 1,
-        workers: 1,
-        rps: 5,
-      };
+      const config = createTestConfig({
+        options: {
+          earlyExitOnError: true,
+          errorRateThreshold: 0.0, // Zero threshold
+          durationSec: 1,
+          workers: 1,
+          rps: 5,
+          rampUpTimeSec: 0,
+          autoscale: false,
+          useUI: true,
+          silent: false,
+        },
+      });
 
-      const runner = new Runner(options, baseRequests, {});
+      const runner = new Runner(config);
 
       await runner.run();
 
