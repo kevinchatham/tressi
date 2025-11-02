@@ -37,7 +37,7 @@ const createTestConfig = (
     workers: 1,
     durationSec: 1,
     rampUpTimeSec: 0,
-        rps: 10,
+    rps: 10,
     useUI: true,
     silent: false,
     earlyExitOnError: false,

@@ -28,12 +28,12 @@ describe('Distribution', () => {
       const result = distribution.getLatencyDistribution({ count: 3 });
 
       expect(result).toHaveLength(3);
-      
+
       // Verify buckets are created and contain expected data
       expect(result[0].count).toBe('4'); // First bucket has 4 values
       expect(result[1].count).toBe('0'); // Middle bucket is empty
       expect(result[2].count).toBe('2'); // Last bucket has 2 values
-      
+
       // Verify the format is correct (range strings)
       expect(result[0].latency).toMatch(/^\d+-\d+$/);
       expect(result[1].latency).toMatch(/^\d+-\d+$/);

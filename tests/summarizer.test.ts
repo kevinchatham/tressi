@@ -84,7 +84,7 @@ const mockOptions: TressiOptionsConfig = {
   durationSec: 10,
   workers: 10,
   rampUpTimeSec: 0,
-        rps: 10,
+  rps: 10,
   useUI: true,
   silent: false,
   earlyExitOnError: false,

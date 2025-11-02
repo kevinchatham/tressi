@@ -72,7 +72,8 @@
             },
             "rps": {
               "type": "number",
-              "exclusiveMinimum": 0
+              "exclusiveMinimum": 0,
+              "default": 1
             },
             "exportPath": {
               "type": ["string", "boolean"]

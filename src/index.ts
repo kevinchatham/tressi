@@ -45,12 +45,7 @@ function printReportInfo(
 }
 
 function printRunConfiguration(options: TressiOptionsConfig): void {
-  const {
-    workers = 10,
-    durationSec = 10,
-    rps,
-    rampUpTimeSec,
-  } = options;
+  const { workers = 10, durationSec = 10, rps, rampUpTimeSec } = options;
 
   const configTable = new Table({
     head: ['Option', 'Setting'],
