@@ -29,16 +29,14 @@ export const TressiRequestConfigSchema = z.object({
 
 export const TressiOptionsConfigSchema = z
   .object({
-    /** The number of concurrent workers to use. Defaults to 10. For autoscale, this is the max workers. */
+    /** The maximum number of concurrent workers to use. Defaults to 10. */
     workers: z.number().int().positive().default(10),
     /** The total duration of the test in seconds. Defaults to 10. */
     durationSec: z.number().int().positive().default(10),
     /** The time in seconds to ramp up to the target RPS. Defaults to 0. */
     rampUpTimeSec: z.number().int().nonnegative().default(0),
-    /** The target requests per second. If not provided, the test will run at maximum possible speed. */
-    rps: z.number().positive().optional(),
-    /** Whether to enable autoscale mode. Defaults to false. --rps is required for this. */
-    autoscale: z.boolean().default(false),
+    /** The target requests per second. Defaults to 1. */
+    rps: z.number().positive().default(1),
     /** The base path for the exported report. If not provided, no report will be generated. */
     exportPath: z.union([z.string(), z.boolean()]).optional(),
     /** Whether to use the terminal UI. Defaults to true. */
@@ -56,19 +54,6 @@ export const TressiOptionsConfigSchema = z
     /** Global headers to be sent with every request. */
     headers: z.record(z.string(), z.string()).optional(),
   })
-  .refine(
-    (data) => {
-      // If autoscale is enabled, rps must be provided
-      if (data.autoscale && !data.rps) {
-        return false;
-      }
-      return true;
-    },
-    {
-      message: 'rps is required when autoscale is enabled',
-      path: ['rps'],
-    },
-  )
   .refine(
     (data) => {
       // If earlyExitOnError is enabled, at least one threshold must be provided
@@ -169,6 +154,15 @@ export function generateMinimalConfig(): TressiConfig {
   return {
     $schema:
       'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json',
+    options: {
+      rps: 10,
+      durationSec: 10,
+      workers: 5,
+      rampUpTimeSec: 0,
+      useUI: true,
+      silent: false,
+      earlyExitOnError: false,
+    },
     requests: [
       {
         url: 'https://jsonplaceholder.typicode.com/posts/1',

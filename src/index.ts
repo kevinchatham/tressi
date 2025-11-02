@@ -50,23 +50,15 @@ function printRunConfiguration(options: TressiOptionsConfig): void {
     durationSec = 10,
     rps,
     rampUpTimeSec,
-    autoscale,
   } = options;
 
   const configTable = new Table({
     head: ['Option', 'Setting'],
     colWidths: [20, 20],
   });
-  configTable.push(['Workers', autoscale ? `Up to ${workers}` : workers]);
+  configTable.push(['Max Workers', `Up to ${workers}`]);
   configTable.push(['Duration', `${durationSec}s`]);
-
-  if (autoscale) {
-    configTable.push(['Autoscale', 'Enabled']);
-  }
-
-  if (rps) {
-    configTable.push(['Target Req/s', rps]);
-  }
+  configTable.push(['Target Req/s', rps]);
 
   if (rampUpTimeSec) {
     configTable.push(['Ramp-up Time', `${rampUpTimeSec}s`]);

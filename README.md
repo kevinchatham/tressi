@@ -12,13 +12,10 @@
 
 ## 🚀 Features
 
-- 📝 **Declarative JSON Config** — Define tests in a simple JSON file with full autocompletion and validation.
-- ⚡️ **Autoscaling** - Automatically adjust the number of workers to meet a target Req/s.
-- 👥 **Concurrent Workers** — Simulate realistic multi-user load with ease via workers.
-- ⏱️ **Rate Limiting** — Control Req/s for accurate throttling scenarios.
-- 📊 **Interactive Terminal UI** — View live Req/s, latency stats, and status codes.
+- 📝 **Declarative JSON Config** — Define tests in a simple JSON file with version-aligned JSON schema for validation.
+- ⚡️ **Target-based Load Testing** - Always uses dynamic worker scaling to meet your target load.
+- 📊 **Interactive Terminal UI** — View live requests per second, latency stats, and status codes.
 - 📁 **Comprehensive Reporting** — Export results to Markdown, XLSX, and CSV for analysis.
-- ⚙️ **Typed Configuration** - Uses Zod for robust configuration validation.
 
 ## 📦 Installation
 
@@ -115,7 +112,7 @@ When you run `tressi` (without the `--no-ui` flag), it displays a live dashboard
 
 #### Basic Load Test
 
-A straightforward test with a fixed number of workers and a target Req/s:
+A straightforward test with a fixed number of workers and a target load:
 
 ```json
 {
@@ -142,7 +139,7 @@ npx tressi
 
 #### Ramp-up Load Test
 
-Gradually increases the load to a target Req/s over a specified duration:
+Gradually increases the load to your target requests per second over a specified duration:
 
 ```json
 {
@@ -203,9 +200,9 @@ A long-running test to check for performance degradation, memory leaks, or other
 }
 ```
 
-#### Autoscaling Load Test
+#### Target-based Load Test
 
-Dynamically adjusts the number of workers to meet a target Req/s, up to a specified maximum:
+Dynamically adjusts the number of workers to meet your target load, up to the specified maximum workers:
 
 ```json
 {
@@ -213,8 +210,7 @@ Dynamically adjusts the number of workers to meet a target Req/s, up to a specif
   "options": {
     "workers": 50,
     "durationSec": 60,
-    "rps": 1000,
-    "autoscale": true
+    "rps": 1000
   },
   "requests": [
     {
@@ -373,7 +369,6 @@ The `tressi init` command will generate a `tressi.config.json` file with a `$sch
     "durationSec": 30,
     "rampUpTimeSec": 0,
     "rps": 200,
-    "autoscale": false,
     "exportPath": null,
     "useUI": true,
     "silent": false,
@@ -409,11 +404,10 @@ All test configuration is now done through the JSON configuration file. The `opt
 
 | Property              | Type                  | Description                                                                          | Default |
 | --------------------- | --------------------- | ------------------------------------------------------------------------------------ | ------- |
-| `workers`             | `integer`             | Number of concurrent workers (for autoscale, this is the max workers)                | `10`    |
+| `workers`             | `integer`             | Maximum number of concurrent workers to use for dynamic scaling                      | `10`    |
 | `durationSec`         | `integer`             | Total test duration in seconds                                                       | `10`    |
-| `rampUpTimeSec`       | `integer`             | Time in seconds to ramp up to the target Req/s                                       | `0`     |
-| `rps`                 | `number`              | Target requests per second (ramps up to this value)                                  |         |
-| `autoscale`           | `boolean`             | Enable autoscaling of workers (requires rps)                                         | `false` |
+| `rampUpTimeSec`       | `integer`             | Time in seconds to ramp up to the target load                                        | `0`     |
+| `rps`                 | `number`              | Target requests per second (ramps up to this value)                                  | `1`     |
 | `exportPath`          | `string` or `boolean` | Export results to Markdown, XLSX, and CSVs. Use `true` for default or specify a path |         |
 | `useUI`               | `boolean`             | Enable the interactive terminal UI                                                   | `true`  |
 | `silent`              | `boolean`             | Suppress all console output                                                          | `false` |

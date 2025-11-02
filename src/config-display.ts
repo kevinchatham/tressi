@@ -61,11 +61,6 @@ function displayOptionsWithDefaults(options: TressiOptionsConfig): void {
       default: defaultTressiOptions.rampUpTimeSec,
     },
     { key: 'rps', value: options.rps, default: undefined },
-    {
-      key: 'autoscale',
-      value: options.autoscale,
-      default: defaultTressiOptions.autoscale,
-    },
     { key: 'useUI', value: options.useUI, default: defaultTressiOptions.useUI },
     {
       key: 'silent',

@@ -74,10 +74,6 @@
               "type": "number",
               "exclusiveMinimum": 0
             },
-            "autoscale": {
-              "type": "boolean",
-              "default": false
-            },
             "exportPath": {
               "type": ["string", "boolean"]
             },

@@ -37,7 +37,7 @@ const createTestConfig = (
     workers: 1,
     durationSec: 1,
     rampUpTimeSec: 0,
-    autoscale: false,
+        rps: 10,
     useUI: true,
     silent: false,
     earlyExitOnError: false,
@@ -70,22 +70,20 @@ describe('Runner', () => {
   }, 10000);
 
   /**
-   * In autoscale mode, it should dynamically add more workers when the
-   * actual RPS is below the target RPS, in order to meet the demand.
+   * It should dynamically scale workers to meet target RPS
    */
-  it('should autoscale workers to meet target RPS', async () => {
+  it('should scale workers to meet target RPS', async () => {
     const mockPool = mockAgent.get('http://localhost:8080');
-    // Make the endpoint slow to ensure autoscaling kicks in
+    // Make the endpoint slow to ensure scaling kicks in
     mockPool.intercept({ path: '/slow', method: 'GET' }).reply(200);
 
     const config = createTestConfig({
       requests: [{ url: 'http://localhost:8080/slow', method: 'GET' }],
       options: {
-        rps: 50,
         durationSec: 3,
-        autoscale: true,
         workers: 5, // Max workers
         rampUpTimeSec: 0,
+        rps: 10,
         useUI: true,
         silent: false,
         earlyExitOnError: false,
@@ -96,10 +94,10 @@ describe('Runner', () => {
 
     const runPromise = runner.run();
 
-    // Give autoscaling some time to work
+    // Give scaling some time to work
     await new Promise((resolve) => setTimeout(resolve, 2000));
 
-    // Check if autoscaling has started (should have at least 1 worker)
+    // Check if scaling has started (should have at least 1 worker)
     expect(runner.getWorkerCount()).toBeGreaterThanOrEqual(1);
 
     runner.stop();
@@ -117,7 +115,7 @@ describe('Runner', () => {
         durationSec: 10,
         workers: 1,
         rampUpTimeSec: 0,
-        autoscale: false,
+        rps: 10,
         useUI: true,
         silent: false,
         earlyExitOnError: false,
@@ -160,7 +158,6 @@ describe('Runner', () => {
         rps: targetRps,
         rampUpTimeSec, // Ramp up to targetRps over rampUpTimeSec seconds
         workers: 1,
-        autoscale: false,
         useUI: true,
         silent: false,
         earlyExitOnError: false,
@@ -218,9 +215,8 @@ describe('Runner', () => {
         headers: { Authorization: 'Bearer global-token' },
         durationSec: 1,
         workers: 1,
-        rps: 5,
         rampUpTimeSec: 0,
-        autoscale: false,
+        rps: 10,
         useUI: true,
         silent: false,
         earlyExitOnError: false,
@@ -245,9 +241,8 @@ describe('Runner', () => {
       options: {
         durationSec: 1,
         workers: 1,
-        rps: 5,
         rampUpTimeSec: 0,
-        autoscale: false,
+        rps: 10,
         useUI: true,
         silent: false,
         earlyExitOnError: false,
@@ -282,7 +277,7 @@ describe('Runner', () => {
         workers: 1, // Use 1 worker instead of 0 to avoid issues
         durationSec: 1,
         rampUpTimeSec: 0,
-        autoscale: false,
+        rps: 10,
         useUI: true,
         silent: false,
         earlyExitOnError: false,

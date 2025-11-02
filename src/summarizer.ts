@@ -122,7 +122,7 @@ export function generateMarkdownReport(
   const { global: g, endpoints: e } = summary;
 
   const distribution = runner.getDistribution();
-  const { workers, durationSec, rps, autoscale } = config.options;
+  const { workers, durationSec, rps } = config.options;
 
   let md = `# Tressi Load Test Report\n\n`;
 
@@ -184,10 +184,9 @@ export function generateMarkdownReport(
   md += `> *This table shows the main parameters used for the load test run.*\n\n`;
   md += `| Option | Setting | Argument |\n`;
   md += `|---|---|---|\n`;
-  md += `| Workers | ${autoscale ? `Up to ${workers}` : workers} | \`--workers\` |\n`;
+  md += `| Max Workers | Up to ${workers} | \`--workers\` |\n`;
   md += `| Duration | ${durationSec}s | \`--duration\` |\n`;
-  if (rps) md += `| Target Req/s | ${rps} | \`--rps\` |\n`;
-  if (autoscale) md += `| Autoscale | Enabled | \`--autoscale\` |\n\n`;
+  md += `| Target Req/s | ${rps} | \`--rps\` |\n\n`;
 
   // Global Summary
   md += `## Global Summary\n\n`;
