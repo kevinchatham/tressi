@@ -6,6 +6,15 @@ import { loadConfig } from '../src/config';
 const minimalConfig = {
   $schema: 'https://example.com/schema.json',
   requests: [{ url: 'http://localhost:8080/test', method: 'GET' as const }],
+  options: {
+    rps: 10,
+    workers: 10,
+    durationSec: 10,
+    rampUpTimeSec: 0,
+    useUI: true,
+    silent: false,
+    earlyExitOnError: false,
+  },
 };
 
 const expectedConfig = {
@@ -15,7 +24,7 @@ const expectedConfig = {
     workers: 10,
     durationSec: 10,
     rampUpTimeSec: 0,
-    autoscale: false,
+    rps: 10,
     useUI: true,
     silent: false,
     earlyExitOnError: false,
@@ -94,7 +103,7 @@ describe('config', () => {
           workers: 1,
           durationSec: 1,
           rampUpTimeSec: 0,
-          autoscale: false,
+          rps: 10,
           useUI: true,
           silent: false,
           earlyExitOnError: false,

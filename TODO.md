@@ -19,10 +19,10 @@ This file tracks the current status of **features**, **bug fixes**, **performanc
 
 ### 🟡 Future Features
 
-- [ ] **JSON-Based Configuration for All CLI Options**
+- [x] **JSON-Based Configuration for All CLI Options**
       Support full config definition in a `.json` file for scripting and automation.
 
-- [ ] **RunOptions Validation**
+- [x] **RunOptions Validation**
       Validate both CLI and programmatic inputs using Zod. Show friendly errors on invalid input.
 
 - [ ] **Request Scenarios**

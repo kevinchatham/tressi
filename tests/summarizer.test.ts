@@ -82,10 +82,9 @@ const mockRunner = {
 
 const mockOptions: TressiOptionsConfig = {
   durationSec: 10,
-  rps: 1, // 10 requests total theoretical
   workers: 10,
   rampUpTimeSec: 0,
-  autoscale: false,
+        rps: 10,
   useUI: true,
   silent: false,
   earlyExitOnError: false,
@@ -125,8 +124,8 @@ describe('summarizer', () => {
     expect(g.maxLatencyMs).toBe(500);
     expect(g.p95LatencyMs).toBe(500);
     expect(g.actualRps).toBe(0.4);
-    expect(g.theoreticalMaxRps).toBeCloseTo(1);
-    expect(g.achievedPercentage).toBeCloseTo(40);
+    expect(g.theoreticalMaxRps).toBeCloseTo(10);
+    expect(g.achievedPercentage).toBeCloseTo(4);
   });
 
   /**

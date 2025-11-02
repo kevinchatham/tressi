@@ -42,7 +42,6 @@ export class Runner extends EventEmitter {
   private activeWorkers: { promise: Promise<void>; stop: () => void }[] = [];
   private testTimeout?: NodeJS.Timeout;
   private rampUpInterval?: NodeJS.Timeout;
-  private autoscaleInterval?: NodeJS.Timeout;
 
   // Object allocation optimizations
   private headersPool: Record<string, string>[] = [];
@@ -342,10 +341,7 @@ export class Runner extends EventEmitter {
    * @returns The number of workers.
    */
   public getWorkerCount(): number {
-    if (this.options.autoscale) {
-      return this.activeWorkers.length;
-    }
-    return this.options.workers ?? 10;
+    return this.activeWorkers.length;
   }
 
   /**
@@ -359,13 +355,15 @@ export class Runner extends EventEmitter {
       workers = 10,
       durationSec = 10,
       rampUpTimeSec = 0,
-      rps = 0,
-      autoscale = false,
+      rps,
     } = this.options;
 
     // The main timer for the total test duration starts now
     const durationMs = durationSec * 1000;
     this.testTimeout = setTimeout(() => this.stop(), durationMs);
+
+    // Always start with dynamic worker scaling to achieve target RPS
+    this.addWorker();
 
     // If ramp-up is enabled, start the governor
     if (rampUpTimeSec > 0) {
@@ -378,75 +376,60 @@ export class Runner extends EventEmitter {
         }
 
         const rampUpProgress = Math.min(elapsedTimeSec / rampUpTimeSec, 1);
-
-        if (rps > 0) {
-          // If a target RPS is set, ramp up to that value
-          this.currentTargetRps = Math.round(rps * rampUpProgress);
-        } else {
-          // If no target RPS, ramp up to a theoretical max (e.g., 1k Req/s per worker)
-          // This creates a steady increase with no upper bound.
-          const arbitraryMaxRps = (this.options.workers || 10) * 1000;
-          this.currentTargetRps = Math.round(arbitraryMaxRps * rampUpProgress);
-        }
+        this.currentTargetRps = Math.round(rps * rampUpProgress);
       }, 1000); // Update every second
-    }
-
-    if (autoscale) {
-      // Start with one worker
-      this.addWorker();
-
-      this.autoscaleInterval = setInterval(() => {
-        if (this.stopped) {
-          clearInterval(this.autoscaleInterval as NodeJS.Timeout);
-          return;
-        }
-
-        const currentRps = this.getCurrentRps();
-        const currentWorkers = this.activeWorkers.length;
-
-        if (currentWorkers === 0) {
-          this.addWorker();
-          return;
-        }
-
-        const targetRps = this.options.rps;
-        if (!targetRps) return;
-
-        const scaleUpThreshold = targetRps * 0.9;
-        const scaleDownThreshold = targetRps * 1.1;
-
-        if (currentRps < scaleUpThreshold && currentWorkers < workers) {
-          const rpsDeficit = targetRps - currentRps;
-          const avgRpsPerWorker =
-            currentWorkers > 0 ? currentRps / currentWorkers : 10;
-          const workersNeeded = rpsDeficit / avgRpsPerWorker;
-          let workersToAdd = Math.ceil(workersNeeded * 0.25);
-          workersToAdd = Math.max(1, workersToAdd);
-          workersToAdd = Math.min(workersToAdd, workers - currentWorkers);
-
-          for (let i = 0; i < workersToAdd; i++) {
-            this.addWorker();
-          }
-        } else if (currentRps > scaleDownThreshold && currentWorkers > 1) {
-          const rpsSurplus = currentRps - targetRps;
-          const avgRpsPerWorker = currentRps / currentWorkers;
-          const workersToCut = rpsSurplus / avgRpsPerWorker;
-          let workersToRemove = Math.ceil(workersToCut * 0.25);
-          workersToRemove = Math.max(1, workersToRemove);
-          workersToRemove = Math.min(workersToRemove, currentWorkers - 1);
-
-          for (let i = 0; i < workersToRemove; i++) {
-            this.removeWorker();
-          }
-        }
-      }, 2000); // Check every 2 seconds
-      await Promise.all(this.activeWorkers.map((w) => w.promise));
     } else {
-      const workerPromises = Array.from({ length: workers }, () =>
-        this.runWorker(),
-      );
-      await Promise.all(workerPromises);
+      // Set target RPS immediately if no ramp-up
+      this.currentTargetRps = rps;
     }
+
+    // Dynamic worker scaling to achieve target RPS
+    const autoscaleInterval = setInterval(() => {
+      if (this.stopped) {
+        clearInterval(autoscaleInterval);
+        return;
+      }
+
+      const currentRps = this.getCurrentRps();
+      const currentWorkers = this.activeWorkers.length;
+
+      if (currentWorkers === 0) {
+        this.addWorker();
+        return;
+      }
+
+      const targetRps = this.options.rps;
+
+      const scaleUpThreshold = targetRps * 0.9;
+      const scaleDownThreshold = targetRps * 1.1;
+
+      if (currentRps < scaleUpThreshold && currentWorkers < workers) {
+        const rpsDeficit = targetRps - currentRps;
+        const avgRpsPerWorker =
+          currentWorkers > 0 ? currentRps / currentWorkers : 10;
+        const workersNeeded = rpsDeficit / avgRpsPerWorker;
+        let workersToAdd = Math.ceil(workersNeeded * 0.25);
+        workersToAdd = Math.max(1, workersToAdd);
+        workersToAdd = Math.min(workersToAdd, workers - currentWorkers);
+
+        for (let i = 0; i < workersToAdd; i++) {
+          this.addWorker();
+        }
+      } else if (currentRps > scaleDownThreshold && currentWorkers > 1) {
+        const rpsSurplus = currentRps - targetRps;
+        const avgRpsPerWorker = currentRps / currentWorkers;
+        const workersToCut = rpsSurplus / avgRpsPerWorker;
+        let workersToRemove = Math.ceil(workersToCut * 0.25);
+        workersToRemove = Math.max(1, workersToRemove);
+        workersToRemove = Math.min(workersToRemove, currentWorkers - 1);
+
+        for (let i = 0; i < workersToRemove; i++) {
+          this.removeWorker();
+        }
+      }
+    }, 2000); // Check every 2 seconds
+
+    await Promise.all(this.activeWorkers.map((w) => w.promise));
 
     this.cleanup();
   }
@@ -471,10 +454,6 @@ export class Runner extends EventEmitter {
       clearInterval(this.rampUpInterval);
       this.rampUpInterval = undefined;
     }
-    if (this.autoscaleInterval) {
-      clearInterval(this.autoscaleInterval);
-      this.autoscaleInterval = undefined;
-    }
 
     // Clear object pools and caches
     this.headersPool.length = 0;
@@ -487,7 +466,7 @@ export class Runner extends EventEmitter {
   }
 
   /**
-   * Adds a new worker to the pool. Used by the autoscaler.
+   * Adds a new worker to the pool. Used by dynamic scaling.
    */
   private addWorker(): void {
     let workerStopped = false;
@@ -499,7 +478,7 @@ export class Runner extends EventEmitter {
   }
 
   /**
-   * Removes a worker from the pool and stops it. Used by the autoscaler.
+   * Removes a worker from the pool and stops it. Used by dynamic scaling.
    */
   private removeWorker(): void {
     const worker = this.activeWorkers.pop();
