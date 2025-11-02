@@ -211,15 +211,14 @@ describe('Early Exit Feature', () => {
       });
 
       const runner = new Runner(config);
-      const startTime = Date.now();
 
       await runner.run();
 
-      const endTime = Date.now();
-      const duration = endTime - startTime;
+      const results = runner.getSampledResults();
 
-      // Should exit much earlier than 5 seconds
-      expect(duration).toBeLessThan(4000);
+      // Verify early exit by checking we have fewer results than expected for full duration
+      // With 10 RPS for 5 seconds, we'd expect ~50 requests, but should exit much earlier
+      expect(results.length).toBeLessThan(30);
     });
 
     it('should exit early when error count threshold is reached', async () => {
@@ -243,15 +242,14 @@ describe('Early Exit Feature', () => {
       });
 
       const runner = new Runner(config);
-      const startTime = Date.now();
 
       await runner.run();
 
-      const endTime = Date.now();
-      const duration = endTime - startTime;
+      const results = runner.getSampledResults();
 
-      // Should exit much earlier than 5 seconds
-      expect(duration).toBeLessThan(4000);
+      // Verify early exit by checking we have significantly fewer results than expected
+      // With 10 RPS for 5 seconds, we'd expect ~50 requests, but should exit much earlier
+      expect(results.length).toBeLessThan(25);
     });
 
     it('should exit early when specific status code is encountered', async () => {
