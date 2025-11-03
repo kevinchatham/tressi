@@ -1,7 +1,7 @@
 import { MockAgent, setGlobalDispatcher } from 'undici';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
-import { loadConfig } from '../src/config';
+import { loadConfig } from '../../src/config';
 
 const minimalConfig = {
   $schema: 'https://example.com/schema.json',

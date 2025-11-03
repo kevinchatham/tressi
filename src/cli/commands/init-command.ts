@@ -1,4 +1,3 @@
-import chalk from 'chalk';
 import { promises as fs } from 'fs';
 import path from 'path';
 
@@ -13,6 +12,7 @@ export class InitCommand {
    * @param options Command options
    * @param options.full Generate full configuration with all options
    * @returns Promise that resolves when the command completes
+   * @throws Error when config file creation fails
    */
   async execute(options: { full?: boolean }): Promise<void> {
     const fileName = `tressi.config.json`;
@@ -20,12 +20,7 @@ export class InitCommand {
 
     try {
       await fs.access(filePath);
-      // eslint-disable-next-line no-console
-      console.log(
-        chalk.yellow(
-          `Configuration file ${fileName} already exists. Skipping.`,
-        ),
-      );
+      // File already exists, skip creation
       return;
     } catch {
       try {
@@ -33,16 +28,10 @@ export class InitCommand {
           ? generateFullConfig()
           : generateMinimalConfig();
         await fs.writeFile(filePath, JSON.stringify(config, null, 2));
-        // eslint-disable-next-line no-console
-        console.log(
-          chalk.green(`Successfully created ${fileName} at ${filePath}`),
-        );
       } catch (err) {
-        // eslint-disable-next-line no-console
-        console.error(
-          chalk.red(`Failed to create config file: ${(err as Error).message}`),
+        throw new Error(
+          `Failed to create config file: ${(err as Error).message}`,
         );
-        process.exit(1);
       }
     }
   }

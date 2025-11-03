@@ -2,9 +2,9 @@
 import { beforeEach, describe, expect, it, Mock, vi } from 'vitest';
 import * as xlsx from 'xlsx';
 
-import { TestSummary } from '../src';
-import { DataExporter } from '../src/reporting/exporters/data-exporter';
-import { EndpointSummary, GlobalSummary, RequestResult } from '../src/types';
+import { TestSummary } from '../../src';
+import { DataExporter } from '../../src/reporting/exporters/data-exporter';
+import { EndpointSummary, GlobalSummary, RequestResult } from '../../src/types';
 
 // Mock file system and external libraries
 vi.mock('fs/promises', () => ({

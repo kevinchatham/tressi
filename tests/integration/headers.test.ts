@@ -9,8 +9,8 @@ import {
   vi,
 } from 'vitest';
 
-import { CoreRunner } from '../src/core/runner/core-runner';
-import type { SafeTressiConfig } from '../src/types';
+import { CoreRunner } from '../../src/core/runner/core-runner';
+import type { SafeTressiConfig } from '../../src/types';
 
 let mockAgent: MockAgent;
 

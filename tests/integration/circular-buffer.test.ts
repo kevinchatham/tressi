@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { CircularBuffer } from '../src/utils/circular-buffer';
+import { CircularBuffer } from '../../src/utils/circular-buffer';
 
 describe('CircularBuffer', () => {
   it('should initialize with the correct capacity', () => {

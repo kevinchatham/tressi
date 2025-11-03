@@ -1,10 +1,10 @@
 import { build, Histogram } from 'hdr-histogram-js';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
-import { generateTestSummary } from '../src/index';
-import { MarkdownGenerator } from '../src/reporting/generators/markdown-generator';
-import { Distribution } from '../src/stats/distribution';
-import type { SafeTressiConfig, TressiOptionsConfig } from '../src/types';
+import { generateTestSummary } from '../../src/index';
+import { MarkdownGenerator } from '../../src/reporting/generators/markdown-generator';
+import { Distribution } from '../../src/stats/distribution';
+import type { SafeTressiConfig, TressiOptionsConfig } from '../../src/types';
 
 const createHistogram = (latencies: number[]): Histogram => {
   const histogram = build();

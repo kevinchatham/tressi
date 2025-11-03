@@ -6,7 +6,11 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const args = process.argv.slice(2);
+const portArg = args.find((arg) => arg.startsWith('--port='));
+const PORT = portArg
+  ? parseInt(portArg.split('=')[1], 10)
+  : process.env.PORT || 5000;
 
 // Middleware
 app.use(helmet());

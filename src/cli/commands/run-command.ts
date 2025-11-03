@@ -1,4 +1,3 @@
-import chalk from 'chalk';
 import { promises as fs } from 'fs';
 import path from 'path';
 
@@ -13,22 +12,19 @@ export class RunCommand {
    * Executes the run command.
    * @param configPath Optional path to configuration file
    * @returns Promise that resolves when the command completes
+   * @throws Error when config loading or test execution fails
    */
   async execute(configPath?: string): Promise<void> {
     const resolvedConfigPath = await this.resolveConfigPath(configPath);
-
-    try {
-      const config = await loadConfig(resolvedConfigPath);
-      await runLoadTest(config);
-    } catch {
-      process.exit(1);
-    }
+    const config = await loadConfig(resolvedConfigPath);
+    await runLoadTest(config);
   }
 
   /**
    * Resolves the configuration file path.
    * @param configPath Optional configuration path provided by user
    * @returns Resolved configuration path
+   * @throws Error when default config file is not found
    */
   private async resolveConfigPath(configPath?: string): Promise<string> {
     if (configPath) {
@@ -40,19 +36,9 @@ export class RunCommand {
       await fs.access(defaultConfigPath);
       return defaultConfigPath;
     } catch {
-      // eslint-disable-next-line no-console
-      console.error(
-        chalk.red(
-          'Error: No config file provided and tressi.config.json not found in the current directory.',
-        ),
+      throw new Error(
+        'No config file provided and tressi.config.json not found in the current directory.',
       );
-      // eslint-disable-next-line no-console
-      console.log(
-        chalk.yellow(
-          'Please specify a config file using --config or run `tressi init` to create one.',
-        ),
-      );
-      process.exit(1);
     }
   }
 

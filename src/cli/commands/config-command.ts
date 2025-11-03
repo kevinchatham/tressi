@@ -1,15 +1,38 @@
-import chalk from 'chalk';
 import { promises as fs } from 'fs';
 import path from 'path';
 
 import { loadConfig } from '../../config';
-import type { DisplayOptions } from '../../types';
+import type { DisplayOptions, SafeTressiConfig } from '../../types';
 import { displayConfig } from '../display/config-display';
+
+export interface ConfigCommandDependencies {
+  loadConfig: (configPath: string) => Promise<SafeTressiConfig>;
+  displayConfig: (config: SafeTressiConfig, options: DisplayOptions) => void;
+  fs: {
+    access: (path: string) => Promise<void>;
+  };
+  path: {
+    resolve: (...paths: string[]) => string;
+  };
+  cwd: () => string;
+}
 
 /**
  * Handles the 'config' command for displaying Tressi configuration.
  */
 export class ConfigCommand {
+  private readonly deps: ConfigCommandDependencies;
+
+  constructor(deps: Partial<ConfigCommandDependencies> = {}) {
+    this.deps = {
+      loadConfig: deps.loadConfig || loadConfig,
+      displayConfig: deps.displayConfig || displayConfig,
+      fs: deps.fs || { access: fs.access.bind(fs) },
+      path: deps.path || { resolve: path.resolve.bind(path) },
+      cwd: deps.cwd || ((): string => process.cwd()),
+    };
+  }
+
   /**
    * Executes the config command.
    * @param options Command options
@@ -25,13 +48,13 @@ export class ConfigCommand {
     const resolvedConfigPath = await this.resolveConfigPath(configPath);
 
     try {
-      const config = await loadConfig(resolvedConfigPath);
+      const config = await this.deps.loadConfig(resolvedConfigPath);
       const displayOptions: DisplayOptions = {
         json: options.json,
         raw: options.raw,
         source: resolvedConfigPath,
       };
-      displayConfig(config, displayOptions);
+      this.deps.displayConfig(config, displayOptions);
     } catch (error) {
       this.handleConfigError(error, resolvedConfigPath);
     }
@@ -41,30 +64,26 @@ export class ConfigCommand {
    * Resolves the configuration file path.
    * @param configPath Optional configuration path provided by user
    * @returns Resolved configuration path
+   * @throws Error when default config file is not found
    */
   private async resolveConfigPath(configPath?: string): Promise<string> {
     if (configPath) {
       return configPath;
     }
 
-    const defaultConfigPath = path.resolve(process.cwd(), 'tressi.config.json');
+    const defaultConfigPath = this.deps.path.resolve(
+      this.deps.cwd(),
+      'tressi.config.json',
+    );
     try {
-      await fs.access(defaultConfigPath);
+      await this.deps.fs.access(defaultConfigPath);
       return defaultConfigPath;
     } catch {
-      // eslint-disable-next-line no-console
-      console.error(
-        chalk.red(
-          'Error: No config file provided and tressi.config.json not found in the current directory.',
-        ),
+      const error = new Error(
+        'No config file provided and tressi.config.json not found in the current directory.',
       );
-      // eslint-disable-next-line no-console
-      console.log(
-        chalk.yellow(
-          'Please specify a config file using --config or run `tressi init` to create one.',
-        ),
-      );
-      process.exit(1);
+      (error as { code?: string }).code = 'ENOENT';
+      throw error;
     }
   }
 
@@ -72,21 +91,19 @@ export class ConfigCommand {
    * Handles configuration loading errors.
    * @param error The error that occurred
    * @param configPath The path that was being loaded
+   * @throws Error with appropriate message for the error type
    */
-  private handleConfigError(error: unknown, configPath: string): void {
+  private handleConfigError(error: unknown, configPath: string): never {
     if (error instanceof Error) {
       if (error.message.includes('ENOENT')) {
-        // eslint-disable-next-line no-console
-        console.error(chalk.red(`Configuration file not found: ${configPath}`));
+        throw new Error(`Configuration file not found: ${configPath}`);
       } else if (error.message.includes('JSON')) {
-        // eslint-disable-next-line no-console
-        console.error(chalk.red('Invalid JSON in configuration file'));
+        throw new Error('Invalid JSON in configuration file');
       } else {
-        // eslint-disable-next-line no-console
-        console.error(chalk.red(`Configuration error: ${error.message}`));
+        throw new Error(`Configuration error: ${error.message}`);
       }
     }
-    process.exit(1);
+    throw new Error('Unknown configuration error');
   }
 
   /**

@@ -9,8 +9,8 @@ import {
   vi,
 } from 'vitest';
 
-import { CoreRunner } from '../src/core/runner/core-runner';
-import type { SafeTressiConfig } from '../src/types';
+import { CoreRunner } from '../../src/core/runner/core-runner';
+import type { SafeTressiConfig } from '../../src/types';
 
 let mockAgent: MockAgent;
 
@@ -81,7 +81,7 @@ describe('Object Allocation Optimizations', () => {
 
       // Check that we have results for the endpoint
       const endpointResults = results.filter(
-        (r) => r.url === 'http://localhost:8080/test',
+        (r: { url: string }) => r.url === 'http://localhost:8080/test',
       );
       expect(endpointResults.length).toBeGreaterThan(0);
     });
@@ -119,8 +119,12 @@ describe('Object Allocation Optimizations', () => {
       expect(results.length).toBeGreaterThan(0);
 
       // Should have both successful and failed requests
-      const successfulRequests = results.filter((r) => r.success);
-      const failedRequests = results.filter((r) => !r.success);
+      const successfulRequests = results.filter(
+        (r: { success: boolean }) => r.success,
+      );
+      const failedRequests = results.filter(
+        (r: { success: boolean }) => !r.success,
+      );
       expect(successfulRequests.length).toBeGreaterThan(0);
       expect(failedRequests.length).toBeGreaterThan(0);
     });
@@ -158,7 +162,7 @@ describe('Object Allocation Optimizations', () => {
       expect(results.length).toBeGreaterThan(0);
 
       // Should have network error results
-      const networkErrors = results.filter((r) => r.error);
+      const networkErrors = results.filter((r: { error?: string }) => r.error);
       expect(networkErrors.length).toBeGreaterThan(0);
     });
   });
@@ -189,7 +193,9 @@ describe('Object Allocation Optimizations', () => {
       expect(results.length).toBeGreaterThan(0);
 
       // Should have results from multiple workers
-      const successfulRequests = results.filter((r) => r.success);
+      const successfulRequests = results.filter(
+        (r: { success: boolean }) => r.success,
+      );
       expect(successfulRequests.length).toBeGreaterThan(0);
     });
 
@@ -218,7 +224,9 @@ describe('Object Allocation Optimizations', () => {
       expect(results.length).toBeGreaterThan(0);
 
       // Should handle high concurrency without issues
-      const successfulRequests = results.filter((r) => r.success);
+      const successfulRequests = results.filter(
+        (r: { success: boolean }) => r.success,
+      );
       expect(successfulRequests.length).toBeGreaterThan(0);
     });
   });
@@ -252,7 +260,9 @@ describe('Object Allocation Optimizations', () => {
       expect(results.length).toBeGreaterThan(0);
 
       // Should complete without memory issues
-      const successfulRequests = results.filter((r) => r.success);
+      const successfulRequests = results.filter(
+        (r: { success: boolean }) => r.success,
+      );
       expect(successfulRequests.length).toBeGreaterThan(0);
     });
   });

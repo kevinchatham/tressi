@@ -9,8 +9,8 @@ import {
   vi,
 } from 'vitest';
 
-import { CoreRunner } from '../src/core/runner/core-runner';
-import type { SafeTressiConfig } from '../src/types';
+import { CoreRunner } from '../../src/core/runner/core-runner';
+import type { SafeTressiConfig } from '../../src/types';
 
 let mockAgent: MockAgent;
 
@@ -288,7 +288,9 @@ describe('Early Exit Feature', () => {
         expect(results.length).toBeGreaterThan(0);
 
         // Should have 503 status codes
-        const status503Results = results.filter((r) => r.status === 503);
+        const status503Results = results.filter(
+          (r: { status: number }) => r.status === 503,
+        );
         expect(status503Results.length).toBeGreaterThan(0);
       } finally {
         // Clean up the test-specific mock agent

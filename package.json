@@ -40,7 +40,14 @@
     "test:ui": "vitest --ui",
     "test": "npm run typecheck:tests && vitest run",
     "typecheck": "tsc --noEmit",
-    "typecheck:tests": "tsc -p tsconfig.tests.json --noEmit"
+    "typecheck:tests": "tsc -p tsconfig.tests.json --noEmit",
+    "test:unit": "vitest tests/unit",
+    "test:integration": "vitest tests/integration",
+    "test:e2e": "vitest tests/e2e",
+    "test:performance": "vitest tests/performance",
+    "test:watch": "vitest --watch",
+    "test:coverage": "vitest --coverage",
+    "test:all": "npm run test:unit && npm run test:integration && npm run test:e2e"
   },
   "dependencies": {
     "blessed": "^0.1.81",

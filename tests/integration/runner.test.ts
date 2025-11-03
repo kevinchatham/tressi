@@ -9,8 +9,8 @@ import {
   vi,
 } from 'vitest';
 
-import { CoreRunner } from '../src/core/runner/core-runner';
-import type { SafeTressiConfig } from '../src/types';
+import { CoreRunner } from '../../src/core/runner/core-runner';
+import type { SafeTressiConfig } from '../../src/types';
 
 let mockAgent: MockAgent;
 
@@ -204,7 +204,9 @@ describe('CoreRunner', () => {
     expect(results.length).toBeGreaterThan(0);
 
     // Find a successful result
-    const successfulResult = results.find((r) => r.success);
+    const successfulResult = results.find(
+      (r: { success: boolean }) => r.success,
+    );
     expect(successfulResult).toBeDefined();
     expect(successfulResult?.status).toBe(200);
     expect(successfulResult?.success).toBe(true);

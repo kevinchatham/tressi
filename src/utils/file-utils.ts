@@ -1,5 +1,5 @@
 import { promises as fs } from 'fs';
-import path from 'path';
+import * as path from 'path';
 
 /**
  * File system utility functions.
@@ -12,8 +12,8 @@ export class FileUtils {
    */
   static async fileExists(filePath: string): Promise<boolean> {
     try {
-      await fs.access(filePath);
-      return true;
+      const stats = await fs.stat(filePath);
+      return stats.isFile();
     } catch {
       return false;
     }
@@ -40,6 +40,7 @@ export class FileUtils {
     data: unknown,
     indent: number = 2,
   ): Promise<void> {
+    await this.ensureDirectoryExists(path.dirname(filePath));
     const content = JSON.stringify(data, null, indent);
     await fs.writeFile(filePath, content, 'utf-8');
   }
