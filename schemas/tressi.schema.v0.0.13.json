@@ -46,6 +46,10 @@
                 "additionalProperties": {
                   "type": "string"
                 }
+              },
+              "rps": {
+                "type": "integer",
+                "minimum": 1
               }
             },
             "required": ["url"],
@@ -71,8 +75,8 @@
               "default": 0
             },
             "rps": {
-              "type": "number",
-              "exclusiveMinimum": 0,
+              "type": "integer",
+              "minimum": 1,
               "default": 1
             },
             "exportPath": {

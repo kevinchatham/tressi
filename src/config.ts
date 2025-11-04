@@ -25,6 +25,8 @@ export const TressiRequestConfigSchema = z.object({
     .default('GET'),
   /** Headers to be sent with this specific request. Merged with global headers. */
   headers: z.record(z.string(), z.string()).optional(),
+  /** Per-endpoint requests per second limit. Overrides global RPS for this endpoint. */
+  rps: z.number().int().min(1).optional(),
 });
 
 export const TressiOptionsConfigSchema = z
@@ -36,7 +38,7 @@ export const TressiOptionsConfigSchema = z
     /** The time in seconds to ramp up to the target RPS. Defaults to 0. */
     rampUpTimeSec: z.number().int().nonnegative().default(0),
     /** The target requests per second. Defaults to 1. */
-    rps: z.number().positive().default(1),
+    rps: z.number().int().min(1).default(1),
     /** The base path for the exported report. If not provided, no report will be generated. */
     exportPath: z.union([z.string(), z.boolean()]).optional(),
     /** Whether to use the terminal UI. Defaults to true. */

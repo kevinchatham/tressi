@@ -62,6 +62,7 @@ describe('CoreRunner', () => {
     const runner = new CoreRunner(config);
 
     await runner.run();
+
     const resultAggregator = runner.getResultAggregator();
     const results = resultAggregator.getSampledResults();
 

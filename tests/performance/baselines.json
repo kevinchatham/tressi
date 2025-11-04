@@ -1,13 +1,13 @@
 {
-  "timestamp": "2025-11-03T18:28:52.992Z",
+  "timestamp": "2025-11-03T22:38:58.343Z",
   "nodeVersion": "v22.17.0",
   "platform": "linux",
   "metrics": {
-    "startupTime": 505,
-    "healthCheckLatency": 0,
-    "successEndpointLatency": 1,
-    "delayEndpointLatency": 103,
-    "concurrentRequestLatency": 22,
+    "startupTime": 59688,
+    "healthCheckLatency": 34,
+    "successEndpointLatency": 82.5,
+    "delayEndpointLatency": 152,
+    "concurrentRequestLatency": 198,
     "memoryUsage": {
       "rss": 31457280,
       "heapTotal": 20971520,

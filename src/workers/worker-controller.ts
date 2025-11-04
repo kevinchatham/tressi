@@ -1,5 +1,6 @@
 import { performance } from 'perf_hooks';
 
+import { EndpointRateLimiterManager } from '../core/runner/endpoint-rate-limiter-manager';
 import type { RequestExecutor } from '../request/request-executor';
 import type { ResultAggregator } from '../stats/aggregators/result-aggregator';
 import type {
@@ -19,6 +20,7 @@ export class WorkerController {
   private options: TressiOptionsConfig;
   private requests: TressiRequestConfig[];
   private currentTargetRps: number;
+  private rateLimiterManager: EndpointRateLimiterManager;
 
   constructor(
     requestExecutor: RequestExecutor,
@@ -32,6 +34,14 @@ export class WorkerController {
     this.options = options;
     this.requests = requests;
     this.currentTargetRps = currentTargetRps;
+
+    // Initialize rate limiter manager with global RPS
+    this.rateLimiterManager = new EndpointRateLimiterManager({
+      globalRps: currentTargetRps,
+    });
+
+    // Initialize rate limiters for all endpoints
+    this.rateLimiterManager.initializeForRequests(requests);
   }
 
   /**
@@ -59,8 +69,18 @@ export class WorkerController {
         () => this.requests[Math.floor(Math.random() * this.requests.length)],
       );
 
+      // Apply per-endpoint rate limiting before executing requests
+      const rateLimitedRequests =
+        await this.applyPerEndpointRateLimiting(batchRequests);
+
+      if (rateLimitedRequests.length === 0) {
+        // All requests were rate limited, yield to prevent busy waiting
+        await this.sleep(1);
+        continue;
+      }
+
       // Execute all requests concurrently
-      const requestPromises = batchRequests.map((req) =>
+      const requestPromises = rateLimitedRequests.map((req) =>
         this.requestExecutor.executeRequest(req, this.options.headers),
       );
       const results = await Promise.allSettled(requestPromises);
@@ -90,8 +110,7 @@ export class WorkerController {
         return;
       }
 
-      // Rate limiting for the batch
-      await this.applyRateLimiting();
+      // No more global rate limiting - per-endpoint limiting handles this
     }
   }
 
@@ -142,17 +161,29 @@ export class WorkerController {
   }
 
   /**
-   * Applies rate limiting for the current batch of requests.
+   * Applies per-endpoint rate limiting for the current batch of requests.
+   * @param requests Array of requests to apply rate limiting to
+   * @returns Array of requests that can be executed immediately
    */
-  private async applyRateLimiting(): Promise<void> {
-    if (this.currentTargetRps > 0) {
-      // Calculate delay for the entire batch
-      const batchDelay = 1000 / this.currentTargetRps;
-      await this.sleep(batchDelay);
-    } else {
-      // If no RPS is set, yield to the event loop
-      await this.sleep(0);
+  private async applyPerEndpointRateLimiting(
+    requests: TressiRequestConfig[],
+  ): Promise<TressiRequestConfig[]> {
+    const allowedRequests: TressiRequestConfig[] = [];
+
+    for (const request of requests) {
+      const limiter = this.rateLimiterManager.getLimiter(request.url, request);
+
+      // Try to consume a token immediately
+      if (limiter.tryConsume(1)) {
+        allowedRequests.push(request);
+      } else {
+        // Wait for token availability
+        await limiter.waitForTokens(1);
+        allowedRequests.push(request);
+      }
     }
+
+    return allowedRequests;
   }
 
   /**

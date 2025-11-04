@@ -142,8 +142,8 @@ export class ConfigValidator {
    * @throws Error if validation fails
    */
   validateRps(rps: number): void {
-    if (typeof rps !== 'number' || rps <= 0) {
-      throw new Error('rps must be a positive number');
+    if (!Number.isInteger(rps) || rps < 1) {
+      throw new Error('rps must be a positive integer (minimum 1)');
     }
   }
 

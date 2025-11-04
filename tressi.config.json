@@ -4,7 +4,6 @@
     "workers": 1,
     "durationSec": 10,
     "rps": 1,
-    "autoscale": true,
     "useUI": true
   },
   "requests": [

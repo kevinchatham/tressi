@@ -32,7 +32,7 @@ export default defineConfig({
         },
       },
     },
-    testTimeout: 120000,
+    testTimeout: 30000,
     hookTimeout: 10000,
     teardownTimeout: 10000,
   },

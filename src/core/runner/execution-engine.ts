@@ -12,7 +12,7 @@ import { globalResourceManager } from '../../utils/resource-manager';
 import { ConcurrencyCalculator } from '../../workers/concurrency-calculator';
 import { WorkerPool } from '../../workers/worker-pool';
 import { CoreRunner } from './core-runner';
-import { RateLimiter } from './rate-limiter';
+import { EndpointRateLimiterManager } from './endpoint-rate-limiter-manager';
 
 /**
  * Execution engine that manages the test execution loop, ramp-up, rate limiting,
@@ -21,7 +21,7 @@ import { RateLimiter } from './rate-limiter';
 export class ExecutionEngine extends EventEmitter {
   private config: SafeTressiConfig;
   private coreRunner: CoreRunner;
-  private rateLimiter: RateLimiter;
+  private rateLimiterManager: EndpointRateLimiterManager;
   private workerPool: WorkerPool;
   private concurrencyCalculator: ConcurrencyCalculator;
   private requestExecutor: RequestExecutor;
@@ -49,8 +49,14 @@ export class ExecutionEngine extends EventEmitter {
     this.requestExecutor = coreRunner.getRequestExecutor();
     this.resultAggregator = coreRunner.getResultAggregator();
 
-    // Initialize specialized components
-    this.rateLimiter = new RateLimiter();
+    // Initialize rate limiter manager with global configuration
+    this.rateLimiterManager = new EndpointRateLimiterManager({
+      globalRps: this.config.options.rps ?? 0,
+    });
+
+    // Initialize rate limiters for all configured requests
+    this.rateLimiterManager.initializeForRequests(this.config.requests);
+
     this.concurrencyCalculator = new ConcurrencyCalculator({
       maxWorkers: this.config.options.workers ?? 10,
       targetRps: this.config.options.rps ?? 0,
@@ -73,10 +79,6 @@ export class ExecutionEngine extends EventEmitter {
       rampUpTimeSec = 0,
       rps = 0,
     } = this.config.options;
-
-    // Set up test duration timer
-    const durationMs = durationSec * 1000;
-    this.testTimeout = setTimeout(() => this.stop(), durationMs);
 
     // Initialize target RPS
     this.currentTargetRps = rampUpTimeSec > 0 ? 0 : rps;
@@ -238,13 +240,11 @@ export class ExecutionEngine extends EventEmitter {
       while (!isStopped() && !this.stopped) {
         await this.executeWorkerIteration();
 
-        // Rate limiting
-        if (this.currentTargetRps > 0) {
-          await this.rateLimiter.waitForNextRequest(this.currentTargetRps);
-        } else {
-          // If no RPS target, yield to event loop
-          await this.rateLimiter.yield();
-        }
+        // Per-endpoint rate limiting is handled within executeWorkerIteration
+        // No global rate limiting needed here
+
+        // Add a small delay to prevent busy waiting
+        await new Promise((resolve) => setTimeout(resolve, 1));
       }
     };
   }
@@ -271,8 +271,18 @@ export class ExecutionEngine extends EventEmitter {
         ],
     );
 
+    // Apply per-endpoint rate limiting
+    const rateLimitedRequests =
+      await this.applyPerEndpointRateLimiting(batchRequests);
+
+    if (rateLimitedRequests.length === 0) {
+      // All requests were rate limited, yield to prevent busy waiting
+      await new Promise((resolve) => setTimeout(resolve, 1));
+      return;
+    }
+
     // Execute all requests concurrently
-    const requestPromises = batchRequests.map((req) =>
+    const requestPromises = rateLimitedRequests.map((req) =>
       this.executeRequest(req),
     );
     const results = await Promise.allSettled(requestPromises);
@@ -294,6 +304,32 @@ export class ExecutionEngine extends EventEmitter {
     if (this.shouldEarlyExit()) {
       this.stop();
     }
+  }
+
+  /**
+   * Applies per-endpoint rate limiting for the current batch of requests.
+   * @param requests Array of requests to apply rate limiting to
+   * @returns Array of requests that can be executed immediately
+   */
+  private async applyPerEndpointRateLimiting(
+    requests: TressiRequestConfig[],
+  ): Promise<TressiRequestConfig[]> {
+    const allowedRequests: TressiRequestConfig[] = [];
+
+    for (const request of requests) {
+      const limiter = this.rateLimiterManager.getLimiter(request.url, request);
+
+      // Try to consume a token immediately
+      if (limiter.tryConsume(1)) {
+        allowedRequests.push(request);
+      } else {
+        // Wait for token availability
+        await limiter.waitForTokens(1);
+        allowedRequests.push(request);
+      }
+    }
+
+    return allowedRequests;
   }
 
   /**
@@ -414,11 +450,11 @@ export class ExecutionEngine extends EventEmitter {
   }
 
   /**
-   * Gets the rate limiter instance.
-   * @returns The rate limiter
+   * Gets the rate limiter manager instance.
+   * @returns The rate limiter manager
    */
-  public getRateLimiter(): RateLimiter {
-    return this.rateLimiter;
+  public getRateLimiterManager(): EndpointRateLimiterManager {
+    return this.rateLimiterManager;
   }
 
   /**
