@@ -38,6 +38,7 @@ function displayHumanReadable(
   displayOptionsWithDefaults(config.options);
 
   console.log(chalk.bold(`\n🌐 Requests (${config.requests.length} total):`));
+
   config.requests.forEach((request, index) => {
     displayRequest(index + 1, request);
   });

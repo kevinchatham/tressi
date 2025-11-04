@@ -5,7 +5,7 @@ import {
   TressiConfigSchema,
   TressiOptionsConfigSchema,
   TressiRequestConfigSchema,
-} from './config';
+} from '../config';
 
 /**
  * Represents the result of a single request made during the load test.
