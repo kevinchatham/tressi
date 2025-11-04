@@ -53,6 +53,10 @@ export class WorkerController {
   async runWorker(
     isStopped: () => boolean = () => this.stopped,
   ): Promise<void> {
+    let lastRequestTime = 0;
+    const targetIntervalMs =
+      this.currentTargetRps > 0 ? 1000 / this.currentTargetRps : 0;
+
     while (!isStopped()) {
       // Check for early exit conditions before making requests
       if (this.shouldEarlyExit()) {
@@ -110,7 +114,18 @@ export class WorkerController {
         return;
       }
 
-      // No more global rate limiting - per-endpoint limiting handles this
+      // Pace requests to achieve target RPS
+      if (this.currentTargetRps > 0) {
+        const now = performance.now();
+        const nextRequestTime = lastRequestTime + targetIntervalMs;
+        const waitTime = Math.max(0, nextRequestTime - now);
+
+        if (waitTime > 0) {
+          await this.sleep(waitTime);
+        }
+
+        lastRequestTime = performance.now();
+      }
     }
   }
 
@@ -144,17 +159,17 @@ export class WorkerController {
 
     if (targetRps <= 0 || workerCount <= 0) {
       // Default concurrency when no RPS target or no workers
-      return 10;
+      return 1; // Reduced from 10 to prevent ungoverned requests
     }
 
     // Calculate optimal concurrency based on target RPS per worker
     const targetRpsPerWorker = targetRps / workerCount;
 
-    // Dynamic calculation: ensure we can meet target RPS with reasonable concurrency
-    // Allow up to 50 concurrent requests per worker, but at least 1
+    // Constrain concurrency to respect rate limiting
+    // Allow max 2×RPS for burst, but ensure we don't exceed reasonable limits
     const dynamicConcurrency = Math.min(
-      50,
       Math.max(1, Math.ceil(targetRpsPerWorker)),
+      10, // Reduced max from 50 to prevent overwhelming rate limiting
     );
 
     return dynamicConcurrency;

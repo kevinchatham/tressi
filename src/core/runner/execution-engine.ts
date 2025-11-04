@@ -246,14 +246,28 @@ export class ExecutionEngine extends EventEmitter {
    */
   public createWorkerFunction(isStopped: () => boolean): () => Promise<void> {
     return async () => {
+      let lastIterationTime = 0;
+      const targetIntervalMs =
+        this.currentTargetRps > 0 ? 1000 / this.currentTargetRps : 0;
+
       while (!isStopped() && !this.stopped) {
         await this.executeWorkerIteration();
 
-        // Per-endpoint rate limiting is handled within executeWorkerIteration
-        // No global rate limiting needed here
+        // Pace iterations to achieve target RPS
+        if (this.currentTargetRps > 0) {
+          const now = performance.now();
+          const nextIterationTime = lastIterationTime + targetIntervalMs;
+          const waitTime = Math.max(0, nextIterationTime - now);
 
-        // Add a small delay to prevent busy waiting
-        await new Promise((resolve) => setTimeout(resolve, 1));
+          if (waitTime > 0) {
+            await new Promise((resolve) => setTimeout(resolve, waitTime));
+          }
+
+          lastIterationTime = performance.now();
+        } else {
+          // Small delay to prevent busy waiting when no RPS target
+          await new Promise((resolve) => setTimeout(resolve, 1));
+        }
       }
     };
   }
@@ -382,17 +396,17 @@ export class ExecutionEngine extends EventEmitter {
 
     if (targetRps <= 0 || workerCount <= 0) {
       // Default concurrency when no RPS target or no workers
-      return 10;
+      return 1; // Reduced from 10 to prevent ungoverned requests
     }
 
     // Calculate optimal concurrency based on target RPS per worker
     const targetRpsPerWorker = targetRps / workerCount;
 
-    // Dynamic calculation: ensure we can meet target RPS with reasonable concurrency
-    // Allow up to 50 concurrent requests per worker, but at least 1
+    // Constrain concurrency to respect rate limiting
+    // Allow max 2×RPS for burst, but ensure we don't exceed reasonable limits
     const dynamicConcurrency = Math.min(
-      50,
       Math.max(1, Math.ceil(targetRpsPerWorker)),
+      10, // Reduced max from 50 to prevent overwhelming rate limiting
     );
 
     return dynamicConcurrency;

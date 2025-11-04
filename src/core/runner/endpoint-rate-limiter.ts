@@ -26,11 +26,19 @@ export class EndpointRateLimiter {
     this.endpoint = endpoint;
     this.config = config;
 
-    // Use provided capacity or calculate based on RPS (burst = 2x RPS)
-    this.capacity = config.capacity ?? (config.rps ? config.rps * 2 : 100);
-    this.refillRate = config.rps ?? 50;
-    this.tokens = this.capacity;
+    // Ensure RPS is at least 1 when enabled
+    const effectiveRps = Math.max(1, config.rps ?? 0);
+
+    // Use provided capacity or calculate based on RPS (burst = 1x RPS for better governance)
+    this.capacity =
+      config.capacity ?? (config.rps ? Math.max(1, config.rps) : 1);
+    this.refillRate = effectiveRps;
+
+    // Start with 1 token instead of full capacity to prevent initial burst
+    this.tokens = Math.min(1, this.capacity);
     this.lastRefillTime = performance.now();
+
+    // Debug logging removed for production
   }
 
   /**
@@ -83,7 +91,7 @@ export class EndpointRateLimiter {
   private refill(): void {
     const now = performance.now();
     const elapsedMs = now - this.lastRefillTime;
-    const tokensToAdd = Math.floor((elapsedMs / 1000) * this.refillRate);
+    const tokensToAdd = (elapsedMs / 1000) * this.refillRate;
 
     this.tokens = Math.min(this.capacity, this.tokens + tokensToAdd);
     this.lastRefillTime = now;
@@ -128,8 +136,9 @@ export class EndpointRateLimiter {
 
     // Recalculate if RPS changed
     if (config.rps !== undefined) {
-      this.refillRate = config.rps;
-      this.capacity = config.capacity ?? config.rps * 2;
+      const effectiveRps = Math.max(1, config.rps);
+      this.refillRate = effectiveRps;
+      this.capacity = config.capacity ?? effectiveRps;
       this.tokens = Math.min(this.tokens, this.capacity);
     }
   }

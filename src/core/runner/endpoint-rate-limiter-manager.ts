@@ -65,10 +65,15 @@ export class EndpointRateLimiterManager {
     const rps =
       requestConfig?.rps ?? specificConfig?.rps ?? this.globalConfig.globalRps;
 
+    // Ensure RPS is at least 1 when enabled
+    const effectiveRps = Math.max(1, rps ?? 0);
+
     return {
-      rps: rps ?? 0,
+      rps: effectiveRps,
       capacity:
-        specificConfig?.capacity ?? this.globalConfig.defaultCapacity ?? 100,
+        specificConfig?.capacity ??
+        this.globalConfig.defaultCapacity ??
+        effectiveRps,
       enabled: (rps ?? 0) > 0,
     };
   }

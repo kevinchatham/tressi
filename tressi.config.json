@@ -3,7 +3,7 @@
   "options": {
     "workers": 1,
     "durationSec": 10,
-    "rps": 1,
+    "rps": 100,
     "useUI": true
   },
   "requests": [
