@@ -4,6 +4,7 @@ import { performance } from 'perf_hooks';
 import { RequestExecutor } from '../../request/request-executor';
 import { ResponseSampler } from '../../request/response-sampler';
 import { ResultAggregator } from '../../stats/aggregators/result-aggregator';
+import { RpsCalculator } from '../../stats/calculators/rps-calculator';
 import type {
   RequestResult,
   SafeTressiConfig,
@@ -23,6 +24,7 @@ export class CoreRunner extends EventEmitter {
   private options: TressiOptionsConfig;
   private configValidator: ConfigValidator;
   private resultAggregator: ResultAggregator;
+  private rpsCalculator: RpsCalculator;
   private workerPool: WorkerPool;
   private requestExecutor: RequestExecutor;
   private responseSampler: ResponseSampler;
@@ -56,6 +58,7 @@ export class CoreRunner extends EventEmitter {
       this.options.useUI ?? true,
       1000, // Default max sample size
     );
+    this.rpsCalculator = new RpsCalculator(this.options.rps ?? 1000);
     this.executionEngine = new ExecutionEngine(this);
 
     // Set up event forwarding
@@ -281,6 +284,7 @@ export class CoreRunner extends EventEmitter {
    */
   public recordResult(result: RequestResult): void {
     this.resultAggregator.recordResult(result);
+    this.rpsCalculator.recordRequest(result.timestamp);
 
     // Check for early exit conditions
     if (this.shouldEarlyExit()) {
@@ -305,6 +309,14 @@ export class CoreRunner extends EventEmitter {
    */
   public getResultAggregator(): ResultAggregator {
     return this.resultAggregator;
+  }
+
+  /**
+   * Gets the RPS calculator for accessing RPS statistics.
+   * @returns The RPS calculator instance
+   */
+  public getRpsCalculator(): RpsCalculator {
+    return this.rpsCalculator;
   }
 
   /**

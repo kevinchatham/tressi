@@ -189,10 +189,11 @@ export class DataTransformer {
     }>;
   } {
     const resultAggregator = runner.getResultAggregator();
+    const rpsCalculator = runner.getRpsCalculator();
     return {
       histogram: resultAggregator.getGlobalHistogram(),
       statusCodeMap: resultAggregator.getStatusCodeMap(),
-      currentReqPerSec: 0, // Will be calculated from recent timestamps
+      currentReqPerSec: rpsCalculator.getCurrentRps(),
       successfulRequests: resultAggregator.getSuccessfulRequestsCount(),
       failedRequests: resultAggregator.getFailedRequestsCount(),
       averageLatency: resultAggregator.getGlobalHistogram().mean,
