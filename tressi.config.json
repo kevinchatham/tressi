@@ -1,9 +1,9 @@
 {
   "$schema": "./schemas/tressi.schema.v0.0.13.json",
   "options": {
-    "workers": 10,
+    "workers": 100,
     "durationSec": 10,
-    "rps": 100,
+    "rps": 10,
     "useUI": true
   },
   "requests": [

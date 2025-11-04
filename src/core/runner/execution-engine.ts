@@ -60,8 +60,8 @@ export class ExecutionEngine extends EventEmitter {
     this.concurrencyCalculator = new ConcurrencyCalculator({
       maxWorkers: this.config.options.workers ?? 10,
       targetRps: this.config.options.rps ?? 0,
-      scaleUpThreshold: 0.9,
-      scaleDownThreshold: 1.1,
+      scaleUpThreshold: 0.95,
+      scaleDownThreshold: 1.05,
       scaleFactor: 0.25,
     });
   }
@@ -198,27 +198,9 @@ export class ExecutionEngine extends EventEmitter {
    * @returns Current requests per second
    */
   private calculateCurrentRps(): number {
-    // This would typically come from the result aggregator
-    // For now, we'll use a placeholder that can be implemented later
-    const recentLatencies = this.resultAggregator.getRecentLatencies();
-    const timestamps = recentLatencies.map(
-      (_, index) => performance.now() - (recentLatencies.length - index) * 10,
-    );
-
-    const now = performance.now();
-    const oneSecondAgo = now - 1000;
-
-    let count = 0;
-    // Iterate backwards since recent timestamps are at the end
-    for (let i = timestamps.length - 1; i >= 0; i--) {
-      if (timestamps[i] >= oneSecondAgo) {
-        count++;
-      } else {
-        // The timestamps are ordered, so we can stop.
-        break;
-      }
-    }
-    return count;
+    // Use the actual RPS calculator from the core runner
+    const rpsCalculator = this.coreRunner.getRpsCalculator();
+    return rpsCalculator.getCurrentRps(1000); // Get RPS over last 1 second
   }
 
   /**

@@ -34,9 +34,9 @@ export class ConcurrencyCalculator extends EventEmitter {
     this.config = {
       targetRps: config.targetRps,
       maxWorkers: config.maxWorkers,
-      scaleUpThreshold: config.scaleUpThreshold ?? 0.9, // 90% of target
-      scaleDownThreshold: config.scaleDownThreshold ?? 1.1, // 110% of target
-      scaleFactor: config.scaleFactor ?? 0.25, // 25% adjustments
+      scaleUpThreshold: config.scaleUpThreshold ?? 0.95, // 95% of target
+      scaleDownThreshold: config.scaleDownThreshold ?? 1.05, // 105% of target
+      scaleFactor: config.scaleFactor ?? 0.1, // 10% adjustments
       minWorkers: config.minWorkers ?? 1,
     };
   }

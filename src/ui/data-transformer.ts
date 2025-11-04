@@ -121,6 +121,7 @@ export class DataTransformer {
     failedRequests: number;
     averageLatency: number;
     workerCount: number;
+    maxWorkers?: number;
   }): {
     headers: string[];
     data: string[][];
@@ -129,9 +130,13 @@ export class DataTransformer {
       ? `${stats.currentReqPerSec} / ${stats.targetReqPerSec}`
       : stats.currentReqPerSec.toString();
 
+    const workerStat = stats.maxWorkers
+      ? `${stats.workerCount} / ${stats.maxWorkers}`
+      : stats.workerCount.toString();
+
     const data: string[][] = [
       ['Time', `${stats.elapsedSec.toFixed(0)}s / ${stats.totalSec}s`],
-      ['Workers', stats.workerCount.toString()],
+      ['Workers', workerStat],
       ['Req/s (Actual/Target)', rpsStat],
       [
         'Success / Fail',

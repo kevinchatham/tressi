@@ -167,6 +167,7 @@ export class TuiManager {
     );
 
     // Transform and update stats table
+    const workerPoolStats = runner.getWorkerPool().getStats();
     const statsData = DataTransformer.transformStatsData({
       elapsedSec,
       totalSec,
@@ -175,7 +176,8 @@ export class TuiManager {
       successfulRequests: runnerData.successfulRequests,
       failedRequests: runnerData.failedRequests,
       averageLatency: runnerData.averageLatency,
-      workerCount: runnerData.workerCount,
+      workerCount: workerPoolStats.activeWorkers,
+      maxWorkers: workerPoolStats.maxWorkers,
     });
     this.statsTable.updateFromObject(statsData);
 
