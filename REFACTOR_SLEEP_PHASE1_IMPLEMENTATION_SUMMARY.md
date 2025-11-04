@@ -44,6 +44,8 @@ interface TressiRequestConfig {
 }
 ```
 
+> ⚠️ **Testing Status**: While the configuration structure supports per-endpoint RPS, this feature requires comprehensive testing in Phase 2 to validate edge cases, configuration validation, and integration behavior.
+
 ### Performance Improvements
 
 - **Eliminated Sleep Calls**: No more `await sleep()` in hot paths
@@ -148,6 +150,7 @@ src/core/runner/execution-engine.ts # Updated rate limiting integration
 3. **Load Testing**: Validate under high concurrency
 4. **Documentation**: Update user guides and examples
 5. **Migration Guide**: Provide upgrade path for existing users
+6. **Per-Endpoint RPS Testing**: ⚠️ **CRITICAL** - The per-endpoint RPS configuration has been extended in the configuration/app basics but requires dedicated testing effort to ensure full functionality and edge case handling
 
 ## 📝 Backward Compatibility
 

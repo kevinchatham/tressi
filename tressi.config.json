@@ -3,13 +3,18 @@
   "options": {
     "workers": 100,
     "durationSec": 10,
-    "rps": 10,
     "useUI": true
   },
   "requests": [
     {
       "url": "http://localhost:5000/health",
-      "method": "GET"
+      "method": "GET",
+      "rps": 1
+    },
+    {
+      "url": "http://localhost:5000/success",
+      "method": "GET",
+      "rps": 1
     }
   ]
 }
