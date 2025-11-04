@@ -2,25 +2,50 @@ import chalk from 'chalk';
 import Table from 'cli-table3';
 import { promises as fs } from 'fs';
 import ora from 'ora';
-import path from 'path';
 import { performance } from 'perf_hooks';
 
 import pkg from '../package.json';
-import { exportDataFiles } from './exporter';
-import { Runner } from './runner';
+import { CoreRunner } from './core/runner/core-runner';
+import { DataExporter } from './reporting/exporters/data-exporter';
+import { MarkdownGenerator } from './reporting/generators/markdown-generator';
 import { getStatusCodeDistributionByCategory } from './stats';
-import { generateMarkdownReport, generateSummary } from './summarizer';
 import type {
+  EndpointSummary,
+  RequestResult,
   SafeTressiConfig,
   TestSummary,
   TressiConfig,
   TressiOptionsConfig,
 } from './types';
-import { TUI } from './ui';
-import { getSafeDirectoryName } from './utils';
+import { TuiManager } from './ui/tui-manager';
+import { FileUtils } from './utils/file-utils';
+import { getSafeDirectoryName } from './utils/safe-directory';
 
 export { TestSummary, TressiConfig };
+export { generateTestSummary };
 
+/**
+ * Prints a detailed summary of the load test results to the console.
+ * @param runner The CoreRunner instance from the test run.
+ * @param options The original RunOptions used for the test.
+ * @param summary The calculated TestSummary object for the run.
+ */
+function printSummary(
+  runner: CoreRunner,
+  options: TressiOptionsConfig,
+  summary: TestSummary,
+): void {
+  printReportInfo(summary, options);
+  printRunConfiguration(options);
+  printGlobalSummary(summary, options);
+  printEndpointSummary(summary);
+  printStatusCodeDistribution(runner);
+  printLatencyDistribution(runner);
+}
+
+/**
+ * Prints report information including version and export details.
+ */
 function printReportInfo(
   summary: TestSummary,
   options: TressiOptionsConfig,
@@ -44,13 +69,11 @@ function printReportInfo(
   console.log(reportInfoTable.toString());
 }
 
+/**
+ * Prints the run configuration including workers, duration, and RPS settings.
+ */
 function printRunConfiguration(options: TressiOptionsConfig): void {
-  const {
-    workers = 10,
-    durationSec = 10,
-    rps,
-    rampUpTimeSec,
-  } = options;
+  const { workers = 10, durationSec = 10, rps, rampUpTimeSec } = options;
 
   const configTable = new Table({
     head: ['Option', 'Setting'],
@@ -70,6 +93,9 @@ function printRunConfiguration(options: TressiOptionsConfig): void {
   console.log(configTable.toString());
 }
 
+/**
+ * Prints the global test summary including request counts and latency metrics.
+ */
 function printGlobalSummary(
   summary: TestSummary,
   options: TressiOptionsConfig,
@@ -123,6 +149,9 @@ function printGlobalSummary(
   console.log(summaryTable.toString());
 }
 
+/**
+ * Prints endpoint-specific summary data.
+ */
 function printEndpointSummary(summary: TestSummary): void {
   const { endpoints } = summary;
   if (endpoints.length === 0) return;
@@ -172,11 +201,15 @@ function printEndpointSummary(summary: TestSummary): void {
   console.log(endpointLatencyTable.toString());
 }
 
-function printLatencyDistribution(runner: Runner): void {
-  const histogram = runner.getHistogram();
+/**
+ * Prints latency distribution data.
+ */
+function printLatencyDistribution(runner: CoreRunner): void {
+  const resultAggregator = runner.getResultAggregator();
+  const histogram = resultAggregator.getGlobalHistogram();
   if (histogram.totalCount === 0) return;
 
-  const distribution = runner.getLatencyDistribution({
+  const distribution = resultAggregator.getLatencyDistribution({
     count: 8,
     chartWidth: 20,
   });
@@ -202,8 +235,12 @@ function printLatencyDistribution(runner: Runner): void {
   console.log(distributionTable.toString());
 }
 
-function printStatusCodeDistribution(runner: Runner): void {
-  const statusCodeMap = runner.getStatusCodeMap();
+/**
+ * Prints status code distribution data.
+ */
+function printStatusCodeDistribution(runner: CoreRunner): void {
+  const resultAggregator = runner.getResultAggregator();
+  const statusCodeMap = resultAggregator.getStatusCodeMap();
   if (Object.keys(statusCodeMap).length === 0) return;
 
   const distribution = getStatusCodeDistributionByCategory(statusCodeMap);
@@ -223,52 +260,46 @@ function printStatusCodeDistribution(runner: Runner): void {
 }
 
 /**
- * Prints a detailed summary of the load test results to the console.
- * @param runner The `Runner` instance from the test run.
- * @param options The original `RunOptions` used for the test.
- * @param summary The calculated `TestSummary` object for the run.
- */
-function printSummary(
-  runner: Runner,
-  options: TressiOptionsConfig,
-  summary: TestSummary,
-): void {
-  printReportInfo(summary, options);
-  printRunConfiguration(options);
-  printGlobalSummary(summary, options);
-  printEndpointSummary(summary);
-  printStatusCodeDistribution(runner);
-  printLatencyDistribution(runner);
-}
-
-/**
- * The main function to execute a Tressi load test.
- * It loads the configuration, initializes the runner, starts the UI,
- * and prints a summary upon completion.
- * @param config The `TressiConfig` for the test.
- * @returns A `Promise` that resolves with the `TestSummary` object.
+ * The main function to execute a Tressi load test using the refactored architecture.
+ * It initializes the core components, manages the test execution, and handles reporting.
+ * @param config The SafeTressiConfig for the test.
+ * @returns A Promise that resolves with the TestSummary object.
  */
 export async function runLoadTest(
   config: SafeTressiConfig,
 ): Promise<TestSummary> {
   const { silent, useUI, durationSec, rps, exportPath } = config.options;
-  const runner = new Runner(config);
+
+  // Initialize core runner
+  const coreRunner = new CoreRunner(config);
 
   // If we have a TUI, we need to handle its destruction and polling
+  let tuiManager: TuiManager | undefined;
+  let tuiInterval: NodeJS.Timeout | undefined;
+
   if (useUI && !silent) {
-    const tui = new TUI(() => runner.stop(), pkg.version || 'unknown');
-    const tuiInterval = setInterval(() => {
-      const startTime = runner.getStartTime();
+    tuiManager = new TuiManager(
+      () => coreRunner.stop(),
+      pkg.version || 'unknown',
+    );
+    tuiInterval = setInterval(() => {
+      const startTime = coreRunner.getStartTime();
       const elapsedSec =
         startTime > 0 ? (performance.now() - startTime) / 1000 : 0;
       const totalSec = durationSec || 10;
 
-      tui.update(runner, elapsedSec, totalSec, rps);
+      tuiManager!.update(coreRunner as any, elapsedSec, totalSec, rps); // eslint-disable-line @typescript-eslint/no-explicit-any
     }, 500);
 
-    runner.on('stop', () => {
-      clearInterval(tuiInterval);
-      tui?.destroy();
+    coreRunner.on('stop', () => {
+      if (tuiInterval) {
+        clearInterval(tuiInterval);
+        tuiInterval = undefined;
+      }
+      if (tuiManager) {
+        tuiManager.destroy();
+        tuiManager = undefined;
+      }
     });
   } else {
     // If we're not using the TUI, we should still provide some basic feedback
@@ -276,20 +307,22 @@ export async function runLoadTest(
       text: 'Test starting...',
       isEnabled: !silent,
     }).start();
+
     const noUiInterval = setInterval(() => {
-      const startTime = runner.getStartTime();
+      const startTime = coreRunner.getStartTime();
       const elapsedSec =
         startTime > 0 ? (performance.now() - startTime) / 1000 : 0;
       const totalSec = durationSec || 10;
 
-      const currentRps = runner.getCurrentRps();
-      const successful = runner.getSuccessfulRequestsCount();
-      const failed = runner.getFailedRequestsCount();
-      const workers = runner.getWorkerCount();
+      const resultAggregator = coreRunner.getResultAggregator();
+      const currentRps = 0; // Will be calculated from recent timestamps
+      const successful = resultAggregator.getSuccessfulRequestsCount();
+      const failed = resultAggregator.getFailedRequestsCount();
+      const workers = coreRunner.getWorkerPool().getWorkerCount();
 
       // For the spinner, we'll use a sample of recent latencies to avoid
       // performance issues with very long test runs.
-      const histogram = runner.getHistogram();
+      const histogram = resultAggregator.getGlobalHistogram();
       const avgLatency = histogram.mean;
       const p95 = histogram.getValueAtPercentile(95);
       const p99 = histogram.getValueAtPercentile(99);
@@ -307,50 +340,83 @@ export async function runLoadTest(
 
     // Handle graceful shutdown on Ctrl+C
     const handleNoUiExit = (): void => {
-      runner.stop();
+      coreRunner.stop();
     };
     process.on('SIGINT', handleNoUiExit);
 
-    runner.on('stop', () => {
+    coreRunner.on('stop', () => {
       clearInterval(noUiInterval);
       process.removeListener('SIGINT', handleNoUiExit);
       noUiSpinner.succeed('Test finished. Generating summary...');
     });
   }
 
-  await runner.run();
-  const startTime = runner.getStartTime();
+  await coreRunner.run();
+
+  // Ensure TUI is completely destroyed before proceeding with report
+  if (useUI && !silent && tuiManager) {
+    if (tuiInterval) {
+      clearInterval(tuiInterval);
+      tuiInterval = undefined;
+    }
+    tuiManager.destroy();
+    tuiManager = undefined;
+
+    // Add a small delay to allow terminal to fully reset
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+
+  const startTime = coreRunner.getStartTime();
   const actualDurationSec =
     startTime > 0 ? (performance.now() - startTime) / 1000 : 0;
-  const summary = generateSummary(runner, config.options, actualDurationSec);
+
+  // Generate summary using the new architecture
+  const resultAggregator = coreRunner.getResultAggregator();
+  const summary = generateTestSummary(
+    resultAggregator,
+    config.options,
+    actualDurationSec,
+  );
 
   if (exportPath) {
     const exportSpinner = ora({
       text: 'Exporting results...',
       isEnabled: !silent,
     }).start();
+
     try {
       const baseExportName =
         typeof exportPath === 'string' ? exportPath : 'tressi-report';
       const runDate = new Date();
 
-      const reportDir = path.resolve(
+      const reportDir = FileUtils.joinPath(
         process.cwd(),
         getSafeDirectoryName(`${baseExportName}-${runDate.toISOString()}`),
       );
-      await fs.mkdir(reportDir, { recursive: true });
+      await FileUtils.ensureDirectoryExists(reportDir);
 
-      const markdownReport = generateMarkdownReport(summary, runner, config, {
-        exportName: baseExportName,
-        runDate,
-      });
-      await fs.writeFile(path.join(reportDir, 'report.md'), markdownReport);
-
-      await exportDataFiles(
+      // Create markdown generator and generate report
+      const markdownGenerator = new MarkdownGenerator();
+      const markdownReport = markdownGenerator.generate(
         summary,
-        runner.getSampledResults(),
+        createRunnerInterface(resultAggregator),
+        config,
+        {
+          exportName: baseExportName,
+          runDate,
+        },
+      );
+      await fs.writeFile(
+        FileUtils.joinPath(reportDir, 'report.md'),
+        markdownReport,
+      );
+
+      const dataExporter = new DataExporter();
+      await dataExporter.exportDataFiles(
+        summary,
+        coreRunner.getResultAggregator().getSampledResults(),
         reportDir,
-        runner,
+        coreRunner.getResultAggregator(),
       );
 
       exportSpinner.succeed(`Successfully exported results to ${reportDir}`);
@@ -363,8 +429,163 @@ export async function runLoadTest(
 
   // Final summary to console
   if (!silent) {
-    printSummary(runner, config.options, summary);
+    printSummary(coreRunner, config.options, summary);
   }
 
   return summary;
+}
+
+/**
+ * Generates a TestSummary from the result aggregator.
+ */
+function generateTestSummary(
+  resultAggregator: {
+    getGlobalHistogram(): {
+      totalCount: number;
+      mean: number;
+      minNonZeroValue: number;
+      maxValue: number;
+      getValueAtPercentile(percentile: number): number;
+    };
+    getEndpointHistograms(): Map<
+      string,
+      {
+        mean: number;
+        minNonZeroValue: number;
+        maxValue: number;
+        getValueAtPercentile(percentile: number): number;
+      }
+    >;
+    getSuccessfulRequestsCount(): number;
+    getFailedRequestsCount(): number;
+    getSuccessfulRequestsByEndpoint(): Map<string, number>;
+    getFailedRequestsByEndpoint(): Map<string, number>;
+  },
+  options: TressiOptionsConfig,
+  actualDurationSec: number,
+): TestSummary {
+  const histogram = resultAggregator.getGlobalHistogram();
+  const endpointHistograms = resultAggregator.getEndpointHistograms();
+
+  if (histogram.totalCount === 0) {
+    return {
+      global: {
+        totalRequests: 0,
+        successfulRequests: 0,
+        failedRequests: 0,
+        avgLatencyMs: 0,
+        minLatencyMs: 0,
+        maxLatencyMs: 0,
+        p95LatencyMs: 0,
+        p99LatencyMs: 0,
+        actualRps: 0,
+        theoreticalMaxRps: 0,
+        achievedPercentage: 0,
+        duration: 0,
+      },
+      endpoints: [],
+      tressiVersion: pkg.version || 'unknown',
+    };
+  }
+
+  const { rps } = options;
+  const totalRequests = histogram.totalCount;
+  const effectiveDuration = actualDurationSec;
+  const actualRps =
+    effectiveDuration > 0 ? totalRequests / effectiveDuration : 0;
+  const avgLatency = histogram.mean;
+  const theoreticalMaxRps = rps
+    ? Math.min(
+        (1000 / (avgLatency || 1)) * (options.workers || 10),
+        options.rps || Infinity,
+      )
+    : 0;
+  const achievedPercentage =
+    rps && theoreticalMaxRps ? (actualRps / theoreticalMaxRps) * 100 : 0;
+
+  const endpointSummaries = Array.from(endpointHistograms.entries()).map(
+    ([endpointKey, endpointHistogram]): EndpointSummary => {
+      const [method, url] = endpointKey.split(' ');
+      const successfulRequests =
+        resultAggregator.getSuccessfulRequestsByEndpoint().get(endpointKey) ||
+        0;
+      const failedRequests =
+        resultAggregator.getFailedRequestsByEndpoint().get(endpointKey) || 0;
+
+      return {
+        method,
+        url,
+        totalRequests: successfulRequests + failedRequests,
+        successfulRequests,
+        failedRequests,
+        avgLatencyMs: endpointHistogram?.mean || 0,
+        minLatencyMs: endpointHistogram?.minNonZeroValue || 0,
+        maxLatencyMs: endpointHistogram?.maxValue || 0,
+        p95LatencyMs: endpointHistogram?.getValueAtPercentile(95) || 0,
+        p99LatencyMs: endpointHistogram?.getValueAtPercentile(99) || 0,
+      };
+    },
+  );
+
+  return {
+    global: {
+      totalRequests,
+      successfulRequests: resultAggregator.getSuccessfulRequestsCount(),
+      failedRequests: resultAggregator.getFailedRequestsCount(),
+      avgLatencyMs: avgLatency,
+      minLatencyMs: histogram.minNonZeroValue,
+      maxLatencyMs: histogram.maxValue,
+      p95LatencyMs: histogram.getValueAtPercentile(95),
+      p99LatencyMs: histogram.getValueAtPercentile(99),
+      actualRps,
+      theoreticalMaxRps,
+      achievedPercentage,
+      duration: effectiveDuration,
+    },
+    endpoints: endpointSummaries,
+    tressiVersion: pkg.version || 'unknown',
+  };
+}
+
+/**
+ * Creates a runner interface for the markdown generator.
+ */
+function createRunnerInterface(resultAggregator: {
+  getDistribution(): {
+    getTotalCount(): number;
+    getLatencyDistribution(options: {
+      count: number;
+      chartWidth: number;
+    }): Array<{
+      latency: string;
+      count: string;
+      percent: string;
+      cumulative: string;
+      chart: string;
+    }>;
+  };
+  getStatusCodeMap(): Record<number, number>;
+  getSampledResults(): RequestResult[];
+}): {
+  getDistribution(): {
+    getTotalCount(): number;
+    getLatencyDistribution(options: {
+      count: number;
+      chartWidth: number;
+    }): Array<{
+      latency: string;
+      count: string;
+      percent: string;
+      cumulative: string;
+      chart: string;
+    }>;
+  };
+  getStatusCodeMap(): Record<number, number>;
+  getSampledResults(): RequestResult[];
+} {
+  return {
+    getDistribution: () => resultAggregator.getDistribution(),
+    getStatusCodeMap: () => resultAggregator.getStatusCodeMap(),
+    getSampledResults: () => resultAggregator.getSampledResults(),
+  };
 }
