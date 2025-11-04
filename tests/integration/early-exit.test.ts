@@ -312,10 +312,10 @@ describe('Early Exit Feature', () => {
         options: {
           earlyExitOnError: false, // Disabled
           errorRateThreshold: 0.1, // Would trigger if enabled
-          durationSec: 1, // Short duration
+          durationSec: 2, // Short duration
           workers: 1,
           rampUpTimeSec: 0,
-          rps: 10,
+          rps: 5, // Reduced RPS to ensure test completes quickly
           useUI: true,
           silent: false,
         },
@@ -330,8 +330,8 @@ describe('Early Exit Feature', () => {
       const duration = endTime - startTime;
 
       // Should run for approximately the full duration
-      expect(duration).toBeGreaterThan(500);
-    });
+      expect(duration).toBeGreaterThan(1000);
+    }, 15000); // Increase timeout to 15 seconds to prevent test framework timeout
 
     it('should handle zero threshold values correctly', async () => {
       const mockPool = mockAgent.get('http://localhost:8080');

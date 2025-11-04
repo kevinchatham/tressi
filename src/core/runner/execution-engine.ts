@@ -88,6 +88,15 @@ export class ExecutionEngine extends EventEmitter {
       this.setupRampUp(rampUpTimeSec, rps);
     }
 
+    // Set up test duration timeout
+    if (durationSec > 0) {
+      this.testTimeout = setTimeout(() => {
+        if (!this.stopped) {
+          this.stop();
+        }
+      }, durationSec * 1000);
+    }
+
     // Set up dynamic worker scaling
     this.setupAutoscaling();
 

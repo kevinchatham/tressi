@@ -45,6 +45,7 @@
     "test:integration": "vitest run tests/integration",
     "test:e2e": "vitest run tests/e2e",
     "test:performance": "vitest run tests/performance",
+    "test:server": "vitest run tests/server",
     "test:watch": "vitest --watch",
     "test:coverage": "vitest --coverage",
     "test:all": "npm run test:unit && npm run test:integration && npm run test:e2e"

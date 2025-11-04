@@ -1,10 +1,4 @@
-import { afterAll, beforeAll, vi } from 'vitest';
-
-// Global test setup
-beforeAll(() => {
-  // Increase timeout for integration tests
-  vi.setConfig({ testTimeout: 30000 });
-});
+import { afterAll, vi } from 'vitest';
 
 afterAll(() => {
   vi.restoreAllMocks();

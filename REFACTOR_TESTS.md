@@ -106,8 +106,6 @@ tests/
 │   ├── circular-buffer.test.ts
 │   └── distribution.test.ts
 ├── e2e/                    # Comprehensive E2E tests using server.ts
-│   ├── server.test.ts
-│   ├── server-capabilities.test.ts
 │   ├── load-test.test.ts
 │   ├── performance.test.ts
 │   ├── cross-platform.test.ts
@@ -115,6 +113,10 @@ tests/
 │   ├── timeout-handling.test.ts
 │   ├── redirect-following.test.ts
 │   └── chunked-transfer.test.ts
+├── utils/                  # Test utilities and helpers (enhanced existing)
+│   ├── test-server/
+│   │   ├── server.test.ts
+│   │   └── server-capabilities.test.ts
 ├── fixtures/               # Test data and configurations
 ├── utils/                  # Test utilities and helpers (enhanced existing)
 ├── performance/            # Performance regression tests
@@ -289,7 +291,7 @@ tests/
 
 ### ✅ Server Capabilities E2E Tests - COMPLETED
 
-**File**: `tests/e2e/server-capabilities.test.ts`
+**File**: `tests/utils/test-server/server-capabilities.test.ts`
 **Status**: ✅ **COMPLETE** - Comprehensive test suite with 298 lines covering:
 
 - `/health` - Health check validation
@@ -304,7 +306,7 @@ tests/
 
 ### ✅ Basic Server E2E Tests - COMPLETED
 
-**File**: `tests/e2e/server.test.ts`
+**File**: `tests/utils/test-server/server.test.ts`
 **Status**: ✅ **COMPLETE** - Comprehensive test suite with 218 lines covering:
 
 - Server startup and lifecycle management

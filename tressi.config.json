@@ -8,15 +8,8 @@
   },
   "requests": [
     {
-      "url": "https://jsonplaceholder.typicode.com/posts/1",
+      "url": "http://localhost:5000/health",
       "method": "GET"
-    },
-    {
-      "url": "https://jsonplaceholder.typicode.com/posts",
-      "method": "POST",
-      "payload": {
-        "name": "Tressi Post"
-      }
     }
   ]
 }

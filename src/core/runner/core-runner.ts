@@ -204,18 +204,35 @@ export class CoreRunner extends EventEmitter {
    * Waits for test completion or stop signal.
    */
   private async waitForCompletion(): Promise<void> {
+    const { durationSec = 10 } = this.config.options;
+    const maxDurationMs = (durationSec + 5) * 1000; // Add buffer for cleanup
+
     return new Promise<void>((resolve, reject) => {
+      // eslint-disable-next-line prefer-const
+      let timeoutId: NodeJS.Timeout;
+
+      // Set up timeout handler
+      const timeoutHandler = (): void => {
+        this.stop();
+        resolve();
+      };
+
       // Set up stop handler
       const stopHandler = (): void => {
+        clearTimeout(timeoutId);
         this.cleanup();
         resolve();
       };
 
       // Set up error handler
       const errorHandler = (error: Error): void => {
+        clearTimeout(timeoutId);
         this.cleanup();
         reject(error);
       };
+
+      // Set maximum execution timeout
+      timeoutId = setTimeout(timeoutHandler, maxDurationMs);
 
       this.once('stop', stopHandler);
       this.once('error', errorHandler);
@@ -224,11 +241,13 @@ export class CoreRunner extends EventEmitter {
       this.workerPool
         .waitForAllWorkers()
         .then(() => {
+          clearTimeout(timeoutId);
           this.removeListener('stop', stopHandler);
           this.removeListener('error', errorHandler);
           resolve();
         })
         .catch((error) => {
+          clearTimeout(timeoutId);
           this.removeListener('stop', stopHandler);
           this.removeListener('error', errorHandler);
           reject(error);
