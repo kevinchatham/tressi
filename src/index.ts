@@ -3,16 +3,16 @@ import Table from 'cli-table3';
 import { promises as fs } from 'fs';
 import ora from 'ora';
 import { performance } from 'perf_hooks';
+import type { ZodError } from 'zod';
 
 import pkg from '../package.json';
-import { CoreRunner } from './core/runner/core-runner';
+import { CoreRunner } from './core/core-runner';
 import { DataExporter } from './reporting/exporters/data-exporter';
 import { MarkdownGenerator } from './reporting/generators/markdown-generator';
 import { getStatusCodeDistributionByCategory } from './stats';
 import type {
   EndpointSummary,
   RequestResult,
-  SafeTressiConfig,
   TestSummary,
   TressiConfig,
   TressiOptionsConfig,
@@ -20,9 +20,17 @@ import type {
 import { TuiManager } from './ui/tui-manager';
 import { FileUtils } from './utils/file-utils';
 import { getSafeDirectoryName } from './utils/safe-directory';
+import {
+  ConfigValidator,
+  ValidationError,
+} from './validation/config-validator';
 
 export { TestSummary, TressiConfig };
 export { generateTestSummary };
+export {
+  ConfigValidator,
+  ValidationError,
+} from './validation/config-validator';
 
 /**
  * Prints a detailed summary of the load test results to the console.
@@ -34,10 +42,11 @@ function printSummary(
   runner: CoreRunner,
   options: TressiOptionsConfig,
   summary: TestSummary,
+  config: TressiConfig,
 ): void {
   printReportInfo(summary, options);
-  printRunConfiguration(options);
-  printGlobalSummary(summary, options);
+  printRunConfiguration(options, config);
+  printGlobalSummary(summary);
   printEndpointSummary(summary);
   printStatusCodeDistribution(runner);
   printLatencyDistribution(runner);
@@ -72,16 +81,22 @@ function printReportInfo(
 /**
  * Prints the run configuration including workers, duration, and RPS settings.
  */
-function printRunConfiguration(options: TressiOptionsConfig): void {
-  const { workers = 10, durationSec = 10, rps, rampUpTimeSec } = options;
+function printRunConfiguration(
+  options: TressiOptionsConfig,
+  config: TressiConfig,
+): void {
+  const { durationSec = 10, rampUpTimeSec } = options;
 
   const configTable = new Table({
     head: ['Option', 'Setting'],
     colWidths: [20, 20],
   });
-  configTable.push(['Max Workers', `Up to ${workers}`]);
+  const totalRps = config.requests.reduce(
+    (sum: number, req: { rps?: number }) => sum + (req.rps || 0),
+    0,
+  );
+  configTable.push(['Total RPS', `${totalRps}`]);
   configTable.push(['Duration', `${durationSec}s`]);
-  configTable.push(['Target Req/s', rps]);
 
   if (rampUpTimeSec) {
     configTable.push(['Ramp-up Time', `${rampUpTimeSec}s`]);
@@ -96,12 +111,8 @@ function printRunConfiguration(options: TressiOptionsConfig): void {
 /**
  * Prints the global test summary including request counts and latency metrics.
  */
-function printGlobalSummary(
-  summary: TestSummary,
-  options: TressiOptionsConfig,
-): void {
+function printGlobalSummary(summary: TestSummary): void {
   const { global: globalSummary } = summary;
-  const { rps } = options;
 
   const summaryTable = new Table({
     head: ['Stat', 'Value'],
@@ -115,25 +126,10 @@ function printGlobalSummary(
     [chalk.red('Failed'), globalSummary.failedRequests],
   );
 
-  if (rps && globalSummary.theoreticalMaxRps) {
-    summaryTable.push(
-      [
-        'Req/s (Actual/Target)',
-        `${Math.ceil(globalSummary.actualRps)} / ${rps}`,
-      ],
-      [
-        'Req/m (Actual/Target)',
-        `${Math.ceil(globalSummary.actualRps * 60)} / ${rps * 60}`,
-      ],
-      ['Theoretical Max Req/s', globalSummary.theoreticalMaxRps.toFixed(0)],
-      ['Achieved %', `${globalSummary.achievedPercentage.toFixed(0)}%`],
-    );
-  } else {
-    summaryTable.push(
-      ['Req/s', Math.ceil(globalSummary.actualRps)],
-      ['Req/m', Math.ceil(globalSummary.actualRps * 60)],
-    );
-  }
+  summaryTable.push(
+    ['Req/s', Math.ceil(globalSummary.actualRps)],
+    ['Req/m', Math.ceil(globalSummary.actualRps * 60)],
+  );
 
   summaryTable.push(
     ['Avg Latency', `${Math.ceil(globalSummary.avgLatencyMs)}ms`],
@@ -262,13 +258,21 @@ function printStatusCodeDistribution(runner: CoreRunner): void {
 /**
  * The main function to execute a Tressi load test using the refactored architecture.
  * It initializes the core components, manages the test execution, and handles reporting.
- * @param config The SafeTressiConfig for the test.
+ * @param config The TressiConfig for the test.
  * @returns A Promise that resolves with the TestSummary object.
  */
-export async function runLoadTest(
-  config: SafeTressiConfig,
-): Promise<TestSummary> {
-  const { silent, useUI, durationSec, rps, exportPath } = config.options;
+export async function runLoadTest(config: TressiConfig): Promise<TestSummary> {
+  // Validate configuration
+  try {
+    ConfigValidator.validateForProgrammatic(config);
+  } catch (error) {
+    if (error instanceof ValidationError) {
+      throw error;
+    }
+    throw new ValidationError(error as ZodError);
+  }
+
+  const { silent, useUI, durationSec, exportPath } = config.options;
 
   // Initialize core runner
   const coreRunner = new CoreRunner(config);
@@ -279,7 +283,7 @@ export async function runLoadTest(
 
   if (useUI && !silent) {
     tuiManager = new TuiManager(
-      () => coreRunner.stop(),
+      async () => await coreRunner.stop(),
       pkg.version || 'unknown',
     );
     tuiInterval = setInterval(() => {
@@ -288,10 +292,10 @@ export async function runLoadTest(
         startTime > 0 ? (performance.now() - startTime) / 1000 : 0;
       const totalSec = durationSec || 10;
 
-      tuiManager!.update(coreRunner as any, elapsedSec, totalSec, rps); // eslint-disable-line @typescript-eslint/no-explicit-any
+      tuiManager!.update(coreRunner as any, elapsedSec, totalSec); // eslint-disable-line @typescript-eslint/no-explicit-any
     }, 500);
 
-    coreRunner.on('stop', () => {
+    coreRunner.on('stop', async () => {
       if (tuiInterval) {
         clearInterval(tuiInterval);
         tuiInterval = undefined;
@@ -301,11 +305,10 @@ export async function runLoadTest(
         tuiManager = undefined;
       }
     });
-  } else {
-    // If we're not using the TUI, we should still provide some basic feedback
+  } else if (!silent) {
+    // If we're not using the TUI and not silent, provide basic feedback
     const noUiSpinner = ora({
       text: 'Test starting...',
-      isEnabled: !silent,
     }).start();
 
     const noUiInterval = setInterval(() => {
@@ -318,7 +321,10 @@ export async function runLoadTest(
       const currentRps = 0; // Will be calculated from recent timestamps
       const successful = resultAggregator.getSuccessfulRequestsCount();
       const failed = resultAggregator.getFailedRequestsCount();
-      const workers = coreRunner.getWorkerPool().getWorkerCount();
+      const totalRps = config.requests.reduce(
+        (sum, req) => sum + (req.rps || 0),
+        0,
+      );
 
       // For the spinner, we'll use a sample of recent latencies to avoid
       // performance issues with very long test runs.
@@ -327,24 +333,23 @@ export async function runLoadTest(
       const p95 = histogram.getValueAtPercentile(95);
       const p99 = histogram.getValueAtPercentile(99);
 
-      const rpsDisplay = rps ? `${currentRps}/${rps}` : `${currentRps}`;
       const successDisplay = chalk.green(successful);
       const failDisplay = failed > 0 ? chalk.red(failed) : chalk.gray(0);
 
       noUiSpinner.text = `[${elapsedSec.toFixed(0)}s/${totalSec}s] RPS: ${
-        rpsDisplay
-      } | W: ${workers} | OK/Fail: ${successDisplay}/${failDisplay} | Avg: ${avgLatency.toFixed(
+        currentRps
+      } | Target: ${totalRps} | OK/Fail: ${successDisplay}/${failDisplay} | Avg: ${avgLatency.toFixed(
         0,
       )}ms | p95: ${p95.toFixed(0)}ms | p99: ${p99.toFixed(0)}ms`;
     }, 1000);
 
     // Handle graceful shutdown on Ctrl+C
-    const handleNoUiExit = (): void => {
-      coreRunner.stop();
+    const handleNoUiExit = async (): Promise<void> => {
+      await coreRunner.stop();
     };
     process.on('SIGINT', handleNoUiExit);
 
-    coreRunner.on('stop', () => {
+    coreRunner.on('stop', async () => {
       clearInterval(noUiInterval);
       process.removeListener('SIGINT', handleNoUiExit);
       noUiSpinner.succeed('Test finished. Generating summary...');
@@ -378,10 +383,9 @@ export async function runLoadTest(
     actualDurationSec,
   );
 
-  if (exportPath) {
+  if (exportPath && !silent) {
     const exportSpinner = ora({
       text: 'Exporting results...',
-      isEnabled: !silent,
     }).start();
 
     try {
@@ -425,11 +429,52 @@ export async function runLoadTest(
         chalk.red(`Failed to export results: ${(err as Error).message}`),
       );
     }
+  } else if (exportPath && silent) {
+    // Silent export without spinner
+    try {
+      const baseExportName =
+        typeof exportPath === 'string' ? exportPath : 'tressi-report';
+      const runDate = new Date();
+
+      const reportDir = FileUtils.joinPath(
+        process.cwd(),
+        getSafeDirectoryName(`${baseExportName}-${runDate.toISOString()}`),
+      );
+      await FileUtils.ensureDirectoryExists(reportDir);
+
+      // Create markdown generator and generate report
+      const markdownGenerator = new MarkdownGenerator();
+      const markdownReport = markdownGenerator.generate(
+        summary,
+        createRunnerInterface(resultAggregator),
+        config,
+        {
+          exportName: baseExportName,
+          runDate,
+        },
+      );
+      await fs.writeFile(
+        FileUtils.joinPath(reportDir, 'report.md'),
+        markdownReport,
+      );
+
+      const dataExporter = new DataExporter();
+      await dataExporter.exportDataFiles(
+        summary,
+        coreRunner.getResultAggregator().getSampledResults(),
+        reportDir,
+        coreRunner.getResultAggregator(),
+      );
+    } catch (err) {
+      // In silent mode, we don't output the error to console
+      // The error will be handled by the caller
+      throw err;
+    }
   }
 
   // Final summary to console
   if (!silent) {
-    printSummary(coreRunner, config.options, summary);
+    printSummary(coreRunner, config.options, summary, config);
   }
 
   return summary;
@@ -461,7 +506,7 @@ function generateTestSummary(
     getSuccessfulRequestsByEndpoint(): Map<string, number>;
     getFailedRequestsByEndpoint(): Map<string, number>;
   },
-  options: TressiOptionsConfig,
+  _options: TressiOptionsConfig,
   actualDurationSec: number,
 ): TestSummary {
   const histogram = resultAggregator.getGlobalHistogram();
@@ -488,20 +533,16 @@ function generateTestSummary(
     };
   }
 
-  const { rps } = options;
   const totalRequests = histogram.totalCount;
   const effectiveDuration = actualDurationSec;
   const actualRps =
     effectiveDuration > 0 ? totalRequests / effectiveDuration : 0;
   const avgLatency = histogram.mean;
-  const theoreticalMaxRps = rps
-    ? Math.min(
-        (1000 / (avgLatency || 1)) * (options.workers || 10),
-        options.rps || Infinity,
-      )
-    : 0;
-  const achievedPercentage =
-    rps && theoreticalMaxRps ? (actualRps / theoreticalMaxRps) * 100 : 0;
+  const totalRpsValue =
+    resultAggregator.getSuccessfulRequestsCount() +
+    resultAggregator.getFailedRequestsCount();
+  const theoreticalMaxRps = (1000 / (avgLatency || 1)) * (totalRpsValue || 10);
+  const achievedPercentage = 0;
 
   const endpointSummaries = Array.from(endpointHistograms.entries()).map(
     ([endpointKey, endpointHistogram]): EndpointSummary => {

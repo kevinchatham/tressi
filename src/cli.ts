@@ -12,9 +12,6 @@ import {
   loadConfig,
 } from './config';
 
-/**
- * The main commander program instance.
- */
 const program = new Command();
 
 program
@@ -31,18 +28,7 @@ program
   .command('init')
   .summary('Create a tressi.config.json file')
   .description(
-    `Create a tressi configuration file to define your load testing scenarios.
-
-This command generates a JSON configuration file that specifies:
-- Target URLs and endpoints to test
-- Request methods, headers, and payloads
-- Load patterns (concurrent users, duration, ramp-up)
-- Performance thresholds and success criteria
-- Output formats and reporting options
-
-By default, a minimal configuration is created with essential settings for quick start. Use --full to generate a comprehensive configuration with all available options, including advanced features like custom distributions, detailed assertions, and multiple test phases.
-
-After creation, edit the configuration file to match your API testing requirements, then run 'tressi' to execute your load tests.`,
+    `Create a tressi configuration file to define your load testing scenarios.`,
   )
   .option(
     '--full',
@@ -84,9 +70,7 @@ After creation, edit the configuration file to match your API testing requiremen
 program
   .command('config')
   .summary('Display current configuration')
-  .description(
-    'Display the current configuration including all resolved values, defaults, and request definitions. Shows configuration source and schema version being used.',
-  )
+  .description('Display the current configuration')
   .option('--json', 'Output configuration as JSON')
   .option('--raw', 'Show raw configuration without defaults filled in')
   .action(async (options) => {

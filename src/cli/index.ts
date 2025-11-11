@@ -9,5 +9,5 @@ export { RunCommand } from './commands/run-command';
 // Export display utilities
 export { displayConfig } from './display/config-display';
 
-// Export validators
-export { ConfigValidator } from './validators/config-validator';
+// Export validators - now handled by unified validator
+// export { ConfigValidator } from './validators/config-validator'; // Removed

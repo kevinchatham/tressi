@@ -1,19 +1,30 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+// Mock the fs module to avoid file system operations
+vi.mock('fs', () => ({
+  promises: {
+    readFile: vi.fn(),
+    access: vi.fn(),
+  },
+}));
+
+vi.mock('../../../../src/validation/config-validator');
+vi.mock('../../../../src/index');
+
+// Import after mocking
+import { promises as fs } from 'fs';
+
 import { RunCommand } from '../../../../src/cli/commands/run-command';
-import { loadConfig } from '../../../../src/config';
 import { runLoadTest } from '../../../../src/index';
 import type { TestSummary } from '../../../../src/types';
-
-// Mock only the essential dependencies
-vi.mock('../../../../src/config');
-vi.mock('../../../../src/index');
+import { ConfigValidator } from '../../../../src/validation/config-validator';
 
 describe('RunCommand', () => {
   let runCommand: RunCommand;
 
-  beforeEach(() => {
-    runCommand = new RunCommand();
+  beforeEach(async () => {
+    const module = await import('../../../../src/cli/commands/run-command');
+    runCommand = new module.RunCommand();
     vi.clearAllMocks();
   });
 
@@ -24,8 +35,6 @@ describe('RunCommand', () => {
         requests: [{ url: 'http://example.com', method: 'GET' as const }],
         options: {
           durationSec: 30,
-          workers: 1,
-          rps: 1,
           rampUpTimeSec: 0,
           useUI: true,
           silent: false,
@@ -33,21 +42,26 @@ describe('RunCommand', () => {
         },
       };
 
-      vi.mocked(loadConfig).mockResolvedValue(mockConfig);
+      vi.mocked(fs.readFile).mockResolvedValue(JSON.stringify(mockConfig));
+      vi.mocked(ConfigValidator.validateForCLI).mockReturnValue(mockConfig);
       vi.mocked(runLoadTest).mockResolvedValue({} as TestSummary);
 
       await runCommand.execute('/custom/path/config.json');
 
-      expect(loadConfig).toHaveBeenCalledWith('/custom/path/config.json');
+      expect(fs.readFile).toHaveBeenCalledWith(
+        '/custom/path/config.json',
+        'utf-8',
+      );
+      expect(ConfigValidator.validateForCLI).toHaveBeenCalledWith(mockConfig);
       expect(runLoadTest).toHaveBeenCalledWith(mockConfig);
     });
 
     it('should handle config loading errors', async () => {
-      const error = new Error('Invalid config');
-      vi.mocked(loadConfig).mockRejectedValue(error);
+      const error = new Error('ENOENT: no such file or directory');
+      vi.mocked(fs.readFile).mockRejectedValue(error);
 
       await expect(runCommand.execute('/invalid/config.json')).rejects.toThrow(
-        'Invalid config',
+        'ENOENT: no such file or directory',
       );
     });
 
@@ -57,8 +71,6 @@ describe('RunCommand', () => {
         requests: [{ url: 'http://example.com', method: 'GET' as const }],
         options: {
           durationSec: 30,
-          workers: 1,
-          rps: 1,
           rampUpTimeSec: 0,
           useUI: true,
           silent: false,
@@ -66,7 +78,8 @@ describe('RunCommand', () => {
         },
       };
 
-      vi.mocked(loadConfig).mockResolvedValue(mockConfig);
+      vi.mocked(fs.readFile).mockResolvedValue(JSON.stringify(mockConfig));
+      vi.mocked(ConfigValidator.validateForCLI).mockReturnValue(mockConfig);
       vi.mocked(runLoadTest).mockRejectedValue(new Error('Test failed'));
 
       await expect(runCommand.execute('/config.json')).rejects.toThrow(
@@ -76,7 +89,7 @@ describe('RunCommand', () => {
   });
 
   describe('getDescription', () => {
-    it('should return command description', () => {
+    it('should return command description', async () => {
       const description = RunCommand.getDescription();
       expect(description).toContain('Run a load test');
     });

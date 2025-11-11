@@ -32,9 +32,9 @@ export { CircularBuffer } from './circular-buffer';
 // File system utilities
 export { FileUtils } from './file-utils';
 
-// Validation utilities
-export { ValidationUtils } from './validation-utils';
+// Validation utilities - now handled by unified validator
+// export { ValidationUtils } from './validation-utils'; // Removed - use ConfigValidator instead
 
 // Re-export types for convenience
-export type { WorkerPoolStats } from '../workers/worker-pool';
-export type { ConcurrencyMetrics } from '../workers/concurrency-calculator';
+// export type { WorkerPoolStats } from '../workers/worker-pool';
+// export type { ConcurrencyMetrics } from '../workers/concurrency-calculator';

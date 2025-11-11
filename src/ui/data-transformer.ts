@@ -1,6 +1,6 @@
 import { Histogram } from 'hdr-histogram-js';
 
-import type { CoreRunner } from '../core/runner/core-runner';
+import type { CoreRunner } from '../core/core-runner';
 import { getStatusCodeDistributionByCategory } from '../stats';
 
 /**
@@ -120,8 +120,7 @@ export class DataTransformer {
     successfulRequests: number;
     failedRequests: number;
     averageLatency: number;
-    workerCount: number;
-    maxWorkers?: number;
+    totalRps: number;
   }): {
     headers: string[];
     data: string[][];
@@ -130,13 +129,9 @@ export class DataTransformer {
       ? `${stats.currentReqPerSec} / ${stats.targetReqPerSec}`
       : stats.currentReqPerSec.toString();
 
-    const workerStat = stats.maxWorkers
-      ? `${stats.workerCount} / ${stats.maxWorkers}`
-      : stats.workerCount.toString();
-
     const data: string[][] = [
       ['Time', `${stats.elapsedSec.toFixed(0)}s / ${stats.totalSec}s`],
-      ['Workers', workerStat],
+      ['Target RPS', stats.totalRps.toString()],
       ['Req/s (Actual/Target)', rpsStat],
       [
         'Success / Fail',
@@ -185,7 +180,7 @@ export class DataTransformer {
     successfulRequests: number;
     failedRequests: number;
     averageLatency: number;
-    workerCount: number;
+    concurrency: number;
     latencyDistribution: Array<{
       latency: string;
       count: string;
@@ -202,7 +197,9 @@ export class DataTransformer {
       successfulRequests: resultAggregator.getSuccessfulRequestsCount(),
       failedRequests: resultAggregator.getFailedRequestsCount(),
       averageLatency: resultAggregator.getGlobalHistogram().mean,
-      workerCount: runner.getWorkerPool().getWorkerCount(),
+      concurrency: runner
+        .getConfig()
+        .requests.reduce((sum, req) => sum + (req.rps || 1), 0),
       latencyDistribution: resultAggregator.getLatencyDistribution({
         count: 10,
       }),

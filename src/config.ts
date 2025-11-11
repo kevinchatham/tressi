@@ -3,7 +3,7 @@ import path from 'path';
 import { request } from 'undici';
 import { z, ZodError } from 'zod';
 
-import type { SafeTressiConfig, TressiConfig } from './types';
+import type { TressiConfig } from './types';
 
 /**
  * Zod schema for a single request configuration.
@@ -25,20 +25,16 @@ export const TressiRequestConfigSchema = z.object({
     .default('GET'),
   /** Headers to be sent with this specific request. Merged with global headers. */
   headers: z.record(z.string(), z.string()).optional(),
-  /** Per-endpoint requests per second limit. Overrides global RPS for this endpoint. */
-  rps: z.number().int().min(1).optional(),
+  /** Per-endpoint requests per second limit. Defaults to 1. */
+  rps: z.number().int().min(1).default(1),
 });
 
 export const TressiOptionsConfigSchema = z
   .object({
-    /** The maximum number of concurrent workers to use. Defaults to 10. */
-    workers: z.number().int().positive().default(10),
     /** The total duration of the test in seconds. Defaults to 10. */
     durationSec: z.number().int().positive().default(10),
     /** The time in seconds to ramp up to the target RPS. Defaults to 0. */
     rampUpTimeSec: z.number().int().nonnegative().default(0),
-    /** The target requests per second. Defaults to 1. */
-    rps: z.number().int().min(1).default(1),
     /** The base path for the exported report. If not provided, no report will be generated. */
     exportPath: z.union([z.string(), z.boolean()]).optional(),
     /** Whether to use the terminal UI. Defaults to true. */
@@ -55,6 +51,22 @@ export const TressiOptionsConfigSchema = z
     errorStatusCodes: z.array(z.number().int().positive()).optional(),
     /** Global headers to be sent with every request. */
     headers: z.record(z.string(), z.string()).optional(),
+    /** Adaptive concurrency configuration */
+    adaptiveConcurrency: z
+      .object({
+        /** Maximum concurrent operations. Defaults to 10. */
+        maxConcurrency: z.number().int().positive().default(10),
+        /** Target response latency in milliseconds for adaptation. Defaults to 100. */
+        targetLatency: z.number().int().positive().default(100),
+        /** Memory usage threshold (0.0-1.0) for scaling down. Defaults to 0.8. */
+        memoryThreshold: z.number().min(0.1).max(0.95).default(0.8),
+        /** Whether to enable adaptive concurrency. Defaults to true. */
+        enabled: z.boolean().default(true),
+        /** Minimum concurrent operations. Defaults to 1. */
+        minConcurrency: z.number().int().positive().default(1),
+      })
+      .optional()
+      .default({}),
   })
   .refine(
     (data) => {
@@ -73,6 +85,17 @@ export const TressiOptionsConfigSchema = z
         'At least one of errorRateThreshold, errorCountThreshold, or errorStatusCodes must be provided when earlyExitOnError is enabled',
       path: ['earlyExitOnError'],
     },
+  )
+  .refine(
+    (data) => {
+      // useUI and silent cannot both be true
+      return !(data.useUI && data.silent);
+    },
+    {
+      message:
+        'useUI and silent options cannot both be true. The TUI requires output, but silent mode suppresses all output.',
+      path: ['useUI', 'silent'],
+    },
   );
 
 export const defaultTressiOptions = TressiOptionsConfigSchema.parse({});
@@ -86,7 +109,7 @@ export const TressiConfigSchema = z.object({
   /** An array of request configurations. */
   requests: z.array(TressiRequestConfigSchema),
   /** Configuration options for the test runner. */
-  options: TressiOptionsConfigSchema.optional(),
+  options: TressiOptionsConfigSchema.default(defaultTressiOptions),
 });
 
 /**
@@ -96,21 +119,10 @@ export const TressiConfigSchema = z.object({
  */
 export async function loadConfig(
   configInput: string | TressiConfig,
-): Promise<SafeTressiConfig> {
+): Promise<TressiConfig> {
   if (typeof configInput === 'object') {
-    // Ensure options are populated with defaults if not provided
-    const configWithDefaults = {
-      ...configInput,
-      options: configInput.options || defaultTressiOptions,
-    };
-    const parsed = TressiConfigSchema.parse(configWithDefaults);
-
-    // Return a properly typed config with guaranteed options
-    return {
-      $schema: parsed.$schema,
-      requests: parsed.requests,
-      options: parsed.options!,
-    };
+    const parsed = TressiConfigSchema.parse(configInput);
+    return parsed;
   }
 
   let rawContent: unknown;
@@ -128,19 +140,7 @@ export async function loadConfig(
 
   try {
     const parsed = TressiConfigSchema.parse(rawContent);
-
-    // Ensure options are populated with defaults if not provided
-    const configWithDefaults = {
-      ...parsed,
-      options: parsed.options || defaultTressiOptions,
-    };
-
-    // Return a properly typed config with guaranteed options
-    return {
-      $schema: configWithDefaults.$schema,
-      requests: configWithDefaults.requests,
-      options: configWithDefaults.options!,
-    };
+    return parsed;
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error('Validation failed:', (error as ZodError).errors);
@@ -157,22 +157,29 @@ export function generateMinimalConfig(): TressiConfig {
     $schema:
       'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json',
     options: {
-      rps: 10,
       durationSec: 10,
-      workers: 5,
       rampUpTimeSec: 0,
       useUI: true,
       silent: false,
       earlyExitOnError: false,
+      adaptiveConcurrency: {
+        maxConcurrency: 10,
+        targetLatency: 100,
+        memoryThreshold: 0.8,
+        enabled: true,
+        minConcurrency: 1,
+      },
     },
     requests: [
       {
         url: 'https://jsonplaceholder.typicode.com/posts/1',
         method: 'GET',
+        rps: 10,
       },
       {
         url: 'https://jsonplaceholder.typicode.com/posts',
         method: 'POST',
+        rps: 5,
         payload: {
           name: 'Tressi Post',
         },
@@ -189,15 +196,25 @@ export function generateFullConfig(): TressiConfig {
   return {
     $schema:
       'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json',
-    options: TressiOptionsConfigSchema.parse({}),
+    options: TressiOptionsConfigSchema.parse({
+      adaptiveConcurrency: {
+        maxConcurrency: 10,
+        targetLatency: 100,
+        memoryThreshold: 0.8,
+        enabled: true,
+        minConcurrency: 1,
+      },
+    }),
     requests: [
       {
         url: 'https://jsonplaceholder.typicode.com/posts/1',
         method: 'GET',
+        rps: 10,
       },
       {
         url: 'https://jsonplaceholder.typicode.com/posts',
         method: 'POST',
+        rps: 5,
         payload: {
           name: 'Tressi Post',
         },

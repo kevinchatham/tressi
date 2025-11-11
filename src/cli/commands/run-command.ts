@@ -2,7 +2,8 @@ import { promises as fs } from 'fs';
 import path from 'path';
 
 import { runLoadTest } from '../..';
-import { loadConfig } from '../../config';
+import type { TressiConfig } from '../../types';
+import { ConfigValidator } from '../../validation/config-validator';
 
 /**
  * Handles the main 'run' command for executing load tests.
@@ -16,8 +17,34 @@ export class RunCommand {
    */
   async execute(configPath?: string): Promise<void> {
     const resolvedConfigPath = await this.resolveConfigPath(configPath);
-    const config = await loadConfig(resolvedConfigPath);
+    const config = await this.loadAndValidateConfig(resolvedConfigPath);
     await runLoadTest(config);
+  }
+
+  /**
+   * Loads and validates configuration from file or URL
+   * @param configPath Path to configuration file
+   * @returns Validated configuration
+   */
+  private async loadAndValidateConfig(
+    configPath: string,
+  ): Promise<TressiConfig> {
+    let rawContent: unknown;
+
+    if (configPath.startsWith('http://') || configPath.startsWith('https://')) {
+      const { request } = await import('undici');
+      const { statusCode, body } = await request(configPath);
+      if (statusCode >= 400) {
+        throw new Error(`Remote config fetch failed: ${statusCode}`);
+      }
+      rawContent = await body.json();
+    } else {
+      const absolutePath = path.resolve(configPath);
+      const fileContent = await fs.readFile(absolutePath, 'utf-8');
+      rawContent = JSON.parse(fileContent);
+    }
+
+    return ConfigValidator.validateForCLI(rawContent);
   }
 
   /**

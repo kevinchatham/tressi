@@ -1,9 +1,8 @@
 {
-  "$schema": "./schemas/tressi.schema.v0.0.13.json",
+  "$schema": "./tressi.schema.json",
   "options": {
-    "workers": 100,
     "durationSec": 10,
-    "useUI": true
+    "useUI": false
   },
   "requests": [
     {
@@ -14,7 +13,7 @@
     {
       "url": "http://localhost:5000/success",
       "method": "GET",
-      "rps": 1
+      "rps": 10
     }
   ]
 }

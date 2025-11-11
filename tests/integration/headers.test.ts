@@ -9,8 +9,8 @@ import {
   vi,
 } from 'vitest';
 
-import { CoreRunner } from '../../src/core/runner/core-runner';
-import type { SafeTressiConfig } from '../../src/types';
+import { CoreRunner } from '../../src/core/core-runner';
+import type { TressiConfig } from '../../src/types';
 
 let mockAgent: MockAgent;
 
@@ -28,16 +28,12 @@ afterAll(() => {
   mockAgent.close();
 });
 
-const createTestConfig = (
-  overrides?: Partial<SafeTressiConfig>,
-): SafeTressiConfig => ({
+const createTestConfig = (overrides?: Partial<TressiConfig>): TressiConfig => ({
   $schema: 'https://example.com/schema.json',
   requests: [{ url: 'http://localhost:8080/test', method: 'GET' }],
   options: {
-    workers: 1,
     durationSec: 1,
     rampUpTimeSec: 0,
-    rps: 10,
     useUI: true,
     silent: false,
     earlyExitOnError: false,
@@ -68,9 +64,7 @@ describe('Headers Merging Tests', () => {
       options: {
         headers: globalHeaders,
         durationSec: 1,
-        workers: 1,
         rampUpTimeSec: 0,
-        rps: 10,
         useUI: true,
         silent: false,
         earlyExitOnError: false,
@@ -105,9 +99,7 @@ describe('Headers Merging Tests', () => {
       options: {
         headers: {},
         durationSec: 1,
-        workers: 1,
         rampUpTimeSec: 0,
-        rps: 10,
         useUI: true,
         silent: false,
         earlyExitOnError: false,
@@ -142,9 +134,7 @@ describe('Headers Merging Tests', () => {
       options: {
         headers: globalHeaders,
         durationSec: 1,
-        workers: 1,
         rampUpTimeSec: 0,
-        rps: 10,
         useUI: true,
         silent: false,
         earlyExitOnError: false,

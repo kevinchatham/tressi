@@ -2,12 +2,12 @@ import { promises as fs } from 'fs';
 import path from 'path';
 
 import { loadConfig } from '../../config';
-import type { DisplayOptions, SafeTressiConfig } from '../../types';
+import type { DisplayOptions, TressiConfig } from '../../types';
 import { displayConfig } from '../display/config-display';
 
 export interface ConfigCommandDependencies {
-  loadConfig: (configPath: string) => Promise<SafeTressiConfig>;
-  displayConfig: (config: SafeTressiConfig, options: DisplayOptions) => void;
+  loadConfig: (configPath: string) => Promise<TressiConfig>;
+  displayConfig: (config: TressiConfig, options: DisplayOptions) => void;
   fs: {
     access: (path: string) => Promise<void>;
   };

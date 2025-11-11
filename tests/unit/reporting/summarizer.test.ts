@@ -1,10 +1,10 @@
 import { build, Histogram } from 'hdr-histogram-js';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
-import { generateTestSummary } from '../../src/index';
-import { MarkdownGenerator } from '../../src/reporting/generators/markdown-generator';
-import { Distribution } from '../../src/stats/distribution';
-import type { SafeTressiConfig, TressiOptionsConfig } from '../../src/types';
+import { generateTestSummary } from '../../../src';
+import { MarkdownGenerator } from '../../../src/reporting/generators/markdown-generator';
+import { Distribution } from '../../../src/stats';
+import { TressiConfig, TressiOptionsConfig } from '../../../src/types';
 
 const createHistogram = (latencies: number[]): Histogram => {
   const histogram = build();
@@ -104,15 +104,13 @@ const mockResultAggregator: {
 
 const mockOptions: TressiOptionsConfig = {
   durationSec: 10,
-  workers: 10,
   rampUpTimeSec: 0,
-  rps: 10,
   useUI: true,
   silent: false,
   earlyExitOnError: false,
 };
 
-const mockConfig: SafeTressiConfig = {
+const mockConfig: TressiConfig = {
   $schema: 'https://example.com/schema.json',
   requests: [{ url: 'http://a.com', method: 'GET' }],
   options: mockOptions,

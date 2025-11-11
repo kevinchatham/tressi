@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { Distribution } from '../../src/stats/distribution';
+import { Distribution } from '../../../src/stats';
 
 vi.mock('chalk', () => ({
   default: {

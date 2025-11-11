@@ -49,7 +49,8 @@
               },
               "rps": {
                 "type": "integer",
-                "minimum": 1
+                "minimum": 1,
+                "default": 1
               }
             },
             "required": ["url"],
@@ -59,11 +60,6 @@
         "options": {
           "type": "object",
           "properties": {
-            "workers": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "default": 10
-            },
             "durationSec": {
               "type": "integer",
               "exclusiveMinimum": 0,
@@ -73,11 +69,6 @@
               "type": "integer",
               "minimum": 0,
               "default": 0
-            },
-            "rps": {
-              "type": "integer",
-              "minimum": 1,
-              "default": 1
             },
             "exportPath": {
               "type": ["string", "boolean"]
@@ -115,9 +106,55 @@
               "additionalProperties": {
                 "type": "string"
               }
+            },
+            "adaptiveConcurrency": {
+              "type": "object",
+              "properties": {
+                "maxConcurrency": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "default": 10
+                },
+                "targetLatency": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "default": 100
+                },
+                "memoryThreshold": {
+                  "type": "number",
+                  "minimum": 0.1,
+                  "maximum": 0.95,
+                  "default": 0.8
+                },
+                "enabled": {
+                  "type": "boolean",
+                  "default": true
+                },
+                "minConcurrency": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "default": 1
+                }
+              },
+              "additionalProperties": false,
+              "default": {}
             }
           },
-          "additionalProperties": false
+          "additionalProperties": false,
+          "default": {
+            "durationSec": 10,
+            "rampUpTimeSec": 0,
+            "useUI": true,
+            "silent": false,
+            "earlyExitOnError": false,
+            "adaptiveConcurrency": {
+              "maxConcurrency": 10,
+              "targetLatency": 100,
+              "memoryThreshold": 0.8,
+              "enabled": true,
+              "minConcurrency": 1
+            }
+          }
         }
       },
       "required": ["$schema", "requests"],

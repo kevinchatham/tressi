@@ -145,15 +145,6 @@ export type DisplayOptions = {
 export type TressiConfig = z.infer<typeof TressiConfigSchema>;
 
 /**
- * Safe type that guarantees the presence of options configuration.
- * This type represents a validated Tressi configuration that is guaranteed to have
- * the options property populated, making it safe for internal use where options
- * are required. In contrast, {@link TressiConfig} is the true external interface
- * type that may have optional or missing options.
- */
-export type SafeTressiConfig = TressiConfig & { options: TressiOptionsConfig };
-
-/**
  * Type representing the options configuration.
  */
 export type TressiOptionsConfig = z.infer<typeof TressiOptionsConfigSchema>;

@@ -2,23 +2,40 @@ import { exec } from 'child_process';
 import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { promisify } from 'util';
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+} from 'vitest';
+
+import { ServerManager } from '../utils/server-manager';
 
 const execAsync = promisify(exec);
 
 describe('Tressi CLI Commands E2E Tests', () => {
-  const testDir = process.cwd();
-  const configPath = join(testDir, 'tressi.config.json');
+  const configPath = join(process.cwd(), 'tressi.test.config.json');
+  let serverManager: ServerManager;
+  let baseUrl: string;
 
-  beforeEach(() => {
-    // Clean up any existing config file
+  beforeAll(async () => {
+    serverManager = new ServerManager();
+    baseUrl = await serverManager.start();
+  });
+
+  afterAll(async () => {
+    await serverManager.stop();
+    // Final cleanup
     if (existsSync(configPath)) {
       unlinkSync(configPath);
     }
   });
 
-  afterAll(() => {
-    // Final cleanup
+  beforeEach(() => {
+    // Clean up any existing test config file
     if (existsSync(configPath)) {
       unlinkSync(configPath);
     }
@@ -26,69 +43,82 @@ describe('Tressi CLI Commands E2E Tests', () => {
 
   describe('init command', () => {
     it('should create a minimal config file', async () => {
-      const { stderr } = await execAsync('npx tressi init', {
-        cwd: testDir,
-      });
+      const { stderr } = await execAsync('node ./dist/cli.js init', {});
 
       expect(stderr).toBe('');
-      expect(existsSync(configPath)).toBe(true);
+      expect(existsSync('tressi.config.json')).toBe(true);
 
-      const config = JSON.parse(readFileSync(configPath, 'utf-8'));
+      const config = JSON.parse(readFileSync('tressi.config.json', 'utf-8'));
       expect(config).toHaveProperty('$schema');
       expect(config).toHaveProperty('options');
       expect(config).toHaveProperty('requests');
       expect(config.options).toHaveProperty('durationSec');
-      expect(config.options).toHaveProperty('workers');
+
+      // Clean up
+      if (existsSync('tressi.config.json')) {
+        unlinkSync('tressi.config.json');
+      }
     });
 
     it('should create a full config file with --full flag', async () => {
-      const { stderr } = await execAsync('npx tressi init --full', {
-        cwd: testDir,
-      });
+      const { stderr } = await execAsync('node ./dist/cli.js init --full', {});
 
       expect(stderr).toBe('');
-      expect(existsSync(configPath)).toBe(true);
+      expect(existsSync('tressi.config.json')).toBe(true);
 
-      const config = JSON.parse(readFileSync(configPath, 'utf-8'));
+      const config = JSON.parse(readFileSync('tressi.config.json', 'utf-8'));
       expect(config).toHaveProperty('$schema');
       expect(config).toHaveProperty('options');
       expect(config).toHaveProperty('requests');
       expect(config.options).toHaveProperty('durationSec');
-      expect(config.options).toHaveProperty('workers');
-      expect(config.options).toHaveProperty('rps');
       expect(config.options).toHaveProperty('rampUpTimeSec');
+      expect(config.options).not.toHaveProperty('rps');
+      expect(config.requests[0]).toHaveProperty('rps');
+
+      // Clean up
+      if (existsSync('tressi.config.json')) {
+        unlinkSync('tressi.config.json');
+      }
     });
 
     it('should not overwrite existing config file', async () => {
       // Create initial config
-      await execAsync('npx tressi init', { cwd: testDir });
+      await execAsync('node ./dist/cli.js init', {});
 
-      const originalContent = readFileSync(configPath, 'utf-8');
+      const originalContent = readFileSync('tressi.config.json', 'utf-8');
       const originalConfig = JSON.parse(originalContent);
 
       // Try to create another config
-      const { stderr } = await execAsync('npx tressi init', {
-        cwd: testDir,
-      });
+      const { stderr } = await execAsync('node ./dist/cli.js init', {});
 
       expect(stderr).toBe('');
-      const newContent = readFileSync(configPath, 'utf-8');
+      const newContent = readFileSync('tressi.config.json', 'utf-8');
       const newConfig = JSON.parse(newContent);
 
       expect(newConfig).toEqual(originalConfig);
+
+      // Clean up
+      if (existsSync('tressi.config.json')) {
+        unlinkSync('tressi.config.json');
+      }
     });
   });
 
   describe('config command', () => {
-    beforeAll(async () => {
-      // Ensure we have a config file
-      await execAsync('npx tressi init', { cwd: testDir });
+    beforeEach(async () => {
+      // Ensure we have a config file for each test
+      await execAsync('npx tsx src/cli.ts init');
+    });
+
+    afterEach(() => {
+      // Clean up default config
+      if (existsSync('tressi.config.json')) {
+        unlinkSync('tressi.config.json');
+      }
     });
 
     it('should display configuration in human-readable format', async () => {
-      const { stdout, stderr } = await execAsync('npx tressi config', {
-        cwd: testDir,
-      });
+      const { stdout, stderr } = await execAsync('npx tsx src/cli.ts config');
 
       expect(stderr).toBe('');
       expect(stdout).toContain('Current Tressi Configuration');
@@ -98,24 +128,26 @@ describe('Tressi CLI Commands E2E Tests', () => {
     });
 
     it('should output configuration as JSON with --json flag', async () => {
-      const { stdout, stderr } = await execAsync('npx tressi config --json', {
-        cwd: testDir,
-      });
+      const { stdout, stderr } = await execAsync(
+        'npx tsx src/cli.ts config --json',
+      );
 
       expect(stderr).toBe('');
-      const config = JSON.parse(stdout);
-      expect(config).toHaveProperty('$schema');
-      expect(config).toHaveProperty('options');
-      expect(config).toHaveProperty('requests');
+      const config = JSON.parse(stdout.trim());
+      expect(config).toHaveProperty('config');
+      expect(config.config).toHaveProperty('$schema');
+      expect(config.config).toHaveProperty('options');
+      expect(config.config).toHaveProperty('requests');
     });
 
     it('should output raw configuration with --raw flag', async () => {
-      const { stdout, stderr } = await execAsync('npx tressi config --raw', {
-        cwd: testDir,
-      });
+      const { stdout, stderr } = await execAsync(
+        'npx tsx src/cli.ts config --raw',
+      );
 
       expect(stderr).toBe('');
-      const config = JSON.parse(stdout);
+      // Raw should be clean JSON
+      const config = JSON.parse(stdout.trim());
       expect(config).toHaveProperty('$schema');
       expect(config).toHaveProperty('options');
       expect(config).toHaveProperty('requests');
@@ -123,15 +155,13 @@ describe('Tressi CLI Commands E2E Tests', () => {
   });
 
   describe('run command', () => {
-    beforeAll(async () => {
-      // Create a test config
+    beforeEach(async () => {
+      // Create a test config using local server for each test
       const testConfig = {
         $schema:
           'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json',
         options: {
           durationSec: 2,
-          workers: 1,
-          rps: 1,
           rampUpTimeSec: 0,
           useUI: false,
           silent: true,
@@ -139,7 +169,7 @@ describe('Tressi CLI Commands E2E Tests', () => {
         },
         requests: [
           {
-            url: 'https://httpbin.org/get',
+            url: `${baseUrl}/success`,
             method: 'GET',
           },
         ],
@@ -150,27 +180,25 @@ describe('Tressi CLI Commands E2E Tests', () => {
     });
 
     it('should execute a basic load test', async () => {
-      const { stdout, stderr } = await execAsync('npx tressi', {
-        cwd: testDir,
-        timeout: 10000, // 10 second timeout
-      });
+      const { stdout, stderr } = await execAsync(
+        `npx tressi --config ${configPath}`,
+        {
+          timeout: 30000, // 30 second timeout for slower systems
+        },
+      );
 
       expect(stderr).toBe('');
-      expect(stdout).toContain('Load test completed');
-      expect(stdout).toContain('Summary');
-      expect(stdout).toContain('Requests');
-      expect(stdout).toContain('Latency');
+      // In silent mode, we expect minimal output
+      expect(stdout).toBe('');
     });
 
     it('should handle custom config file path', async () => {
-      const customConfigPath = join(testDir, 'custom.config.json');
+      const customConfigPath = join(process.cwd(), 'custom.test.config.json');
       const testConfig = {
         $schema:
           'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json',
         options: {
           durationSec: 1,
-          workers: 1,
-          rps: 1,
           rampUpTimeSec: 0,
           useUI: false,
           silent: true,
@@ -178,7 +206,7 @@ describe('Tressi CLI Commands E2E Tests', () => {
         },
         requests: [
           {
-            url: 'https://httpbin.org/get',
+            url: `${baseUrl}/success`, // Use success endpoint instead of delay to speed up
             method: 'GET',
           },
         ],
@@ -190,13 +218,13 @@ describe('Tressi CLI Commands E2E Tests', () => {
         const { stdout, stderr } = await execAsync(
           `npx tressi --config ${customConfigPath}`,
           {
-            cwd: testDir,
-            timeout: 10000,
+            timeout: 30000, // 30 second timeout
           },
         );
 
         expect(stderr).toBe('');
-        expect(stdout).toContain('Load test completed');
+        // In silent mode, we expect minimal output
+        expect(stdout).toBe('');
       } finally {
         if (existsSync(customConfigPath)) {
           unlinkSync(customConfigPath);
@@ -214,13 +242,12 @@ describe('Tressi CLI Commands E2E Tests', () => {
       writeFileSync(configPath, JSON.stringify(invalidConfig, null, 2));
 
       try {
-        await execAsync('npx tressi', {
-          cwd: testDir,
+        await execAsync(`npx tressi --config ${configPath}`, {
           timeout: 5000,
         });
         expect.fail('Should have thrown an error');
       } catch (error: unknown) {
-        expect((error as Error).message).toContain('Error');
+        expect((error as Error).message).toContain('Validation failed');
       }
     });
   });

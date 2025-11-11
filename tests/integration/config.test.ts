@@ -7,13 +7,18 @@ const minimalConfig = {
   $schema: 'https://example.com/schema.json',
   requests: [{ url: 'http://localhost:8080/test', method: 'GET' as const }],
   options: {
-    rps: 10,
-    workers: 10,
     durationSec: 10,
     rampUpTimeSec: 0,
     useUI: true,
     silent: false,
     earlyExitOnError: false,
+    adaptiveConcurrency: {
+      maxConcurrency: 10,
+      targetLatency: 100,
+      memoryThreshold: 0.8,
+      enabled: true,
+      minConcurrency: 1,
+    },
   },
 };
 
@@ -21,13 +26,18 @@ const expectedConfig = {
   $schema: 'https://example.com/schema.json',
   requests: [{ url: 'http://localhost:8080/test', method: 'GET' }],
   options: expect.objectContaining({
-    workers: 10,
     durationSec: 10,
     rampUpTimeSec: 0,
-    rps: 10,
     useUI: true,
     silent: false,
     earlyExitOnError: false,
+    adaptiveConcurrency: expect.objectContaining({
+      maxConcurrency: 10,
+      targetLatency: 100,
+      memoryThreshold: 0.8,
+      enabled: true,
+      minConcurrency: 1,
+    }),
   }),
 };
 
@@ -100,13 +110,18 @@ describe('config', () => {
           headers: {
             Authorization: 'Bearer global-token',
           },
-          workers: 1,
           durationSec: 1,
           rampUpTimeSec: 0,
-          rps: 10,
           useUI: true,
           silent: false,
           earlyExitOnError: false,
+          adaptiveConcurrency: {
+            maxConcurrency: 1,
+            targetLatency: 100,
+            memoryThreshold: 0.8,
+            enabled: true,
+            minConcurrency: 1,
+          },
         },
         requests: [
           {

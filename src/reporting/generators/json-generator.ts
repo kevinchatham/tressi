@@ -2,8 +2,8 @@ import type {
   EndpointSummary,
   ReportMetadata,
   RequestResult,
-  SafeTressiConfig,
   TestSummary,
+  TressiConfig,
 } from '../../types';
 
 interface LatencyDistribution {
@@ -34,7 +34,7 @@ export interface JsonReport {
     version: string;
     exportName?: string;
     runDate?: string;
-    config: SafeTressiConfig;
+    config: TressiConfig;
   };
   summary: {
     global: TestSummary['global'];
@@ -66,7 +66,7 @@ export class JsonGenerator {
   generate(
     summary: TestSummary,
     runner: RunnerInterface,
-    config: SafeTressiConfig,
+    config: TressiConfig,
     metadata?: ReportMetadata,
   ): JsonReport {
     const statusCodeMap: Record<number, number> = runner.getStatusCodeMap();

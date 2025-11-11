@@ -119,20 +119,20 @@ export class LatencyCalculator {
   }
 
   /**
-   * Calculates the theoretical maximum RPS based on average latency and worker count.
+   * Calculates the theoretical maximum RPS based on average latency.
    * @param avgLatencyMs The average latency in milliseconds
-   * @param workerCount The number of workers
+   * @param _workerCount Deprecated parameter, no longer used
    * @param targetRps The target RPS (optional, used to cap the theoretical max)
    * @returns The theoretical maximum RPS
    */
   static calculateTheoreticalMaxRps(
     avgLatencyMs: number,
-    workerCount: number,
+    _workerCount: number, // Deprecated parameter, no longer used
     targetRps?: number,
   ): number {
     if (avgLatencyMs <= 0) return 0;
 
-    const theoreticalMax = (1000 / avgLatencyMs) * workerCount;
+    const theoreticalMax = 1000 / avgLatencyMs;
 
     return targetRps ? Math.min(theoreticalMax, targetRps) : theoreticalMax;
   }

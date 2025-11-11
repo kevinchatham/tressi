@@ -1,18 +1,17 @@
 import { EventEmitter } from 'events';
 import { performance } from 'perf_hooks';
 
-import { RequestExecutor } from '../../request/request-executor';
-import { ResponseSampler } from '../../request/response-sampler';
-import { ResultAggregator } from '../../stats/aggregators/result-aggregator';
-import { RpsCalculator } from '../../stats/calculators/rps-calculator';
+import { RequestExecutor } from '../request/request-executor';
+import { ResponseSampler } from '../request/response-sampler';
+import { ResultAggregator } from '../stats/aggregators/result-aggregator';
+import { RpsCalculator } from '../stats/calculators/rps-calculator';
 import type {
   RequestResult,
-  SafeTressiConfig,
+  TressiConfig,
   TressiOptionsConfig,
-} from '../../types';
-import { globalResourceManager } from '../../utils/resource-manager';
-import { WorkerPool } from '../../workers/worker-pool';
-import { ConfigValidator } from '../validation/config-validator';
+} from '../types';
+import { globalResourceManager } from '../utils/resource-manager';
+import { RateLimitValidator } from '../validation/rate-limit-validator';
 import { ExecutionEngine } from './execution-engine';
 
 /**
@@ -20,12 +19,10 @@ import { ExecutionEngine } from './execution-engine';
  * This class coordinates between all specialized components and manages the test lifecycle.
  */
 export class CoreRunner extends EventEmitter {
-  private config: SafeTressiConfig;
+  private config: TressiConfig;
   private options: TressiOptionsConfig;
-  private configValidator: ConfigValidator;
   private resultAggregator: ResultAggregator;
   private rpsCalculator: RpsCalculator;
-  private workerPool: WorkerPool;
   private requestExecutor: RequestExecutor;
   private responseSampler: ResponseSampler;
   private executionEngine: ExecutionEngine;
@@ -36,19 +33,14 @@ export class CoreRunner extends EventEmitter {
    * Creates a new CoreRunner instance.
    * @param config The Tressi configuration
    */
-  constructor(config: SafeTressiConfig) {
+  constructor(config: TressiConfig) {
     super();
 
     this.config = config;
-    this.configValidator = new ConfigValidator();
-
-    // Validate configuration with early exit options
-    this.options = this.configValidator.validateEarlyExitOptions(
-      config.options,
-    );
+    // Configuration has defaults applied via Zod, use directly
+    this.options = config.options;
 
     // Initialize components in correct order
-    this.workerPool = new WorkerPool(this.options.workers ?? 10);
     this.responseSampler = new ResponseSampler();
     this.requestExecutor = new RequestExecutor(
       this.responseSampler,
@@ -58,45 +50,17 @@ export class CoreRunner extends EventEmitter {
       this.options.useUI ?? true,
       1000, // Default max sample size
     );
-    this.rpsCalculator = new RpsCalculator(this.options.rps ?? 1000);
+    this.rpsCalculator = new RpsCalculator();
     this.executionEngine = new ExecutionEngine(this);
 
     // Set up event forwarding
     this.setupEventForwarding();
-    this.setupExecutionEngineIntegration();
   }
 
   /**
    * Sets up event forwarding between components.
    */
   private setupEventForwarding(): void {
-    // Forward worker pool events
-    this.workerPool.on('workerAdded', (count) => {
-      this.emit('workerAdded', count);
-    });
-
-    this.workerPool.on('workerRemoved', (count) => {
-      this.emit('workerRemoved', count);
-    });
-
-    this.workerPool.on('allWorkersStopped', (count) => {
-      this.emit('allWorkersStopped', count);
-    });
-  }
-
-  /**
-   * Sets up execution engine integration.
-   */
-  private setupExecutionEngineIntegration(): void {
-    // Handle worker requests from execution engine
-    this.executionEngine.on('addWorkerRequested', () => {
-      this.addWorker();
-    });
-
-    this.executionEngine.on('removeWorkerRequested', () => {
-      this.removeWorker();
-    });
-
     // Forward execution engine events
     this.executionEngine.on('executionStarted', (data) => {
       this.emit('executionStarted', data);
@@ -105,38 +69,6 @@ export class CoreRunner extends EventEmitter {
     this.executionEngine.on('executionStopped', (data) => {
       this.emit('executionStopped', data);
     });
-
-    this.executionEngine.on('rampUpProgress', (data) => {
-      this.emit('rampUpProgress', data);
-    });
-
-    this.executionEngine.on('autoscaling', (data) => {
-      this.emit('autoscaling', data);
-    });
-  }
-
-  /**
-   * Adds a new worker to the pool.
-   */
-  private addWorker(): void {
-    let workerStopped = false;
-    const stop = (): void => {
-      workerStopped = true;
-    };
-
-    const workerFunction = this.executionEngine.createWorkerFunction(
-      () => workerStopped,
-    );
-    const promise = workerFunction();
-
-    this.workerPool.addWorker(() => ({ promise, stop }));
-  }
-
-  /**
-   * Removes a worker from the pool.
-   */
-  private removeWorker(): void {
-    this.workerPool.removeWorker();
   }
 
   /**
@@ -148,6 +80,21 @@ export class CoreRunner extends EventEmitter {
     this.stopped = false;
 
     try {
+      // Validate configuration before starting
+      const validationResult = RateLimitValidator.validate(this.config);
+      if (!validationResult.isValid) {
+        RateLimitValidator.logValidationResults(validationResult);
+        throw new Error('Configuration validation failed');
+      }
+
+      // Log warnings and recommendations
+      if (
+        validationResult.warnings.length > 0 ||
+        validationResult.recommendations.length > 0
+      ) {
+        RateLimitValidator.logValidationResults(validationResult);
+      }
+
       // Emit start event
       this.emit('start', {
         config: this.config,
@@ -159,9 +106,6 @@ export class CoreRunner extends EventEmitter {
 
       // Start the execution engine
       await this.executionEngine.start();
-
-      // Add initial worker
-      this.addWorker();
 
       // Wait for completion or stop signal
       await this.waitForCompletion();
@@ -177,7 +121,7 @@ export class CoreRunner extends EventEmitter {
       this.emit('error', error);
       throw error;
     } finally {
-      this.cleanup();
+      await this.cleanup();
     }
   }
 
@@ -194,11 +138,9 @@ export class CoreRunner extends EventEmitter {
     });
 
     // Register result aggregator - don't clear it here, we need results for reporting
-    // The clear() method will be called manually when needed (e.g., for reuse)
     globalResourceManager.registerResource('result-aggregator', {
       cleanup: () => {
         // Don't clear the result aggregator - results are needed for reporting
-        // this.resultAggregator.clear();
       },
     });
   }
@@ -208,72 +150,42 @@ export class CoreRunner extends EventEmitter {
    */
   private async waitForCompletion(): Promise<void> {
     const { durationSec = 10 } = this.config.options;
-    const maxDurationMs = (durationSec + 5) * 1000; // Add buffer for cleanup
+    const maxDurationMs = durationSec * 1000;
 
-    return new Promise<void>((resolve, reject) => {
-      // eslint-disable-next-line prefer-const
-      let timeoutId: NodeJS.Timeout;
-
-      // Set up timeout handler
-      const timeoutHandler = (): void => {
-        this.stop();
+    return new Promise<void>((resolve) => {
+      const timeoutId = setTimeout(async () => {
+        await this.stop();
         resolve();
-      };
+      }, maxDurationMs);
 
-      // Set up stop handler
-      const stopHandler = (): void => {
+      this.once('stop', async () => {
         clearTimeout(timeoutId);
-        this.cleanup();
         resolve();
-      };
+      });
 
-      // Set up error handler
-      const errorHandler = (error: Error): void => {
+      this.once('error', async () => {
         clearTimeout(timeoutId);
-        this.cleanup();
-        reject(error);
-      };
-
-      // Set maximum execution timeout
-      timeoutId = setTimeout(timeoutHandler, maxDurationMs);
-
-      this.once('stop', stopHandler);
-      this.once('error', errorHandler);
-
-      // Wait for all workers to complete
-      this.workerPool
-        .waitForAllWorkers()
-        .then(() => {
-          clearTimeout(timeoutId);
-          this.removeListener('stop', stopHandler);
-          this.removeListener('error', errorHandler);
-          resolve();
-        })
-        .catch((error) => {
-          clearTimeout(timeoutId);
-          this.removeListener('stop', stopHandler);
-          this.removeListener('error', errorHandler);
-          reject(error);
-        });
+        await this.stop();
+        resolve();
+      });
     });
   }
 
   /**
    * Stops the test execution.
    */
-  public stop(): void {
+  public async stop(): Promise<void> {
     if (this.stopped) return;
 
     this.stopped = true;
-    this.executionEngine.stop();
-    this.workerPool.stopAllWorkers();
+    await this.executionEngine.stop();
     this.emit('stop');
   }
 
   /**
    * Cleans up all resources.
    */
-  private cleanup(): void {
+  private async cleanup(): Promise<void> {
     // Don't clear the result aggregator here - we need the results for reporting
     globalResourceManager.cleanupAll();
   }
@@ -320,14 +232,6 @@ export class CoreRunner extends EventEmitter {
   }
 
   /**
-   * Gets the worker pool for worker management.
-   * @returns The worker pool instance
-   */
-  public getWorkerPool(): WorkerPool {
-    return this.workerPool;
-  }
-
-  /**
    * Gets the request executor for making HTTP requests.
    * @returns The request executor instance
    */
@@ -347,7 +251,7 @@ export class CoreRunner extends EventEmitter {
    * Gets the configuration.
    * @returns The Tressi configuration
    */
-  public getConfig(): SafeTressiConfig {
+  public getConfig(): TressiConfig {
     return this.config;
   }
 

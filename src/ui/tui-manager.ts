@@ -1,7 +1,7 @@
 import blessed from 'blessed';
 import contrib from 'blessed-contrib';
 
-import type { CoreRunner } from '../core/runner/core-runner';
+import type { CoreRunner } from '../core/core-runner';
 import { CircularBuffer } from '../utils/circular-buffer';
 import { LatencyChart } from './components/latency-chart';
 import { LatencyDistributionTable } from './components/latency-distribution-table';
@@ -16,7 +16,7 @@ export class TuiManager {
   private screen: blessed.Widgets.Screen;
   private grid: contrib.grid;
   private tressiVersion: string;
-  private onExit: () => void;
+  private onExit: () => Promise<void>;
 
   // UI Components
   private latencyChart: LatencyChart;
@@ -36,7 +36,7 @@ export class TuiManager {
    * @param onExit A callback function to be called when the user exits the UI.
    * @param tressiVersion The version of Tressi being used.
    */
-  constructor(onExit: () => void, tressiVersion: string) {
+  constructor(onExit: () => Promise<void>, tressiVersion: string) {
     this.onExit = onExit;
     this.tressiVersion = tressiVersion;
 
@@ -70,8 +70,8 @@ export class TuiManager {
    * Sets up keyboard event handlers for the UI.
    */
   private setupEventHandlers(): void {
-    this.screen.key(['escape', 'q', 'C-c'], () => {
-      this.onExit();
+    this.screen.key(['escape', 'q', 'C-c'], async () => {
+      await this.onExit();
     });
   }
 
@@ -111,7 +111,7 @@ export class TuiManager {
     runner: CoreRunner,
     elapsedSec: number,
     totalSec: number,
-    targetReqPerSec: number | undefined,
+    targetReqPerSec?: number,
   ): void {
     // Extract data from runner
     const runnerData = DataTransformer.extractRunnerData(runner);
@@ -167,7 +167,9 @@ export class TuiManager {
     );
 
     // Transform and update stats table
-    const workerPoolStats = runner.getWorkerPool().getStats();
+    const totalRps = runner
+      .getConfig()
+      .requests.reduce((sum, req) => sum + (req.rps || 1), 0);
     const statsData = DataTransformer.transformStatsData({
       elapsedSec,
       totalSec,
@@ -176,8 +178,7 @@ export class TuiManager {
       successfulRequests: runnerData.successfulRequests,
       failedRequests: runnerData.failedRequests,
       averageLatency: runnerData.averageLatency,
-      workerCount: workerPoolStats.activeWorkers,
-      maxWorkers: workerPoolStats.maxWorkers,
+      totalRps,
     });
     this.statsTable.updateFromObject(statsData);
 

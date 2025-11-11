@@ -2,8 +2,8 @@ import type {
   EndpointSummary,
   ReportMetadata,
   RequestResult,
-  SafeTressiConfig,
   TestSummary,
+  TressiConfig,
 } from '../../types';
 
 interface LatencyDistribution {
@@ -36,7 +36,7 @@ export class HtmlGenerator {
   generate(
     summary: TestSummary,
     runner: RunnerInterface,
-    config: SafeTressiConfig,
+    config: TressiConfig,
     metadata?: ReportMetadata,
   ): string {
     const { global: g, endpoints: e } = summary;
@@ -204,15 +204,14 @@ export class HtmlGenerator {
             }
         </div>
 
-        ${this.generateWarningsHtml(g, e, config.options.rps)}
+        ${this.generateWarningsHtml(g, e)}
 
         <div class="config-details">
             <h3>Test Configuration</h3>
             <table>
                 <tr><th>Option</th><th>Setting</th><th>Argument</th></tr>
-                <tr><td>Max Workers</td><td>${config.options.workers}</td><td>--workers</td></tr>
+                <tr><td>Concurrency</td><td>Adaptive (based on system metrics)</td><td>N/A</td></tr>
                 <tr><td>Duration</td><td>${config.options.durationSec}s</td><td>--duration</td></tr>
-                <tr><td>Target Req/s</td><td>${config.options.rps}</td><td>--rps</td></tr>
             </table>
         </div>
 
@@ -223,19 +222,8 @@ export class HtmlGenerator {
             <tr><td>Total Requests</td><td>${g.totalRequests}</td></tr>
             <tr><td>Successful</td><td>${g.successfulRequests}</td></tr>
             <tr><td>Failed</td><td>${g.failedRequests}</td></tr>
-            ${
-              config.options.rps && g.theoreticalMaxRps
-                ? `
-            <tr><td>Req/s (Actual/Target)</td><td>${g.actualRps.toFixed(0)} / ${config.options.rps}</td></tr>
-            <tr><td>Req/m (Actual/Target)</td><td>${(g.actualRps * 60).toFixed(0)} / ${config.options.rps * 60}</td></tr>
-            <tr><td>Theoretical Max Req/s</td><td>${g.theoreticalMaxRps.toFixed(0)}</td></tr>
-            <tr><td>Achieved %</td><td>${g.achievedPercentage.toFixed(0)}%</td></tr>
-            `
-                : `
             <tr><td>Req/s</td><td>${g.actualRps.toFixed(0)}</td></tr>
             <tr><td>Req/m</td><td>${(g.actualRps * 60).toFixed(0)}</td></tr>
-            `
-            }
             <tr><td>Avg Latency</td><td>${g.avgLatencyMs.toFixed(0)}ms</td></tr>
             <tr><td>Min Latency</td><td>${g.minLatencyMs.toFixed(0)}ms</td></tr>
             <tr><td>Max Latency</td><td>${g.maxLatencyMs.toFixed(0)}ms</td></tr>
@@ -309,26 +297,10 @@ export class HtmlGenerator {
   }
 
   private generateWarningsHtml(
-    global: TestSummary['global'],
+    _global: TestSummary['global'],
     endpoints: EndpointSummary[],
-    rps?: number,
   ): string {
     const warnings: string[] = [];
-
-    if (rps && global.achievedPercentage && global.achievedPercentage < 80) {
-      const maxRpsPerWorker = 1000 / global.avgLatencyMs + 1;
-      const suggestedWorkers = Math.ceil(rps / maxRpsPerWorker) + 1;
-
-      warnings.push(
-        `Target RPS Unreachable: The target of ${rps} RPS was not met. The test achieved ~${global.actualRps.toFixed(
-          0,
-        )} RPS (${global.achievedPercentage.toFixed(
-          0,
-        )}% of the target). Based on the average latency of ${global.avgLatencyMs.toFixed(
-          0,
-        )}ms, you would need at least <strong>${suggestedWorkers}</strong> workers to meet the target.`,
-      );
-    }
 
     for (const endpoint of endpoints) {
       const failureRate =

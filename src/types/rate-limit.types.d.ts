@@ -14,8 +14,6 @@ export interface EndpointRateLimitConfig {
  * Configuration for endpoint-specific rate limiting
  */
 export interface PerEndpointRateLimitConfig {
-  /** Global RPS limit used when per-endpoint config is not specified */
-  globalRps?: number;
   /** Map of endpoint URLs to their specific rate limits */
   endpointLimits?: Map<string, EndpointRateLimitConfig>;
   /** Default capacity for token buckets when not specified */

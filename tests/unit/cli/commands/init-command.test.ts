@@ -21,8 +21,6 @@ describe('InitCommand', () => {
         requests: [{ url: 'http://example.com', method: 'GET' as const }],
         options: {
           durationSec: 30,
-          workers: 1,
-          rps: 1,
           rampUpTimeSec: 0,
           useUI: true,
           silent: false,
@@ -43,8 +41,6 @@ describe('InitCommand', () => {
         requests: [{ url: 'http://example.com', method: 'GET' as const }],
         options: {
           durationSec: 30,
-          workers: 1,
-          rps: 1,
           rampUpTimeSec: 0,
           useUI: true,
           silent: false,

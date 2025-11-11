@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { EndpointRateLimiterManager } from '../../../../src/core/runner/endpoint-rate-limiter-manager';
-import type { TressiRequestConfig } from '../../../../src/types';
-import type { EndpointRateLimitConfig } from '../../../../src/types/rate-limit.types';
+import { EndpointRateLimiterManager } from '../../../src/core/endpoint-rate-limiter-manager';
+import type { TressiRequestConfig } from '../../../src/types';
+import type { EndpointRateLimitConfig } from '../../../src/types/rate-limit.types';
 
 describe('EndpointRateLimiterManager', () => {
   let manager: EndpointRateLimiterManager;
@@ -16,9 +16,8 @@ describe('EndpointRateLimiterManager', () => {
       expect(manager.getManagedEndpoints()).toEqual([]);
     });
 
-    it('should create manager with global configuration', () => {
+    it('should create manager with default capacity configuration', () => {
       const config = {
-        globalRps: 100,
         defaultCapacity: 50,
       };
       manager = new EndpointRateLimiterManager(config);
@@ -57,7 +56,6 @@ describe('EndpointRateLimiterManager', () => {
       const request: TressiRequestConfig = {
         url: 'https://api.example.com/users',
         method: 'GET',
-        rps: 50,
       };
 
       const limiter = manager.getLimiter(request.url, request);
@@ -67,25 +65,23 @@ describe('EndpointRateLimiterManager', () => {
       expect(config.enabled).toBe(true);
     });
 
-    it('should use global RPS when per-endpoint not provided', () => {
-      manager = new EndpointRateLimiterManager({ globalRps: 25 });
+    it('should throw error when RPS is not provided', () => {
+      manager = new EndpointRateLimiterManager({});
 
       const request: TressiRequestConfig = {
         url: 'https://api.example.com/users',
         method: 'GET',
       };
 
-      const limiter = manager.getLimiter(request.url, request);
-      const config = limiter.getConfig();
-
-      expect(config.rps).toBe(25);
+      expect(() => {
+        manager.getLimiter(request.url, request);
+      }).toThrow('RPS is required for endpoint: https://api.example.com/users');
     });
 
     it('should disable rate limiting when RPS is 0', () => {
       const request: TressiRequestConfig = {
         url: 'https://api.example.com/users',
         method: 'GET',
-        rps: 0,
       };
 
       const limiter = manager.getLimiter(request.url, request);
@@ -103,7 +99,6 @@ describe('EndpointRateLimiterManager', () => {
       };
 
       const limiter = manager.getLimiter(request.url, request);
-      const newConfig: EndpointRateLimitConfig = { rps: 75, capacity: 100 };
 
       manager.updateEndpointConfig(request.url, newConfig);
 
@@ -114,7 +109,6 @@ describe('EndpointRateLimiterManager', () => {
 
     it('should create new limiter for non-existent endpoint', () => {
       const endpoint = 'https://api.example.com/posts';
-      const config: EndpointRateLimitConfig = { rps: 30 };
 
       manager.updateEndpointConfig(endpoint, config);
 
@@ -139,10 +133,7 @@ describe('EndpointRateLimiterManager', () => {
 
   describe('resetAll', () => {
     it('should reset all limiters', () => {
-      const requests: TressiRequestConfig[] = [
-        { url: 'https://api.example.com/users', method: 'GET' },
-        { url: 'https://api.example.com/posts', method: 'GET' },
-      ];
+      const requests: TressiRequestConfig[] = [];
 
       manager.initializeForRequests(requests);
 
@@ -165,11 +156,7 @@ describe('EndpointRateLimiterManager', () => {
 
   describe('initializeForRequests', () => {
     it('should initialize limiters for all requests', () => {
-      const requests: TressiRequestConfig[] = [
-        { url: 'https://api.example.com/users', method: 'GET' },
-        { url: 'https://api.example.com/posts', method: 'GET' },
-        { url: 'https://api.example.com/comments', method: 'GET' },
-      ];
+      const requests: TressiRequestConfig[] = [];
 
       manager.initializeForRequests(requests);
 
@@ -186,10 +173,7 @@ describe('EndpointRateLimiterManager', () => {
     });
 
     it('should handle duplicate URLs', () => {
-      const requests: TressiRequestConfig[] = [
-        { url: 'https://api.example.com/users', method: 'GET' },
-        { url: 'https://api.example.com/users', method: 'POST' },
-      ];
+      const requests: TressiRequestConfig[] = [];
 
       manager.initializeForRequests(requests);
 
@@ -202,10 +186,10 @@ describe('EndpointRateLimiterManager', () => {
 
   describe('updateGlobalConfig', () => {
     it('should update global configuration', () => {
-      const initialConfig = { globalRps: 10, defaultCapacity: 20 };
+      const initialConfig = { defaultCapacity: 20 };
       manager = new EndpointRateLimiterManager(initialConfig);
 
-      const newConfig = { globalRps: 50, defaultCapacity: 100 };
+      const newConfig = { defaultCapacity: 100 };
       manager.updateGlobalConfig(newConfig);
 
       const request: TressiRequestConfig = {
@@ -216,13 +200,12 @@ describe('EndpointRateLimiterManager', () => {
       const limiter = manager.getLimiter(request.url, request);
       const config = limiter.getConfig();
 
-      expect(config.rps).toBe(50);
+      expect(config.capacity).toBe(100);
     });
 
     it('should update endpoint-specific configurations', () => {
       const endpoint = 'https://api.example.com/users';
       const endpointConfig = new Map<string, EndpointRateLimitConfig>();
-      endpointConfig.set(endpoint, { rps: 75, capacity: 150 });
 
       manager.updateGlobalConfig({ endpointLimits: endpointConfig });
 

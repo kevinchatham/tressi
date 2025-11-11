@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ConfigCommand } from '../../../../src/cli/commands/config-command';
 import { displayConfig } from '../../../../src/cli/display/config-display';
 import { loadConfig } from '../../../../src/config';
-import { SafeTressiConfig } from '../../../../src/types';
+import { TressiConfig } from '../../../../src/types';
 
 // Mock only the external dependencies we need to control
 vi.mock('../../../../src/config');
@@ -19,13 +19,11 @@ describe('ConfigCommand', () => {
 
   describe('execute', () => {
     it('should display configuration with provided config path', async () => {
-      const mockConfig: SafeTressiConfig = {
+      const mockConfig: TressiConfig = {
         $schema: 'http://example.com/schema.json',
         requests: [{ url: 'http://example.com', method: 'GET' as const }],
         options: {
           durationSec: 30,
-          workers: 1,
-          rps: 1,
           rampUpTimeSec: 0,
           useUI: true,
           silent: false,
@@ -46,13 +44,11 @@ describe('ConfigCommand', () => {
     });
 
     it('should display configuration with JSON output when json option is true', async () => {
-      const mockConfig: SafeTressiConfig = {
+      const mockConfig: TressiConfig = {
         $schema: 'http://example.com/schema.json',
         requests: [{ url: 'http://example.com', method: 'GET' as const }],
         options: {
           durationSec: 30,
-          workers: 1,
-          rps: 1,
           rampUpTimeSec: 0,
           useUI: true,
           silent: false,
@@ -72,13 +68,11 @@ describe('ConfigCommand', () => {
     });
 
     it('should display raw configuration when raw option is true', async () => {
-      const mockConfig: SafeTressiConfig = {
+      const mockConfig: TressiConfig = {
         $schema: 'http://example.com/schema.json',
         requests: [{ url: 'http://example.com', method: 'GET' as const }],
         options: {
           durationSec: 30,
-          workers: 1,
-          rps: 1,
           rampUpTimeSec: 0,
           useUI: true,
           silent: false,

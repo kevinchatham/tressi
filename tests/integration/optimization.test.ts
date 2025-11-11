@@ -9,8 +9,8 @@ import {
   vi,
 } from 'vitest';
 
-import { CoreRunner } from '../../src/core/runner/core-runner';
-import type { SafeTressiConfig } from '../../src/types';
+import { CoreRunner } from '../../src/core/core-runner';
+import type { TressiConfig } from '../../src/types';
 
 let mockAgent: MockAgent;
 
@@ -28,16 +28,12 @@ afterAll(() => {
   mockAgent.close();
 });
 
-const createTestConfig = (
-  overrides?: Partial<SafeTressiConfig>,
-): SafeTressiConfig => ({
+const createTestConfig = (overrides?: Partial<TressiConfig>): TressiConfig => ({
   $schema: 'https://example.com/schema.json',
   requests: [{ url: 'http://localhost:8080/test', method: 'GET' }],
   options: {
-    workers: 1,
     durationSec: 1,
     rampUpTimeSec: 0,
-    rps: 10,
     useUI: true,
     silent: false,
     earlyExitOnError: false,
@@ -62,9 +58,7 @@ describe('Object Allocation Optimizations', () => {
       const config = createTestConfig({
         options: {
           durationSec: 2,
-          workers: 1,
           rampUpTimeSec: 0,
-          rps: 10,
           useUI: true,
           silent: false,
           earlyExitOnError: false,
@@ -101,9 +95,7 @@ describe('Object Allocation Optimizations', () => {
       const config = createTestConfig({
         options: {
           durationSec: 2,
-          workers: 1,
           rampUpTimeSec: 0,
-          rps: 10,
           useUI: true,
           silent: false,
           earlyExitOnError: false,
@@ -144,9 +136,7 @@ describe('Object Allocation Optimizations', () => {
       const config = createTestConfig({
         options: {
           durationSec: 2,
-          workers: 1,
           rampUpTimeSec: 0,
-          rps: 10,
           useUI: true,
           silent: false,
           earlyExitOnError: false,
@@ -168,16 +158,14 @@ describe('Object Allocation Optimizations', () => {
   });
 
   describe('Concurrency and Thread Safety', () => {
-    it('should handle multiple workers correctly', async () => {
+    it('should handle concurrent requests correctly', async () => {
       const mockPool = mockAgent.get('http://localhost:8080');
       mockPool.intercept({ path: '/test', method: 'GET' }).reply(200).times(20);
 
       const config = createTestConfig({
         options: {
-          workers: 2,
           durationSec: 2,
           rampUpTimeSec: 0,
-          rps: 10,
           useUI: true,
           silent: false,
           earlyExitOnError: false,
@@ -192,7 +180,7 @@ describe('Object Allocation Optimizations', () => {
       const results = resultAggregator.getSampledResults();
       expect(results.length).toBeGreaterThan(0);
 
-      // Should have results from multiple workers
+      // Should have successful results
       const successfulRequests = results.filter(
         (r: { success: boolean }) => r.success,
       );
@@ -205,10 +193,8 @@ describe('Object Allocation Optimizations', () => {
 
       const config = createTestConfig({
         options: {
-          workers: 5,
           durationSec: 2,
           rampUpTimeSec: 0,
-          rps: 10,
           useUI: true,
           silent: false,
           earlyExitOnError: false,
@@ -241,10 +227,8 @@ describe('Object Allocation Optimizations', () => {
 
       const config = createTestConfig({
         options: {
-          workers: 2,
           durationSec: 2,
           rampUpTimeSec: 0,
-          rps: 10,
           useUI: true,
           silent: false,
           earlyExitOnError: false,

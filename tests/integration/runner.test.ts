@@ -9,8 +9,8 @@ import {
   vi,
 } from 'vitest';
 
-import { CoreRunner } from '../../src/core/runner/core-runner';
-import type { SafeTressiConfig } from '../../src/types';
+import { CoreRunner } from '../../src/core/core-runner';
+import type { TressiConfig } from '../../src/types';
 
 let mockAgent: MockAgent;
 
@@ -28,19 +28,22 @@ afterAll(() => {
   mockAgent.close();
 });
 
-const createTestConfig = (
-  overrides?: Partial<SafeTressiConfig>,
-): SafeTressiConfig => ({
+const createTestConfig = (overrides?: Partial<TressiConfig>): TressiConfig => ({
   $schema: 'https://example.com/schema.json',
   requests: [{ url: 'http://localhost:8080/test', method: 'GET' }],
   options: {
-    workers: 1,
     durationSec: 1,
     rampUpTimeSec: 0,
-    rps: 10,
     useUI: true,
     silent: false,
     earlyExitOnError: false,
+    adaptiveConcurrency: {
+      maxConcurrency: 10,
+      targetLatency: 100,
+      memoryThreshold: 0.8,
+      enabled: true,
+      minConcurrency: 1,
+    },
     ...overrides?.options,
   },
   ...overrides,
@@ -51,7 +54,7 @@ const createTestConfig = (
  */
 describe('CoreRunner', () => {
   /**
-   * It should be able to run a simple test with one worker for one second
+   * It should be able to run a simple test for one second
    * and produce a valid set of results.
    */
   it('should run a basic test and return results', async () => {
@@ -72,52 +75,46 @@ describe('CoreRunner', () => {
   }, 10000);
 
   /**
-   * It should dynamically scale workers to meet target RPS
+   * It should run with adaptive concurrency management
    */
-  it('should scale workers to meet target RPS', async () => {
+  it('should run with adaptive concurrency management', async () => {
     const mockPool = mockAgent.get('http://localhost:8080');
-    // Make the endpoint slow to ensure scaling kicks in
-    mockPool.intercept({ path: '/slow', method: 'GET' }).reply(200);
+    mockPool.intercept({ path: '/test', method: 'GET' }).reply(200).persist();
 
     const config = createTestConfig({
-      requests: [{ url: 'http://localhost:8080/slow', method: 'GET' }],
       options: {
-        durationSec: 3,
-        workers: 5, // Max workers
-        rampUpTimeSec: 0,
-        rps: 10,
-        useUI: true,
-        silent: false,
-        earlyExitOnError: false,
+        durationSec: 2,
+        adaptiveConcurrency: {
+          maxConcurrency: 5,
+          targetLatency: 100,
+          memoryThreshold: 0.8,
+          enabled: true,
+          minConcurrency: 1,
+        },
       },
     });
 
     const runner = new CoreRunner(config);
+    await runner.run();
 
-    const runPromise = runner.run();
+    const resultAggregator = runner.getResultAggregator();
+    const results = resultAggregator.getSampledResults();
 
-    // Give scaling some time to work
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-
-    // Check if scaling has started (should have at least 1 worker)
-    expect(runner.getWorkerPool().getWorkerCount()).toBeGreaterThanOrEqual(1);
-
-    runner.stop();
-    await runPromise;
-  }, 8000);
+    expect(results.length).toBeGreaterThan(0);
+    expect(results[0].status).toBe(200);
+    expect(results[0].success).toBe(true);
+  }, 10000);
 
   /**
    * It should be possible to prematurely stop a test run by calling the
-   * `stop()` method, which should immediately halt all workers.
+   * `stop()` method, which should immediately halt execution.
    */
   it('should stop the test run when stop() is called', async () => {
     vi.useFakeTimers();
     const config = createTestConfig({
       options: {
         durationSec: 10,
-        workers: 1,
         rampUpTimeSec: 0,
-        rps: 10,
         useUI: true,
         silent: false,
         earlyExitOnError: false,
@@ -155,9 +152,7 @@ describe('CoreRunner', () => {
       options: {
         headers: { Authorization: 'Bearer global-token' },
         durationSec: 1,
-        workers: 1,
         rampUpTimeSec: 0,
-        rps: 10,
         useUI: true,
         silent: false,
         earlyExitOnError: false,
@@ -182,9 +177,7 @@ describe('CoreRunner', () => {
     const config = createTestConfig({
       options: {
         durationSec: 1,
-        workers: 1,
         rampUpTimeSec: 0,
-        rps: 10,
         useUI: true,
         silent: false,
         earlyExitOnError: false,
@@ -213,16 +206,14 @@ describe('CoreRunner', () => {
     expect(successfulResult?.success).toBe(true);
   });
 
-  it('should handle zero workers gracefully', async () => {
+  it('should handle basic configuration gracefully', async () => {
     const mockPool = mockAgent.get('http://localhost:8080');
     mockPool.intercept({ path: '/test', method: 'GET' }).reply(200).persist();
 
     const config = createTestConfig({
       options: {
-        workers: 1, // Use 1 worker instead of 0 to avoid issues
         durationSec: 1,
         rampUpTimeSec: 0,
-        rps: 10,
         useUI: true,
         silent: false,
         earlyExitOnError: false,

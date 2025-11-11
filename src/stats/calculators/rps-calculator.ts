@@ -12,12 +12,10 @@ export class RpsCalculator {
 
   /**
    * Creates a new RpsCalculator instance.
-   * @param maxRps The maximum expected RPS (used to size the buffer)
-   * @param bufferSize Optional buffer size (defaults to maxRps * 2 or 10000, whichever is larger)
+   * @param bufferSize Optional buffer size (defaults to 10000)
    */
-  constructor(maxRps: number = 1000, bufferSize?: number) {
-    // Estimate buffer size: 2 seconds of requests at max RPS, or 10k, whichever is larger
-    this.bufferSize = bufferSize || Math.max(10000, maxRps * 2);
+  constructor(bufferSize?: number) {
+    this.bufferSize = bufferSize || 10000;
     this.recentRequestTimestamps = new CircularBuffer<number>(this.bufferSize);
   }
 
