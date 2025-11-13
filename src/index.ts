@@ -220,14 +220,16 @@ export async function runLoadTest(config: TressiConfig): Promise<TestSummary> {
     );
     tuiInterval = setInterval(() => {
       const startTime = coreRunner.getStartTime();
-      const elapsedSec =
-        startTime > 0 ? (performance.now() - startTime) / 1000 : 0;
+      const elapsedSec = Math.min(
+        startTime > 0 ? (performance.now() - startTime) / 1000 : 0,
+        durationSec || 10,
+      );
       const totalSec = durationSec || 10;
 
       tuiManager!.update(coreRunner as any, elapsedSec, totalSec); // eslint-disable-line @typescript-eslint/no-explicit-any
     }, 500);
 
-    coreRunner.on('stop', async () => {
+    const cleanupUI = (): void => {
       if (tuiInterval) {
         clearInterval(tuiInterval);
         tuiInterval = undefined;
@@ -236,7 +238,10 @@ export async function runLoadTest(config: TressiConfig): Promise<TestSummary> {
         tuiManager.destroy();
         tuiManager = undefined;
       }
-    });
+    };
+
+    coreRunner.on('stop', cleanupUI);
+    coreRunner.on('complete', cleanupUI);
   } else if (!silent) {
     // If we're not using the TUI and not silent, provide basic feedback
     const noUiSpinner = ora({
@@ -245,8 +250,10 @@ export async function runLoadTest(config: TressiConfig): Promise<TestSummary> {
 
     const noUiInterval = setInterval(() => {
       const startTime = coreRunner.getStartTime();
-      const elapsedSec =
-        startTime > 0 ? (performance.now() - startTime) / 1000 : 0;
+      const elapsedSec = Math.min(
+        startTime > 0 ? (performance.now() - startTime) / 1000 : 0,
+        durationSec || 10,
+      );
       const totalSec = durationSec || 10;
 
       noUiSpinner.text = `[${elapsedSec.toFixed(0)}s/${totalSec}s] Test running...`;
@@ -258,11 +265,14 @@ export async function runLoadTest(config: TressiConfig): Promise<TestSummary> {
     };
     process.on('SIGINT', handleNoUiExit);
 
-    coreRunner.on('stop', async () => {
+    const cleanupSpinner = (): void => {
       clearInterval(noUiInterval);
       process.removeListener('SIGINT', handleNoUiExit);
       noUiSpinner.succeed('Test finished. Generating summary...');
-    });
+    };
+
+    coreRunner.on('stop', cleanupSpinner);
+    coreRunner.on('complete', cleanupSpinner);
   }
 
   await coreRunner.run();

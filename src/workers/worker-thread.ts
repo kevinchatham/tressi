@@ -104,8 +104,7 @@ export class WorkerThread {
 
       // Release result object back to pool
       this.requestExecutor.releaseResultObject(result);
-    } catch (error) {
-      console.error(`Worker ${this.workerId}: Request failed - ${error}`);
+    } catch {
       this.sharedMemory.recordError(this.workerId, endpointIndex);
     }
   }
@@ -113,9 +112,6 @@ export class WorkerThread {
   private getEndpointIndex(request: TressiRequestConfig): number {
     const index = this.endpoints.findIndex((ep) => ep.url === request.url);
     if (index === -1) {
-      console.error(
-        `Worker ${this.workerId}: Could not find endpoint index for ${request.url}`,
-      );
       return 0; // Default to first endpoint
     }
     return index;

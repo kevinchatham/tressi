@@ -90,7 +90,7 @@ export class CoreRunner extends EventEmitter {
     // Get results from worker pool
     const results = this.workerPool.getAggregatedResults();
 
-    // Emit results for compatibility
+    // Emit completion event with actual results
     this.emit('complete', results);
   }
 
