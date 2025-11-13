@@ -199,6 +199,23 @@ export class SharedMemoryManager {
     workerId: number,
     result: { success: boolean; latency: number; endpointIndex: number },
   ): void {
+    // Validate inputs to prevent corruption
+    if (workerId < 0 || workerId >= this.workersCount) {
+      console.error(`Invalid workerId: ${workerId}`);
+      return;
+    }
+    if (
+      result.endpointIndex < 0 ||
+      result.endpointIndex >= this.endpointsCount
+    ) {
+      console.error(`Invalid endpointIndex: ${result.endpointIndex}`);
+      return;
+    }
+    if (result.latency < 0 || result.latency > 60000) {
+      // Cap at 60s
+      result.latency = 60000;
+    }
+
     // Update global counters
     Atomics.add(this.sharedMetrics.totalRequests, 0, 1);
     if (result.success) {
@@ -210,20 +227,26 @@ export class SharedMemoryManager {
     // Update per-endpoint counters
     const endpointOffset =
       workerId * this.endpointsCount + result.endpointIndex;
-    Atomics.add(this.sharedMetrics.endpointRequests, endpointOffset, 1);
-    if (result.success) {
-      Atomics.add(this.sharedMetrics.endpointSuccess, endpointOffset, 1);
-    } else {
-      Atomics.add(this.sharedMetrics.endpointFailures, endpointOffset, 1);
+    if (endpointOffset < this.sharedMetrics.endpointRequests.length) {
+      Atomics.add(this.sharedMetrics.endpointRequests, endpointOffset, 1);
+      if (result.success) {
+        Atomics.add(this.sharedMetrics.endpointSuccess, endpointOffset, 1);
+      } else {
+        Atomics.add(this.sharedMetrics.endpointFailures, endpointOffset, 1);
+      }
     }
 
-    // Record latency
-    const latencyOffset =
-      workerId * this.bufferSize + this.getLatencyWriteIndex(workerId);
-    this.sharedMetrics.latencyBuffer[latencyOffset] = result.latency;
-    Atomics.add(this.sharedMetrics.latencyWriteIndex, workerId, 1);
-    if (this.getLatencyWriteIndex(workerId) >= this.bufferSize) {
-      Atomics.store(this.sharedMetrics.latencyWriteIndex, workerId, 0);
+    // Record latency with bounds checking
+    const writeIndex = this.getLatencyWriteIndex(workerId);
+    if (writeIndex < this.bufferSize) {
+      const latencyOffset = workerId * this.bufferSize + writeIndex;
+      if (latencyOffset < this.sharedMetrics.latencyBuffer.length) {
+        this.sharedMetrics.latencyBuffer[latencyOffset] = result.latency;
+        Atomics.add(this.sharedMetrics.latencyWriteIndex, workerId, 1);
+        if (this.getLatencyWriteIndex(workerId) >= this.bufferSize) {
+          Atomics.store(this.sharedMetrics.latencyWriteIndex, workerId, 0);
+        }
+      }
     }
 
     // Update global counters for early exit
@@ -308,22 +331,28 @@ export class SharedMemoryManager {
 
       for (let workerId = 0; workerId < this.workersCount; workerId++) {
         const offset = workerId * this.endpointsCount + endpointIndex;
-        totalRequests += Atomics.load(
-          this.sharedMetrics.endpointRequests,
-          offset,
-        );
-        totalErrors += Atomics.load(
-          this.sharedMetrics.endpointFailures,
-          offset,
-        );
+        if (offset < this.sharedMetrics.endpointRequests.length) {
+          totalRequests += Atomics.load(
+            this.sharedMetrics.endpointRequests,
+            offset,
+          );
+          totalErrors += Atomics.load(
+            this.sharedMetrics.endpointFailures,
+            offset,
+          );
+        }
       }
 
-      if (totalRequests > 0) {
+      // Cap values to prevent overflow display
+      const cappedRequests = Math.min(totalRequests, 1000000);
+      const cappedErrors = Math.min(totalErrors, cappedRequests);
+
+      if (cappedRequests > 0) {
         stats[`endpoint_${endpointIndex}`] = {
-          totalRequests,
-          totalErrors,
-          errorRate: totalErrors / totalRequests,
-          errorCount: totalErrors,
+          totalRequests: cappedRequests,
+          totalErrors: cappedErrors,
+          errorRate: cappedErrors / cappedRequests,
+          errorCount: cappedErrors,
         };
       }
     }

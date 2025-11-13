@@ -38,6 +38,7 @@ export interface WorkerData {
   endpoints: TressiRequestConfig[];
   sharedBuffer: SharedArrayBuffer;
   memoryLimit: number;
+  totalWorkers: number;
 }
 
 export interface WorkerResult {

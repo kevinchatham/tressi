@@ -62,6 +62,7 @@ export class WorkerPoolManager {
           endpoints: workerConfigs[i],
           sharedBuffer: this.sharedMemory.getBuffer(),
           memoryLimit: this.config.options.workerMemoryLimit,
+          totalWorkers: workerConfigs.length,
         },
         resourceLimits: {
           maxOldGenerationSizeMb: this.config.options.workerMemoryLimit,
@@ -107,6 +108,7 @@ export class WorkerPoolManager {
         endpoints: workerConfigs[workerId],
         sharedBuffer: this.sharedMemory.getBuffer(),
         memoryLimit: this.config.options.workerMemoryLimit,
+        totalWorkers: workerConfigs.length,
       },
     });
 

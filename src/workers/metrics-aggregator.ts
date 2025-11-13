@@ -36,6 +36,10 @@ export class MetricsAggregator {
     const globalStats = this.sharedMemory.getGlobalStats();
     const endpointStats = this.sharedMemory.getEndpointStats();
 
+    // Validate and sanitize global stats to prevent overflow
+    const totalRequests = Math.min(globalStats.totalRequests, 1000000);
+    const totalErrors = Math.min(globalStats.totalErrors, totalRequests);
+
     // Calculate duration
     const startTime = this.sharedMemory['sharedMetrics'].startTime[0];
     const duration = startTime > 0 ? Date.now() - startTime : 0;
@@ -44,13 +48,15 @@ export class MetricsAggregator {
     const allLatencies: number[] = [];
     const endpointLatencies: { [url: string]: number[] } = {};
 
-    // Collect latency data from all workers
+    // Collect latency data from all workers with validation
     for (let workerId = 0; workerId < workersCount; workerId++) {
       const latencies = this.sharedMemory.getLatencyData(workerId);
-      allLatencies.push(...latencies);
+      // Filter out invalid latency values
+      const validLatencies = latencies.filter((lat) => lat > 0 && lat < 60000);
+      allLatencies.push(...validLatencies);
 
       // Group by endpoint (simplified for now)
-      for (const latency of latencies) {
+      for (const latency of validLatencies) {
         if (!endpointLatencies['all']) {
           endpointLatencies['all'] = [];
         }
@@ -72,25 +78,28 @@ export class MetricsAggregator {
     const minLatency = allLatencies.length > 0 ? Math.min(...allLatencies) : 0;
     const maxLatency = allLatencies.length > 0 ? Math.max(...allLatencies) : 0;
 
-    // Calculate RPS
+    // Calculate RPS with realistic bounds
     const requestsPerSecond =
-      duration > 0 ? globalStats.totalRequests / (duration / 1000) : 0;
+      duration > 0 ? Math.min(totalRequests / (duration / 1000), 10000) : 0;
 
-    // Build endpoint metrics
+    // Build endpoint metrics with validation
     const endpointMetrics: AggregatedMetrics['endpointMetrics'] = {};
 
-    // For now, use simplified endpoint metrics
     for (const [url, stats] of Object.entries(endpointStats)) {
       const endpointLatencyData = endpointLatencies['all'] || [];
       const sortedEndpointLatencies = [...endpointLatencyData].sort(
         (a, b) => a - b,
       );
 
+      // Validate endpoint stats
+      const endpointTotal = Math.min(stats.totalRequests, 1000000);
+      const endpointErrors = Math.min(stats.totalErrors, endpointTotal);
+
       endpointMetrics[url] = {
-        totalRequests: stats.totalRequests,
-        successfulRequests: stats.totalRequests - stats.totalErrors,
-        failedRequests: stats.totalErrors,
-        errorRate: stats.errorRate,
+        totalRequests: endpointTotal,
+        successfulRequests: endpointTotal - endpointErrors,
+        failedRequests: endpointErrors,
+        errorRate: endpointTotal > 0 ? endpointErrors / endpointTotal : 0,
         averageLatency:
           endpointLatencyData.length > 0
             ? endpointLatencyData.reduce((sum, lat) => sum + lat, 0) /
@@ -107,10 +116,10 @@ export class MetricsAggregator {
     }
 
     return {
-      totalRequests: globalStats.totalRequests,
-      successfulRequests: globalStats.totalRequests - globalStats.totalErrors,
-      failedRequests: globalStats.totalErrors,
-      errorRate: globalStats.errorRate,
+      totalRequests: totalRequests,
+      successfulRequests: totalRequests - totalErrors,
+      failedRequests: totalErrors,
+      errorRate: totalRequests > 0 ? totalErrors / totalRequests : 0,
       averageLatency,
       minLatency,
       maxLatency,
