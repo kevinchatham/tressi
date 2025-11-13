@@ -14,8 +14,18 @@ export class WorkerRateLimiter {
     this.intervalStart = new Array(endpoints.length).fill(0);
   }
 
-  async getNextRequest(): Promise<TressiRequestConfig | null> {
+  async getNextRequest(
+    startTime: number,
+    durationSec: number,
+  ): Promise<TressiRequestConfig | null> {
     const now = Date.now();
+    const elapsedMs = now - startTime;
+    const durationMs = durationSec * 1000;
+
+    // Check if we've exceeded the test duration
+    if (elapsedMs >= durationMs) {
+      return null;
+    }
 
     for (let i = 0; i < this.endpoints.length; i++) {
       const endpoint = this.endpoints[i];
@@ -38,7 +48,7 @@ export class WorkerRateLimiter {
       }
     }
 
-    // Calculate the minimum wait time
+    // Calculate the minimum wait time, but don't exceed remaining duration
     let minWaitTime = Infinity;
     for (let i = 0; i < this.endpoints.length; i++) {
       const endpoint = this.endpoints[i];
@@ -53,8 +63,16 @@ export class WorkerRateLimiter {
       minWaitTime = 1;
     }
 
+    // Ensure we don't wait beyond the test duration
+    const remainingMs = durationMs - elapsedMs;
+    const actualWaitTime = Math.min(minWaitTime, remainingMs);
+
+    if (actualWaitTime <= 0) {
+      return null;
+    }
+
     // Wait for the minimum time before checking again
-    await new Promise((resolve) => setTimeout(resolve, minWaitTime));
+    await new Promise((resolve) => setTimeout(resolve, actualWaitTime));
     return null;
   }
 

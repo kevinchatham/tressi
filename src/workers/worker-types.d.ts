@@ -39,6 +39,7 @@ export interface WorkerData {
   sharedBuffer: SharedArrayBuffer;
   memoryLimit: number;
   totalWorkers: number;
+  durationSec: number;
 }
 
 export interface WorkerResult {

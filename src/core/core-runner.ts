@@ -78,22 +78,17 @@ export class CoreRunner extends EventEmitter {
   }
 
   private async runWithWorkers(): Promise<void> {
-    console.log('DEBUG: Creating WorkerPoolManager...');
     this.workerPool = new WorkerPoolManager(
       this.config,
       this.config.options.threads || cpus().length,
     );
-    console.log('DEBUG: WorkerPoolManager created, starting...');
 
     await this.workerPool.start();
-    console.log('DEBUG: WorkerPoolManager started, waiting for completion...');
 
     await this.workerPool.waitForCompletion();
-    console.log('DEBUG: WorkerPoolManager completed');
 
     // Get results from worker pool
     const results = this.workerPool.getAggregatedResults();
-    console.log('DEBUG: Got aggregated results:', results);
 
     // Emit results for compatibility
     this.emit('complete', results);
