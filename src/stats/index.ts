@@ -48,8 +48,5 @@ export { EndpointCollector } from './collectors/endpoint-collector';
 export { RpsCalculator } from './calculators/rps-calculator';
 export { LatencyCalculator } from './calculators/latency-calculator';
 
-// Export aggregators
-export { ResultAggregator } from './aggregators/result-aggregator';
-
 // Export distribution
 export { Distribution } from './distribution';

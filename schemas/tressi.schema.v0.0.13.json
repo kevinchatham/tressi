@@ -107,37 +107,81 @@
                 "type": "string"
               }
             },
-            "adaptiveConcurrency": {
+            "threads": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 12,
+              "description": "Number of worker threads to use (defaults to CPU count)"
+            },
+            "workerMemoryLimit": {
+              "type": "integer",
+              "minimum": 16,
+              "maximum": 512,
+              "default": 128,
+              "description": "Memory limit per worker in MB"
+            },
+            "workerEarlyExit": {
               "type": "object",
               "properties": {
-                "maxConcurrency": {
-                  "type": "integer",
-                  "exclusiveMinimum": 0,
-                  "default": 10
-                },
-                "targetLatency": {
-                  "type": "integer",
-                  "exclusiveMinimum": 0,
-                  "default": 100
-                },
-                "memoryThreshold": {
-                  "type": "number",
-                  "minimum": 0.1,
-                  "maximum": 0.95,
-                  "default": 0.8
-                },
                 "enabled": {
                   "type": "boolean",
-                  "default": true
+                  "default": false
                 },
-                "minConcurrency": {
+                "globalErrorRateThreshold": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "globalErrorCountThreshold": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0
+                },
+                "perEndpointThresholds": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "url": {
+                        "type": "string"
+                      },
+                      "errorRateThreshold": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "errorCountThreshold": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0
+                      }
+                    },
+                    "required": ["url", "errorRateThreshold"],
+                    "additionalProperties": false
+                  }
+                },
+                "workerExitStatusCodes": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0
+                  }
+                },
+                "monitoringWindowMs": {
                   "type": "integer",
                   "exclusiveMinimum": 0,
-                  "default": 1
+                  "default": 1000
+                },
+                "stopMode": {
+                  "type": "string",
+                  "enum": ["endpoint", "global"],
+                  "default": "endpoint"
                 }
               },
               "additionalProperties": false,
-              "default": {}
+              "default": {
+                "enabled": false,
+                "monitoringWindowMs": 1000,
+                "stopMode": "endpoint"
+              }
             }
           },
           "additionalProperties": false,
@@ -147,12 +191,11 @@
             "useUI": true,
             "silent": false,
             "earlyExitOnError": false,
-            "adaptiveConcurrency": {
-              "maxConcurrency": 10,
-              "targetLatency": 100,
-              "memoryThreshold": 0.8,
-              "enabled": true,
-              "minConcurrency": 1
+            "workerMemoryLimit": 128,
+            "workerEarlyExit": {
+              "enabled": false,
+              "monitoringWindowMs": 1000,
+              "stopMode": "endpoint"
             }
           }
         }

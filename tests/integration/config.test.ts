@@ -5,19 +5,20 @@ import { loadConfig } from '../../src/config';
 
 const minimalConfig = {
   $schema: 'https://example.com/schema.json',
-  requests: [{ url: 'http://localhost:8080/test', method: 'GET' as const }],
+  requests: [
+    { url: 'http://localhost:8080/test', method: 'GET' as const, rps: 10 },
+  ],
   options: {
     durationSec: 10,
     rampUpTimeSec: 0,
     useUI: true,
     silent: false,
     earlyExitOnError: false,
-    adaptiveConcurrency: {
-      maxConcurrency: 10,
-      targetLatency: 100,
-      memoryThreshold: 0.8,
-      enabled: true,
-      minConcurrency: 1,
+    workerMemoryLimit: 128,
+    workerEarlyExit: {
+      enabled: false,
+      monitoringWindowMs: 1000,
+      stopMode: 'endpoint',
     },
   },
 };
@@ -31,13 +32,6 @@ const expectedConfig = {
     useUI: true,
     silent: false,
     earlyExitOnError: false,
-    adaptiveConcurrency: expect.objectContaining({
-      maxConcurrency: 10,
-      targetLatency: 100,
-      memoryThreshold: 0.8,
-      enabled: true,
-      minConcurrency: 1,
-    }),
   }),
 };
 
@@ -115,12 +109,11 @@ describe('config', () => {
           useUI: true,
           silent: false,
           earlyExitOnError: false,
-          adaptiveConcurrency: {
-            maxConcurrency: 1,
-            targetLatency: 100,
-            memoryThreshold: 0.8,
-            enabled: true,
-            minConcurrency: 1,
+          workerMemoryLimit: 128,
+          workerEarlyExit: {
+            enabled: false,
+            monitoringWindowMs: 1000,
+            stopMode: 'endpoint',
           },
         },
         requests: [
@@ -130,6 +123,7 @@ describe('config', () => {
             headers: {
               'X-Request-ID': '123',
             },
+            rps: 10,
           },
         ],
       };

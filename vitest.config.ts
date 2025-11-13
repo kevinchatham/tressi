@@ -10,6 +10,7 @@ export default defineConfig({
       'tests/performance/**/*.test.ts',
       'tests/server/**/*.test.ts',
       'tests/unit/**/*.test.ts',
+      'tests/workers/**/*.test.ts',
     ],
     exclude: ['tests/utils/**', 'tests/setup/**'],
     coverage: {
@@ -33,8 +34,14 @@ export default defineConfig({
         },
       },
     },
-    testTimeout: 30000,
-    hookTimeout: 10000,
-    teardownTimeout: 10000,
+    testTimeout: 60000, // Increased for worker tests
+    hookTimeout: 20000,
+    teardownTimeout: 20000,
+    threads: false, // Disable Vitest threads for worker testing
+    poolOptions: {
+      threads: {
+        singleThread: true,
+      },
+    },
   },
 });

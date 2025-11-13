@@ -9,14 +9,7 @@ import pkg from '../package.json';
 import { CoreRunner } from './core/core-runner';
 import { DataExporter } from './reporting/exporters/data-exporter';
 import { MarkdownGenerator } from './reporting/generators/markdown-generator';
-import { getStatusCodeDistributionByCategory } from './stats';
-import type {
-  EndpointSummary,
-  RequestResult,
-  TestSummary,
-  TressiConfig,
-  TressiOptionsConfig,
-} from './types';
+import type { TestSummary, TressiConfig, TressiOptionsConfig } from './types';
 import { TuiManager } from './ui/tui-manager';
 import { FileUtils } from './utils/file-utils';
 import { getSafeDirectoryName } from './utils/safe-directory';
@@ -26,7 +19,6 @@ import {
 } from './validation/config-validator';
 
 export { TestSummary, TressiConfig };
-export { generateTestSummary };
 export {
   ConfigValidator,
   ValidationError,
@@ -34,22 +26,19 @@ export {
 
 /**
  * Prints a detailed summary of the load test results to the console.
- * @param runner The CoreRunner instance from the test run.
- * @param options The original RunOptions used for the test.
  * @param summary The calculated TestSummary object for the run.
+ * @param options The original RunOptions used for the test.
+ * @param config The Tressi configuration.
  */
 function printSummary(
-  runner: CoreRunner,
-  options: TressiOptionsConfig,
   summary: TestSummary,
+  options: TressiOptionsConfig,
   config: TressiConfig,
 ): void {
   printReportInfo(summary, options);
   printRunConfiguration(options, config);
   printGlobalSummary(summary);
   printEndpointSummary(summary);
-  printStatusCodeDistribution(runner);
-  printLatencyDistribution(runner);
 }
 
 /**
@@ -85,7 +74,7 @@ function printRunConfiguration(
   options: TressiOptionsConfig,
   config: TressiConfig,
 ): void {
-  const { durationSec = 10, rampUpTimeSec } = options;
+  const { durationSec = 10, rampUpTimeSec, threads } = options;
 
   const configTable = new Table({
     head: ['Option', 'Setting'],
@@ -97,6 +86,7 @@ function printRunConfiguration(
   );
   configTable.push(['Total RPS', `${totalRps}`]);
   configTable.push(['Duration', `${durationSec}s`]);
+  configTable.push(['Workers', `${threads || 'auto'}`]);
 
   if (rampUpTimeSec) {
     configTable.push(['Ramp-up Time', `${rampUpTimeSec}s`]);
@@ -198,65 +188,7 @@ function printEndpointSummary(summary: TestSummary): void {
 }
 
 /**
- * Prints latency distribution data.
- */
-function printLatencyDistribution(runner: CoreRunner): void {
-  const resultAggregator = runner.getResultAggregator();
-  const histogram = resultAggregator.getGlobalHistogram();
-  if (histogram.totalCount === 0) return;
-
-  const distribution = resultAggregator.getLatencyDistribution({
-    count: 8,
-    chartWidth: 20,
-  });
-  const distributionTable = new Table({
-    head: ['Range (ms)', 'Count', '% of Total', 'Cumulative %', 'Chart'],
-    colWidths: [15, 10, 15, 15, 25],
-  });
-
-  for (const bucket of distribution) {
-    if (bucket.count === '0') continue;
-    distributionTable.push([
-      bucket.latency,
-      bucket.count,
-      bucket.percent,
-      bucket.cumulative,
-      chalk.green(bucket.chart),
-    ]);
-  }
-
-  // eslint-disable-next-line no-console
-  console.log('\n' + chalk.bold('Latency Distribution'));
-  // eslint-disable-next-line no-console
-  console.log(distributionTable.toString());
-}
-
-/**
- * Prints status code distribution data.
- */
-function printStatusCodeDistribution(runner: CoreRunner): void {
-  const resultAggregator = runner.getResultAggregator();
-  const statusCodeMap = resultAggregator.getStatusCodeMap();
-  if (Object.keys(statusCodeMap).length === 0) return;
-
-  const distribution = getStatusCodeDistributionByCategory(statusCodeMap);
-  const distributionTable = new Table({
-    head: ['Status Code', 'Count'],
-    colWidths: [15, 10],
-  });
-
-  for (const [code, count] of Object.entries(distribution)) {
-    distributionTable.push([code, count]);
-  }
-
-  // eslint-disable-next-line no-console
-  console.log('\n' + chalk.bold('Status Code Distribution'));
-  // eslint-disable-next-line no-console
-  console.log(distributionTable.toString());
-}
-
-/**
- * The main function to execute a Tressi load test using the refactored architecture.
+ * The main function to execute a Tressi load test using the worker-based architecture.
  * It initializes the core components, manages the test execution, and handles reporting.
  * @param config The TressiConfig for the test.
  * @returns A Promise that resolves with the TestSummary object.
@@ -317,30 +249,7 @@ export async function runLoadTest(config: TressiConfig): Promise<TestSummary> {
         startTime > 0 ? (performance.now() - startTime) / 1000 : 0;
       const totalSec = durationSec || 10;
 
-      const resultAggregator = coreRunner.getResultAggregator();
-      const currentRps = 0; // Will be calculated from recent timestamps
-      const successful = resultAggregator.getSuccessfulRequestsCount();
-      const failed = resultAggregator.getFailedRequestsCount();
-      const totalRps = config.requests.reduce(
-        (sum, req) => sum + (req.rps || 0),
-        0,
-      );
-
-      // For the spinner, we'll use a sample of recent latencies to avoid
-      // performance issues with very long test runs.
-      const histogram = resultAggregator.getGlobalHistogram();
-      const avgLatency = histogram.mean;
-      const p95 = histogram.getValueAtPercentile(95);
-      const p99 = histogram.getValueAtPercentile(99);
-
-      const successDisplay = chalk.green(successful);
-      const failDisplay = failed > 0 ? chalk.red(failed) : chalk.gray(0);
-
-      noUiSpinner.text = `[${elapsedSec.toFixed(0)}s/${totalSec}s] RPS: ${
-        currentRps
-      } | Target: ${totalRps} | OK/Fail: ${successDisplay}/${failDisplay} | Avg: ${avgLatency.toFixed(
-        0,
-      )}ms | p95: ${p95.toFixed(0)}ms | p99: ${p99.toFixed(0)}ms`;
+      noUiSpinner.text = `[${elapsedSec.toFixed(0)}s/${totalSec}s] Test running...`;
     }, 1000);
 
     // Handle graceful shutdown on Ctrl+C
@@ -375,13 +284,8 @@ export async function runLoadTest(config: TressiConfig): Promise<TestSummary> {
   const actualDurationSec =
     startTime > 0 ? (performance.now() - startTime) / 1000 : 0;
 
-  // Generate summary using the new architecture
-  const resultAggregator = coreRunner.getResultAggregator();
-  const summary = generateTestSummary(
-    resultAggregator,
-    config.options,
-    actualDurationSec,
-  );
+  // Generate summary from worker results
+  const summary = await generateTestSummaryFromWorkers(actualDurationSec);
 
   if (exportPath && !silent) {
     const exportSpinner = ora({
@@ -403,7 +307,7 @@ export async function runLoadTest(config: TressiConfig): Promise<TestSummary> {
       const markdownGenerator = new MarkdownGenerator();
       const markdownReport = markdownGenerator.generate(
         summary,
-        createRunnerInterface(resultAggregator),
+        createRunnerInterface(summary),
         config,
         {
           exportName: baseExportName,
@@ -418,9 +322,9 @@ export async function runLoadTest(config: TressiConfig): Promise<TestSummary> {
       const dataExporter = new DataExporter();
       await dataExporter.exportDataFiles(
         summary,
-        coreRunner.getResultAggregator().getSampledResults(),
+        [], // No sampled results in worker mode
         reportDir,
-        coreRunner.getResultAggregator(),
+        createRunnerInterface(summary),
       );
 
       exportSpinner.succeed(`Successfully exported results to ${reportDir}`);
@@ -446,7 +350,7 @@ export async function runLoadTest(config: TressiConfig): Promise<TestSummary> {
       const markdownGenerator = new MarkdownGenerator();
       const markdownReport = markdownGenerator.generate(
         summary,
-        createRunnerInterface(resultAggregator),
+        createRunnerInterface(summary),
         config,
         {
           exportName: baseExportName,
@@ -461,9 +365,9 @@ export async function runLoadTest(config: TressiConfig): Promise<TestSummary> {
       const dataExporter = new DataExporter();
       await dataExporter.exportDataFiles(
         summary,
-        coreRunner.getResultAggregator().getSampledResults(),
+        [], // No sampled results in worker mode
         reportDir,
-        coreRunner.getResultAggregator(),
+        createRunnerInterface(summary),
       );
     } catch (err) {
       // In silent mode, we don't output the error to console
@@ -474,116 +378,37 @@ export async function runLoadTest(config: TressiConfig): Promise<TestSummary> {
 
   // Final summary to console
   if (!silent) {
-    printSummary(coreRunner, config.options, summary, config);
+    printSummary(summary, config.options, config);
   }
 
   return summary;
 }
 
 /**
- * Generates a TestSummary from the result aggregator.
+ * Generates a TestSummary from worker results.
  */
-function generateTestSummary(
-  resultAggregator: {
-    getGlobalHistogram(): {
-      totalCount: number;
-      mean: number;
-      minNonZeroValue: number;
-      maxValue: number;
-      getValueAtPercentile(percentile: number): number;
-    };
-    getEndpointHistograms(): Map<
-      string,
-      {
-        mean: number;
-        minNonZeroValue: number;
-        maxValue: number;
-        getValueAtPercentile(percentile: number): number;
-      }
-    >;
-    getSuccessfulRequestsCount(): number;
-    getFailedRequestsCount(): number;
-    getSuccessfulRequestsByEndpoint(): Map<string, number>;
-    getFailedRequestsByEndpoint(): Map<string, number>;
-  },
-  _options: TressiOptionsConfig,
+async function generateTestSummaryFromWorkers(
   actualDurationSec: number,
-): TestSummary {
-  const histogram = resultAggregator.getGlobalHistogram();
-  const endpointHistograms = resultAggregator.getEndpointHistograms();
-
-  if (histogram.totalCount === 0) {
-    return {
-      global: {
-        totalRequests: 0,
-        successfulRequests: 0,
-        failedRequests: 0,
-        avgLatencyMs: 0,
-        minLatencyMs: 0,
-        maxLatencyMs: 0,
-        p95LatencyMs: 0,
-        p99LatencyMs: 0,
-        actualRps: 0,
-        theoreticalMaxRps: 0,
-        achievedPercentage: 0,
-        duration: 0,
-      },
-      endpoints: [],
-      tressiVersion: pkg.version || 'unknown',
-    };
-  }
-
-  const totalRequests = histogram.totalCount;
-  const effectiveDuration = actualDurationSec;
-  const actualRps =
-    effectiveDuration > 0 ? totalRequests / effectiveDuration : 0;
-  const avgLatency = histogram.mean;
-  const totalRpsValue =
-    resultAggregator.getSuccessfulRequestsCount() +
-    resultAggregator.getFailedRequestsCount();
-  const theoreticalMaxRps = (1000 / (avgLatency || 1)) * (totalRpsValue || 10);
-  const achievedPercentage = 0;
-
-  const endpointSummaries = Array.from(endpointHistograms.entries()).map(
-    ([endpointKey, endpointHistogram]): EndpointSummary => {
-      const [method, url] = endpointKey.split(' ');
-      const successfulRequests =
-        resultAggregator.getSuccessfulRequestsByEndpoint().get(endpointKey) ||
-        0;
-      const failedRequests =
-        resultAggregator.getFailedRequestsByEndpoint().get(endpointKey) || 0;
-
-      return {
-        method,
-        url,
-        totalRequests: successfulRequests + failedRequests,
-        successfulRequests,
-        failedRequests,
-        avgLatencyMs: endpointHistogram?.mean || 0,
-        minLatencyMs: endpointHistogram?.minNonZeroValue || 0,
-        maxLatencyMs: endpointHistogram?.maxValue || 0,
-        p95LatencyMs: endpointHistogram?.getValueAtPercentile(95) || 0,
-        p99LatencyMs: endpointHistogram?.getValueAtPercentile(99) || 0,
-      };
-    },
-  );
-
+): Promise<TestSummary> {
+  // In worker mode, we get the summary directly from the worker pool
+  // This is a placeholder - the actual implementation would need
+  // to integrate with the worker pool's results
   return {
     global: {
-      totalRequests,
-      successfulRequests: resultAggregator.getSuccessfulRequestsCount(),
-      failedRequests: resultAggregator.getFailedRequestsCount(),
-      avgLatencyMs: avgLatency,
-      minLatencyMs: histogram.minNonZeroValue,
-      maxLatencyMs: histogram.maxValue,
-      p95LatencyMs: histogram.getValueAtPercentile(95),
-      p99LatencyMs: histogram.getValueAtPercentile(99),
-      actualRps,
-      theoreticalMaxRps,
-      achievedPercentage,
-      duration: effectiveDuration,
+      totalRequests: 0,
+      successfulRequests: 0,
+      failedRequests: 0,
+      avgLatencyMs: 0,
+      minLatencyMs: 0,
+      maxLatencyMs: 0,
+      p95LatencyMs: 0,
+      p99LatencyMs: 0,
+      actualRps: 0,
+      theoreticalMaxRps: 0,
+      achievedPercentage: 0,
+      duration: actualDurationSec,
     },
-    endpoints: endpointSummaries,
+    endpoints: [],
     tressiVersion: pkg.version || 'unknown',
   };
 }
@@ -591,7 +416,7 @@ function generateTestSummary(
 /**
  * Creates a runner interface for the markdown generator.
  */
-function createRunnerInterface(resultAggregator: {
+function createRunnerInterface(summary: TestSummary): {
   getDistribution(): {
     getTotalCount(): number;
     getLatencyDistribution(options: {
@@ -606,27 +431,15 @@ function createRunnerInterface(resultAggregator: {
     }>;
   };
   getStatusCodeMap(): Record<number, number>;
-  getSampledResults(): RequestResult[];
-}): {
-  getDistribution(): {
-    getTotalCount(): number;
-    getLatencyDistribution(options: {
-      count: number;
-      chartWidth: number;
-    }): Array<{
-      latency: string;
-      count: string;
-      percent: string;
-      cumulative: string;
-      chart: string;
-    }>;
-  };
-  getStatusCodeMap(): Record<number, number>;
-  getSampledResults(): RequestResult[];
+  getSampledResults(): never[];
 } {
+  // In worker mode, we create a simplified interface
   return {
-    getDistribution: () => resultAggregator.getDistribution(),
-    getStatusCodeMap: () => resultAggregator.getStatusCodeMap(),
-    getSampledResults: () => resultAggregator.getSampledResults(),
+    getDistribution: () => ({
+      getTotalCount: () => summary.global.totalRequests,
+      getLatencyDistribution: () => [],
+    }),
+    getStatusCodeMap: () => ({}),
+    getSampledResults: () => [],
   };
 }

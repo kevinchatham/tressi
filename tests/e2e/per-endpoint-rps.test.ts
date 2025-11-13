@@ -22,13 +22,23 @@ describe('Per-endpoint RPS Configuration Tests', () => {
       const config: TressiConfig = {
         $schema:
           'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json',
-        requests: [],
+        requests: [
+          { url: `${baseUrl}/success`, method: 'GET', rps: 50 },
+          { url: `${baseUrl}/delay/100`, method: 'GET', rps: 25 },
+          { url: `${baseUrl}/payload/1`, method: 'GET', rps: 10 },
+        ],
         options: {
           durationSec: 10,
           rampUpTimeSec: 0,
           useUI: false,
           silent: true,
           earlyExitOnError: false,
+          workerMemoryLimit: 128,
+          workerEarlyExit: {
+            enabled: false,
+            monitoringWindowMs: 1000,
+            stopMode: 'endpoint',
+          },
         },
       };
 
@@ -58,13 +68,23 @@ describe('Per-endpoint RPS Configuration Tests', () => {
       const config: TressiConfig = {
         $schema:
           'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json',
-        requests: [],
+        requests: [
+          { url: `${baseUrl}/success`, method: 'GET', rps: 1 },
+          { url: `${baseUrl}/delay/50`, method: 'GET', rps: 30 },
+          { url: `${baseUrl}/payload/1`, method: 'GET', rps: 20 },
+        ],
         options: {
           durationSec: 5,
           rampUpTimeSec: 0,
           useUI: false,
           silent: true,
           earlyExitOnError: false,
+          workerMemoryLimit: 128,
+          workerEarlyExit: {
+            enabled: false,
+            monitoringWindowMs: 1000,
+            stopMode: 'endpoint',
+          },
         },
       };
 
@@ -90,13 +110,22 @@ describe('Per-endpoint RPS Configuration Tests', () => {
       const config: TressiConfig = {
         $schema:
           'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json',
-        requests: [],
+        requests: [
+          { url: `${baseUrl}/success`, method: 'GET', rps: 100 },
+          { url: `${baseUrl}/delay/50`, method: 'GET', rps: 200 },
+        ],
         options: {
           durationSec: 3,
           rampUpTimeSec: 0,
           useUI: false,
           silent: true,
           earlyExitOnError: false,
+          workerMemoryLimit: 128,
+          workerEarlyExit: {
+            enabled: false,
+            monitoringWindowMs: 1000,
+            stopMode: 'endpoint',
+          },
         },
       };
 
@@ -111,13 +140,22 @@ describe('Per-endpoint RPS Configuration Tests', () => {
       const config: TressiConfig = {
         $schema:
           'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json',
-        requests: [],
+        requests: [
+          { url: `${baseUrl}/success`, method: 'GET', rps: 2 },
+          { url: `${baseUrl}/delay/100`, method: 'GET', rps: 3 },
+        ],
         options: {
           durationSec: 10,
           rampUpTimeSec: 0,
           useUI: false,
           silent: true,
           earlyExitOnError: false,
+          workerMemoryLimit: 128,
+          workerEarlyExit: {
+            enabled: false,
+            monitoringWindowMs: 1000,
+            stopMode: 'endpoint',
+          },
         },
       };
 
@@ -135,7 +173,9 @@ describe('Per-endpoint RPS Configuration Tests', () => {
         $schema:
           'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json',
         requests: [
-          { url: `${baseUrl}/delay/50`, method: 'GET' }, // Should use global RPS
+          { url: `${baseUrl}/delay/50`, method: 'GET', rps: 40 },
+          { url: `${baseUrl}/success`, method: 'GET', rps: 15 },
+          { url: `${baseUrl}/payload/10`, method: 'GET', rps: 20 },
         ],
         options: {
           durationSec: 5,
@@ -143,6 +183,12 @@ describe('Per-endpoint RPS Configuration Tests', () => {
           useUI: false,
           silent: true,
           earlyExitOnError: false,
+          workerMemoryLimit: 128,
+          workerEarlyExit: {
+            enabled: false,
+            monitoringWindowMs: 1000,
+            stopMode: 'endpoint',
+          },
         },
       };
 
@@ -158,9 +204,9 @@ describe('Per-endpoint RPS Configuration Tests', () => {
         $schema:
           'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json',
         requests: [
-          { url: `${baseUrl}/success`, method: 'GET' },
-          { url: `${baseUrl}/delay/100`, method: 'GET' },
-          { url: `${baseUrl}/payload/10`, method: 'GET' },
+          { url: `${baseUrl}/success`, method: 'GET', rps: 20 },
+          { url: `${baseUrl}/delay/100`, method: 'GET', rps: 20 },
+          { url: `${baseUrl}/payload/10`, method: 'GET', rps: 20 },
         ],
         options: {
           durationSec: 5,
@@ -168,6 +214,12 @@ describe('Per-endpoint RPS Configuration Tests', () => {
           useUI: false,
           silent: true,
           earlyExitOnError: false,
+          workerMemoryLimit: 128,
+          workerEarlyExit: {
+            enabled: false,
+            monitoringWindowMs: 1000,
+            stopMode: 'endpoint' as const,
+          },
         },
       };
 
@@ -184,12 +236,19 @@ describe('Per-endpoint RPS Configuration Tests', () => {
       const config: TressiConfig = {
         $schema:
           'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json',
+        requests: [{ url: `${baseUrl}/success`, method: 'GET', rps: 100 }],
         options: {
           durationSec: 3,
           rampUpTimeSec: 0,
           useUI: false,
           silent: true,
           earlyExitOnError: false,
+          workerMemoryLimit: 128,
+          workerEarlyExit: {
+            enabled: false,
+            monitoringWindowMs: 1000,
+            stopMode: 'endpoint' as const,
+          },
         },
       };
 
@@ -203,13 +262,19 @@ describe('Per-endpoint RPS Configuration Tests', () => {
       const config: TressiConfig = {
         $schema:
           'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json',
-        requests: [],
+        requests: [{ url: `${baseUrl}/success`, method: 'GET', rps: 5 }],
         options: {
           durationSec: 10,
           rampUpTimeSec: 0,
           useUI: false,
           silent: true,
           earlyExitOnError: false,
+          workerMemoryLimit: 128,
+          workerEarlyExit: {
+            enabled: false,
+            monitoringWindowMs: 1000,
+            stopMode: 'endpoint' as const,
+          },
         },
       };
 

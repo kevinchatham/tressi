@@ -1,5 +1,6 @@
 import { promises as fs } from 'fs';
-import path from 'path';
+import * as os from 'os';
+import * as path from 'path';
 import { request } from 'undici';
 import { z, ZodError } from 'zod';
 
@@ -51,22 +52,51 @@ export const TressiOptionsConfigSchema = z
     errorStatusCodes: z.array(z.number().int().positive()).optional(),
     /** Global headers to be sent with every request. */
     headers: z.record(z.string(), z.string()).optional(),
-    /** Adaptive concurrency configuration */
-    adaptiveConcurrency: z
+    threads: z
+      .number()
+      .int()
+      .min(1)
+      .max(os.cpus().length)
+      .optional()
+      .describe('Number of worker threads to use (defaults to CPU count)'),
+    workerMemoryLimit: z
+      .number()
+      .int()
+      .min(16)
+      .max(512)
+      .default(128)
+      .describe('Memory limit per worker in MB'),
+    workerEarlyExit: z
       .object({
-        /** Maximum concurrent operations. Defaults to 10. */
-        maxConcurrency: z.number().int().positive().default(10),
-        /** Target response latency in milliseconds for adaptation. Defaults to 100. */
-        targetLatency: z.number().int().positive().default(100),
-        /** Memory usage threshold (0.0-1.0) for scaling down. Defaults to 0.8. */
-        memoryThreshold: z.number().min(0.1).max(0.95).default(0.8),
-        /** Whether to enable adaptive concurrency. Defaults to true. */
-        enabled: z.boolean().default(true),
-        /** Minimum concurrent operations. Defaults to 1. */
-        minConcurrency: z.number().int().positive().default(1),
+        /** Enable early exit coordination across all workers */
+        enabled: z.boolean().default(false),
+        /** Global error rate threshold (0.0-1.0) across all workers */
+        globalErrorRateThreshold: z.number().min(0).max(1).optional(),
+        /** Global error count threshold across all workers */
+        globalErrorCountThreshold: z.number().int().positive().optional(),
+        /** Per-endpoint error rate thresholds */
+        perEndpointThresholds: z
+          .array(
+            z.object({
+              url: z.string(),
+              errorRateThreshold: z.number().min(0).max(1),
+              errorCountThreshold: z.number().int().positive().optional(),
+            }),
+          )
+          .optional(),
+        /** Specific HTTP status codes that trigger immediate worker shutdown */
+        workerExitStatusCodes: z.array(z.number().int().positive()).optional(),
+        /** Time window in milliseconds for threshold calculation */
+        monitoringWindowMs: z.number().int().positive().default(1000),
+        /** Whether to stop individual endpoints vs entire test */
+        stopMode: z.enum(['endpoint', 'global']).default('endpoint'),
       })
       .optional()
-      .default({}),
+      .default({
+        enabled: false,
+        monitoringWindowMs: 1000,
+        stopMode: 'endpoint',
+      }),
   })
   .refine(
     (data) => {
@@ -96,9 +126,44 @@ export const TressiOptionsConfigSchema = z
         'useUI and silent options cannot both be true. The TUI requires output, but silent mode suppresses all output.',
       path: ['useUI', 'silent'],
     },
+  )
+  .refine(
+    (data) => {
+      // Validate worker early exit configuration
+      if (data.workerEarlyExit?.enabled) {
+        const hasGlobalThreshold = !!(
+          data.workerEarlyExit.globalErrorRateThreshold ||
+          data.workerEarlyExit.globalErrorCountThreshold ||
+          data.workerEarlyExit.workerExitStatusCodes
+        );
+        const hasPerEndpoint = !!(
+          data.workerEarlyExit.perEndpointThresholds &&
+          data.workerEarlyExit.perEndpointThresholds.length > 0
+        );
+        return hasGlobalThreshold || hasPerEndpoint;
+      }
+      return true;
+    },
+    {
+      message:
+        'At least one threshold must be provided when workerEarlyExit is enabled',
+      path: ['workerEarlyExit'],
+    },
   );
 
-export const defaultTressiOptions = TressiOptionsConfigSchema.parse({});
+export const defaultTressiOptions = TressiOptionsConfigSchema.parse({
+  durationSec: 10,
+  rampUpTimeSec: 0,
+  useUI: true,
+  silent: false,
+  earlyExitOnError: false,
+  workerMemoryLimit: 128,
+  workerEarlyExit: {
+    enabled: false,
+    monitoringWindowMs: 1000,
+    stopMode: 'endpoint',
+  },
+});
 
 /**
  * Zod schema for the main Tressi configuration.
@@ -162,12 +227,11 @@ export function generateMinimalConfig(): TressiConfig {
       useUI: true,
       silent: false,
       earlyExitOnError: false,
-      adaptiveConcurrency: {
-        maxConcurrency: 10,
-        targetLatency: 100,
-        memoryThreshold: 0.8,
-        enabled: true,
-        minConcurrency: 1,
+      workerMemoryLimit: 128,
+      workerEarlyExit: {
+        enabled: false,
+        monitoringWindowMs: 1000,
+        stopMode: 'endpoint',
       },
     },
     requests: [
@@ -197,12 +261,11 @@ export function generateFullConfig(): TressiConfig {
     $schema:
       'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json',
     options: TressiOptionsConfigSchema.parse({
-      adaptiveConcurrency: {
-        maxConcurrency: 10,
-        targetLatency: 100,
-        memoryThreshold: 0.8,
-        enabled: true,
-        minConcurrency: 1,
+      workerMemoryLimit: 128,
+      workerEarlyExit: {
+        enabled: false,
+        monitoringWindowMs: 1000,
+        stopMode: 'endpoint',
       },
     }),
     requests: [

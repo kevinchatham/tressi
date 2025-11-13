@@ -21,13 +21,21 @@ describe('ConfigCommand', () => {
     it('should display configuration with provided config path', async () => {
       const mockConfig: TressiConfig = {
         $schema: 'http://example.com/schema.json',
-        requests: [{ url: 'http://example.com', method: 'GET' as const }],
+        requests: [
+          { url: 'http://example.com', method: 'GET' as const, rps: 10 },
+        ],
         options: {
           durationSec: 30,
           rampUpTimeSec: 0,
           useUI: true,
           silent: false,
           earlyExitOnError: false,
+          workerMemoryLimit: 128,
+          workerEarlyExit: {
+            enabled: false,
+            monitoringWindowMs: 1000,
+            stopMode: 'endpoint',
+          },
         },
       };
 
@@ -46,13 +54,21 @@ describe('ConfigCommand', () => {
     it('should display configuration with JSON output when json option is true', async () => {
       const mockConfig: TressiConfig = {
         $schema: 'http://example.com/schema.json',
-        requests: [{ url: 'http://example.com', method: 'GET' as const }],
+        requests: [
+          { url: 'http://example.com', method: 'GET' as const, rps: 10 },
+        ],
         options: {
           durationSec: 30,
           rampUpTimeSec: 0,
           useUI: true,
           silent: false,
           earlyExitOnError: false,
+          workerMemoryLimit: 128,
+          workerEarlyExit: {
+            enabled: false,
+            monitoringWindowMs: 1000,
+            stopMode: 'endpoint',
+          },
         },
       };
 
@@ -70,13 +86,21 @@ describe('ConfigCommand', () => {
     it('should display raw configuration when raw option is true', async () => {
       const mockConfig: TressiConfig = {
         $schema: 'http://example.com/schema.json',
-        requests: [{ url: 'http://example.com', method: 'GET' as const }],
+        requests: [
+          { url: 'http://example.com', method: 'GET' as const, rps: 10 },
+        ],
         options: {
           durationSec: 30,
           rampUpTimeSec: 0,
           useUI: true,
           silent: false,
           earlyExitOnError: false,
+          workerMemoryLimit: 128,
+          workerEarlyExit: {
+            enabled: false,
+            monitoringWindowMs: 1000,
+            stopMode: 'endpoint',
+          },
         },
       };
 

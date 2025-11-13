@@ -35,7 +35,10 @@ describe('Memory Leak Detection E2E Tests', () => {
     return body.memory;
   };
 
-  const runLoadTest = async (durationMs: number): Promise<void> => {
+  const runLoadTest = async (
+    durationMs: number,
+    rps: number,
+  ): Promise<void> => {
     const startTime = Date.now();
     const interval = 1000 / rps;
 

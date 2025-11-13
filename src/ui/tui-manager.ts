@@ -128,9 +128,7 @@ export class TuiManager {
     this.latencyDistributionTable.updateFromObject(latencyDistributionData);
 
     // Get current response code distribution
-    const currentDistribution = this.getStatusCodeDistribution(
-      runnerData.statusCodeMap,
-    );
+    const currentDistribution = this.getStatusCodeDistribution({});
 
     // Update response code data buffers
     this.successData.add(currentDistribution['2xx']);

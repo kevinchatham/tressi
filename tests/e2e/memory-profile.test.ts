@@ -30,6 +30,7 @@ describe('Memory Profile E2E Tests', () => {
           requests: Array.from({ length: 50 }, () => ({
             url: `${baseUrl}/success`,
             method: 'GET',
+            rps: 1,
           })),
           options: {
             durationSec: 10,
@@ -37,6 +38,12 @@ describe('Memory Profile E2E Tests', () => {
             useUI: false,
             silent: true,
             earlyExitOnError: false,
+            workerMemoryLimit: 128,
+            workerEarlyExit: {
+              enabled: false,
+              monitoringWindowMs: 1000,
+              stopMode: 'endpoint',
+            },
           },
         };
 
@@ -62,13 +69,25 @@ describe('Memory Profile E2E Tests', () => {
         const config: TressiConfig = {
           $schema:
             'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json',
-          requests: [],
+          requests: [
+            {
+              url: `${baseUrl}/success`,
+              method: 'GET',
+              rps: 30,
+            },
+          ],
           options: {
             durationSec: 10,
             rampUpTimeSec: 0,
             useUI: false,
             silent: true,
             earlyExitOnError: false,
+            workerMemoryLimit: 128,
+            workerEarlyExit: {
+              enabled: false,
+              monitoringWindowMs: 1000,
+              stopMode: 'endpoint',
+            },
           },
         };
 
@@ -94,13 +113,25 @@ describe('Memory Profile E2E Tests', () => {
         const config: TressiConfig = {
           $schema:
             'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json',
-          requests: [],
+          requests: [
+            {
+              url: `${baseUrl}/success`,
+              method: 'GET',
+              rps: 20,
+            },
+          ],
           options: {
             durationSec: 20,
             rampUpTimeSec: 0,
             useUI: false,
             silent: true,
             earlyExitOnError: false,
+            workerMemoryLimit: 128,
+            workerEarlyExit: {
+              enabled: false,
+              monitoringWindowMs: 1000,
+              stopMode: 'endpoint',
+            },
           },
         };
 
@@ -131,13 +162,25 @@ describe('Memory Profile E2E Tests', () => {
           const config: TressiConfig = {
             $schema:
               'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json',
-            requests: [],
+            requests: [
+              {
+                url: `${baseUrl}/success`,
+                method: 'GET',
+                rps: 10,
+              },
+            ],
             options: {
               durationSec: 3,
               rampUpTimeSec: 0,
               useUI: false,
               silent: true,
               earlyExitOnError: false,
+              workerMemoryLimit: 128,
+              workerEarlyExit: {
+                enabled: false,
+                monitoringWindowMs: 1000,
+                stopMode: 'endpoint',
+              },
             },
           };
 

@@ -80,8 +80,7 @@ export class RateLimitValidator {
       );
     }
 
-    // Note: Worker count validation has been removed as workers are no longer used
-    // The new architecture uses centralized rate limiting with adaptive concurrency
+    // Note: Worker threads handle rate limiting per-worker for better accuracy
   }
 
   /**
@@ -91,8 +90,7 @@ export class RateLimitValidator {
    */
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   static getRecommendations(_config: TressiConfig): string[] {
-    // Note: Worker recommendations have been removed
-    // The new architecture automatically manages concurrency
+    // Worker threads automatically handle concurrency per CPU core
     return [];
   }
 

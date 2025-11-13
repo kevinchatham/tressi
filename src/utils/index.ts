@@ -32,6 +32,9 @@ export { CircularBuffer } from './circular-buffer';
 // File system utilities
 export { FileUtils } from './file-utils';
 
+// Worker utilities
+export { getWorkerThreadPath } from './worker-path';
+
 // Validation utilities - now handled by unified validator
 // export { ValidationUtils } from './validation-utils'; // Removed - use ConfigValidator instead
 

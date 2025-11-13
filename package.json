@@ -17,12 +17,14 @@
   "bin": {
     "tressi": "dist/cli.js"
   },
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
     "build": "npm run schema:generate && tsc --noEmit && tsup",
-    "dev": "npm run schema:generate && tsx src/cli.ts",
+    "dev": "npm run build && node dist/cli.js",
     "format:watch": "chokidar \"**/*.{ts,js,json,md}\" -c \"npm run format\" --ignore \"**/node_modules/**\"",
     "format": "prettier --write . --config .prettierrc --ignore-path .prettierignore",
-    "init": "tsx src/cli.ts init",
     "lint:inspect": "eslint --inspect-config",
     "lint:watch": "chokidar \"**/*.ts\" -c \"npm run lint\" --ignore \"**/node_modules/**\"",
     "lint": "eslint --fix --format unix --config ./eslint.config.mjs .",

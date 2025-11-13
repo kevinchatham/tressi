@@ -31,13 +31,19 @@ afterAll(() => {
 
 const createTestConfig = (overrides?: Partial<TressiConfig>): TressiConfig => ({
   $schema: 'https://example.com/schema.json',
-  requests: [{ url: 'http://localhost:8080/test', method: 'GET' }],
+  requests: [{ url: 'http://localhost:8080/test', method: 'GET', rps: 10 }],
   options: {
     durationSec: 10,
     rampUpTimeSec: 0,
     useUI: true,
     silent: false,
     earlyExitOnError: false,
+    workerMemoryLimit: 128,
+    workerEarlyExit: {
+      enabled: false,
+      monitoringWindowMs: 1000,
+      stopMode: 'endpoint',
+    },
     ...overrides?.options,
   },
   ...overrides,
@@ -185,6 +191,12 @@ describe('Early Exit Feature', () => {
           rampUpTimeSec: 0,
           useUI: true,
           silent: false,
+          workerMemoryLimit: 128,
+          workerEarlyExit: {
+            enabled: false,
+            monitoringWindowMs: 1000,
+            stopMode: 'endpoint',
+          },
         },
       });
 
@@ -192,12 +204,11 @@ describe('Early Exit Feature', () => {
 
       await runner.run();
 
-      const resultAggregator = runner.getResultAggregator();
-      const results = resultAggregator.getSampledResults();
+      const results = runner.getResults();
 
       // Verify early exit by checking we have fewer results than expected for full duration
       // With 10 RPS for 5 seconds, we'd expect ~50 requests, but should exit much earlier
-      expect(results.length).toBeLessThan(30);
+      expect(results.global.totalRequests).toBeLessThan(30);
     });
 
     it('should exit early when error count threshold is reached', async () => {
@@ -214,6 +225,12 @@ describe('Early Exit Feature', () => {
           rampUpTimeSec: 0,
           useUI: true,
           silent: false,
+          workerMemoryLimit: 128,
+          workerEarlyExit: {
+            enabled: false,
+            monitoringWindowMs: 1000,
+            stopMode: 'endpoint',
+          },
         },
       });
 
@@ -221,12 +238,11 @@ describe('Early Exit Feature', () => {
 
       await runner.run();
 
-      const resultAggregator = runner.getResultAggregator();
-      const results = resultAggregator.getSampledResults();
+      const results = runner.getResults();
 
       // Verify early exit by checking we have significantly fewer results than expected
       // With 10 RPS for 5 seconds, we'd expect ~50 requests, but should exit much earlier
-      expect(results.length).toBeLessThan(25);
+      expect(results.global.totalRequests).toBeLessThan(25);
     });
 
     it('should handle specific status code early exit configuration', async () => {
@@ -248,6 +264,12 @@ describe('Early Exit Feature', () => {
           rampUpTimeSec: 0,
           useUI: true,
           silent: false,
+          workerMemoryLimit: 128,
+          workerEarlyExit: {
+            enabled: false,
+            monitoringWindowMs: 1000,
+            stopMode: 'endpoint',
+          },
         },
       });
 
@@ -258,13 +280,12 @@ describe('Early Exit Feature', () => {
         await expect(runner.run()).resolves.toBeUndefined();
 
         // Should have made some requests
-        const resultAggregator = runner.getResultAggregator();
-        const results = resultAggregator.getSampledResults();
-        expect(results.length).toBeGreaterThan(0);
+        const results = runner.getResults();
+        expect(results.global.totalRequests).toBeGreaterThan(0);
 
         // Should have 503 status codes
-        const status503Results = results.filter(
-          (r: { status: number }) => r.status === 503,
+        const status503Results = results.endpoints.filter(
+          (e) => e.failedRequests > 0,
         );
         expect(status503Results.length).toBeGreaterThan(0);
       } finally {
@@ -291,6 +312,12 @@ describe('Early Exit Feature', () => {
           rampUpTimeSec: 0,
           useUI: true,
           silent: false,
+          workerMemoryLimit: 128,
+          workerEarlyExit: {
+            enabled: false,
+            monitoringWindowMs: 1000,
+            stopMode: 'endpoint',
+          },
         },
       });
 
@@ -320,6 +347,12 @@ describe('Early Exit Feature', () => {
           rampUpTimeSec: 0,
           useUI: true,
           silent: false,
+          workerMemoryLimit: 128,
+          workerEarlyExit: {
+            enabled: false,
+            monitoringWindowMs: 1000,
+            stopMode: 'endpoint',
+          },
         },
       });
 
@@ -328,9 +361,8 @@ describe('Early Exit Feature', () => {
       await runner.run();
 
       // Should complete successfully
-      const resultAggregator = runner.getResultAggregator();
-      const results = resultAggregator.getSampledResults();
-      expect(results.length).toBeGreaterThan(0);
+      const results = runner.getResults();
+      expect(results.global.totalRequests).toBeGreaterThan(0);
     });
   });
 });

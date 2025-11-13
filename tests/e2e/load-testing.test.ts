@@ -19,13 +19,14 @@ describe('Tressi Load Testing E2E', () => {
 
   describe('Basic Load Testing', () => {
     it('should execute a simple load test against server endpoints', async () => {
-      const config = {
+      const config: TressiConfig = {
         $schema:
           'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json',
         requests: [
           {
             url: `${baseUrl}/success`,
             method: 'GET' as const,
+            rps: 10,
           },
         ],
         options: {
@@ -34,6 +35,12 @@ describe('Tressi Load Testing E2E', () => {
           useUI: false,
           silent: true,
           earlyExitOnError: false,
+          workerMemoryLimit: 128,
+          workerEarlyExit: {
+            enabled: false,
+            monitoringWindowMs: 1000,
+            stopMode: 'endpoint',
+          },
         },
       };
 
@@ -45,7 +52,7 @@ describe('Tressi Load Testing E2E', () => {
     });
 
     it('should handle POST requests with payload', async () => {
-      const config = {
+      const config: TressiConfig = {
         $schema:
           'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json',
         requests: [
@@ -56,6 +63,7 @@ describe('Tressi Load Testing E2E', () => {
             headers: {
               'Content-Type': 'application/json',
             },
+            rps: 5,
           },
         ],
         options: {
@@ -64,6 +72,12 @@ describe('Tressi Load Testing E2E', () => {
           useUI: false,
           silent: true,
           earlyExitOnError: false,
+          workerMemoryLimit: 128,
+          workerEarlyExit: {
+            enabled: false,
+            monitoringWindowMs: 1000,
+            stopMode: 'endpoint',
+          },
         },
       };
 
@@ -74,17 +88,19 @@ describe('Tressi Load Testing E2E', () => {
     });
 
     it('should handle multiple endpoints', async () => {
-      const config = {
+      const config: TressiConfig = {
         $schema:
           'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json',
         requests: [
           {
             url: `${baseUrl}/success`,
             method: 'GET' as const,
+            rps: 10,
           },
           {
             url: `${baseUrl}/delay/50`,
             method: 'GET' as const,
+            rps: 5,
           },
         ],
         options: {
@@ -93,6 +109,12 @@ describe('Tressi Load Testing E2E', () => {
           useUI: false,
           silent: true,
           earlyExitOnError: false,
+          workerMemoryLimit: 128,
+          workerEarlyExit: {
+            enabled: false,
+            monitoringWindowMs: 1000,
+            stopMode: 'endpoint',
+          },
         },
       };
 
@@ -103,7 +125,7 @@ describe('Tressi Load Testing E2E', () => {
     });
 
     it('should handle custom headers', async () => {
-      const config = {
+      const config: TressiConfig = {
         $schema:
           'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json',
         requests: [
@@ -114,6 +136,7 @@ describe('Tressi Load Testing E2E', () => {
               'X-Custom-Header': 'test-value',
               'User-Agent': 'tressi-test',
             },
+            rps: 5,
           },
         ],
         options: {
@@ -122,6 +145,12 @@ describe('Tressi Load Testing E2E', () => {
           useUI: false,
           silent: true,
           earlyExitOnError: false,
+          workerMemoryLimit: 128,
+          workerEarlyExit: {
+            enabled: false,
+            monitoringWindowMs: 1000,
+            stopMode: 'endpoint',
+          },
         },
       };
 
@@ -134,13 +163,14 @@ describe('Tressi Load Testing E2E', () => {
 
   describe('Error Handling', () => {
     it('should handle invalid URLs gracefully', async () => {
-      const config = {
+      const config: TressiConfig = {
         $schema:
           'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json',
         requests: [
           {
             url: `${baseUrl}/invalid-endpoint`,
             method: 'GET' as const,
+            rps: 5,
           },
         ],
         options: {
@@ -149,6 +179,12 @@ describe('Tressi Load Testing E2E', () => {
           useUI: false,
           silent: true,
           earlyExitOnError: false,
+          workerMemoryLimit: 128,
+          workerEarlyExit: {
+            enabled: false,
+            monitoringWindowMs: 1000,
+            stopMode: 'endpoint',
+          },
         },
       };
 
@@ -159,13 +195,14 @@ describe('Tressi Load Testing E2E', () => {
     });
 
     it('should handle 404 responses', async () => {
-      const config = {
+      const config: TressiConfig = {
         $schema:
           'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json',
         requests: [
           {
             url: `${baseUrl}/status/404`,
             method: 'GET' as const,
+            rps: 5,
           },
         ],
         options: {
@@ -174,6 +211,12 @@ describe('Tressi Load Testing E2E', () => {
           useUI: false,
           silent: true,
           earlyExitOnError: false,
+          workerMemoryLimit: 128,
+          workerEarlyExit: {
+            enabled: false,
+            monitoringWindowMs: 1000,
+            stopMode: 'endpoint',
+          },
         },
       };
 
@@ -225,6 +268,7 @@ describe('Tressi Load Testing E2E', () => {
           {
             url: `${baseUrl}/success`,
             method: 'GET' as const,
+            rps: 20,
           },
         ],
         options: {
@@ -233,6 +277,12 @@ describe('Tressi Load Testing E2E', () => {
           useUI: false,
           silent: true,
           earlyExitOnError: false,
+          workerMemoryLimit: 128,
+          workerEarlyExit: {
+            enabled: false,
+            monitoringWindowMs: 1000,
+            stopMode: 'endpoint' as const,
+          },
         },
       };
 
@@ -250,6 +300,7 @@ describe('Tressi Load Testing E2E', () => {
           {
             url: `${baseUrl}/success`,
             method: 'GET' as const,
+            rps: 50,
           },
         ],
         options: {
@@ -258,6 +309,12 @@ describe('Tressi Load Testing E2E', () => {
           useUI: false,
           silent: true,
           earlyExitOnError: false,
+          workerMemoryLimit: 128,
+          workerEarlyExit: {
+            enabled: false,
+            monitoringWindowMs: 1000,
+            stopMode: 'endpoint' as const,
+          },
         },
       };
 

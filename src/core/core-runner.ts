@@ -1,18 +1,10 @@
 import { EventEmitter } from 'events';
+import { cpus } from 'os';
 import { performance } from 'perf_hooks';
 
-import { RequestExecutor } from '../request/request-executor';
-import { ResponseSampler } from '../request/response-sampler';
-import { ResultAggregator } from '../stats/aggregators/result-aggregator';
-import { RpsCalculator } from '../stats/calculators/rps-calculator';
-import type {
-  RequestResult,
-  TressiConfig,
-  TressiOptionsConfig,
-} from '../types';
-import { globalResourceManager } from '../utils/resource-manager';
+import type { TressiConfig, TressiOptionsConfig } from '../types';
 import { RateLimitValidator } from '../validation/rate-limit-validator';
-import { ExecutionEngine } from './execution-engine';
+import { WorkerPoolManager } from '../workers/worker-pool-manager';
 
 /**
  * Core orchestration component for the Tressi load testing tool.
@@ -21,11 +13,7 @@ import { ExecutionEngine } from './execution-engine';
 export class CoreRunner extends EventEmitter {
   private config: TressiConfig;
   private options: TressiOptionsConfig;
-  private resultAggregator: ResultAggregator;
-  private rpsCalculator: RpsCalculator;
-  private requestExecutor: RequestExecutor;
-  private responseSampler: ResponseSampler;
-  private executionEngine: ExecutionEngine;
+  private workerPool: WorkerPoolManager | null = null;
   private startTime: number = 0;
   private stopped = false;
 
@@ -39,36 +27,6 @@ export class CoreRunner extends EventEmitter {
     this.config = config;
     // Configuration has defaults applied via Zod, use directly
     this.options = config.options;
-
-    // Initialize components in correct order
-    this.responseSampler = new ResponseSampler();
-    this.requestExecutor = new RequestExecutor(
-      this.responseSampler,
-      1000, // Default max pool size
-    );
-    this.resultAggregator = new ResultAggregator(
-      this.options.useUI ?? true,
-      1000, // Default max sample size
-    );
-    this.rpsCalculator = new RpsCalculator();
-    this.executionEngine = new ExecutionEngine(this);
-
-    // Set up event forwarding
-    this.setupEventForwarding();
-  }
-
-  /**
-   * Sets up event forwarding between components.
-   */
-  private setupEventForwarding(): void {
-    // Forward execution engine events
-    this.executionEngine.on('executionStarted', (data) => {
-      this.emit('executionStarted', data);
-    });
-
-    this.executionEngine.on('executionStopped', (data) => {
-      this.emit('executionStopped', data);
-    });
   }
 
   /**
@@ -101,21 +59,15 @@ export class CoreRunner extends EventEmitter {
         startTime: this.startTime,
       });
 
-      // Register resources for cleanup
-      this.registerResources();
-
-      // Start the execution engine
-      await this.executionEngine.start();
-
-      // Wait for completion or stop signal
-      await this.waitForCompletion();
+      // Use worker threads for all execution
+      await this.runWithWorkers();
 
       // Emit completion event
       this.emit('complete', {
         duration: performance.now() - this.startTime,
-        totalRequests: this.resultAggregator.getTotalRequestsCount(),
-        successfulRequests: this.resultAggregator.getSuccessfulRequestsCount(),
-        failedRequests: this.resultAggregator.getFailedRequestsCount(),
+        totalRequests: 0, // Will be populated from worker results
+        successfulRequests: 0, // Will be populated from worker results
+        failedRequests: 0, // Will be populated from worker results
       });
     } catch (error) {
       this.emit('error', error);
@@ -125,50 +77,26 @@ export class CoreRunner extends EventEmitter {
     }
   }
 
-  /**
-   * Registers resources for automatic cleanup.
-   */
-  private registerResources(): void {
-    // Register request executor pools
-    globalResourceManager.registerResource('request-executor-pools', {
-      cleanup: () => {
-        this.requestExecutor.clearPools();
-        this.responseSampler.clear();
-      },
-    });
+  private async runWithWorkers(): Promise<void> {
+    console.log('DEBUG: Creating WorkerPoolManager...');
+    this.workerPool = new WorkerPoolManager(
+      this.config,
+      this.config.options.threads || cpus().length,
+    );
+    console.log('DEBUG: WorkerPoolManager created, starting...');
 
-    // Register result aggregator - don't clear it here, we need results for reporting
-    globalResourceManager.registerResource('result-aggregator', {
-      cleanup: () => {
-        // Don't clear the result aggregator - results are needed for reporting
-      },
-    });
-  }
+    await this.workerPool.start();
+    console.log('DEBUG: WorkerPoolManager started, waiting for completion...');
 
-  /**
-   * Waits for test completion or stop signal.
-   */
-  private async waitForCompletion(): Promise<void> {
-    const { durationSec = 10 } = this.config.options;
-    const maxDurationMs = durationSec * 1000;
+    await this.workerPool.waitForCompletion();
+    console.log('DEBUG: WorkerPoolManager completed');
 
-    return new Promise<void>((resolve) => {
-      const timeoutId = setTimeout(async () => {
-        await this.stop();
-        resolve();
-      }, maxDurationMs);
+    // Get results from worker pool
+    const results = this.workerPool.getAggregatedResults();
+    console.log('DEBUG: Got aggregated results:', results);
 
-      this.once('stop', async () => {
-        clearTimeout(timeoutId);
-        resolve();
-      });
-
-      this.once('error', async () => {
-        clearTimeout(timeoutId);
-        await this.stop();
-        resolve();
-      });
-    });
+    // Emit results for compatibility
+    this.emit('complete', results);
   }
 
   /**
@@ -178,7 +106,11 @@ export class CoreRunner extends EventEmitter {
     if (this.stopped) return;
 
     this.stopped = true;
-    await this.executionEngine.stop();
+
+    if (this.workerPool) {
+      await this.workerPool.stop();
+    }
+
     this.emit('stop');
   }
 
@@ -186,65 +118,7 @@ export class CoreRunner extends EventEmitter {
    * Cleans up all resources.
    */
   private async cleanup(): Promise<void> {
-    // Don't clear the result aggregator here - we need the results for reporting
-    globalResourceManager.cleanupAll();
-  }
-
-  /**
-   * Records a request result.
-   * @param result The request result to record
-   */
-  public recordResult(result: RequestResult): void {
-    this.resultAggregator.recordResult(result);
-    this.rpsCalculator.recordRequest(result.timestamp);
-
-    // Check for early exit conditions
-    if (this.shouldEarlyExit()) {
-      this.stop();
-    }
-
-    // Emit result event for UI updates
-    this.emit('result', result);
-  }
-
-  /**
-   * Checks if early exit conditions are met.
-   * @returns true if early exit conditions are met
-   */
-  private shouldEarlyExit(): boolean {
-    return this.resultAggregator.shouldEarlyExit(this.options);
-  }
-
-  /**
-   * Gets the result aggregator for accessing statistics.
-   * @returns The result aggregator instance
-   */
-  public getResultAggregator(): ResultAggregator {
-    return this.resultAggregator;
-  }
-
-  /**
-   * Gets the RPS calculator for accessing RPS statistics.
-   * @returns The RPS calculator instance
-   */
-  public getRpsCalculator(): RpsCalculator {
-    return this.rpsCalculator;
-  }
-
-  /**
-   * Gets the request executor for making HTTP requests.
-   * @returns The request executor instance
-   */
-  public getRequestExecutor(): RequestExecutor {
-    return this.requestExecutor;
-  }
-
-  /**
-   * Gets the execution engine.
-   * @returns The execution engine instance
-   */
-  public getExecutionEngine(): ExecutionEngine {
-    return this.executionEngine;
+    // Worker pool handles its own cleanup
   }
 
   /**
