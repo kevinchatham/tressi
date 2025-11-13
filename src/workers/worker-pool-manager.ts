@@ -100,7 +100,7 @@ export class WorkerPoolManager {
   }
 
   async waitForCompletion(): Promise<void> {
-    const maxDurationMs = (this.config.options.durationSec || 10) * 1000 + 5000; // Add 5s buffer
+    const maxDurationMs = (this.config.options.durationSec || 10) * 1000; // Add 5s buffer
 
     const workerPromises = this.workers.map(
       (worker) =>
