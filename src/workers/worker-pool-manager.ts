@@ -100,8 +100,6 @@ export class WorkerPoolManager {
   }
 
   async waitForCompletion(): Promise<void> {
-    const maxDurationMs = (this.config.options.durationSec || 10) * 1000; // Add 5s buffer
-
     const workerPromises = this.workers.map(
       (worker) =>
         new Promise<void>((resolve) => {
@@ -109,9 +107,10 @@ export class WorkerPoolManager {
         }),
     );
 
-    const timeoutPromise = new Promise<void>((resolve) => {
+    const maxDurationMs = (this.config.options.durationSec || 10) * 1000 + 100; // add buffer
+
+    const forceTerminateWorkersPromise = new Promise<void>((resolve) => {
       setTimeout(() => {
-        // Force terminate workers if they haven't exited
         this.workers.forEach((worker) => {
           if (!worker.threadId) return; // Worker already terminated
           try {
@@ -124,7 +123,10 @@ export class WorkerPoolManager {
       }, maxDurationMs);
     });
 
-    await Promise.race([Promise.all(workerPromises), timeoutPromise]);
+    await Promise.race([
+      forceTerminateWorkersPromise,
+      Promise.all(workerPromises),
+    ]);
   }
 
   getAggregatedResults(): ReturnType<MetricsAggregator['getResults']> {

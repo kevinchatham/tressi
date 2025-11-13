@@ -201,6 +201,7 @@ export class SharedMemoryManager {
   ): void {
     // Validate inputs to prevent corruption
     if (workerId < 0 || workerId >= this.workersCount) {
+      // eslint-disable-next-line no-console
       console.error(`Invalid workerId: ${workerId}`);
       return;
     }
@@ -208,6 +209,7 @@ export class SharedMemoryManager {
       result.endpointIndex < 0 ||
       result.endpointIndex >= this.endpointsCount
     ) {
+      // eslint-disable-next-line no-console
       console.error(`Invalid endpointIndex: ${result.endpointIndex}`);
       return;
     }
