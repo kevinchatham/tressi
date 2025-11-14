@@ -10,6 +10,7 @@ import { CoreRunner } from './core/core-runner';
 import { DataExporter } from './reporting/exporters/data-exporter';
 import { MarkdownGenerator } from './reporting/generators/markdown-generator';
 import type { TestSummary, TressiConfig, TressiOptionsConfig } from './types';
+import { MinimalUI } from './ui/minimal-ui';
 import { TuiManager } from './ui/tui-manager';
 import { FileUtils } from './utils/file-utils';
 import { getSafeDirectoryName } from './utils/safe-directory';
@@ -245,21 +246,10 @@ export async function runLoadTest(config: TressiConfig): Promise<TestSummary> {
     coreRunner.on('stop', cleanupUI);
     coreRunner.on('complete', cleanupUI);
   } else if (!silent) {
-    // If we're not using the TUI and not silent, provide basic feedback
-    const noUiSpinner = ora({
-      text: 'Test starting...',
-    }).start();
+    // Use enhanced minimal UI
+    const minimalUI = new MinimalUI(config);
 
-    const noUiInterval = setInterval(() => {
-      const startTime = coreRunner.getStartTime();
-      const elapsedSec = Math.min(
-        startTime > 0 ? (performance.now() - startTime) / 1000 : 0,
-        durationSec || 10,
-      );
-      const totalSec = durationSec || 10;
-
-      noUiSpinner.text = `[${elapsedSec.toFixed(0)}s/${totalSec}s] Test running...`;
-    }, 1000);
+    minimalUI.start(coreRunner);
 
     // Handle graceful shutdown on Ctrl+C
     const handleNoUiExit = async (): Promise<void> => {
@@ -267,14 +257,13 @@ export async function runLoadTest(config: TressiConfig): Promise<TestSummary> {
     };
     process.on('SIGINT', handleNoUiExit);
 
-    const cleanupSpinner = (): void => {
-      clearInterval(noUiInterval);
+    const cleanupUI = (): void => {
       process.removeListener('SIGINT', handleNoUiExit);
-      noUiSpinner.succeed('Test finished. Generating summary...');
+      minimalUI.stop();
     };
 
-    coreRunner.on('stop', cleanupSpinner);
-    coreRunner.on('complete', cleanupSpinner);
+    coreRunner.on('stop', cleanupUI);
+    coreRunner.on('complete', cleanupUI);
   }
 
   await coreRunner.run();

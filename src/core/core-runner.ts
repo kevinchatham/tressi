@@ -4,6 +4,7 @@ import { performance } from 'perf_hooks';
 
 import type { TressiConfig, TressiOptionsConfig } from '../types';
 import { RateLimitValidator } from '../validation/rate-limit-validator';
+import { AggregatedMetrics } from '../workers/metrics-aggregator';
 import { WorkerPoolManager } from '../workers/worker-pool-manager';
 
 /**
@@ -27,6 +28,10 @@ export class CoreRunner extends EventEmitter {
     this.config = config;
     // Configuration has defaults applied via Zod, use directly
     this.options = config.options;
+  }
+
+  get aggregatedMetrics(): AggregatedMetrics | undefined {
+    return this.workerPool?.getAggregatedResults();
   }
 
   /**
@@ -61,14 +66,6 @@ export class CoreRunner extends EventEmitter {
 
       // Use worker threads for all execution
       await this.runWithWorkers();
-
-      // Emit completion event
-      this.emit('complete', {
-        duration: performance.now() - this.startTime,
-        totalRequests: 0, // Will be populated from worker results
-        successfulRequests: 0, // Will be populated from worker results
-        failedRequests: 0, // Will be populated from worker results
-      });
     } catch (error) {
       this.emit('error', error);
       throw error;
@@ -89,6 +86,21 @@ export class CoreRunner extends EventEmitter {
 
     // Get results from worker pool
     const results = this.workerPool.getAggregatedResults();
+
+    // TODO do not remove / do not eslint ignore
+    console.log('\nDEBUG: Request Metrics', {
+      ...results,
+      statusCodeDistribution: JSON.stringify(results.statusCodeDistribution),
+      endpointMetrics: Object.fromEntries(
+        Object.entries(results.endpointMetrics).map(([url, data]) => [
+          url,
+          {
+            ...data,
+            statusCodeDistribution: JSON.stringify(data.statusCodeDistribution),
+          },
+        ]),
+      ),
+    });
 
     // Emit completion event with actual results
     this.emit('complete', results);

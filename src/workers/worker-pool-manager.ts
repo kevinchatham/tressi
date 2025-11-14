@@ -4,7 +4,7 @@ import { Worker } from 'worker_threads';
 import type { TressiConfig, TressiRequestConfig } from '../types';
 import { getWorkerThreadPath } from '../utils';
 import { EarlyExitCoordinator } from './early-exit-coordinator';
-import { MetricsAggregator } from './metrics-aggregator';
+import { AggregatedMetrics, MetricsAggregator } from './metrics-aggregator';
 import { SharedMemoryManager } from './shared-memory-manager';
 
 export class WorkerPoolManager {
@@ -138,7 +138,7 @@ export class WorkerPoolManager {
     ]);
   }
 
-  getAggregatedResults(): ReturnType<MetricsAggregator['getResults']> {
+  getAggregatedResults(): AggregatedMetrics {
     const endpoints = this.config.requests.map((req) => req.url);
     return this.metricsAggregator.getResults(this.workers.length, endpoints);
   }

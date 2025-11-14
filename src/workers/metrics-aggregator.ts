@@ -1,6 +1,7 @@
 import type { SharedMemoryManager } from './shared-memory-manager';
 
 export interface AggregatedMetrics {
+  threads: number;
   totalRequests: number;
   successfulRequests: number;
   failedRequests: number;
@@ -164,22 +165,8 @@ export class MetricsAggregator {
       duration,
       statusCodeDistribution: globalStatusCodeDistribution,
       endpointMetrics,
+      threads: workersCount,
     };
-
-    // TODO do not remove / do not eslint ignore
-    console.log('\nDEBUG: Request Metrics', {
-      ...metrics,
-      statusCodeDistribution: JSON.stringify(metrics.statusCodeDistribution),
-      endpointMetrics: Object.fromEntries(
-        Object.entries(metrics.endpointMetrics).map(([url, data]) => [
-          url,
-          {
-            ...data,
-            statusCodeDistribution: JSON.stringify(data.statusCodeDistribution),
-          },
-        ]),
-      ),
-    });
 
     return metrics;
   }
