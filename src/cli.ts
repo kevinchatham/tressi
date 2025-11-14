@@ -11,6 +11,9 @@ import {
   generateMinimalConfig,
   loadConfig,
 } from './config';
+import { clearTerminal } from './utils/terminal-utils';
+
+clearTerminal();
 
 const program = new Command();
 
