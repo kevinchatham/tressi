@@ -12,15 +12,19 @@ export interface SharedMetrics {
   endpointSuccess: Int32Array; // 4 bytes per endpoint per worker
   endpointFailures: Int32Array; // 4 bytes per endpoint per worker
 
-  // Latency data (8 bytes * bufferSize * workers)
+  // Global latency data (8 bytes * bufferSize * workers) - for backward compatibility
   latencyBuffer: Float64Array; // Circular buffer per worker
   latencyWriteIndex: Int32Array; // Write index per worker
+
+  // Per-endpoint latency data (8 bytes * bufferSize * workers * endpoints)
+  endpointLatencyBuffer: Float64Array; // Circular buffer per worker per endpoint
+  endpointLatencyWriteIndex: Int32Array; // Write index per worker per endpoint
 
   // Control flags (4 bytes * workers + 4 bytes)
   workerStatus: Int32Array; // Worker state (0=ready, 1=running, 2=stopped, 3=error)
   shutdownFlag: Int32Array; // Global shutdown signal (0=continue, 1=shutdown)
 
-  // Early exit coordination (NEW)
+  // Early exit coordination
   earlyExitTriggered: Int32Array; // Global early exit flag (0=continue, 1=exit)
   endpointEarlyExit: Int32Array; // Per-endpoint exit flags (0=continue, 1=exit)
   globalErrorCount: Int32Array; // Atomic error counter for thresholds

@@ -116,7 +116,7 @@ export class WorkerPoolManager {
         }),
     );
 
-    const maxDurationMs = (this.config.options.durationSec || 10) * 1000 + 100; // add buffer
+    const maxDurationMs = (this.config.options.durationSec || 10) * 1000 + 250; // add small buffer
 
     const forceTerminateWorkersPromise = new Promise<void>((resolve) => {
       setTimeout(() => {

@@ -35,6 +35,8 @@ function printSummary(
   options: TressiOptionsConfig,
   config: TressiConfig,
 ): void {
+  // TODO REENABLE WHEN YOU ARE READY TO WORK ON THIS
+  return;
   printReportInfo(summary, options);
   printRunConfiguration(options, config);
   printGlobalSummary(summary);

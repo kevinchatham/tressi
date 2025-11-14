@@ -73,16 +73,47 @@ export class MetricsAggregator {
     const requestsPerSecond =
       duration > 0 ? totalRequests / (duration / 1000) : 0;
 
-    // Build endpoint metrics without capping
+    // Build endpoint metrics with per-endpoint latency tracking
     const endpointMetrics: AggregatedMetrics['endpointMetrics'] = {};
 
+    // Create a reliable endpoint index mapping
+    const endpointIndexMap = new Map<string, number>();
+    if (endpoints) {
+      endpoints.forEach((url, index) => {
+        endpointIndexMap.set(url, index);
+      });
+    } else {
+      // Fallback to Object.keys order if endpoints not provided
+      Object.keys(endpointStats).forEach((url, index) => {
+        endpointIndexMap.set(url, index);
+      });
+    }
+
     for (const [url, stats] of Object.entries(endpointStats)) {
-      // For now, use all latencies for each endpoint since we don't have per-endpoint tracking
-      // This is a limitation that should be addressed in future improvements
-      const endpointLatencyData = allLatencies;
-      const sortedEndpointLatencies = [...endpointLatencyData].sort(
-        (a, b) => a - b,
-      );
+      const endpointIndex = endpointIndexMap.get(url);
+      if (endpointIndex === undefined) {
+        console.warn(`Warning: Could not find endpoint index for ${url}`);
+        continue;
+      }
+
+      // Collect per-endpoint latency data from all workers
+      const endpointLatencyData: number[] = [];
+      for (let workerId = 0; workerId < workersCount; workerId++) {
+        const latencies = this.sharedMemory.getEndpointLatencyData(
+          workerId,
+          endpointIndex,
+        );
+        const validLatencies = latencies.filter(
+          (lat) => lat > 0 && lat < 60000,
+        );
+        endpointLatencyData.push(...validLatencies);
+      }
+
+      // If no per-endpoint data, fall back to global data (for backward compatibility)
+      const useGlobalData = endpointLatencyData.length === 0;
+      const latencyData = useGlobalData ? allLatencies : endpointLatencyData;
+
+      const sortedEndpointLatencies = [...latencyData].sort((a, b) => a - b);
 
       endpointMetrics[url] = {
         totalRequests: stats.totalRequests,
@@ -91,14 +122,12 @@ export class MetricsAggregator {
         errorRate:
           stats.totalRequests > 0 ? stats.totalErrors / stats.totalRequests : 0,
         averageLatency:
-          endpointLatencyData.length > 0
-            ? endpointLatencyData.reduce((sum, lat) => sum + lat, 0) /
-              endpointLatencyData.length
+          latencyData.length > 0
+            ? latencyData.reduce((sum, lat) => sum + lat, 0) /
+              latencyData.length
             : 0,
-        minLatency:
-          endpointLatencyData.length > 0 ? Math.min(...endpointLatencyData) : 0,
-        maxLatency:
-          endpointLatencyData.length > 0 ? Math.max(...endpointLatencyData) : 0,
+        minLatency: latencyData.length > 0 ? Math.min(...latencyData) : 0,
+        maxLatency: latencyData.length > 0 ? Math.max(...latencyData) : 0,
         p50Latency: this.calculatePercentile(sortedEndpointLatencies, 0.5),
         p95Latency: this.calculatePercentile(sortedEndpointLatencies, 0.95),
         p99Latency: this.calculatePercentile(sortedEndpointLatencies, 0.99),

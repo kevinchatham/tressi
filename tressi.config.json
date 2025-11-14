@@ -15,7 +15,7 @@
   },
   "requests": [
     {
-      "url": "http://localhost:5000/health",
+      "url": "http://localhost:5000/delay/500",
       "method": "GET",
       "rps": 1
     },

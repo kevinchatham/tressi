@@ -56,14 +56,17 @@ export class SharedMemoryManager {
     // startTime: 8 bytes
     size += 8;
 
-    // Align for Float64Array (latencyBuffer)
-    size = Math.ceil(size / 8) * 8;
-
-    // Latency data: 8 bytes * bufferSize * workers
+    // Global latency data: 8 bytes * bufferSize * workers
     size += 8 * this.bufferSize * this.workersCount;
 
-    // Latency write indices: 4 bytes * workers
+    // Global latency write indices: 4 bytes * workers
     size += 4 * this.workersCount;
+
+    // Per-endpoint latency data: 8 bytes * bufferSize * workers * endpoints
+    size += 8 * this.bufferSize * this.workersCount * this.endpointsCount;
+
+    // Per-endpoint latency write indices: 4 bytes * workers * endpoints
+    size += 4 * this.workersCount * this.endpointsCount;
 
     // Worker status: 4 bytes * workers
     size += 4 * this.workersCount;
@@ -140,6 +143,22 @@ export class SharedMemoryManager {
     );
     offset += 4 * this.workersCount;
 
+    // Per-endpoint latency data (8 bytes * bufferSize * workers * endpoints)
+    const endpointLatencyBuffer = new Float64Array(
+      this.buffer,
+      offset,
+      this.bufferSize * this.workersCount * this.endpointsCount,
+    );
+    offset += 8 * this.bufferSize * this.workersCount * this.endpointsCount;
+
+    // Per-endpoint latency write indices (4 bytes * workers * endpoints)
+    const endpointLatencyWriteIndex = new Int32Array(
+      this.buffer,
+      offset,
+      this.workersCount * this.endpointsCount,
+    );
+    offset += 4 * this.workersCount * this.endpointsCount;
+
     // Worker status (4 bytes * workers)
     const workerStatus = new Int32Array(this.buffer, offset, this.workersCount);
     offset += 4 * this.workersCount;
@@ -174,6 +193,8 @@ export class SharedMemoryManager {
       endpointFailures,
       latencyBuffer,
       latencyWriteIndex,
+      endpointLatencyBuffer,
+      endpointLatencyWriteIndex,
       workerStatus,
       shutdownFlag,
       earlyExitTriggered,
@@ -251,6 +272,43 @@ export class SharedMemoryManager {
       }
     }
 
+    // Record per-endpoint latency
+    const endpointWriteIndex = this.getEndpointLatencyWriteIndex(
+      workerId,
+      result.endpointIndex,
+    );
+    if (endpointWriteIndex < this.bufferSize) {
+      const endpointLatencyOffset =
+        (workerId * this.endpointsCount + result.endpointIndex) *
+          this.bufferSize +
+        endpointWriteIndex;
+      if (
+        endpointLatencyOffset < this.sharedMetrics.endpointLatencyBuffer.length
+      ) {
+        this.sharedMetrics.endpointLatencyBuffer[endpointLatencyOffset] =
+          result.latency;
+        const endpointWriteOffset =
+          workerId * this.endpointsCount + result.endpointIndex;
+        Atomics.add(
+          this.sharedMetrics.endpointLatencyWriteIndex,
+          endpointWriteOffset,
+          1,
+        );
+        if (
+          this.getEndpointLatencyWriteIndex(workerId, result.endpointIndex) >=
+          this.bufferSize
+        ) {
+          const writeOffset =
+            workerId * this.endpointsCount + result.endpointIndex;
+          Atomics.store(
+            this.sharedMetrics.endpointLatencyWriteIndex,
+            writeOffset,
+            0,
+          );
+        }
+      }
+    }
+
     // Update global counters for early exit
     Atomics.add(this.sharedMetrics.globalRequestCount, 0, 1);
     if (!result.success) {
@@ -275,6 +333,14 @@ export class SharedMemoryManager {
 
   private getLatencyWriteIndex(workerId: number): number {
     return Atomics.load(this.sharedMetrics.latencyWriteIndex, workerId);
+  }
+
+  private getEndpointLatencyWriteIndex(
+    workerId: number,
+    endpointIndex: number,
+  ): number {
+    const offset = workerId * this.endpointsCount + endpointIndex;
+    return Atomics.load(this.sharedMetrics.endpointLatencyWriteIndex, offset);
   }
 
   shouldShutdown(): boolean {
@@ -385,6 +451,25 @@ export class SharedMemoryManager {
     return latencies;
   }
 
+  getEndpointLatencyData(workerId: number, endpointIndex: number): number[] {
+    const latencies: number[] = [];
+    const writeIndex = this.getEndpointLatencyWriteIndex(
+      workerId,
+      endpointIndex,
+    );
+
+    for (let i = 0; i < Math.min(writeIndex, this.bufferSize); i++) {
+      const offset =
+        (workerId * this.endpointsCount + endpointIndex) * this.bufferSize + i;
+      const latency = this.sharedMetrics.endpointLatencyBuffer[offset];
+      if (latency > 0) {
+        latencies.push(latency);
+      }
+    }
+
+    return latencies;
+  }
+
   reset(): void {
     // Reset all counters
     Atomics.store(this.sharedMetrics.totalRequests, 0, 0);
@@ -410,6 +495,11 @@ export class SharedMemoryManager {
 
     for (let i = 0; i < this.endpointsCount; i++) {
       Atomics.store(this.sharedMetrics.endpointEarlyExit, i, 0);
+    }
+
+    // Reset per-endpoint latency arrays
+    for (let i = 0; i < this.workersCount * this.endpointsCount; i++) {
+      Atomics.store(this.sharedMetrics.endpointLatencyWriteIndex, i, 0);
     }
 
     // Set start time
