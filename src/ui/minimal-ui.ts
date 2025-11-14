@@ -46,14 +46,14 @@ export class MinimalUI {
       // Use aggregated metrics directly as requested in comments
       const aggregatedMetrics = coreRunner.aggregatedMetrics;
       if (aggregatedMetrics) {
-        const { requestsPerSecond, averageLatency, threads } =
-          aggregatedMetrics;
+        const {
+          requestsPerSecond,
+          averageLatency,
+          memoryUsageMB,
+          cpuUsagePercent,
+        } = aggregatedMetrics;
 
-        const memoryMB = Math.round(
-          process.memoryUsage().heapUsed / 1024 / 1024,
-        );
-
-        metricsText = `${Math.round(requestsPerSecond)} rps | ${Math.round(averageLatency)}ms avg | ${memoryMB}MB | ${threads} threads`;
+        metricsText = `${Math.round(requestsPerSecond)} rps | ${Math.round(averageLatency)}ms avg | ${memoryUsageMB}MB | ${cpuUsagePercent}% CPU`;
       }
     } catch {
       // Fallback to basic display if metrics unavailable

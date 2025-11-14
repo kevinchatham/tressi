@@ -1,7 +1,11 @@
+import { cpus, loadavg } from 'os';
+
 import type { SharedMemoryManager } from './shared-memory-manager';
 
 export interface AggregatedMetrics {
   threads: number;
+  cpuUsagePercent: number;
+  memoryUsageMB: number;
   totalRequests: number;
   successfulRequests: number;
   failedRequests: number;
@@ -150,6 +154,19 @@ export class MetricsAggregator {
       };
     }
 
+    // Calculate CPU usage percentage based on system load average
+    const cpuCount = cpus().length;
+    const loadAvg = loadavg()[0];
+    const cpuUsagePercent = Math.min(
+      Math.round((loadAvg / cpuCount) * 100),
+      100,
+    );
+
+    // Calculate memory usage in MB
+    const memoryUsageMB = Math.round(
+      process.memoryUsage().heapUsed / 1024 / 1024,
+    );
+
     const metrics: AggregatedMetrics = {
       totalRequests: totalRequests,
       successfulRequests: totalRequests - totalErrors,
@@ -166,6 +183,8 @@ export class MetricsAggregator {
       statusCodeDistribution: globalStatusCodeDistribution,
       endpointMetrics,
       threads: workersCount,
+      cpuUsagePercent,
+      memoryUsageMB,
     };
 
     return metrics;
