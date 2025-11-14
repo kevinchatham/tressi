@@ -25,6 +25,7 @@ export interface AggregatedMetrics {
       p50Latency: number;
       p95Latency: number;
       p99Latency: number;
+      requestsPerSecond: number;
     };
   };
 }
@@ -131,6 +132,8 @@ export class MetricsAggregator {
         p50Latency: this.calculatePercentile(sortedEndpointLatencies, 0.5),
         p95Latency: this.calculatePercentile(sortedEndpointLatencies, 0.95),
         p99Latency: this.calculatePercentile(sortedEndpointLatencies, 0.99),
+        requestsPerSecond:
+          duration > 0 ? stats.totalRequests / (duration / 1000) : 0,
       };
     }
 
@@ -150,8 +153,8 @@ export class MetricsAggregator {
       endpointMetrics,
     };
 
-    // do not remove / do not eslint ignore
-    console.log('\nDEBUG: Request Metrics', metrics);
+    // TODO do not remove / do not eslint ignore
+    // console.log('\nDEBUG: Request Metrics', metrics);
 
     return metrics;
   }
