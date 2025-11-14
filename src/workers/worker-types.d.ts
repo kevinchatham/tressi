@@ -36,6 +36,7 @@ export interface WorkerMessage {
 export interface WorkerData {
   workerId: number;
   endpoints: TressiRequestConfig[];
+  allEndpoints: TressiRequestConfig[];
   sharedBuffer: SharedArrayBuffer;
   memoryLimit: number;
   totalWorkers: number;

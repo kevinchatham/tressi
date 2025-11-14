@@ -32,13 +32,13 @@ export interface AggregatedMetrics {
 export class MetricsAggregator {
   constructor(private sharedMemory: SharedMemoryManager) {}
 
-  getResults(workersCount: number): AggregatedMetrics {
+  getResults(workersCount: number, endpoints?: string[]): AggregatedMetrics {
     const globalStats = this.sharedMemory.getGlobalStats();
-    const endpointStats = this.sharedMemory.getEndpointStats();
+    const endpointStats = this.sharedMemory.getEndpointStats(endpoints);
 
-    // Validate and sanitize global stats to prevent overflow
-    const totalRequests = Math.min(globalStats.totalRequests, 1000000);
-    const totalErrors = Math.min(globalStats.totalErrors, totalRequests);
+    // Remove int overflow capping - use actual values
+    const totalRequests = globalStats.totalRequests;
+    const totalErrors = globalStats.totalErrors;
 
     // Calculate duration
     const startTime = this.sharedMemory['sharedMetrics'].startTime[0];
@@ -46,7 +46,6 @@ export class MetricsAggregator {
 
     // Get all latency data
     const allLatencies: number[] = [];
-    const endpointLatencies: { [url: string]: number[] } = {};
 
     // Collect latency data from all workers with validation
     for (let workerId = 0; workerId < workersCount; workerId++) {
@@ -54,14 +53,6 @@ export class MetricsAggregator {
       // Filter out invalid latency values
       const validLatencies = latencies.filter((lat) => lat > 0 && lat < 60000);
       allLatencies.push(...validLatencies);
-
-      // Group by endpoint (simplified for now)
-      for (const latency of validLatencies) {
-        if (!endpointLatencies['all']) {
-          endpointLatencies['all'] = [];
-        }
-        endpointLatencies['all'].push(latency);
-      }
     }
 
     // Calculate latency percentiles
@@ -78,28 +69,27 @@ export class MetricsAggregator {
     const minLatency = allLatencies.length > 0 ? Math.min(...allLatencies) : 0;
     const maxLatency = allLatencies.length > 0 ? Math.max(...allLatencies) : 0;
 
-    // Calculate RPS with realistic bounds
+    // Calculate RPS without capping
     const requestsPerSecond =
-      duration > 0 ? Math.min(totalRequests / (duration / 1000), 10000) : 0;
+      duration > 0 ? totalRequests / (duration / 1000) : 0;
 
-    // Build endpoint metrics with validation
+    // Build endpoint metrics without capping
     const endpointMetrics: AggregatedMetrics['endpointMetrics'] = {};
 
     for (const [url, stats] of Object.entries(endpointStats)) {
-      const endpointLatencyData = endpointLatencies['all'] || [];
+      // For now, use all latencies for each endpoint since we don't have per-endpoint tracking
+      // This is a limitation that should be addressed in future improvements
+      const endpointLatencyData = allLatencies;
       const sortedEndpointLatencies = [...endpointLatencyData].sort(
         (a, b) => a - b,
       );
 
-      // Validate endpoint stats
-      const endpointTotal = Math.min(stats.totalRequests, 1000000);
-      const endpointErrors = Math.min(stats.totalErrors, endpointTotal);
-
       endpointMetrics[url] = {
-        totalRequests: endpointTotal,
-        successfulRequests: endpointTotal - endpointErrors,
-        failedRequests: endpointErrors,
-        errorRate: endpointTotal > 0 ? endpointErrors / endpointTotal : 0,
+        totalRequests: stats.totalRequests,
+        successfulRequests: stats.totalRequests - stats.totalErrors,
+        failedRequests: stats.totalErrors,
+        errorRate:
+          stats.totalRequests > 0 ? stats.totalErrors / stats.totalRequests : 0,
         averageLatency:
           endpointLatencyData.length > 0
             ? endpointLatencyData.reduce((sum, lat) => sum + lat, 0) /
@@ -115,7 +105,7 @@ export class MetricsAggregator {
       };
     }
 
-    return {
+    const metrics: AggregatedMetrics = {
       totalRequests: totalRequests,
       successfulRequests: totalRequests - totalErrors,
       failedRequests: totalErrors,
@@ -130,6 +120,11 @@ export class MetricsAggregator {
       duration,
       endpointMetrics,
     };
+
+    // do not remove / do not eslint ignore
+    console.log('\nDEBUG: Request Metrics', metrics);
+
+    return metrics;
   }
 
   private calculatePercentile(

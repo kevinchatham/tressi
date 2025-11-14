@@ -35,6 +35,14 @@ export class WorkerPoolManager {
   async start(): Promise<void> {
     const workerConfigs = this.distributeEndpoints();
 
+    // Re-initialize shared memory with actual worker count
+    this.sharedMemory = new SharedMemoryManager(
+      workerConfigs.length,
+      this.config.requests.length,
+      10000, // buffer size per worker
+    );
+    this.metricsAggregator = new MetricsAggregator(this.sharedMemory);
+
     // Reset shared memory
     this.sharedMemory.reset();
 
@@ -45,6 +53,7 @@ export class WorkerPoolManager {
         workerData: {
           workerId: i,
           endpoints: workerConfigs[i],
+          allEndpoints: this.config.requests, // Pass global endpoint list
           sharedBuffer: this.sharedMemory.getBuffer(),
           memoryLimit: this.config.options.workerMemoryLimit,
           totalWorkers: workerConfigs.length,
@@ -130,7 +139,8 @@ export class WorkerPoolManager {
   }
 
   getAggregatedResults(): ReturnType<MetricsAggregator['getResults']> {
-    return this.metricsAggregator.getResults(this.maxWorkers);
+    const endpoints = this.config.requests.map((req) => req.url);
+    return this.metricsAggregator.getResults(this.workers.length, endpoints);
   }
 
   async stop(): Promise<void> {

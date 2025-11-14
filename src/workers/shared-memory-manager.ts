@@ -320,7 +320,7 @@ export class SharedMemoryManager {
     };
   }
 
-  getEndpointStats(): EndpointStats {
+  getEndpointStats(endpoints?: string[]): EndpointStats {
     const stats: EndpointStats = {};
 
     for (
@@ -334,27 +334,35 @@ export class SharedMemoryManager {
       for (let workerId = 0; workerId < this.workersCount; workerId++) {
         const offset = workerId * this.endpointsCount + endpointIndex;
         if (offset < this.sharedMetrics.endpointRequests.length) {
-          totalRequests += Atomics.load(
+          const requests = Atomics.load(
             this.sharedMetrics.endpointRequests,
             offset,
           );
-          totalErrors += Atomics.load(
+          const errors = Atomics.load(
             this.sharedMetrics.endpointFailures,
             offset,
           );
+
+          // Filter out garbage values (negative or impossibly high)
+          if (requests >= 0 && requests <= 1000000) {
+            totalRequests += requests;
+          }
+          if (errors >= 0 && errors <= 1000000) {
+            totalErrors += errors;
+          }
         }
       }
 
-      // Cap values to prevent overflow display
-      const cappedRequests = Math.min(totalRequests, 1000000);
-      const cappedErrors = Math.min(totalErrors, cappedRequests);
+      // Use actual endpoint URL if provided, otherwise use index
+      const endpointKey =
+        endpoints?.[endpointIndex] || `endpoint_${endpointIndex}`;
 
-      if (cappedRequests > 0) {
-        stats[`endpoint_${endpointIndex}`] = {
-          totalRequests: cappedRequests,
-          totalErrors: cappedErrors,
-          errorRate: cappedErrors / cappedRequests,
-          errorCount: cappedErrors,
+      if (totalRequests > 0) {
+        stats[endpointKey] = {
+          totalRequests: totalRequests,
+          totalErrors: totalErrors,
+          errorRate: totalErrors / totalRequests,
+          errorCount: totalErrors,
         };
       }
     }

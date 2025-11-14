@@ -14,6 +14,7 @@ export class WorkerThread {
   private isRunning = false;
   private workerId: number;
   private endpoints: TressiRequestConfig[];
+  private allEndpoints: TressiRequestConfig[];
   private startTime: number;
   private durationMs: number;
 
@@ -21,10 +22,11 @@ export class WorkerThread {
     const data = workerData as WorkerData;
     this.workerId = data.workerId;
     this.endpoints = data.endpoints;
+    this.allEndpoints = data.allEndpoints;
     this.sharedMemory = SharedMemoryManager.fromBuffer(
       data.sharedBuffer,
       data.totalWorkers || 1, // Use actual total workers count
-      this.endpoints.length,
+      this.allEndpoints.length, // Use global endpoint count
     );
     this.rateLimiter = new WorkerRateLimiter(this.endpoints);
     this.requestExecutor = new RequestExecutor(new ResponseSampler(), 1000);
@@ -110,7 +112,8 @@ export class WorkerThread {
   }
 
   private getEndpointIndex(request: TressiRequestConfig): number {
-    const index = this.endpoints.findIndex((ep) => ep.url === request.url);
+    // Use global endpoint index instead of worker-local index
+    const index = this.allEndpoints.findIndex((ep) => ep.url === request.url);
     if (index === -1) {
       return 0; // Default to first endpoint
     }
