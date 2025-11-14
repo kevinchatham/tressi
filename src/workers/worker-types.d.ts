@@ -29,6 +29,10 @@ export interface SharedMetrics {
   endpointEarlyExit: Int32Array; // Per-endpoint exit flags (0=continue, 1=exit)
   globalErrorCount: Int32Array; // Atomic error counter for thresholds
   globalRequestCount: Int32Array; // Atomic request counter for rate calculation
+
+  // Status code tracking
+  statusCodeCounts: Int32Array; // Global status code counts (indices 100-599)
+  endpointStatusCodeCounts: Int32Array; // Per-endpoint status codes (600 * endpoints * workers)
 }
 
 export interface WorkerMessage {

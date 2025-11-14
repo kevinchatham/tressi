@@ -77,6 +77,12 @@ export class SharedMemoryManager {
     // Early exit coordination: 4 bytes * endpoints + 4 bytes * 2 + 4 bytes * 2
     size += 4 * this.endpointsCount + 8 + 8;
 
+    // Status code tracking: 4 bytes * 600 (status codes 100-599)
+    size += 4 * 600;
+
+    // Per-endpoint status codes: 4 bytes * 600 * endpoints * workers
+    size += 4 * 600 * this.endpointsCount * this.workersCount;
+
     // Final alignment to ensure 8-byte boundary
     size = Math.ceil(size / 8) * 8;
 
@@ -182,6 +188,17 @@ export class SharedMemoryManager {
     offset += 4;
 
     const globalRequestCount = new Int32Array(this.buffer, offset, 1);
+    offset += 4;
+
+    // Status code tracking
+    const statusCodeCounts = new Int32Array(this.buffer, offset, 600);
+    offset += 4 * 600;
+
+    const endpointStatusCodeCounts = new Int32Array(
+      this.buffer,
+      offset,
+      600 * this.endpointsCount * this.workersCount,
+    );
 
     return {
       totalRequests,
@@ -201,6 +218,8 @@ export class SharedMemoryManager {
       endpointEarlyExit,
       globalErrorCount,
       globalRequestCount,
+      statusCodeCounts,
+      endpointStatusCodeCounts,
     };
   }
 
@@ -218,7 +237,12 @@ export class SharedMemoryManager {
 
   recordResult(
     workerId: number,
-    result: { success: boolean; latency: number; endpointIndex: number },
+    result: {
+      success: boolean;
+      latency: number;
+      endpointIndex: number;
+      statusCode?: number;
+    },
   ): void {
     // Validate inputs to prevent corruption
     if (workerId < 0 || workerId >= this.workersCount) {
@@ -256,6 +280,31 @@ export class SharedMemoryManager {
         Atomics.add(this.sharedMetrics.endpointSuccess, endpointOffset, 1);
       } else {
         Atomics.add(this.sharedMetrics.endpointFailures, endpointOffset, 1);
+      }
+    }
+
+    // Record status code if provided
+    if (
+      result.statusCode &&
+      result.statusCode >= 100 &&
+      result.statusCode <= 599
+    ) {
+      // Global status code count
+      Atomics.add(this.sharedMetrics.statusCodeCounts, result.statusCode, 1);
+
+      // Per-endpoint status code count
+      const endpointStatusOffset =
+        (workerId * this.endpointsCount + result.endpointIndex) * 600 +
+        result.statusCode;
+      if (
+        endpointStatusOffset <
+        this.sharedMetrics.endpointStatusCodeCounts.length
+      ) {
+        Atomics.add(
+          this.sharedMetrics.endpointStatusCodeCounts,
+          endpointStatusOffset,
+          1,
+        );
       }
     }
 
@@ -502,7 +551,63 @@ export class SharedMemoryManager {
       Atomics.store(this.sharedMetrics.endpointLatencyWriteIndex, i, 0);
     }
 
+    // Reset status code counts
+    for (let i = 0; i < 600; i++) {
+      Atomics.store(this.sharedMetrics.statusCodeCounts, i, 0);
+    }
+
+    // Reset per-endpoint status code counts
+    for (let i = 0; i < 600 * this.endpointsCount * this.workersCount; i++) {
+      Atomics.store(this.sharedMetrics.endpointStatusCodeCounts, i, 0);
+    }
+
     // Set start time
     this.sharedMetrics.startTime[0] = Date.now();
+  }
+
+  /**
+   * Gets the global status code distribution
+   * @returns Record mapping status codes to their counts
+   */
+  getStatusCodeDistribution(): Record<number, number> {
+    const distribution: Record<number, number> = {};
+    for (let status = 100; status <= 599; status++) {
+      const count = Atomics.load(this.sharedMetrics.statusCodeCounts, status);
+      if (count > 0) {
+        distribution[status] = count;
+      }
+    }
+    return distribution;
+  }
+
+  /**
+   * Gets the per-endpoint status code distribution
+   * @param endpointIndex The endpoint index
+   * @returns Record mapping status codes to their counts for the endpoint
+   */
+  getEndpointStatusCodeDistribution(
+    endpointIndex: number,
+  ): Record<number, number> {
+    const distribution: Record<number, number> = {};
+
+    // Sum across all workers for this endpoint
+    for (let status = 100; status <= 599; status++) {
+      let totalCount = 0;
+      for (let workerId = 0; workerId < this.workersCount; workerId++) {
+        const offset =
+          (workerId * this.endpointsCount + endpointIndex) * 600 + status;
+        if (offset < this.sharedMetrics.endpointStatusCodeCounts.length) {
+          totalCount += Atomics.load(
+            this.sharedMetrics.endpointStatusCodeCounts,
+            offset,
+          );
+        }
+      }
+      if (totalCount > 0) {
+        distribution[status] = totalCount;
+      }
+    }
+
+    return distribution;
   }
 }

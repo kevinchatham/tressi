@@ -102,6 +102,7 @@ export class WorkerThread {
         success: result.success,
         latency,
         endpointIndex,
+        statusCode: result.status,
       });
 
       // Release result object back to pool

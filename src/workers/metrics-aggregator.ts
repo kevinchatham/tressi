@@ -13,6 +13,7 @@ export interface AggregatedMetrics {
   p99Latency: number;
   requestsPerSecond: number;
   duration: number;
+  statusCodeDistribution: Record<number, number>;
   endpointMetrics: {
     [url: string]: {
       totalRequests: number;
@@ -26,6 +27,7 @@ export interface AggregatedMetrics {
       p95Latency: number;
       p99Latency: number;
       requestsPerSecond: number;
+      statusCodeDistribution: Record<number, number>;
     };
   };
 }
@@ -90,9 +92,14 @@ export class MetricsAggregator {
       });
     }
 
+    // Get global status code distribution
+    const globalStatusCodeDistribution =
+      this.sharedMemory.getStatusCodeDistribution();
+
     for (const [url, stats] of Object.entries(endpointStats)) {
       const endpointIndex = endpointIndexMap.get(url);
       if (endpointIndex === undefined) {
+        // eslint-disable-next-line no-console
         console.warn(`Warning: Could not find endpoint index for ${url}`);
         continue;
       }
@@ -116,6 +123,10 @@ export class MetricsAggregator {
 
       const sortedEndpointLatencies = [...latencyData].sort((a, b) => a - b);
 
+      // Get per-endpoint status code distribution
+      const endpointStatusCodeDistribution =
+        this.sharedMemory.getEndpointStatusCodeDistribution(endpointIndex);
+
       endpointMetrics[url] = {
         totalRequests: stats.totalRequests,
         successfulRequests: stats.totalRequests - stats.totalErrors,
@@ -134,6 +145,7 @@ export class MetricsAggregator {
         p99Latency: this.calculatePercentile(sortedEndpointLatencies, 0.99),
         requestsPerSecond:
           duration > 0 ? stats.totalRequests / (duration / 1000) : 0,
+        statusCodeDistribution: endpointStatusCodeDistribution,
       };
     }
 
@@ -150,11 +162,24 @@ export class MetricsAggregator {
       p99Latency: p99,
       requestsPerSecond,
       duration,
+      statusCodeDistribution: globalStatusCodeDistribution,
       endpointMetrics,
     };
 
     // TODO do not remove / do not eslint ignore
-    // console.log('\nDEBUG: Request Metrics', metrics);
+    console.log('\nDEBUG: Request Metrics', {
+      ...metrics,
+      statusCodeDistribution: JSON.stringify(metrics.statusCodeDistribution),
+      endpointMetrics: Object.fromEntries(
+        Object.entries(metrics.endpointMetrics).map(([url, data]) => [
+          url,
+          {
+            ...data,
+            statusCodeDistribution: JSON.stringify(data.statusCodeDistribution),
+          },
+        ]),
+      ),
+    });
 
     return metrics;
   }
