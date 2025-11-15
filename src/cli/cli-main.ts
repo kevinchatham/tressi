@@ -2,12 +2,14 @@ import chalk from 'chalk';
 import { Command } from 'commander';
 
 import pkg from '../../package.json';
-import { ConfigCommand, InitCommand, RunCommand } from './index';
+import { ConfigCommand } from './commands/config-command';
+import { InitCommand } from './commands/init-command';
+import { RunCommand } from './commands/run-command';
 
 /**
  * The main CLI application for Tressi.
  */
-export class TressiCli {
+export class TressiCLI {
   private program: Command;
 
   constructor() {
@@ -134,6 +136,6 @@ Examples:
  * Main entry point for the CLI.
  */
 export async function runCli(): Promise<void> {
-  const cli = new TressiCli();
+  const cli = new TressiCLI();
   await cli.run();
 }

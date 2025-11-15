@@ -1,4 +1,3 @@
-import { getStatusCodeDistributionByCategory } from '../../stats';
 import type {
   EndpointSummary,
   ReportMetadata,
@@ -6,6 +5,7 @@ import type {
   TestSummary,
   TressiConfig,
 } from '../../types';
+import { getStatusCodeDistributionByCategory } from '../../utils';
 
 interface LatencyDistribution {
   getTotalCount(): number;

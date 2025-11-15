@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 import chalk from 'chalk';
 
-import { defaultTressiOptions } from '../../config';
+import { defaultTressiOptions } from '../../core/config';
 import type {
   DisplayOptions,
   TressiConfig,

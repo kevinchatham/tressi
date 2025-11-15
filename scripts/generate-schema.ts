@@ -3,7 +3,7 @@ import path from 'path';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 
 import pkg from '../package.json';
-import { TressiConfigSchema } from '../src/config';
+import { TressiConfigSchema } from '../src/core/config';
 
 const schema = zodToJsonSchema(TressiConfigSchema, 'TressiConfigSchema');
 

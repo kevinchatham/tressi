@@ -1,7 +1,7 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 
-import { loadConfig } from '../../config';
+import { loadConfig } from '../../core/config';
 import type { DisplayOptions, TressiConfig } from '../../types';
 import { displayConfig } from '../display/config-display';
 

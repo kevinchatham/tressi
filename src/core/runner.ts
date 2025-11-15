@@ -11,7 +11,7 @@ import { WorkerPoolManager } from '../workers/worker-pool-manager';
  * Core orchestration component for the Tressi load testing tool.
  * This class coordinates between all specialized components and manages the test lifecycle.
  */
-export class CoreRunner extends EventEmitter {
+export class Runner extends EventEmitter {
   private config: TressiConfig;
   private options: TressiOptionsConfig;
   private workerPool: WorkerPoolManager | null = null;

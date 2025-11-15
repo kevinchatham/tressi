@@ -4,7 +4,7 @@ import * as path from 'path';
 import { request } from 'undici';
 import { z, ZodError } from 'zod';
 
-import type { TressiConfig } from './types';
+import type { TressiConfig } from '../types';
 
 /**
  * Zod schema for a single request configuration.

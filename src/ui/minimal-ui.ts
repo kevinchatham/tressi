@@ -1,7 +1,7 @@
 import ora from 'ora';
 import { performance } from 'perf_hooks';
 
-import type { CoreRunner } from '../core/core-runner';
+import type { Runner } from '../core/runner';
 import type { TressiConfig } from '../types';
 
 /**
@@ -20,19 +20,19 @@ export class MinimalUI {
   /**
    * Start the enhanced minimal UI
    */
-  start(coreRunner: CoreRunner): void {
+  start(runner: Runner): void {
     this.spinner.start();
 
     this.interval = setInterval(() => {
-      this.updateDisplay(coreRunner);
+      this.updateDisplay(runner);
     }, 500);
   }
 
   /**
    * Update the display with real-time metrics
    */
-  private updateDisplay(coreRunner: CoreRunner): void {
-    const startTime = coreRunner.getStartTime();
+  private updateDisplay(runner: Runner): void {
+    const startTime = runner.getStartTime();
     const durationSec = this.config.options.durationSec || 10;
     const elapsedSec = Math.min(
       startTime > 0 ? (performance.now() - startTime) / 1000 : 0,
@@ -44,7 +44,7 @@ export class MinimalUI {
 
     try {
       // Use aggregated metrics directly as requested in comments
-      const aggregatedMetrics = coreRunner.aggregatedMetrics;
+      const aggregatedMetrics = runner.aggregatedMetrics;
       if (aggregatedMetrics) {
         const {
           requestsPerSecond,

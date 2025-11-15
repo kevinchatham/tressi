@@ -1,7 +1,7 @@
 import { parentPort, workerData } from 'worker_threads';
 
-import { RequestExecutor } from '../request/request-executor';
-import { ResponseSampler } from '../request/response-sampler';
+import { RequestExecutor } from '../http/request-executor';
+import { ResponseSampler } from '../http/response-sampler';
 import type { TressiRequestConfig } from '../types';
 import { SharedMemoryManager } from './shared-memory-manager';
 import { WorkerRateLimiter } from './worker-rate-limiter';

@@ -1,7 +1,7 @@
 import blessed from 'blessed';
 import contrib from 'blessed-contrib';
 
-import type { CoreRunner } from '../core/core-runner';
+import type { Runner } from '../core/runner';
 import { CircularBuffer } from '../utils/circular-buffer';
 import { LatencyChart } from './components/latency-chart';
 import { LatencyDistributionTable } from './components/latency-distribution-table';
@@ -108,7 +108,7 @@ export class TuiManager {
    * @param targetReqPerSec The target requests per second, if any.
    */
   public update(
-    runner: CoreRunner,
+    runner: Runner,
     elapsedSec: number,
     totalSec: number,
     targetReqPerSec?: number,

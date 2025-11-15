@@ -6,7 +6,7 @@ import { performance } from 'perf_hooks';
 import type { ZodError } from 'zod';
 
 import pkg from '../package.json';
-import { CoreRunner } from './core/core-runner';
+import { Runner } from './core/runner';
 import { DataExporter } from './reporting/exporters/data-exporter';
 import { MarkdownGenerator } from './reporting/generators/markdown-generator';
 import type { TestSummary, TressiConfig, TressiOptionsConfig } from './types';
@@ -36,8 +36,6 @@ function printSummary(
   options: TressiOptionsConfig,
   config: TressiConfig,
 ): void {
-  // TODO REENABLE WHEN YOU ARE READY TO WORK ON THIS
-  return;
   printReportInfo(summary, options);
   printRunConfiguration(options, config);
   printGlobalSummary(summary);
@@ -210,7 +208,7 @@ export async function runLoadTest(config: TressiConfig): Promise<TestSummary> {
   const { silent, useUI, durationSec, exportPath } = config.options;
 
   // Initialize core runner
-  const coreRunner = new CoreRunner(config);
+  const runner = new Runner(config);
 
   // If we have a TUI, we need to handle its destruction and polling
   let tuiManager: TuiManager | undefined;
@@ -218,18 +216,18 @@ export async function runLoadTest(config: TressiConfig): Promise<TestSummary> {
 
   if (useUI && !silent) {
     tuiManager = new TuiManager(
-      async () => await coreRunner.stop(),
+      async () => await runner.stop(),
       pkg.version || 'unknown',
     );
     tuiInterval = setInterval(() => {
-      const startTime = coreRunner.getStartTime();
+      const startTime = runner.getStartTime();
       const elapsedSec = Math.min(
         startTime > 0 ? (performance.now() - startTime) / 1000 : 0,
         durationSec || 10,
       );
       const totalSec = durationSec || 10;
 
-      tuiManager!.update(coreRunner as any, elapsedSec, totalSec); // eslint-disable-line @typescript-eslint/no-explicit-any
+      tuiManager!.update(runner as any, elapsedSec, totalSec); // eslint-disable-line @typescript-eslint/no-explicit-any
     }, 500);
 
     const cleanupUI = (): void => {
@@ -243,17 +241,17 @@ export async function runLoadTest(config: TressiConfig): Promise<TestSummary> {
       }
     };
 
-    coreRunner.on('stop', cleanupUI);
-    coreRunner.on('complete', cleanupUI);
+    runner.on('stop', cleanupUI);
+    runner.on('complete', cleanupUI);
   } else if (!silent) {
     // Use enhanced minimal UI
     const minimalUI = new MinimalUI(config);
 
-    minimalUI.start(coreRunner);
+    minimalUI.start(runner);
 
     // Handle graceful shutdown on Ctrl+C
     const handleNoUiExit = async (): Promise<void> => {
-      await coreRunner.stop();
+      await runner.stop();
     };
     process.on('SIGINT', handleNoUiExit);
 
@@ -262,11 +260,11 @@ export async function runLoadTest(config: TressiConfig): Promise<TestSummary> {
       minimalUI.stop();
     };
 
-    coreRunner.on('stop', cleanupUI);
-    coreRunner.on('complete', cleanupUI);
+    runner.on('stop', cleanupUI);
+    runner.on('complete', cleanupUI);
   }
 
-  await coreRunner.run();
+  await runner.run();
 
   // Ensure TUI is completely destroyed before proceeding with report
   if (useUI && !silent && tuiManager) {
@@ -281,7 +279,7 @@ export async function runLoadTest(config: TressiConfig): Promise<TestSummary> {
     await new Promise((resolve) => setTimeout(resolve, 100));
   }
 
-  const startTime = coreRunner.getStartTime();
+  const startTime = runner.getStartTime();
   const actualDurationSec =
     startTime > 0 ? (performance.now() - startTime) / 1000 : 0;
 

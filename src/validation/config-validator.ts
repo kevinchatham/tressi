@@ -1,7 +1,7 @@
 import chalk from 'chalk';
 import { z, ZodError } from 'zod';
 
-import { TressiConfigSchema } from '../config';
+import { TressiConfigSchema } from '../core/config';
 import type { TressiConfig } from '../types';
 
 /**

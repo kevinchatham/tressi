@@ -1,11 +1,10 @@
-import type { Dispatcher } from 'undici';
 import z from 'zod';
 
 import {
   TressiConfigSchema,
   TressiOptionsConfigSchema,
   TressiRequestConfigSchema,
-} from '../config';
+} from '../core/config';
 
 /**
  * Represents the result of a single request made during the load test.
@@ -43,16 +42,6 @@ export type AgentConfig = {
   headersTimeout?: number;
   /** Timeout for receiving response body in milliseconds. */
   bodyTimeout?: number;
-};
-
-/**
- * Represents an HTTP agent configuration for a specific endpoint.
- */
-export type EndpointAgent = {
-  /** The URL of the endpoint this agent is configured for. */
-  url: string;
-  /** The HTTP dispatcher/agent instance for making requests to this endpoint. */
-  agent: Dispatcher;
 };
 
 /**

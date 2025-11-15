@@ -79,19 +79,6 @@ export class RateLimitValidator {
         `High total RPS (${totalRps}). Consider reducing individual endpoint RPS or using fewer endpoints.`,
       );
     }
-
-    // Note: Worker threads handle rate limiting per-worker for better accuracy
-  }
-
-  /**
-   * Provides configuration recommendations based on the current setup
-   * @param config The configuration to analyze
-   * @returns Configuration recommendations
-   */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  static getRecommendations(_config: TressiConfig): string[] {
-    // Worker threads automatically handle concurrency per CPU core
-    return [];
   }
 
   /**

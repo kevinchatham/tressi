@@ -1,21 +1,3 @@
-// Object pooling utilities
-export { ObjectPool, HeadersPool, ResultPool } from './object-pool';
-
-// Endpoint caching utilities
-export { EndpointCache, globalEndpointCache } from './endpoint-cache';
-
-// Resource management utilities
-export {
-  ResourceManager,
-  globalResourceManager,
-  Resource,
-  HttpAgentResource,
-  TimerResource,
-  IntervalResource,
-  ObjectPoolResource,
-  MapResource,
-} from './resource-manager';
-
 // Safe directory and file name utilities
 export {
   getSafeDirectoryName,
@@ -35,9 +17,42 @@ export { FileUtils } from './file-utils';
 // Worker utilities
 export { getWorkerThreadPath } from './worker-path';
 
-// Validation utilities - now handled by unified validator
-// export { ValidationUtils } from './validation-utils'; // Removed - use ConfigValidator instead
+/**
+ * Aggregates a status code map into standard categories (2xx, 3xx, 4xx, 5xx).
+ * @param statusCodeMap A record where keys are status codes and values are their counts.
+ * @returns An object containing the counts for each status code category.
+ */
+export function getStatusCodeDistributionByCategory(
+  statusCodeMap: Record<number, number>,
+): {
+  '2xx': number;
+  '3xx': number;
+  '4xx': number;
+  '5xx': number;
+  other: number;
+} {
+  const distribution = {
+    '2xx': 0,
+    '3xx': 0,
+    '4xx': 0,
+    '5xx': 0,
+    other: 0,
+  };
 
-// Re-export types for convenience
-// export type { WorkerPoolStats } from '../workers/worker-pool';
-// export type { ConcurrencyMetrics } from '../workers/concurrency-calculator';
+  for (const [codeStr, count] of Object.entries(statusCodeMap)) {
+    const code = Number(codeStr);
+    if (code >= 200 && code < 300) {
+      distribution['2xx'] += count;
+    } else if (code >= 300 && code < 400) {
+      distribution['3xx'] += count;
+    } else if (code >= 400 && code < 500) {
+      distribution['4xx'] += count;
+    } else if (code >= 500 && code < 600) {
+      distribution['5xx'] += count;
+    } else {
+      distribution.other += count;
+    }
+  }
+
+  return distribution;
+}
