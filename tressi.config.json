@@ -1,9 +1,9 @@
 {
   "$schema": "./tressi.schema.json",
   "options": {
-    "durationSec": 10,
+    "durationSec": 100,
     "rampUpTimeSec": 0,
-    "useUI": false,
+    "useUI": true,
     "silent": false,
     "earlyExitOnError": false,
     "workerMemoryLimit": 128,

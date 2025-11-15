@@ -1,5 +1,7 @@
 import contrib from 'blessed-contrib';
 
+import type { AggregatedMetrics } from '../../workers/metrics-aggregator';
+
 /**
  * Manages the statistics table component for the terminal UI.
  */
@@ -48,6 +50,57 @@ export class StatsTable {
     this.table.setData({
       headers: tableData.headers,
       data: tableData.data.map((row) => row.map((cell) => cell.toString())),
+    });
+  }
+
+  /**
+   * Updates the statistics table directly from aggregated metrics.
+   * @param metrics The aggregated metrics from worker threads
+   * @param elapsedSec Current elapsed time in seconds
+   * @param totalSec Total test duration in seconds
+   * @param targetReqPerSec Target requests per second (optional)
+   */
+  updateFromAggregatedMetrics(
+    metrics: AggregatedMetrics,
+    elapsedSec: number,
+    totalSec: number,
+    targetReqPerSec?: number,
+  ): void {
+    const successRate =
+      metrics.totalRequests > 0
+        ? ((metrics.successfulRequests / metrics.totalRequests) * 100).toFixed(
+            1,
+          )
+        : '0.0';
+
+    const rpsStat = targetReqPerSec
+      ? `${metrics.requestsPerSecond.toFixed(1)} / ${targetReqPerSec}`
+      : metrics.requestsPerSecond.toFixed(1);
+
+    const data: string[][] = [
+      ['Time', `${elapsedSec.toFixed(0)}s / ${totalSec}s`],
+      ['Workers', metrics.threads.toString()],
+      ['CPU Usage', `${metrics.cpuUsagePercent}%`],
+      ['Memory Usage', `${metrics.memoryUsageMB}MB`],
+      ['Total Requests', metrics.totalRequests.toLocaleString()],
+      ['Success Rate', `${successRate}%`],
+      ['Req/s (Actual/Target)', rpsStat],
+      [
+        'Success / Fail',
+        `${metrics.successfulRequests.toLocaleString()} / ${metrics.failedRequests.toLocaleString()}`,
+      ],
+      ['Avg Latency (ms)', Math.round(metrics.averageLatency).toString()],
+      ['p95 Latency (ms)', Math.round(metrics.p95Latency).toString()],
+      ['p99 Latency (ms)', Math.round(metrics.p99Latency).toString()],
+      [
+        'Min / Max Latency (ms)',
+        `${Math.round(metrics.minLatency)} / ${Math.round(metrics.maxLatency)}`,
+      ],
+    ];
+
+    this.table.setData({
+      headers: ['Stat', 'Value'],
+      data: data.map((row) => row.map((cell) => cell.toString())),
     });
   }
 
