@@ -14,52 +14,92 @@ Use this template to design and visualize the terminal UI layout. Each quadrant 
 ┌───────────────────────────────────────────────────────────────────┐
 │                                                                   │
 │    ┌────────────────────────────┬─────────────────────────────┐   │
-│    │                            │                             │   │
-│    │   TOP-LEFT (0,0)           │        TOP-RIGHT (0,6)      │   │
-│    │   [6 rows × 6 cols]        │        [6 rows × 6 cols]    │   │
-│    │                            │                             │   │
+│    │  QUADRANT 1: TOP-LEFT      │  QUADRANT 2: TOP-RIGHT      │   │
+│    │  [RPS: Actual vs Target]   │  [Latency: Line Chart]      │   │
 │    │                            │                             │   │
 │    │                            │                             │   │
-│    │                            │                             │   │
+│    │  ╱╲╱╲ Actual (White)       │  ╱╲    ╱╲    ╱╲ p99 (Red)   │   │
+│    │ ╱╲─ Target (Yellow Dashed) │ ╱╲────╱╲────╱╲─ p95 (Yel)   │   │
+│    │                            │╱╲╱╲╱╲╱╲╱╲╱╲╱╲ p50 (Cyan)    │   │
 │    ├────────────────────────────┼─────────────────────────────┤   │
+│    │  QUADRANT 3: BOTTOM-LEFT   │  QUADRANT 4: BOTTOM-RIGHT   │   │
+│    │  [System: CPU/MEM/NET]     │  [Status: Distribution]     │   │
+│    │  Press '3' to toggle view  │                             │   │
 │    │                            │                             │   │
-│    │  BOTTOM-LEFT (6,0)         │      BOTTOM-RIGHT (6,6)     │   │
-│    │  [6 rows × 6 cols]         │      [6 rows × 6 cols]      │   │
-│    │                            │                             │   │
-│    │                            │                             │   │
-│    │                            │                             │   │
-│    │                            │                             │   │
+│    │  ┌──────┐ ┌──────┐ ┌──────┐│         ╱╲                  │   │
+│    │  │ CPU  │ │ MEM  │ │ NET  ││    2xx ╱  ╲ 3xx             │   │
+│    │  │ 75%  │ │ 45%  │ │ 95MB ││   75% ╱────╲ 10%            │   │
+│    │  └──────┘ └──────┘ └──────┘│      ╱  ╱╲  ╲               │   │
+│    │                            │     ╱  ╱__╲  ╲              │   │
 │    └────────────────────────────┴─────────────────────────────┘   │
 │                                                                   │
-│ [version]                                             [shortcuts] │
+│ [Global] [1:RPS] [2:Latency] [3:System] [4:Status] | ?            │
 └───────────────────────────────────────────────────────────────────┘
 ```
+
+### View Mode Indicators:
+
+- **Quadrant 1**: Shows current RPS view mode with cycle indicator [1/3]
+- **Quadrant 2**: Shows line chart with 3 latency percentiles (p50/p95/p99)
+- **Quadrant 3**: Shows system metrics donuts (CPU/Memory/Network)
+- **Quadrant 4**: Shows status code distribution donut chart
+- **Status Bar**: Shows current view states for all quadrants
 
 ## QUADRANT 1: TOP-LEFT (Primary Focus Area)
 
 **Grid Position**: row 0, col 0, rowSpan 6, colSpan 6
 
-### ASCII Template:
+### ASCII Templates:
+
+#### View Mode 1: Actual vs Target RPS (Default)
 
 ```
 ┌─────────────────────────────────────┐
-│                                     │
+│  Requests Per Second: Actual vs     │
 │  ┌───────────────────────────────┐  │
+│  │  ╱╲╱╲╱╲ Actual RPS (White)    │  │
+│  │ ╱╲╱╲╱╲╱╲ ── Target RPS (Yel)  │  │
+│  │╱╲╱╲╱╲╱╲╱╲                     │  │
 │  │                               │  │
-│  │                               │  │
-│  │                               │  │
-│  │                               │  │
-│  │                               │  │
-│  │                               │  │
+│  │  50s   40s   30s   20s   10s  │  │
 │  └───────────────────────────────┘  │
 │                                     │
-│  Title: [Requests Per Second: ___]  │
 └─────────────────────────────────────┘
 ```
 
-### Toggle-Based Design for Quadrant 1
+#### View Mode 2: Success vs Error Breakdown
 
-**Toggle Cycle:**
+```
+┌─────────────────────────────────────┐
+│  Requests Per Second: Success vs    │
+│  ┌───────────────────────────────┐  │
+│  │  ╱╲╱╲╱╲ Success RPS (Green)   │  │
+│  │ ╱╲╱╲╱╲╱╲ ── Error RPS (Red)   │  │
+│  │╱╲╱╲╱╲╱╲╱╲                     │  │
+│  │                               │  │
+│  │  50s   40s   30s   20s   10s  │  │
+│  └───────────────────────────────┘  │
+│                                     │
+└─────────────────────────────────────┘
+```
+
+#### View Mode 3: Combined View (All Metrics)
+
+```
+┌─────────────────────────────────────┐
+│  Requests Per Second: All Metrics   │
+│  ┌───────────────────────────────┐  │
+│  │  ╱╲ Actual (W) ╱╲ Success (G) │  │
+│  │ ╱╲─Target (Y) ╱╲─Error (R)    │  │
+│  │╱╲╱╲╱╲╱╲╱╲╱╲╱╲╱╲╱╲╱╲╱╲╱╲╱╲     │  │
+│  │                               │  │
+│  │  50s   40s   30s   20s   10s  │  │
+│  └───────────────────────────────┘  │
+│                                     │
+└─────────────────────────────────────┘
+```
+
+### View Modes:
 
 1. **Actual vs Target RPS** (default view)
    - Title: "Requests Per Second: Actual vs Target"
@@ -68,24 +108,29 @@ Use this template to design and visualize the terminal UI layout. Each quadrant 
    - Title: "Requests Per Second: Success vs Errors"
    - Lines: Success RPS (green), Error RPS (red)
    - Note: Only shows when errors > 0, otherwise displays "No errors detected"
-
 3. **Combined View** (optional toggle)
    - Title: "Requests Per Second: All Metrics"
    - Lines: All 4 series (for detailed analysis when needed)
 
-### Visual Feedback
+**Visual Feedback:**
 
-**Title Field Usage:**
-The `[___]` area in the ASCII template becomes dynamic:
-
-- Updates immediately when toggling
+- Title field updates immediately when toggling
 - Shows current view mode clearly
 - Includes brief instructions: "Press '1' to switch views"
+- Cycle indicator: `[1/3]` in footer or corner
 
-**Status Indicator:**
-Add a small indicator in the footer or corner showing:
+**Toggle Logic:**
 
-- Cycle indicator: `[1/3]`
+```typescript
+// Pseudocode for toggle behavior
+currentView = 0
+views = ['actual-target', 'success-error', 'all-metrics']
+
+onKeyPress('1'):
+  currentView = (currentView + 1) % views.length
+  updateChartTitle(views[currentView])
+  refreshChartData()
+```
 
 ### Component Specifications:
 
@@ -107,8 +152,22 @@ Add a small indicator in the footer or corner showing:
   - Red: Error RPS
 - **Interactive Features**:
   - `1` key: Cycle through view modes
-  - Mouse hover: Shows values for visible series only
   - Legend: Updates dynamically based on current view
+
+### Default View Highlights:
+
+- **Primary Focus**: Shows actual performance vs target goals
+- **Key Metrics**: Actual RPS (white line) compared against Target RPS (yellow dashed line)
+- **Visual Cues**: Gap between lines indicates performance deviation
+- **Use Case**: Ideal for monitoring if load test is meeting its target throughput
+
+### Alternate View Highlights:
+
+- **Success vs Error View**: Automatically switches when errors detected
+- **Error Detection**: Red line shows error rate, green shows successful requests
+- **Visual Impact**: Clear separation between healthy and failing requests
+- **Combined View**: All metrics overlay for detailed performance analysis
+- **Use Case**: Troubleshooting performance issues and error analysis
 
 ### Default Behavior:
 
@@ -133,21 +192,39 @@ onKeyPress('1'):
 
 **Grid Position**: row 0, col 6, rowSpan 6, colSpan 6
 
-### ASCII Template:
+### ASCII Templates:
+
+#### View Mode 1: Line Chart View (Default)
 
 ```
 ┌─────────────────────────────────────┐
-│                                     │
+│  Latency Percentiles Over Time      │
 │  ┌───────────────────────────────┐  │
+│  │  ╱╲    ╱╲    ╱╲ p99 (Red)     │  │
+│  │ ╱╲────╱╲────╱╲─ p95 (Yel)     │  │
+│  │╱╲╱╲╱╲╱╲╱╲╱╲╱╲ p50 (Cyan)      │  │
 │  │                               │  │
-│  │                               │  │
-│  │                               │  │
-│  │                               │  │
-│  │                               │  │
-│  │                               │  │
+│  │  50s   40s   30s   20s   10s  │  │
 │  └───────────────────────────────┘  │
 │                                     │
-│  Title: [_______________________]   │
+└─────────────────────────────────────┘
+```
+
+#### View Mode 2: Gauge View (Toggle with `2` key)
+
+```
+┌─────────────────────────────────────┐
+│  Current Latency Percentiles        │
+│  ┌───────────────────────────────┐  │
+│  │  p50: ████████░░ 65%  45ms    │  │
+│  │  ━━━━━━━━━━━━━━━━━━━━━━━━━━━  │  │
+│  │  p95: ████████████ 85% 120ms  │  │
+│  │  ━━━━━━━━━━━━━━━━━━━━━━━━━━━  │  │
+│  │  p99: ██████████████ 92% 250ms│  │
+│  │  ━━━━━━━━━━━━━━━━━━━━━━━━━━━  │  │
+│  │  [Green<50 Yel<200 Red>200]   │  │
+│  └───────────────────────────────┘  │
+│                                     │
 └─────────────────────────────────────┘
 ```
 
@@ -184,7 +261,6 @@ onKeyPress('1'):
    - Shows historical trends over time
    - Best for identifying patterns and spikes
    - Multiple series with different colors
-   - Hover tooltips with exact values
 
 2. **Gauge View (Toggle with `2` key)**
    - Shows current/latest values only
@@ -204,30 +280,21 @@ onKeyPress('1'):
    - Current values displayed numerically within each gauge
    - Compact design fits 6×6 constraint
    - Color thresholds for instant assessment
-
-### Gauge Specifications:
-
-- **Layout**: Vertical stack (4 gauges, 1.5 rows each)
-- **Size**: Optimized for 6×6 grid constraint
-- **Color Thresholds** (configurable):
-  - **p50**: Green <50ms, Yellow 50-100ms, Red >100ms
-  - **p95**: Green <100ms, Yellow 100-200ms, Red >200ms
-  - **p99**: Green <200ms, Yellow 200-500ms, Red >500ms
-- **Display**: Percentage + absolute value (e.g., "65% - 120ms")
-- **Update Frequency**: Every 500ms for responsive feel
+   - **Gauge Specifications**:
+     - Layout: Vertical stack (4 gauges, 1.5 rows each)
+     - Size: Optimized for 6×6 grid constraint
+     - Color thresholds (configurable):
+       - p50: Green <50ms, Yellow 50-100ms, Red >100ms
+       - p95: Green <100ms, Yellow 100-200ms, Red >200ms
+       - p99: Green <200ms, Yellow 200-500ms, Red >500ms
+     - Display: Percentage + absolute value (e.g., "65% - 120ms")
+     - Update frequency: Every 500ms for responsive feel
 
 ---
 
 ## QUADRANT 3: BOTTOM-LEFT (System Metrics ↔ App Configuration)
 
 **Grid Position**: row 6, col 0, rowSpan 6, colSpan 6
-
-### Toggle-Based Design for Quadrant 3
-
-**Toggle Cycle:**
-
-1. **System Metrics View** (default)
-2. **App Configuration View**
 
 ### ASCII Template:
 
@@ -239,79 +306,27 @@ onKeyPress('1'):
 │  │ 75%  │     │ 45%  │    │ 95%  │  │
 │  └──────┘     └──────┘    └──────┘  │
 │                                     │
-│  ┌───────────────────────────────┐  │
-│  │                               │  │
-│  │  [System Metrics Table]       │  │
-│  │                               │  │
-│  └───────────────────────────────┘  │
 └─────────────────────────────────────┘
 ```
 
-### View Mode 1: System Metrics (Default)
+### View Modes:
 
-**Component Specifications:**
+1. **System Metrics View** (default)
+   - Title: "System Health & Performance"
+   - Three side-by-side `donut` components:
+     - **CPU Usage**: Green (<60%), Yellow (60-85%), Red (>85%)
+     - **Memory Usage**: Green (<60%), Yellow (60-80%), Red (>80%)
+     - **Network Bandwidth**: Current throughput in MB/s, Green (<80MB/s), Yellow (80-150MB/s), Red (>150MB/s)
+   - Update frequency: Every 1s (real-time)
 
-- **Top Section (3 rows)**: Three `donut` components side by side
-  - **Gauge 1**: CPU Usage
-    - Label: "CPU"
-    - Percent: 0-100%
-    - Color: Green (<60%), Yellow (60-85%), Red (>85%)
-  - **Gauge 2**: Memory Usage
-    - Label: "MEM"
-    - Percent: 0-100%
-    - Color: Green (<60%), Yellow (60-80%), Red (>80%)
-  - **Gauge 3**: RPS Achievement
-    - Label: "RPS"
-    - Percent: (actual/target) × 100
-    - Color: Green (>90%), Yellow (70-90%), Red (<70%)
+2. **App Configuration View**
+   - Title: "Test Configuration & Settings"
+   - Single `table` component with Setting | Value columns
+   - Rows include: Test Endpoints, Target RPS, Test Duration, Worker Threads, Test Status, Elapsed Time, Configuration File Path
+   - Status indicators: 🟢 Running | 🟡 Paused | 🔴 Completed
+   - Update frequency: On toggle only (static data)
 
-- **Bottom Section (3 rows)**: `table` component
-  - **Columns**: Metric | Current | Target | Status
-  - **Rows** (optimized for 6×6 constraint):
-    - Workers Active
-    - Success Rate
-    - Avg Latency
-    - Error Count
-  - **Color Coding**: Green (good), Yellow (warning), Red (critical)
-
-### View Mode 2: App Configuration
-
-**Component Specifications:**
-
-- **Full Section (6 rows)**: Single `table` component
-- **Title**: "Test Configuration" (dynamic based on view mode)
-- **Columns**: Setting | Value
-- **Rows** (optimized for readability):
-  - Test Endpoints (first 3, with count indicator)
-  - Target RPS
-  - Test Duration
-  - Worker Threads
-  - Test Status (Running/Paused/Completed)
-  - Elapsed Time
-  - Configuration File Path
-
-**Data Display Format:**
-
-- **Endpoints**: `https://api.example.com/users` (and 2 more...)
-- **Target RPS**: `1000 req/s`
-- **Duration**: `60s`
-- **Workers**: `4 threads`
-- **Status**: `🟢 Running` | `🟡 Paused` | `🔴 Completed`
-- **Elapsed**: `00:02:15 / 01:00:00`
-
-### Visual Feedback
-
-**Title Field Usage:**
-
-- System Metrics: "System Health & Performance"
-- App Configuration: "Test Configuration & Settings"
-
-**Status Indicator:**
-
-- Add cycle indicator in corner: `[System/Config]`
-- Updates immediately when toggling
-
-### Toggle Logic
+**Toggle Logic:**
 
 ```typescript
 // Pseudocode for toggle behavior
@@ -323,22 +338,12 @@ onKeyPress('3'):
   refreshQuadrant3Data()
 ```
 
-### Implementation Notes
+**Visual Feedback:**
 
-**Data Sources:**
+- Cycle indicator in corner: `[System/Config]`
+- Updates immediately when toggling
 
-- **System Metrics**: AggregatedMetrics from worker threads
-- **App Configuration**: Runner.config and test state
-
-**Update Frequency:**
-
-- System Metrics: Every 1s (real-time)
-- App Configuration: On toggle only (static data)
-
-**Default Behavior:**
-
-- Start in System Metrics view (most commonly needed during testing)
-- Toggle preserves state when switching back and forth
+### Component Specifications:
 
 ---
 
@@ -346,27 +351,48 @@ onKeyPress('3'):
 
 **Grid Position**: row 6, col 6, rowSpan 6, colSpan 6
 
-### ASCII Template:
+### ASCII Templates:
+
+#### View Mode 1: Status Distribution (Default)
 
 ```
 ┌─────────────────────────────────────┐
-│                                     │
-│  ┌─────────────────┐                │
-│  │                 │                │
-│  │    DONUT CHART  │                │
-│  │   Status Codes  │                │
-│  │                 │                │
-│  └─────────────────┘                │
-│                                     │
+│  Status Code Distribution           │
 │  ┌───────────────────────────────┐  │
-│  │  Top Endpoints Table          │  │
+│  │         ╱╲                    │  │
+│  │    2xx ╱  ╲ 3xx               │  │
+│  │   75% ╱────╲ 10%              │  │
+│  │      ╱  ╱╲  ╲                 │  │
+│  │     ╱╱____╲╲                  │  │
+│  │    4xx    5xx                 │  │
+│  │    12%    3%                  │  │
+│  │                               │  │
+│  │  Total: 15,234 requests       │  │
 │  └───────────────────────────────┘  │
+│                                     │
+└─────────────────────────────────────┘
+```
+
+#### View Mode 2: Detailed Analysis
+
+```
+┌─────────────────────────────────────┐
+│  Detailed Status Code Analysis      │
+│  ┌───────────────────────────────┐  │
+│  │ Code │ Count │ Avg Latency    │  │
+│  │━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━│  │
+│  │ 201  │ 3,125 │ 52ms           │  │
+│  │ 404  │ 1,523 │ 23ms           │  │
+│  │ 500  │  352  │ 125ms          │  │
+│  │ 503  │  125  │ 89ms           │  │
+│  └───────────────────────────────┘  │
+│                                     │
 └─────────────────────────────────────┘
 ```
 
 ### Component Specifications:
 
-- **Top Section (3 rows)**: `donut` chart for status code distribution
+- **Default View**: `donut` chart for status code distribution
   - **Label**: "Status Code Distribution"
   - **Radius**: 8 characters
   - **Arc Width**: 3 characters
@@ -378,24 +404,26 @@ onKeyPress('3'):
   - **Center Text**: Total requests count
   - **Legend**: Show percentages for each segment
 
-- **Bottom Section (3 rows)**: `table` for top endpoints (optimized for 6×6 constraint)
-  - **Label**: "Top Endpoints (RPS)"
-  - **Columns**: Endpoint | RPS | Success%
-  - **Data**: Top 5-6 endpoints by request count
-  - **Sorting**: By RPS (descending)
-  - **Format**: Shortened endpoint URLs (first 20 chars)
-  - **Color**: Green/white text with color-coded success rates
+- **Alternate View**: Extended analysis with detailed breakdown
+  - Shows extended status code breakdown (all status codes)
+  - Includes response time distribution by status code
+  - More detailed endpoint analysis
 
-### Toggle Modes:
+### Default View Highlights (Status Distribution):
 
-1. **Status Distribution View** (default)
-   - Shows status code donut + top endpoints table
-   - Focus on current distribution and top performers
+- **Primary Focus**: High-level HTTP status code categorization
+- **Key Metrics**: 2xx/3xx/4xx/5xx request percentages in donut format
+- **Visual Cues**: Color-coded segments (Green/Yellow/Red/Magenta) for instant health assessment
+- **Use Case**: Quick overview of request success/failure ratios
+- **Layout**: Compact donut chart with center total and percentage legend
 
-2. **Detailed Analysis View**
-   - Shows extended status code breakdown
-   - Includes response time distribution by status code
-   - More detailed endpoint analysis
+### Alternate View Highlights (Detailed Analysis):
+
+- **Primary Focus**: Granular status code breakdown and performance correlation
+- **Key Metrics**: Individual status codes (200, 201, 404, 500, etc.) with response time analysis
+- **Visual Cues**: Extended table or multi-series chart showing status-specific performance
+- **Use Case**: Deep-dive analysis for troubleshooting specific error patterns
+- **Additional Data**: Response time distribution per status code, endpoint-specific breakdowns
 
 ### Toggle Logic
 
@@ -409,14 +437,14 @@ onKeyPress('4'):
   refreshQuadrant4Data()
 ```
 
----
-
 ## KEYBOARD SHORTCUTS & CONTROLS
 
 ### Core Navigation:
 
 - **Quit**: `q` / `esc` / `ctrl+c`
 - **Global/Endpoint Toggle**: `tab` (cycles through global → endpoint1 → endpoint2 → ... → global)
+- **Navigate Quadrants**: `arrow_keys` (small indicator should show which quadrant is `selected`)
+- **Full Screen**: `f` (full screens the selected quadrant)
 - **Help Overlay**: `?` (shows all shortcuts and current view states)
 
 ### Quadrant Controls:
@@ -426,26 +454,16 @@ onKeyPress('4'):
 - **Quadrant 3 Toggle**: `3` (system metrics ↔ app configuration)
 - **Quadrant 4 Toggle**: `4` (status distribution ↔ detailed analysis)
 
-### Removed Shortcuts:
-
-- ~~`s` key~~ (replaced by `1`)
-- ~~`g` key~~ (replaced by `2`)
-- ~~`c` key~~ (replaced by `3`)
-- ~~`t` key~~ (replaced by `tab`)
-- ~~`e` key~~ (replaced by `tab`)
-- ~~Arrow keys~~ (not needed with simplified navigation)
-- ~~`f` key~~ (fullscreen mode removed)
-
 ### Status Bar Enhancement:
 
 ```
-[Global View] [Q1: Actual/Target] [Q2: Line Chart] [Q3: System] [Q4: Status] | Press ? for help
+[Global View] [1: Actual/Target] [2: Line Chart] [3: System] [4: Status] | Press ? for help
 ```
 
 Or when in endpoint mode:
 
 ```
-[Endpoint: /api/users] [Q1: Actual/Target] [Q2: Line Chart] [Q3: System] [Q4: Status] | Press ? for help
+[Endpoint: /api/users] [1: Actual/Target] [2: Line Chart] [3: System] [4: Status] | Press ? for help
 ```
 
 ## COLOR SCHEME GUIDE
@@ -470,3 +488,47 @@ Or when in endpoint mode:
 ## DATA UPDATE FREQUENCY
 
 Start with 500ms updates for all components, but ensure each can be changed individually as needed.
+
+---
+
+## NETWORK BANDWIDTH IMPLEMENTATION REQUIREMENTS
+
+To implement the network bandwidth display in Quadrant 3, the following changes are required:
+
+### 1. Shared Memory System Updates
+
+- Add network bytes tracking to `src/workers/shared-memory-manager.ts`
+- Track bytes sent/received per worker thread
+- Add atomic counters for network throughput calculations
+
+### 2. AggregatedMetrics Interface Updates
+
+- Add network bandwidth fields to `src/workers/metrics-aggregator.ts`:
+  - `networkBytesSent: number`
+  - `networkBytesReceived: number`
+  - `networkThroughputMBps: number`
+
+### 3. MetricsAggregator Updates
+
+- Modify `getResults()` method to calculate network bandwidth from shared memory data
+- Calculate throughput based on bytes transferred over time window
+- Aggregate network metrics across all worker threads
+
+### 4. StatsTable Component Updates
+
+- Replace RPS display with network bandwidth metrics in `src/ui/components/stats-table.ts`
+- Update `updateFromAggregatedMetrics()` method to show:
+  - Network throughput (MB/s)
+  - Total data sent/received
+  - Network efficiency metrics
+
+### 5. Network Tracking Integration
+
+- Integrate with HTTP request/response tracking in worker threads
+- Track request/response body sizes
+- Monitor connection overhead and protocol-specific metrics
+- Update network counters in real-time during test execution
+
+### Implementation Priority
+
+This is a significant architectural change that requires modifications to the core metrics collection system. The network bandwidth tracking should be implemented as a new feature that integrates seamlessly with the existing worker thread architecture.
