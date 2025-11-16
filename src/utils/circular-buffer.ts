@@ -71,4 +71,11 @@ export class CircularBuffer<T> {
     }
     return this.capacity - this.head + this.tail;
   }
+
+  /**
+   * Gets the maximum capacity of the buffer.
+   */
+  getCapacity(): number {
+    return this.capacity;
+  }
 }

@@ -83,6 +83,10 @@ export class SharedMemoryManager {
     // Per-endpoint status codes: 4 bytes * 600 * endpoints * workers
     size += 4 * 600 * this.endpointsCount * this.workersCount;
 
+    // Network bandwidth tracking (8 bytes * 2 global + 8 bytes * 2 * endpoints * workers)
+    size += 8 * 2; // Global network bytes sent/received
+    size += 8 * 2 * this.endpointsCount * this.workersCount; // Per-endpoint network bytes
+
     // Final alignment to ensure 8-byte boundary
     size = Math.ceil(size / 8) * 8;
 
@@ -199,6 +203,31 @@ export class SharedMemoryManager {
       offset,
       600 * this.endpointsCount * this.workersCount,
     );
+    offset += 4 * 600 * this.endpointsCount * this.workersCount;
+
+    // Ensure 8-byte alignment for network bandwidth tracking
+    offset = Math.ceil(offset / 8) * 8;
+
+    // Network bandwidth tracking (8 bytes * 2 global)
+    const networkBytesSent = new Float64Array(this.buffer, offset, 1);
+    offset += 8;
+
+    const networkBytesReceived = new Float64Array(this.buffer, offset, 1);
+    offset += 8;
+
+    // Per-endpoint network bandwidth tracking (8 bytes * 2 * endpoints * workers)
+    const endpointNetworkBytesSent = new Float64Array(
+      this.buffer,
+      offset,
+      this.endpointsCount * this.workersCount,
+    );
+    offset += 8 * this.endpointsCount * this.workersCount;
+
+    const endpointNetworkBytesReceived = new Float64Array(
+      this.buffer,
+      offset,
+      this.endpointsCount * this.workersCount,
+    );
 
     return {
       totalRequests,
@@ -218,6 +247,10 @@ export class SharedMemoryManager {
       endpointEarlyExit,
       globalErrorCount,
       globalRequestCount,
+      networkBytesSent,
+      networkBytesReceived,
+      endpointNetworkBytesSent,
+      endpointNetworkBytesReceived,
       statusCodeCounts,
       endpointStatusCodeCounts,
     };
@@ -242,6 +275,8 @@ export class SharedMemoryManager {
       latency: number;
       endpointIndex: number;
       statusCode?: number;
+      bytesSent?: number;
+      bytesReceived?: number;
     },
   ): void {
     // Validate inputs to prevent corruption
@@ -358,6 +393,38 @@ export class SharedMemoryManager {
       }
     }
 
+    // Update network bandwidth tracking
+    if (result.bytesSent && result.bytesSent > 0) {
+      this.sharedMetrics.networkBytesSent[0] += result.bytesSent;
+
+      // Update per-endpoint network bytes
+      const endpointNetworkOffset =
+        workerId * this.endpointsCount + result.endpointIndex;
+      if (
+        endpointNetworkOffset <
+        this.sharedMetrics.endpointNetworkBytesSent.length
+      ) {
+        this.sharedMetrics.endpointNetworkBytesSent[endpointNetworkOffset] +=
+          result.bytesSent;
+      }
+    }
+
+    if (result.bytesReceived && result.bytesReceived > 0) {
+      this.sharedMetrics.networkBytesReceived[0] += result.bytesReceived;
+
+      // Update per-endpoint network bytes
+      const endpointNetworkOffset =
+        workerId * this.endpointsCount + result.endpointIndex;
+      if (
+        endpointNetworkOffset <
+        this.sharedMetrics.endpointNetworkBytesReceived.length
+      ) {
+        this.sharedMetrics.endpointNetworkBytesReceived[
+          endpointNetworkOffset
+        ] += result.bytesReceived;
+      }
+    }
+
     // Update global counters for early exit
     Atomics.add(this.sharedMetrics.globalRequestCount, 0, 1);
     if (!result.success) {
@@ -426,12 +493,17 @@ export class SharedMemoryManager {
     );
     const failedRequests = Atomics.load(this.sharedMetrics.failedRequests, 0);
     const totalErrors = failedRequests;
+    const networkBytesSent = this.sharedMetrics.networkBytesSent[0];
+    const networkBytesReceived = this.sharedMetrics.networkBytesReceived[0];
+
     return {
       totalRequests,
       successfulRequests,
       failedRequests,
       totalErrors,
       errorRate: totalRequests > 0 ? totalErrors / totalRequests : 0,
+      networkBytesSent,
+      networkBytesReceived,
     };
   }
 
@@ -445,6 +517,8 @@ export class SharedMemoryManager {
     ) {
       let totalRequests = 0;
       let totalErrors = 0;
+      let totalNetworkBytesSent = 0;
+      let totalNetworkBytesReceived = 0;
 
       for (let workerId = 0; workerId < this.workersCount; workerId++) {
         const offset = workerId * this.endpointsCount + endpointIndex;
@@ -466,6 +540,21 @@ export class SharedMemoryManager {
             totalErrors += errors;
           }
         }
+
+        // Aggregate network bytes for this endpoint
+        if (offset < this.sharedMetrics.endpointNetworkBytesSent.length) {
+          const bytesSent = this.sharedMetrics.endpointNetworkBytesSent[offset];
+          const bytesReceived =
+            this.sharedMetrics.endpointNetworkBytesReceived[offset];
+
+          if (bytesSent >= 0 && bytesSent <= 1e12) {
+            // Reasonable upper limit
+            totalNetworkBytesSent += bytesSent;
+          }
+          if (bytesReceived >= 0 && bytesReceived <= 1e12) {
+            totalNetworkBytesReceived += bytesReceived;
+          }
+        }
       }
 
       // Use actual endpoint URL if provided, otherwise use index
@@ -478,6 +567,8 @@ export class SharedMemoryManager {
           totalErrors: totalErrors,
           errorRate: totalErrors / totalRequests,
           errorCount: totalErrors,
+          networkBytesSent: totalNetworkBytesSent,
+          networkBytesReceived: totalNetworkBytesReceived,
         };
       }
     }
@@ -549,6 +640,16 @@ export class SharedMemoryManager {
     // Reset per-endpoint latency arrays
     for (let i = 0; i < this.workersCount * this.endpointsCount; i++) {
       Atomics.store(this.sharedMetrics.endpointLatencyWriteIndex, i, 0);
+    }
+
+    // Reset network bandwidth counters
+    this.sharedMetrics.networkBytesSent[0] = 0;
+    this.sharedMetrics.networkBytesReceived[0] = 0;
+
+    // Reset per-endpoint network counters
+    for (let i = 0; i < this.endpointsCount * this.workersCount; i++) {
+      this.sharedMetrics.endpointNetworkBytesSent[i] = 0;
+      this.sharedMetrics.endpointNetworkBytesReceived[i] = 0;
     }
 
     // Reset status code counts

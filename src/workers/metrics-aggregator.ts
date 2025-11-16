@@ -19,6 +19,9 @@ export interface AggregatedMetrics {
   requestsPerSecond: number;
   duration: number;
   statusCodeDistribution: Record<number, number>;
+  networkBytesSent: number;
+  networkBytesReceived: number;
+  networkThroughputMBps: number;
   endpointMetrics: {
     [url: string]: {
       totalRequests: number;
@@ -33,6 +36,9 @@ export interface AggregatedMetrics {
       p99Latency: number;
       requestsPerSecond: number;
       statusCodeDistribution: Record<number, number>;
+      networkBytesSent: number;
+      networkBytesReceived: number;
+      networkThroughputMBps: number;
     };
   };
 }
@@ -132,6 +138,14 @@ export class MetricsAggregator {
       const endpointStatusCodeDistribution =
         this.sharedMemory.getEndpointStatusCodeDistribution(endpointIndex);
 
+      // Calculate per-endpoint network throughput
+      const endpointNetworkThroughputMBps =
+        duration > 0
+          ? (stats.networkBytesSent + stats.networkBytesReceived) /
+            (duration / 1000) /
+            (1024 * 1024)
+          : 0;
+
       endpointMetrics[url] = {
         totalRequests: stats.totalRequests,
         successfulRequests: stats.totalRequests - stats.totalErrors,
@@ -151,6 +165,9 @@ export class MetricsAggregator {
         requestsPerSecond:
           duration > 0 ? stats.totalRequests / (duration / 1000) : 0,
         statusCodeDistribution: endpointStatusCodeDistribution,
+        networkBytesSent: stats.networkBytesSent,
+        networkBytesReceived: stats.networkBytesReceived,
+        networkThroughputMBps: endpointNetworkThroughputMBps,
       };
     }
 
@@ -167,6 +184,14 @@ export class MetricsAggregator {
       process.memoryUsage().heapUsed / 1024 / 1024,
     );
 
+    // Calculate network throughput in MB/s
+    const networkThroughputMBps =
+      duration > 0
+        ? (globalStats.networkBytesSent + globalStats.networkBytesReceived) /
+          (duration / 1000) /
+          (1024 * 1024)
+        : 0;
+
     const metrics: AggregatedMetrics = {
       totalRequests: totalRequests,
       successfulRequests: totalRequests - totalErrors,
@@ -181,6 +206,9 @@ export class MetricsAggregator {
       requestsPerSecond,
       duration,
       statusCodeDistribution: globalStatusCodeDistribution,
+      networkBytesSent: globalStats.networkBytesSent,
+      networkBytesReceived: globalStats.networkBytesReceived,
+      networkThroughputMBps,
       endpointMetrics,
       threads: workersCount,
       cpuUsagePercent,

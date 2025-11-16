@@ -1,5 +1,4 @@
 import { promises as fs } from 'fs';
-import * as os from 'os';
 import * as path from 'path';
 import { request } from 'undici';
 import { z, ZodError } from 'zod';
@@ -56,7 +55,7 @@ export const TressiOptionsConfigSchema = z
       .number()
       .int()
       .min(1)
-      .max(os.cpus().length)
+      .max(32)
       .optional()
       .describe('Number of worker threads to use (defaults to CPU count)'),
     workerMemoryLimit: z

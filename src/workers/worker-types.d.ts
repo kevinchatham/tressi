@@ -30,6 +30,12 @@ export interface SharedMetrics {
   globalErrorCount: Int32Array; // Atomic error counter for thresholds
   globalRequestCount: Int32Array; // Atomic request counter for rate calculation
 
+  // Network bandwidth tracking
+  networkBytesSent: Float64Array; // Total bytes sent (8 bytes)
+  networkBytesReceived: Float64Array; // Total bytes received (8 bytes)
+  endpointNetworkBytesSent: Float64Array; // Per-endpoint bytes sent (8 bytes * endpoints * workers)
+  endpointNetworkBytesReceived: Float64Array; // Per-endpoint bytes received (8 bytes * endpoints * workers)
+
   // Status code tracking
   statusCodeCounts: Int32Array; // Global status code counts (indices 100-599)
   endpointStatusCodeCounts: Int32Array; // Per-endpoint status codes (600 * endpoints * workers)
@@ -55,6 +61,8 @@ export interface WorkerResult {
   success: boolean;
   latency: number;
   endpointIndex: number;
+  bytesSent?: number;
+  bytesReceived?: number;
 }
 
 export interface GlobalStats {
@@ -63,6 +71,8 @@ export interface GlobalStats {
   failedRequests: number;
   totalErrors: number;
   errorRate: number;
+  networkBytesSent: number;
+  networkBytesReceived: number;
 }
 
 export interface EndpointStats {
@@ -71,5 +81,7 @@ export interface EndpointStats {
     totalErrors: number;
     errorRate: number;
     errorCount: number;
+    networkBytesSent: number;
+    networkBytesReceived: number;
   };
 }

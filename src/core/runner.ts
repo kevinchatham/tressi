@@ -75,10 +75,14 @@ export class Runner extends EventEmitter {
   }
 
   private async runWithWorkers(): Promise<void> {
-    this.workerPool = new WorkerPoolManager(
-      this.config,
-      this.config.options.threads || cpus().length,
-    );
+    const cpuCount = cpus().length;
+
+    const requestedThreads = this.config.options.threads ?? cpuCount;
+
+    const maxWorkers =
+      cpuCount > requestedThreads ? cpuCount : requestedThreads;
+
+    this.workerPool = new WorkerPoolManager(this.config, maxWorkers);
 
     await this.workerPool.start();
 
@@ -88,19 +92,19 @@ export class Runner extends EventEmitter {
     const results = this.workerPool.getAggregatedResults();
 
     // TODO do not remove / do not eslint ignore
-    console.log('\nDEBUG: Request Metrics', {
-      ...results,
-      statusCodeDistribution: JSON.stringify(results.statusCodeDistribution),
-      endpointMetrics: Object.fromEntries(
-        Object.entries(results.endpointMetrics).map(([url, data]) => [
-          url,
-          {
-            ...data,
-            statusCodeDistribution: JSON.stringify(data.statusCodeDistribution),
-          },
-        ]),
-      ),
-    });
+    // console.log('\nDEBUG: Request Metrics', {
+    //   ...results,
+    //   statusCodeDistribution: JSON.stringify(results.statusCodeDistribution),
+    //   endpointMetrics: Object.fromEntries(
+    //     Object.entries(results.endpointMetrics).map(([url, data]) => [
+    //       url,
+    //       {
+    //         ...data,
+    //         statusCodeDistribution: JSON.stringify(data.statusCodeDistribution),
+    //       },
+    //     ]),
+    //   ),
+    // });
 
     // Emit completion event with actual results
     this.emit('complete', results);

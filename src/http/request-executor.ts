@@ -40,22 +40,36 @@ export class RequestExecutor {
       // Reuse headers object instead of creating new one
       Object.assign(headers, globalHeaders, req.headers);
 
+      // Calculate request body size for bandwidth tracking
+      const requestBody =
+        req.payload === undefined ? undefined : JSON.stringify(req.payload);
+      const bytesSent = requestBody
+        ? Buffer.byteLength(requestBody, 'utf8')
+        : 0;
+
       // Use per-endpoint agents in production, global dispatcher in tests
       const dispatcher =
         process.env.NODE_ENV !== 'test'
           ? globalAgentManager.getAgent(req.url)
           : undefined; // When undefined, undici will use the global dispatcher
 
-      const { statusCode, body: responseBody } = await request(req.url, {
+      const {
+        statusCode,
+        body: responseBody,
+        headers: responseHeaders,
+      } = await request(req.url, {
         method: req.method || 'GET',
         headers,
-        body:
-          req.payload === undefined ? undefined : JSON.stringify(req.payload),
+        body: requestBody,
         dispatcher,
       });
 
       const method = req.method || 'GET';
       const latencyMs = Math.max(0, performance.now() - start);
+
+      // Calculate response body size for bandwidth tracking
+      let responseBodySize = 0;
+      let body: string | undefined;
 
       // Check if we should sample this status code for this endpoint
       const shouldSampleBody = this.responseSampler.shouldSampleResponse(
@@ -65,14 +79,24 @@ export class RequestExecutor {
       );
 
       // Handle response body sampling
-      let body: string | undefined;
       if (responseBody && shouldSampleBody) {
         try {
           body = await responseBody.text();
+          responseBodySize = Buffer.byteLength(body, 'utf8');
         } catch (e) {
           // Ignore body read errors, it might be empty.
           body = `(Could not read body: ${(e as Error).message}`;
+          responseBodySize = Buffer.byteLength(body, 'utf8');
         }
+      }
+
+      // Calculate total bytes received from headers if available
+      const contentLength = responseHeaders['content-length'];
+      if (contentLength && !responseBodySize) {
+        const contentLengthValue = Array.isArray(contentLength)
+          ? contentLength[0]
+          : contentLength;
+        responseBodySize = parseInt(contentLengthValue, 10) || 0;
       }
 
       // Populate result object from pool
@@ -83,10 +107,19 @@ export class RequestExecutor {
       result.success = statusCode >= 200 && statusCode < 300;
       result.body = body;
       result.timestamp = performance.now();
+      result.bytesSent = bytesSent;
+      result.bytesReceived = responseBodySize;
 
       return result;
     } catch (err) {
       const latencyMs = Math.max(0, performance.now() - start);
+
+      // Calculate request body size for bandwidth tracking (even in error case)
+      const requestBody =
+        req.payload === undefined ? undefined : JSON.stringify(req.payload);
+      const bytesSent = requestBody
+        ? Buffer.byteLength(requestBody, 'utf8')
+        : 0;
 
       // Populate result object for error case
       result.method = req.method || 'GET';
@@ -96,6 +129,8 @@ export class RequestExecutor {
       result.success = false;
       result.error = (err as Error).message;
       result.timestamp = performance.now();
+      result.bytesSent = bytesSent;
+      result.bytesReceived = 0;
 
       return result;
     } finally {
@@ -152,6 +187,8 @@ export class RequestExecutor {
       result.body = undefined;
       result.error = undefined;
       result.timestamp = 0;
+      result.bytesSent = 0;
+      result.bytesReceived = 0;
       this.resultPool.push(result);
     }
   }

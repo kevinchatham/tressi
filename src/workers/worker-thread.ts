@@ -103,6 +103,8 @@ export class WorkerThread {
         latency,
         endpointIndex,
         statusCode: result.status,
+        bytesSent: result.bytesSent || 0,
+        bytesReceived: result.bytesReceived || 0,
       });
 
       // Release result object back to pool

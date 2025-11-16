@@ -26,6 +26,10 @@ export type RequestResult = {
   timestamp: number;
   /** The sampled response body, if captured. */
   body?: string;
+  /** Number of bytes sent in the request body. */
+  bytesSent?: number;
+  /** Number of bytes received in the response body. */
+  bytesReceived?: number;
 };
 
 /**

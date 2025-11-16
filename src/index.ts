@@ -215,9 +215,16 @@ export async function runLoadTest(config: TressiConfig): Promise<TestSummary> {
   let tuiInterval: NodeJS.Timeout | undefined;
 
   if (useUI && !silent) {
+    // Use the quadrant-based TUI manager with configurable update frequencies
     tuiManager = new TuiManager(
       async () => await runner.stop(),
       pkg.version || 'unknown',
+      {
+        quadrant1: 500, // RPS chart - update every 500ms
+        quadrant2: 500, // Latency - update every 500ms
+        quadrant3: 1000, // System metrics - update every 1000ms
+        quadrant4: 1000, // Status distribution - update every 1000ms
+      },
     );
     tuiInterval = setInterval(() => {
       const startTime = runner.getStartTime();
@@ -226,8 +233,12 @@ export async function runLoadTest(config: TressiConfig): Promise<TestSummary> {
         durationSec || 10,
       );
       const totalSec = durationSec || 10;
+      const targetReqPerSec = config.requests.reduce(
+        (sum: number, req: { rps?: number }) => sum + (req.rps || 0),
+        0,
+      );
 
-      tuiManager!.update(runner as any, elapsedSec, totalSec); // eslint-disable-line @typescript-eslint/no-explicit-any
+      tuiManager!.update(runner as any, elapsedSec, totalSec, targetReqPerSec); // eslint-disable-line @typescript-eslint/no-explicit-any
     }, 500);
 
     const cleanupUI = (): void => {
