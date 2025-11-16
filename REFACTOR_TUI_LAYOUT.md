@@ -924,35 +924,191 @@ export class TuiPerformanceMonitor {
 }
 ```
 
-### Network Optimization
-
-- **Batch API calls**: Combine multiple metric requests into single calls
-- **WebSocket compression**: Enable per-message deflate for real-time updates
-- **Delta updates**: Only send changed metrics, not full datasets
-- **Client-side caching**: Cache frequently accessed configuration data
-- **Lazy loading**: Load endpoint-specific data only when needed
-
----
-
 ## IMPLEMENTATION CHECKLIST
 
-### Phase 1: Foundation (Week 1)
+### Phase 1: Foundation & Architecture (Week 1)
 
-- [ ] Create quadrant base classes with standardized interfaces
-- [ ] Implement buffer management system
-- [ ] Set up error handling framework
-- [ ] Create performance monitoring utilities
+#### Core Infrastructure
 
-### Phase 2: Component Migration (Week 2)
+- [ ] Create `src/ui/types/quadrant-data.ts` with TypeScript interfaces:
+  - [ ] `QuadrantData` base interface
+  - [ ] `Quadrant1RPSData` with view mode support
+  - [ ] `Quadrant2LatencyData` with percentile data and view modes
+  - [ ] `Quadrant3SystemData` with system metrics and config data
+  - [ ] `Quadrant4StatusData` with status distribution and detailed analysis
+- [ ] Implement `QuadrantComponent` interface for standardized component updates
+- [ ] Create `src/ui/buffer-manager.ts` with `QuadrantBufferManager` class:
+  - [ ] Circular buffer management for time-series data (100 points capacity)
+  - [ ] Buffer allocation for each quadrant (TIME_SERIES, GAUGE_CURRENT, TABLE_SUMMARY, STATUS_CODES)
+  - [ ] Batch update functionality for reduced render frequency
+  - [ ] Throttled update mechanism (500ms default) to prevent UI blocking
 
-- [ ] Migrate LatencyChart → Quadrant2Latency
-- [ ] Migrate ResponseChart → Quadrant4Status
-- [ ] Migrate StatsTable → Quadrant3System
-- [ ] Create Quadrant1RPS from scratch
+#### Base Classes & Framework
 
-### Phase 3: Integration (Week 3)
+- [ ] Create `src/ui/components/base/quadrant-base.ts`:
+  - [ ] Abstract `QuadrantComponent` base class with standardized interface
+  - [ ] Common functionality for view mode switching
+  - [ ] Error state handling methods
+  - [ ] Performance monitoring integration
+- [ ] Implement `src/ui/error/quadrant-error-handler.ts`:
+  - [ ] `handleNoData()` method for empty state displays
+  - [ ] `handleConnectionError()` method for connection loss scenarios
+  - [ ] `handlePartialData()` method for incomplete data scenarios
+  - [ ] Standardized error message formatting with visual indicators
 
-- [ ] Implement keyboard navigation system
-- [ ] Add view mode toggling logic
-- [ ] Integrate with existing TuiManager
-- [ ] Add status bar enhancements
+#### Performance & Memory Management
+
+- [ ] Create `src/ui/performance/quadrant-memory-manager.ts`:
+  - [ ] Automatic cleanup interval (30 seconds)
+  - [ ] Data age management (5-minute maximum age)
+  - [ ] Buffer cleanup and reset functionality
+  - [ ] Memory leak prevention mechanisms
+- [ ] Implement `src/ui/performance/tui-performance-monitor.ts`:
+  - [ ] Render time tracking for 60fps optimization (<16ms threshold)
+  - [ ] Buffer utilization monitoring
+  - [ ] Memory usage tracking
+  - [ ] Performance metrics interface (`TuiPerformanceMetrics`)
+- [ ] Set up performance optimization framework:
+  - [ ] Update frequency configuration (500ms for charts, 1000ms for system metrics)
+  - [ ] Render strategy optimization (real-time, smooth transitions, batch updates)
+  - [ ] Network optimization (batch API calls, delta updates, client-side caching)
+
+### Phase 2: Component Development & Migration (Week 2)
+
+#### Quadrant 1: RPS Chart Component (New Development)
+
+- [ ] Create `src/ui/components/quadrant-1-rps.ts`:
+  - [ ] Implement 3 view modes: 'actual-target', 'success-error', 'all-metrics'
+  - [ ] Dynamic title updates: "Requests Per Second: Actual vs Target" etc.
+  - [ ] Color-coded line series (White: Actual, Yellow: Target, Green: Success, Red: Error)
+  - [ ] Y-axis dynamic scaling based on target RPS × 1.5
+  - [ ] X-axis rolling time labels (past minute, 5s intervals)
+  - [ ] View mode cycling with '1' key binding
+  - [ ] Cycle indicator display [1/3] in corner
+  - [ ] Smart toggle logic with conditional error view display
+  - [ ] Legend updates based on current view mode
+
+#### Quadrant 2: Latency Component (Enhanced Migration)
+
+- [ ] Migrate and enhance `src/ui/components/quadrant-2-latency.ts`:
+  - [ ] Preserve existing line chart functionality from LatencyChart
+  - [ ] Add gauge view mode with vertical stack layout
+  - [ ] Implement view toggle with '2' key binding
+  - [ ] Color-coded percentiles (Cyan: p50, Yellow: p95, Red: p99)
+  - [ ] Gauge specifications: 4 gauges, 1.5 rows each, optimized for 6×6 grid
+  - [ ] Color thresholds for gauges (configurable):
+    - p50: Green <50ms, Yellow 50-100ms, Red >100ms
+    - p95: Green <100ms, Yellow 100-200ms, Red >200ms
+    - p99: Green <200ms, Yellow 200-500ms, Red >500ms
+  - [ ] Display format: "65% - 120ms" (percentage + absolute value)
+  - [ ] Update frequency: 500ms for responsive feel
+
+#### Quadrant 3: System Metrics Component (Split Migration)
+
+- [ ] Split and enhance `src/ui/components/quadrant-3-system.ts`:
+  - [ ] System Metrics View (default):
+    - [ ] Three side-by-side donut components (CPU, Memory, Network)
+    - [ ] CPU Usage: Green (<60%), Yellow (60-85%), Red (>85%)
+    - [ ] Memory Usage: Green (<60%), Yellow (60-80%), Red (>80%)
+    - [ ] Network Bandwidth: Current throughput in MB/s with color coding
+    - [ ] Update frequency: 1000ms (real-time)
+  - [ ] App Configuration View (toggle):
+    - [ ] Single table component with Setting | Value columns
+    - [ ] Rows: Test Endpoints, Target RPS, Test Duration, Worker Threads, Test Status, Elapsed Time, Configuration File Path
+    - [ ] Status indicators: 🟢 Running | 🟡 Paused | 🔴 Completed
+    - [ ] Update frequency: On toggle only (static data)
+  - [ ] View toggle with '3' key binding
+  - [ ] Cycle indicator: [System/Config] in corner
+
+#### Quadrant 4: Status Distribution Component (Enhanced Migration)
+
+- [ ] Migrate and enhance `src/ui/components/quadrant-4-status.ts`:
+  - [ ] Status Distribution View (default):
+    - [ ] Donut chart with 4 segments (2xx, 3xx, 4xx, 5xx)
+    - [ ] Color coding: Green (2xx), Yellow (3xx), Red (4xx), Magenta (5xx)
+    - [ ] Radius: 8 characters, Arc width: 3 characters
+    - [ ] Center text: Total requests count
+    - [ ] Legend with percentages for each segment
+  - [ ] Detailed Analysis View (toggle):
+    - [ ] Extended status code breakdown table
+    - [ ] Individual status codes (200, 201, 404, 500, etc.)
+    - [ ] Response time analysis per status code
+    - [ ] Endpoint-specific breakdown support
+  - [ ] View toggle with '4' key binding
+  - [ ] Integration with existing ResponseChart and LatencyDistributionTable functionality
+
+### Phase 3: Integration & Navigation System (Week 3)
+
+#### Enhanced TuiManager Integration
+
+- [ ] Refactor `src/ui/tui-manager.ts` to support quadrant architecture:
+  - [ ] Replace individual component management with quadrant-based system
+  - [ ] Implement `updateAllQuadrants()` method with shared data distribution
+  - [ ] Add quadrant state management (current view modes, selected quadrant)
+  - [ ] Integrate buffer manager for centralized data handling
+  - [ ] Add performance monitoring integration
+- [ ] Update data flow in `TuiManager.update()` method:
+  - [ ] Distribute aggregated metrics to all quadrants simultaneously
+  - [ ] Implement shared time label management across quadrants
+  - [ ] Add endpoint-specific data filtering support
+  - [ ] Integrate historical data buffering for all quadrants
+
+#### Keyboard Navigation System
+
+- [ ] Implement comprehensive keyboard event handling:
+  - [ ] Core navigation: `q` / `esc` / `ctrl+c` for quit
+  - [ ] Global/Endpoint toggle: `tab` (cycles through global → endpoint1 → endpoint2 → ... → global)
+  - [ ] Quadrant navigation: `arrow_keys` with visual selection indicator
+  - [ ] Full screen: `f` for full screening selected quadrant
+  - [ ] Help overlay: `?` for shortcuts and current view states
+- [ ] Quadrant-specific controls:
+  - [ ] `1` key: Quadrant 1 view mode cycling (RPS views)
+  - [ ] `2` key: Quadrant 2 view toggle (line chart ↔ gauge)
+  - [ ] `3` key: Quadrant 3 view toggle (system metrics ↔ app config)
+  - [ ] `4` key: Quadrant 4 view toggle (status distribution ↔ detailed analysis)
+- [ ] Add visual feedback for quadrant selection:
+  - [ ] Highlight border of selected quadrant
+  - [ ] Show quadrant selection indicator in status bar
+  - [ ] Update help overlay with current quadrant focus
+
+#### Status Bar Enhancement
+
+- [ ] Replace existing footer with enhanced status bar:
+  - [ ] Global view indicator: `[Global View]` or `[Endpoint: /api/users]`
+  - [ ] Quadrant view states: `[1: Actual/Target] [2: Line Chart] [3: System] [4: Status]`
+  - [ ] Help prompt: `| Press ? for help`
+  - [ ] Dynamic updates based on current view modes and selected quadrant
+- [ ] Implement status bar refresh mechanism:
+  - [ ] Update on view mode changes
+  - [ ] Update on quadrant selection changes
+  - [ ] Update on global/endpoint toggle
+
+### Phase 4: Network Bandwidth Implementation (Week 4)
+
+#### Shared Memory System Updates
+
+- [ ] Modify `src/workers/shared-memory-manager.ts`:
+  - [ ] Add network bytes tracking per worker thread
+  - [ ] Implement atomic counters for bytes sent/received
+  - [ ] Add network throughput calculation methods
+  - [ ] Integrate with existing shared memory architecture
+
+#### Metrics Aggregator Enhancement
+
+- [ ] Update `src/workers/metrics-aggregator.ts`:
+  - [ ] Add network bandwidth fields to `AggregatedMetrics` interface:
+    - [ ] `networkBytesSent: number`
+    - [ ] `networkBytesReceived: number`
+    - [ ] `networkThroughputMBps: number`
+  - [ ] Modify `getResults()` method to calculate network bandwidth
+  - [ ] Implement throughput calculation based on time windows
+  - [ ] Aggregate network metrics across all worker threads
+
+#### Component Integration
+
+- [ ] Update `src/ui/components/quadrant-3-system.ts`:
+  - [ ] Replace RPS display with network bandwidth metrics
+  - [ ] Update `updateFromAggregatedMetrics()` method
+  - [ ] Show network throughput (MB/s) with color coding
+  - [ ] Display total data sent/received
+  - [ ] Add network efficiency metrics
