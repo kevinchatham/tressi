@@ -532,3 +532,427 @@ To implement the network bandwidth display in Quadrant 3, the following changes 
 ### Implementation Priority
 
 This is a significant architectural change that requires modifications to the core metrics collection system. The network bandwidth tracking should be implemented as a new feature that integrates seamlessly with the existing worker thread architecture.
+
+## MIGRATION STRATEGY: From Current to New TUI Architecture
+
+### Current Component Mapping
+
+This section maps existing TUI components to the new quadrant-based architecture:
+
+#### **Current → New Quadrant Mapping**
+
+| Current Component          | Current Location       | New Quadrant   | Migration Notes                                |
+| -------------------------- | ---------------------- | -------------- | ---------------------------------------------- |
+| `LatencyChart`             | Top-right (0,6,6,6)    | **Quadrant 2** | Direct migration with enhanced view modes      |
+| `ResponseChart`            | Top-right (0,6,6,6)    | **Quadrant 4** | Convert from line chart to donut + table views |
+| `StatsTable`               | Bottom-left (6,0,6,6)  | **Quadrant 3** | Split system metrics from test configuration   |
+| `LatencyDistributionTable` | Bottom-right (6,6,6,6) | **Quadrant 4** | Enhanced detailed analysis view                |
+
+#### **Detailed Migration Steps**
+
+**Phase 1: Component Refactoring**
+
+```typescript
+// Current: src/ui/components/latency-chart.ts
+export class LatencyChart {
+  /* existing implementation */
+}
+
+// New: src/ui/components/quadrant-2-latency.ts
+export class Quadrant2Latency {
+  private lineChart: contrib.Widgets.LineElement;
+  private gaugeView: contrib.Widgets.GaugeElement;
+  private currentView: 'line' | 'gauge' = 'line';
+
+  // Enhanced with toggle functionality
+  toggleView(): void {
+    /* implementation */
+  }
+}
+```
+
+**Phase 2: Data Flow Updates**
+
+```typescript
+// Current TuiManager.update() method needs modification:
+public update(runner: Runner, elapsedSec: number, totalSec: number, targetReqPerSec?: number): void {
+  const aggregatedMetrics = runner.aggregatedMetrics;
+
+  // NEW: Update all quadrants with shared data
+  this.quadrant1RPS.updateFromAggregatedMetrics(aggregatedMetrics, elapsedSec, targetReqPerSec);
+  this.quadrant2Latency.updateFromAggregatedMetrics(aggregatedMetrics, this.timeLabels);
+  this.quadrant3System.updateFromAggregatedMetrics(aggregatedMetrics);
+  this.quadrant4Status.updateFromAggregatedMetrics(aggregatedMetrics, this.timeLabels);
+}
+```
+
+**Phase 3: State Management**
+
+- Migrate from individual component state to centralized quadrant state
+- Implement shared `CircularBuffer` management across quadrants
+- Add quadrant-specific keyboard event handling
+
+---
+
+## DATA INTERFACES & TYPE DEFINITIONS
+
+### Core Data Interfaces
+
+```typescript
+// src/ui/types/quadrant-data.ts
+
+export interface QuadrantData {
+  timestamp: number;
+  elapsedSec: number;
+  aggregatedMetrics: AggregatedMetrics;
+}
+
+export interface Quadrant1RPSData extends QuadrantData {
+  targetRPS?: number;
+  actualRPS: number;
+  successRPS: number;
+  errorRPS: number;
+  viewMode: 'actual-target' | 'success-error' | 'all-metrics';
+}
+
+export interface Quadrant2LatencyData extends QuadrantData {
+  percentiles: {
+    p50: number;
+    p95: number;
+    p99: number;
+    avg: number;
+    min: number;
+    max: number;
+  };
+  viewMode: 'line-chart' | 'gauge';
+  timeLabels: string[];
+}
+
+export interface Quadrant3SystemData extends QuadrantData {
+  systemMetrics: {
+    cpuUsage: number;
+    memoryUsageMB: number;
+    networkThroughputMBps: number;
+  };
+  configData?: {
+    endpoints: string[];
+    targetRPS: number;
+    duration: number;
+    workers: number;
+    status: 'running' | 'paused' | 'completed';
+  };
+  viewMode: 'system-metrics' | 'app-config';
+}
+
+export interface Quadrant4StatusData extends QuadrantData {
+  statusDistribution: {
+    '2xx': number;
+    '3xx': number;
+    '4xx': number;
+    '5xx': number;
+  };
+  detailedStatusCodes?: Array<{
+    code: number;
+    count: number;
+    avgLatency: number;
+  }>;
+  viewMode: 'status-distribution' | 'detailed-analysis';
+  totalRequests: number;
+}
+```
+
+### Component Update Methods
+
+```typescript
+// Standardized update interface for all quadrants
+export interface QuadrantComponent {
+  update(data: QuadrantData): void;
+  clear(): void;
+  getElement(): blessed.Widgets.BlessedElement;
+  setViewMode(mode: string): void;
+}
+
+// Implementation example for Quadrant 1
+export class Quadrant1RPS implements QuadrantComponent {
+  update(data: Quadrant1RPSData): void {
+    const { actualRPS, successRPS, errorRPS, targetRPS, viewMode } = data;
+
+    switch (viewMode) {
+      case 'actual-target':
+        this.renderActualVsTarget(actualRPS, targetRPS);
+        break;
+      case 'success-error':
+        this.renderSuccessVsError(successRPS, errorRPS);
+        break;
+      case 'all-metrics':
+        this.renderAllMetrics(actualRPS, targetRPS, successRPS, errorRPS);
+        break;
+    }
+  }
+}
+```
+
+---
+
+## ERROR STATE HANDLING & FALLBACK DISPLAYS
+
+### Error State Mockups
+
+#### **Quadrant 1: RPS Chart - No Data Available**
+
+```
+┌─────────────────────────────────────┐
+│  Requests Per Second: No Data       │
+│  ┌───────────────────────────────┐  │
+│  │                               │  │
+│  │  ⚠ No requests recorded yet   │  │
+│  │  Test may be starting...      │  │
+│  │                               │  │
+│  │  [Waiting for data...]        │  │
+│  └───────────────────────────────┘  │
+│                                     │
+└─────────────────────────────────────┘
+```
+
+#### **Quadrant 2: Latency - Connection Error**
+
+```
+┌─────────────────────────────────────┐
+│  Latency Percentiles: Error         │
+│  ┌───────────────────────────────┐  │
+│  │                               │  │
+│  │  ⚠ Connection lost            │  │
+│  │  Retrying in 5s...            │  │
+│  │                               │  │
+│  │  [Reconnecting...]            │  │
+│  └───────────────────────────────┘  │
+│                                     │
+└─────────────────────────────────────┘
+```
+
+#### **Quadrant 3: System Metrics - Metrics Unavailable**
+
+```
+┌─────────────────────────────────────┐
+│  System Health: Metrics Unavailable │
+│  ┌───────────────────────────────┐  │
+│  │  CPU: --%      MEM: --MB      │  │
+│  │  ┌──────┐     ┌──────┐        │  │
+│  │  │  --  │     │  --  │        │  │
+│  │  └──────┘     └──────┘        │  │
+│  │                               │  │
+│  │  System metrics unavailable   │  │
+│  └───────────────────────────────┘  │
+│                                     │
+└─────────────────────────────────────┘
+```
+
+#### **Quadrant 4: Status Distribution - No Requests**
+
+```
+┌─────────────────────────────────────┐
+│  Status Code Distribution: No Data  │
+│  ┌───────────────────────────────┐  │
+│  │                               │  │
+│  │  ⚠ No HTTP requests yet       │  │
+│  │  Waiting for traffic...       │  │
+│  │                               │  │
+│  │  [No data to display]         │  │
+│  └───────────────────────────────┘  │
+│                                     │
+└─────────────────────────────────────┘
+```
+
+### Error Handling Implementation
+
+```typescript
+export class QuadrantErrorHandler {
+  static handleNoData(quadrant: QuadrantComponent, message: string): void {
+    quadrant.getElement().setContent(`⚠ ${message}\n[Waiting for data...]`);
+    quadrant
+      .getElement()
+      .setLabel(`${quadrant.getElement().getLabel()}: No Data`);
+  }
+
+  static handleConnectionError(
+    quadrant: QuadrantComponent,
+    retryInSeconds: number,
+  ): void {
+    quadrant
+      .getElement()
+      .setContent(
+        `⚠ Connection lost\nRetrying in ${retryInSeconds}s...\n[Reconnecting...]`,
+      );
+    quadrant
+      .getElement()
+      .setLabel(`${quadrant.getElement().getLabel()}: Error`);
+  }
+
+  static handlePartialData(
+    quadrant: QuadrantComponent,
+    availableMetrics: string[],
+  ): void {
+    // Show available metrics with placeholders for missing ones
+    const content =
+      availableMetrics.length > 0
+        ? `Partial data available:\n${availableMetrics.join('\n')}\n⚠ Some metrics missing`
+        : '⚠ No metrics available';
+
+    quadrant.getElement().setContent(content);
+  }
+}
+```
+
+---
+
+## PERFORMANCE CONSIDERATIONS & OPTIMIZATION
+
+### Buffer Management Strategy
+
+```typescript
+// src/ui/buffer-manager.ts
+export class QuadrantBufferManager {
+  private static readonly BUFFER_SIZES = {
+    TIME_SERIES: 100, // 100 data points for historical charts
+    GAUGE_CURRENT: 1, // Only current value for gauges
+    TABLE_SUMMARY: 50, // 50 rows max for table views
+    STATUS_CODES: 20, // Top 20 status codes max
+  };
+
+  private buffers: Map<string, CircularBuffer<any>> = new Map();
+
+  constructor() {
+    // Initialize buffers for each quadrant
+    this.buffers.set(
+      'quadrant1-time',
+      new CircularBuffer<string>(this.BUFFER_SIZES.TIME_SERIES),
+    );
+    this.buffers.set(
+      'quadrant1-rps',
+      new CircularBuffer<number>(this.BUFFER_SIZES.TIME_SERIES),
+    );
+    this.buffers.set(
+      'quadrant2-latency',
+      new CircularBuffer<number>(this.BUFFER_SIZES.TIME_SERIES),
+    );
+    // ... etc
+  }
+
+  // Batch updates to reduce render frequency
+  batchUpdate(quadrantId: string, data: any[]): void {
+    const buffer = this.buffers.get(quadrantId);
+    if (buffer) {
+      data.forEach((item) => buffer.add(item));
+    }
+  }
+
+  // Throttled updates to prevent UI blocking
+  throttledUpdate(
+    quadrantId: string,
+    data: any,
+    throttleMs: number = 500,
+  ): void {
+    // Implementation using lodash.throttle or custom throttling
+  }
+}
+```
+
+### Update Frequency Optimization
+
+| Component                | Update Frequency | Buffer Size  | Render Strategy         |
+| ------------------------ | ---------------- | ------------ | ----------------------- |
+| **Quadrant 1 (RPS)**     | 500ms            | 100 points   | Real-time line updates  |
+| **Quadrant 2 (Latency)** | 500ms            | 100 points   | Smooth line transitions |
+| **Quadrant 3 (System)**  | 1000ms           | Current only | Donut smooth animations |
+| **Quadrant 4 (Status)**  | 1000ms           | 20 codes max | Batch status updates    |
+
+### Memory Management
+
+```typescript
+// Prevent memory leaks with automatic cleanup
+export class QuadrantMemoryManager {
+  private cleanupInterval: NodeJS.Timeout;
+  private readonly MAX_MEMORY_AGE = 5 * 60 * 1000; // 5 minutes
+
+  constructor() {
+    // Clean up old data every 30 seconds
+    this.cleanupInterval = setInterval(() => this.cleanup(), 30000);
+  }
+
+  private cleanup(): void {
+    // Remove data older than 5 minutes
+    // Clear unused buffers
+    // Reset circular buffers that are full
+  }
+
+  destroy(): void {
+    clearInterval(this.cleanupInterval);
+    // Clear all buffers
+    // Reset all component states
+  }
+}
+```
+
+### Performance Monitoring
+
+```typescript
+// Built-in performance metrics for the TUI itself
+export interface TuiPerformanceMetrics {
+  renderTimeMs: number;
+  bufferUtilization: number;
+  memoryUsageMB: number;
+  updateFrequency: number;
+  droppedFrames: number;
+}
+
+export class TuiPerformanceMonitor {
+  trackRenderTime(quadrantId: string, renderFn: () => void): number {
+    const start = performance.now();
+    renderFn();
+    const end = performance.now();
+    return end - start;
+  }
+
+  // Alert if render time > 16ms (60fps threshold)
+  checkPerformance(metrics: TuiPerformanceMetrics): void {
+    if (metrics.renderTimeMs > 16) {
+      console.warn(
+        `Quadrant render time exceeded 60fps threshold: ${metrics.renderTimeMs}ms`,
+      );
+    }
+  }
+}
+```
+
+### Network Optimization
+
+- **Batch API calls**: Combine multiple metric requests into single calls
+- **WebSocket compression**: Enable per-message deflate for real-time updates
+- **Delta updates**: Only send changed metrics, not full datasets
+- **Client-side caching**: Cache frequently accessed configuration data
+- **Lazy loading**: Load endpoint-specific data only when needed
+
+---
+
+## IMPLEMENTATION CHECKLIST
+
+### Phase 1: Foundation (Week 1)
+
+- [ ] Create quadrant base classes with standardized interfaces
+- [ ] Implement buffer management system
+- [ ] Set up error handling framework
+- [ ] Create performance monitoring utilities
+
+### Phase 2: Component Migration (Week 2)
+
+- [ ] Migrate LatencyChart → Quadrant2Latency
+- [ ] Migrate ResponseChart → Quadrant4Status
+- [ ] Migrate StatsTable → Quadrant3System
+- [ ] Create Quadrant1RPS from scratch
+
+### Phase 3: Integration (Week 3)
+
+- [ ] Implement keyboard navigation system
+- [ ] Add view mode toggling logic
+- [ ] Integrate with existing TuiManager
+- [ ] Add status bar enhancements
