@@ -7,7 +7,7 @@ export default defineConfig([
     format: ['cjs'],
     dts: true,
     sourcemap: true,
-    clean: true,
+    clean: false,
     tsconfig: 'tsconfig.json',
   },
   {
@@ -15,11 +15,10 @@ export default defineConfig([
     outDir: '../../dist',
     format: ['cjs'],
     sourcemap: true,
-    clean: false, // Don't clean the dist folder for the second entry
+    clean: false,
     banner: {
       js: '#!/usr/bin/env node',
     },
-    // Enable TypeScript strict checking to match tsconfig.json
     tsconfig: 'tsconfig.json',
   },
   {

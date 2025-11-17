@@ -67,14 +67,14 @@ export function generateMinimalConfig(): TressiConfig {
     },
     requests: [
       {
-        url: 'https://jsonplaceholder.typicode.com/posts/1',
+        url: 'https://postman-echo.com/get',
         method: 'GET',
-        rps: 10,
+        rps: 1,
       },
       {
-        url: 'https://jsonplaceholder.typicode.com/posts',
+        url: 'https://postman-echo.com/post',
         method: 'POST',
-        rps: 5,
+        rps: 1,
         payload: {
           name: 'Tressi Post',
         },
@@ -101,14 +101,14 @@ export function generateFullConfig(): TressiConfig {
     }),
     requests: [
       {
-        url: 'https://jsonplaceholder.typicode.com/posts/1',
+        url: 'https://postman-echo.com/get',
         method: 'GET',
-        rps: 10,
+        rps: 1,
       },
       {
-        url: 'https://jsonplaceholder.typicode.com/posts',
+        url: 'https://postman-echo.com/post',
         method: 'POST',
-        rps: 5,
+        rps: 1,
         payload: {
           name: 'Tressi Post',
         },

@@ -5,6 +5,7 @@ import pkg from '../../../package.json';
 import { ConfigCommand } from './commands/config-command';
 import { InitCommand } from './commands/init-command';
 import { RunCommand } from './commands/run-command';
+import { ServeCommand } from './commands/serve-command';
 import { clearTerminal } from './utils/cli-utils';
 
 /**
@@ -66,6 +67,18 @@ export class TressiCLI {
         await command.execute(options, configPath);
       });
 
+    // Serve command
+    this.program
+      .command('serve')
+      .summary('Start a Hono server with healthcheck endpoint')
+      .description(ServeCommand.getDescription())
+      .option('-p, --port <port>', 'Server port (default: 3108)', '3108')
+      .action(async (options) => {
+        const command = new ServeCommand();
+        const port = parseInt(options.port, 10);
+        await command.execute({ port });
+      });
+
     // Default run command (when no specific command is provided)
     this.program.action(async (opts) => {
       const command = new RunCommand();
@@ -83,6 +96,7 @@ export class TressiCLI {
 Commands:
   init    Create a tressi.config.json file
   config  Display current configuration
+  serve   Start a Hono server with healthcheck endpoint
 
 Options:
   -c, --config <path>  Path or URL to JSON configuration file (local file path or remote URL)
@@ -115,6 +129,12 @@ Examples:
 
   # View configuration from a specific file
   $ tressi --config ./my-config.json config
+
+  # Start the Tressi server on default port (3000)
+  $ tressi serve
+
+  # Start the Tressi server on a custom port
+  $ tressi serve --port 8080
 `,
     );
   }

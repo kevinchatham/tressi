@@ -3,7 +3,7 @@
   "options": {
     "durationSec": 100,
     "rampUpTimeSec": 0,
-    "useUI": true,
+    "useUI": false,
     "silent": false,
     "earlyExitOnError": false,
     "workerMemoryLimit": 128,
@@ -15,14 +15,17 @@
   },
   "requests": [
     {
-      "url": "http://localhost:5000/delay/500",
+      "url": "https://postman-echo.com/get",
       "method": "GET",
       "rps": 1
     },
     {
-      "url": "http://localhost:5000/success",
-      "method": "GET",
-      "rps": 10
+      "url": "https://postman-echo.com/post",
+      "method": "POST",
+      "rps": 1,
+      "payload": {
+        "name": "Tressi Post"
+      }
     }
   ]
 }

@@ -31,16 +31,19 @@
     "projects/tressi-ui"
   ],
   "scripts": {
-    "build": "npx rimraf dist && npm run build:common && npm run build:ui && npm run build:cli",
-    "build:cli": "npm run build -w projects/tressi-cli",
-    "build:common": "npm run build -w projects/tressi-common",
-    "build:ui": "npm run build -w projects/tressi-ui",
+    "build": "npx rimraf dist && npm run common:build && npm run ui:build && npm run cli:build",
     "clean": "npx rimraf --glob \"**/package-lock.json\" \"dist\" \"**/dist\" \"node_modules\" \"**/node_modules\" && npm i",
+    "cli:build": "npm run build -w projects/tressi-cli",
+    "cli:run": "npm run run -w projects/tressi-cli",
+    "cli:serve": "npm run serve -w projects/tressi-cli",
+    "common:build": "npm run build -w projects/tressi-common",
     "format:watch": "chokidar \"**/*.{ts,json,md}\" -c \"npm run format\" --ignore \"**/node_modules/**\" --ignore \"**/dist/**\"",
     "format": "prettier --write . --config .prettierrc --ignore-path .prettierignore",
     "lint:inspect": "eslint --inspect-config",
     "lint:watch": "chokidar \"**/*.ts\" -c \"npm run lint\" --ignore \"**/node_modules/**\" --ignore \"**/dist/**\"",
-    "lint": "eslint --fix --format unix --config ./eslint.config.mjs ."
+    "lint": "eslint --fix --format unix --config ./eslint.config.mjs .",
+    "ui:build": "npm run build -w projects/tressi-ui",
+    "ui:serve": "npm run serve -w projects/tressi-ui"
   },
   "dependencies": {
     "zod": "^3.25.74"
