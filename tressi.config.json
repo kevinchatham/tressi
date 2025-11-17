@@ -1,23 +1,28 @@
 {
-  "$schema": "./schemas/tressi.schema.v0.0.13.json",
+  "$schema": "./tressi.schema.json",
   "options": {
-    "workers": 1,
-    "durationSec": 10,
-    "rps": 1,
-    "autoscale": true,
-    "useUI": true
+    "durationSec": 100,
+    "rampUpTimeSec": 0,
+    "useUI": true,
+    "silent": false,
+    "earlyExitOnError": false,
+    "workerMemoryLimit": 128,
+    "workerEarlyExit": {
+      "enabled": false,
+      "monitoringWindowMs": 1000,
+      "stopMode": "endpoint"
+    }
   },
   "requests": [
     {
-      "url": "https://jsonplaceholder.typicode.com/posts/1",
-      "method": "GET"
+      "url": "http://localhost:5000/delay/500",
+      "method": "GET",
+      "rps": 1
     },
     {
-      "url": "https://jsonplaceholder.typicode.com/posts",
-      "method": "POST",
-      "payload": {
-        "name": "Tressi Post"
-      }
+      "url": "http://localhost:5000/success",
+      "method": "GET",
+      "rps": 10
     }
   ]
 }

@@ -1,7 +1,7 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 
-import { generateFullConfig, generateMinimalConfig } from '../../config';
+import { generateFullConfig, generateMinimalConfig } from '../../core/config';
 
 /**
  * Handles the 'init' command for creating Tressi configuration files.

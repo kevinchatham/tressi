@@ -5,15 +5,21 @@ import { loadConfig } from '../../src/config';
 
 const minimalConfig = {
   $schema: 'https://example.com/schema.json',
-  requests: [{ url: 'http://localhost:8080/test', method: 'GET' as const }],
+  requests: [
+    { url: 'http://localhost:8080/test', method: 'GET' as const, rps: 10 },
+  ],
   options: {
-    rps: 10,
-    workers: 10,
     durationSec: 10,
     rampUpTimeSec: 0,
     useUI: true,
     silent: false,
     earlyExitOnError: false,
+    workerMemoryLimit: 128,
+    workerEarlyExit: {
+      enabled: false,
+      monitoringWindowMs: 1000,
+      stopMode: 'endpoint',
+    },
   },
 };
 
@@ -21,10 +27,8 @@ const expectedConfig = {
   $schema: 'https://example.com/schema.json',
   requests: [{ url: 'http://localhost:8080/test', method: 'GET' }],
   options: expect.objectContaining({
-    workers: 10,
     durationSec: 10,
     rampUpTimeSec: 0,
-    rps: 10,
     useUI: true,
     silent: false,
     earlyExitOnError: false,
@@ -100,13 +104,17 @@ describe('config', () => {
           headers: {
             Authorization: 'Bearer global-token',
           },
-          workers: 1,
           durationSec: 1,
           rampUpTimeSec: 0,
-          rps: 10,
           useUI: true,
           silent: false,
           earlyExitOnError: false,
+          workerMemoryLimit: 128,
+          workerEarlyExit: {
+            enabled: false,
+            monitoringWindowMs: 1000,
+            stopMode: 'endpoint',
+          },
         },
         requests: [
           {
@@ -115,6 +123,7 @@ describe('config', () => {
             headers: {
               'X-Request-ID': '123',
             },
+            rps: 10,
           },
         ],
       };

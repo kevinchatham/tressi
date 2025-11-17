@@ -1,198 +1,96 @@
-import { createServer } from 'http';
-import { createServer as createNetServer } from 'net';
+import * as net from 'net';
 
-export interface TestServer {
-  port: number;
-  kill: (signal?: NodeJS.Signals) => boolean;
-}
+import type { TressiConfig } from '../../src/types/index';
 
-export async function startTestServer(port: number = 0): Promise<TestServer> {
-  return new Promise((resolve, reject) => {
-    const server = createServer((req, res) => {
-      const url = new URL(req.url || '/', 'http://localhost:' + port);
-
-      // Health check endpoint
-      if (url.pathname === '/health') {
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ status: 'ok' }));
-        return;
-      }
-
-      // Success endpoint
-      if (url.pathname === '/success') {
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ message: 'success' }));
-        return;
-      }
-
-      // Server error endpoint
-      if (url.pathname === '/server-error') {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Internal server error' }));
-        return;
-      }
-
-      // Not found endpoint
-      if (url.pathname === '/not-found') {
-        res.writeHead(404, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Not found' }));
-        return;
-      }
-
-      // Delay endpoint
-      if (url.pathname.startsWith('/delay/')) {
-        const delay = parseInt(url.pathname.split('/')[2]) || 1000;
-        setTimeout(() => {
-          res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ delay }));
-        }, delay);
-        return;
-      }
-
-      // Timeout endpoint
-      if (url.pathname === '/timeout') {
-        // Never respond
-        return;
-      }
-
-      // Chunked transfer endpoint
-      if (url.pathname === '/chunked') {
-        res.writeHead(200, {
-          'Content-Type': 'text/plain',
-          'Transfer-Encoding': 'chunked',
-        });
-
-        let chunks = 0;
-        const interval = setInterval(() => {
-          if (chunks >= 5) {
-            clearInterval(interval);
-            res.end();
-            return;
-          }
-          res.write('chunk-' + chunks + '\n');
-          chunks++;
-        }, 100);
-        return;
-      }
-
-      // Redirect endpoint
-      if (url.pathname.startsWith('/redirect/')) {
-        const code = parseInt(url.pathname.split('/')[2]) || 301;
-        const target = url.searchParams.get('url') || '/success';
-        res.writeHead(code, { Location: target });
-        res.end();
-        return;
-      }
-
-      // Rate limit endpoint
-      if (url.pathname === '/rate-limit') {
-        const count = parseInt(url.searchParams.get('count') || '10');
-        const window = parseInt(url.searchParams.get('window') || '1000');
-
-        // Simple rate limiting simulation
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(
-          JSON.stringify({
-            limit: count,
-            remaining: Math.max(0, count - 1),
-            reset: Date.now() + window,
-          }),
-        );
-        return;
-      }
-
-      // Headers endpoint
-      if (url.pathname === '/headers') {
-        res.writeHead(200, {
-          'Content-Type': 'application/json',
-          'X-Custom-Header': 'test-value',
-        });
-        res.end(
-          JSON.stringify({
-            headers: req.headers,
-            method: req.method,
-          }),
-        );
-        return;
-      }
-
-      // Default response
-      res.writeHead(404, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: 'Endpoint not found' }));
-    });
-
-    server.listen(port, () => {
-      const address = server.address();
-      if (address && typeof address === 'object') {
-        resolve({
-          port: address.port,
-          kill: () => {
-            server.close();
-            return true;
-          },
-        });
-      } else {
-        reject(new Error('Failed to get server address'));
-      }
-    });
-
-    server.on('error', reject);
-  });
-}
-
-export async function getAvailablePort(): Promise<number> {
-  return new Promise((resolve, reject) => {
-    const server = createNetServer();
-    server.listen(0, () => {
-      const address = server.address();
-      if (address && typeof address === 'object') {
-        const port = address.port;
-        server.close(() => resolve(port));
-      } else {
-        server.close();
-        reject(new Error('Failed to get available port'));
-      }
-    });
-    server.on('error', reject);
-  });
-}
-
-export interface TestConfig {
-  requests: unknown[];
-  options: {
-    durationSec: number;
-    workers: number;
-    rps: number;
-    timeoutMs: number;
-    [key: string]: unknown;
-  };
-  [key: string]: unknown;
-}
-
-export function createTestConfig(
-  overrides: Partial<TestConfig> = {},
-): TestConfig {
-  return {
-    requests: [],
-    options: {
-      durationSec: 1,
-      workers: 1,
+/**
+ * Standard test configuration that includes all required fields
+ */
+export const createTestConfig = (
+  overrides: Partial<TressiConfig> = {},
+): TressiConfig => ({
+  $schema:
+    'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json',
+  requests: [
+    {
+      url: 'http://localhost:8080/test',
+      method: 'GET',
       rps: 10,
-      timeoutMs: 5000,
-      ...overrides.options,
     },
-    ...overrides,
-  };
-}
+  ],
+  options: {
+    durationSec: 5,
+    rampUpTimeSec: 0,
+    useUI: false,
+    silent: true,
+    earlyExitOnError: false,
+    workerMemoryLimit: 128,
+    workerEarlyExit: {
+      enabled: false,
+      monitoringWindowMs: 1000,
+      stopMode: 'endpoint',
+    },
+    ...overrides.options,
+  },
+  ...overrides,
+});
 
-export async function withTestServer(
-  testFn: (server: TestServer) => Promise<void>,
-  port?: number,
-): Promise<void> {
-  const server = await startTestServer(port);
-  try {
-    await testFn(server);
-  } finally {
-    server.kill();
-  }
-}
+/**
+ * Worker-specific test configuration
+ */
+export const createWorkerTestConfig = (
+  overrides: Partial<TressiConfig> = {},
+): TressiConfig => ({
+  ...createTestConfig(),
+  options: {
+    ...createTestConfig().options,
+    threads: 2,
+    ...overrides.options,
+  },
+  ...overrides,
+});
+
+/**
+ * Minimal test configuration for simple tests
+ */
+export const createMinimalTestConfig = (
+  overrides: Partial<TressiConfig> = {},
+): TressiConfig => ({
+  $schema:
+    'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json',
+  requests: [
+    {
+      url: 'http://localhost:8080/test',
+      method: 'GET',
+      rps: 1,
+    },
+  ],
+  options: {
+    durationSec: 1,
+    rampUpTimeSec: 0,
+    useUI: false,
+    silent: true,
+    earlyExitOnError: false,
+    workerMemoryLimit: 64,
+    workerEarlyExit: {
+      enabled: false,
+      monitoringWindowMs: 1000,
+      stopMode: 'endpoint',
+    },
+    ...overrides.options,
+  },
+  ...overrides,
+});
+
+/**
+ * Gets an available port for testing
+ */
+export const getAvailablePort = (): Promise<number> => {
+  return new Promise((resolve, reject) => {
+    const server = net.createServer();
+    server.listen(0, () => {
+      const port = (server.address() as { port: number }).port;
+      server.close(() => resolve(port));
+    });
+    server.on('error', reject);
+  });
+};

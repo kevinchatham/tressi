@@ -1,15 +1,15 @@
 /* eslint-disable no-console */
 import chalk from 'chalk';
 
-import { defaultTressiOptions } from '../../config';
+import { defaultTressiOptions } from '../../core/config';
 import type {
   DisplayOptions,
-  SafeTressiConfig,
+  TressiConfig,
   TressiOptionsConfig,
 } from '../../types';
 
 export function displayConfig(
-  config: SafeTressiConfig,
+  config: TressiConfig,
   options: DisplayOptions,
 ): void {
   if (options.json) {
@@ -17,11 +17,16 @@ export function displayConfig(
     return;
   }
 
+  if (options.raw) {
+    console.log(JSON.stringify(config, null, 2));
+    return;
+  }
+
   displayHumanReadable(config, options);
 }
 
 function displayHumanReadable(
-  config: SafeTressiConfig,
+  config: TressiConfig,
   options: DisplayOptions,
 ): void {
   console.log(chalk.bold('\n📋 Current Tressi Configuration'));
@@ -38,6 +43,7 @@ function displayHumanReadable(
   displayOptionsWithDefaults(config.options);
 
   console.log(chalk.bold(`\n🌐 Requests (${config.requests.length} total):`));
+
   config.requests.forEach((request, index) => {
     displayRequest(index + 1, request);
   });
@@ -46,9 +52,9 @@ function displayHumanReadable(
 function displayOptionsWithDefaults(options: TressiOptionsConfig): void {
   const entries = [
     {
-      key: 'workers',
-      value: options.workers,
-      default: defaultTressiOptions.workers,
+      key: 'concurrency',
+      value: 'Adaptive (based on system metrics)',
+      default: 'Adaptive',
     },
     {
       key: 'durationSec',
@@ -60,7 +66,6 @@ function displayOptionsWithDefaults(options: TressiOptionsConfig): void {
       value: options.rampUpTimeSec,
       default: defaultTressiOptions.rampUpTimeSec,
     },
-    { key: 'rps', value: options.rps, default: undefined },
     { key: 'useUI', value: options.useUI, default: defaultTressiOptions.useUI },
     {
       key: 'silent',
@@ -117,9 +122,11 @@ function displayRequest(
     method?: string;
     headers?: Record<string, string>;
     payload?: unknown;
+    rps?: number;
   },
 ): void {
   console.log(`  ${index}. ${request.method || 'GET'} ${request.url}`);
+  console.log(`     RPS: ${request.rps || 1}`);
   if (request.headers && Object.keys(request.headers).length > 0) {
     console.log(
       `     Headers: ${JSON.stringify(request.headers, null, 2).replace(/\n/g, '\n            ')}`,
@@ -133,7 +140,7 @@ function displayRequest(
 }
 
 function formatConfigAsJson(
-  config: SafeTressiConfig,
+  config: TressiConfig,
   options: DisplayOptions,
 ): Record<string, unknown> {
   return {

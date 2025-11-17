@@ -22,4 +22,12 @@ export default defineConfig([
     // Enable TypeScript strict checking to match tsconfig.json
     tsconfig: 'tsconfig.json',
   },
+  {
+    entry: ['src/workers/worker-thread.ts'],
+    outDir: 'dist/workers',
+    format: ['cjs'],
+    sourcemap: true,
+    clean: false,
+    tsconfig: 'tsconfig.json',
+  },
 ]);

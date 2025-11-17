@@ -5,12 +5,14 @@ export default defineConfig({
     globals: true,
     setupFiles: ['tests/setup/test-setup.ts'],
     include: [
-      'tests/unit/**/*.test.ts',
-      'tests/integration/**/*.test.ts',
       'tests/e2e/**/*.test.ts',
+      'tests/integration/**/*.test.ts',
       'tests/performance/**/*.test.ts',
+      'tests/server/**/*.test.ts',
+      'tests/unit/**/*.test.ts',
+      'tests/workers/**/*.test.ts',
     ],
-    exclude: ['tests/fixtures/**', 'tests/utils/**', 'tests/setup/**'],
+    exclude: ['tests/utils/**', 'tests/setup/**'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
@@ -32,8 +34,14 @@ export default defineConfig({
         },
       },
     },
-    testTimeout: 120000,
-    hookTimeout: 10000,
-    teardownTimeout: 10000,
+    testTimeout: 60000, // Increased for worker tests
+    hookTimeout: 20000,
+    teardownTimeout: 20000,
+    threads: false, // Disable Vitest threads for worker testing
+    poolOptions: {
+      threads: {
+        singleThread: true,
+      },
+    },
   },
 });

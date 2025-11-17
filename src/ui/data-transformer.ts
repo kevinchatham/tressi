@@ -1,48 +1,33 @@
-import { Histogram } from 'hdr-histogram-js';
-
-import type { CoreRunner } from '../core/runner/core-runner';
-import { getStatusCodeDistributionByCategory } from '../stats';
-
 /**
  * Transforms runner data into UI-friendly formats for display components.
  */
 export class DataTransformer {
   /**
    * Transforms latency data for chart display.
-   * @param histogram The HDR histogram containing latency data
    * @param dataPoints The number of historical data points to include
    * @returns Array of latency values for chart rendering
    */
-  static transformLatencyData(
-    _histogram: Histogram,
-    dataPoints: number[],
-  ): number[] {
+  static transformLatencyData(dataPoints: number[]): number[] {
     return dataPoints.map((value) => Math.round(value));
   }
 
   /**
    * Transforms response code distribution data for chart display.
-   * @param statusCodeMap Map of status codes to their counts
    * @param historicalData Historical data points for each category
    * @returns Object containing transformed data for each response category
    */
-  static transformResponseCodeData(
-    statusCodeMap: Record<number, number>,
-    historicalData: {
-      success: number[];
-      redirect: number[];
-      clientError: number[];
-      serverError: number[];
-    },
-  ): Array<{
+  static transformResponseCodeData(historicalData: {
+    success: number[];
+    redirect: number[];
+    clientError: number[];
+    serverError: number[];
+  }): Array<{
     title: string;
     x: string[];
     y: number[];
     style?: { line: string };
   }> {
     const series = [];
-    // Validate status codes but don't use the result directly
-    getStatusCodeDistributionByCategory(statusCodeMap);
 
     if (historicalData.success.some((v) => v > 0)) {
       series.push({
@@ -120,7 +105,7 @@ export class DataTransformer {
     successfulRequests: number;
     failedRequests: number;
     averageLatency: number;
-    workerCount: number;
+    totalRps: number;
   }): {
     headers: string[];
     data: string[][];
@@ -131,7 +116,7 @@ export class DataTransformer {
 
     const data: string[][] = [
       ['Time', `${stats.elapsedSec.toFixed(0)}s / ${stats.totalSec}s`],
-      ['Workers', stats.workerCount.toString()],
+      ['Target RPS', stats.totalRps.toString()],
       ['Req/s (Actual/Target)', rpsStat],
       [
         'Success / Fail',
@@ -167,39 +152,59 @@ export class DataTransformer {
 
   /**
    * Extracts all necessary data from a Runner instance for UI display.
-   * @param runner The Runner instance
-   * @param elapsedSec Elapsed time in seconds
-   * @param totalSec Total test duration in seconds
-   * @param targetReqPerSec Target requests per second
    * @returns Comprehensive data object for UI components
    */
-  static extractRunnerData(runner: CoreRunner): {
-    histogram: Histogram;
-    statusCodeMap: Record<number, number>;
-    currentReqPerSec: number;
-    successfulRequests: number;
-    failedRequests: number;
-    averageLatency: number;
-    workerCount: number;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  static extractRunnerData(runner: any): {
+    histogram: { mean: number };
     latencyDistribution: Array<{
       latency: string;
       count: string;
       percent: string;
       cumulative: string;
     }>;
+    currentReqPerSec: number;
+    successfulRequests: number;
+    failedRequests: number;
+    averageLatency: number;
   } {
-    const resultAggregator = runner.getResultAggregator();
+    // Get results from the runner
+    const results =
+      runner && typeof runner.getResults === 'function'
+        ? runner.getResults()
+        : null;
+
+    if (!results) {
+      return {
+        histogram: { mean: 0 },
+        latencyDistribution: [],
+        currentReqPerSec: 0,
+        successfulRequests: 0,
+        failedRequests: 0,
+        averageLatency: 0,
+      };
+    }
+
+    const typedResults = results as {
+      averageLatency?: number;
+      currentReqPerSec?: number;
+      successfulRequests?: number;
+      failedRequests?: number;
+      latencyDistribution?: Array<{
+        latency: string;
+        count: string;
+        percent: string;
+        cumulative: string;
+      }>;
+    };
+
     return {
-      histogram: resultAggregator.getGlobalHistogram(),
-      statusCodeMap: resultAggregator.getStatusCodeMap(),
-      currentReqPerSec: 0, // Will be calculated from recent timestamps
-      successfulRequests: resultAggregator.getSuccessfulRequestsCount(),
-      failedRequests: resultAggregator.getFailedRequestsCount(),
-      averageLatency: resultAggregator.getGlobalHistogram().mean,
-      workerCount: runner.getWorkerPool().getWorkerCount(),
-      latencyDistribution: resultAggregator.getLatencyDistribution({
-        count: 10,
-      }),
+      histogram: { mean: typedResults.averageLatency || 0 },
+      latencyDistribution: typedResults.latencyDistribution || [],
+      currentReqPerSec: typedResults.currentReqPerSec || 0,
+      successfulRequests: typedResults.successfulRequests || 0,
+      failedRequests: typedResults.failedRequests || 0,
+      averageLatency: typedResults.averageLatency || 0,
     };
   }
 }

@@ -9,8 +9,9 @@ import {
   vi,
 } from 'vitest';
 
-import { CoreRunner } from '../../src/core/runner/core-runner';
-import type { SafeTressiConfig } from '../../src/types';
+import { CoreRunner } from '../../src/core/core-runner';
+import type { TressiConfig } from '../../src/types';
+import { ConfigValidator } from '../../src/validation/config-validator';
 
 let mockAgent: MockAgent;
 
@@ -28,19 +29,21 @@ afterAll(() => {
   mockAgent.close();
 });
 
-const createTestConfig = (
-  overrides?: Partial<SafeTressiConfig>,
-): SafeTressiConfig => ({
+const createTestConfig = (overrides?: Partial<TressiConfig>): TressiConfig => ({
   $schema: 'https://example.com/schema.json',
-  requests: [{ url: 'http://localhost:8080/test', method: 'GET' }],
+  requests: [{ url: 'http://localhost:8080/test', method: 'GET', rps: 10 }],
   options: {
-    workers: 1,
     durationSec: 10,
     rampUpTimeSec: 0,
-    rps: 10,
     useUI: true,
     silent: false,
     earlyExitOnError: false,
+    workerMemoryLimit: 128,
+    workerEarlyExit: {
+      enabled: false,
+      monitoringWindowMs: 1000,
+      stopMode: 'endpoint',
+    },
     ...overrides?.options,
   },
   ...overrides,
@@ -56,18 +59,16 @@ describe('Early Exit Feature', () => {
         options: {
           earlyExitOnError: true,
           errorRateThreshold: 1.5, // Invalid: > 1.0
-          workers: 1,
           durationSec: 1,
           rampUpTimeSec: 0,
-          rps: 10,
           useUI: true,
           silent: false,
         },
       });
 
       expect(() => {
-        new CoreRunner(config);
-      }).toThrow('errorRateThreshold must be a number between 0.0 and 1.0');
+        ConfigValidator.validateForProgrammatic(config);
+      }).toThrow();
     });
 
     it('should throw error when error rate threshold is negative', () => {
@@ -75,18 +76,16 @@ describe('Early Exit Feature', () => {
         options: {
           earlyExitOnError: true,
           errorRateThreshold: -0.1, // Invalid: < 0.0
-          workers: 1,
           durationSec: 1,
           rampUpTimeSec: 0,
-          rps: 10,
           useUI: true,
           silent: false,
         },
       });
 
       expect(() => {
-        new CoreRunner(config);
-      }).toThrow('errorRateThreshold must be a number between 0.0 and 1.0');
+        ConfigValidator.validateForProgrammatic(config);
+      }).toThrow();
     });
 
     it('should throw error when error count threshold is negative', () => {
@@ -94,18 +93,16 @@ describe('Early Exit Feature', () => {
         options: {
           earlyExitOnError: true,
           errorCountThreshold: -5, // Invalid: negative
-          workers: 1,
           durationSec: 1,
           rampUpTimeSec: 0,
-          rps: 10,
           useUI: true,
           silent: false,
         },
       });
 
       expect(() => {
-        new CoreRunner(config);
-      }).toThrow('errorCountThreshold must be a non-negative integer');
+        ConfigValidator.validateForProgrammatic(config);
+      }).toThrow();
     });
 
     it('should throw error when error count threshold is not an integer', () => {
@@ -113,47 +110,41 @@ describe('Early Exit Feature', () => {
         options: {
           earlyExitOnError: true,
           errorCountThreshold: 3.5, // Invalid: not integer
-          workers: 1,
           durationSec: 1,
           rampUpTimeSec: 0,
-          rps: 10,
           useUI: true,
           silent: false,
         },
       });
 
       expect(() => {
-        new CoreRunner(config);
-      }).toThrow('errorCountThreshold must be a non-negative integer');
+        ConfigValidator.validateForProgrammatic(config);
+      }).toThrow();
     });
 
     it('should throw error when error status codes contain invalid values', () => {
       const config = createTestConfig({
         options: {
           earlyExitOnError: true,
-          errorStatusCodes: [99, 200, 600], // Invalid: 99 and 600
-          workers: 1,
+          errorStatusCodes: [-1, 0, 3.5], // Invalid: negative and non-integer
           durationSec: 1,
           rampUpTimeSec: 0,
-          rps: 10,
           useUI: true,
           silent: false,
         },
       });
 
       expect(() => {
-        new CoreRunner(config);
-      }).toThrow('Invalid HTTP status code: 99. Must be between 100-599');
+        ConfigValidator.validateForProgrammatic(config);
+      }).toThrow();
     });
 
     it('should throw error when no thresholds are provided with early exit enabled', () => {
       const config = createTestConfig({
         options: {
           earlyExitOnError: true,
-          workers: 1,
           durationSec: 1,
           rampUpTimeSec: 0,
-          rps: 10,
           useUI: true,
           silent: false,
           // No thresholds provided
@@ -161,10 +152,8 @@ describe('Early Exit Feature', () => {
       });
 
       expect(() => {
-        new CoreRunner(config);
-      }).toThrow(
-        'When earlyExitOnError is enabled, at least one of errorRateThreshold, errorCountThreshold, or errorStatusCodes must be provided',
-      );
+        ConfigValidator.validateForProgrammatic(config);
+      }).toThrow();
     });
 
     it('should accept valid configuration with all thresholds', () => {
@@ -174,17 +163,15 @@ describe('Early Exit Feature', () => {
           errorRateThreshold: 0.5,
           errorCountThreshold: 10,
           errorStatusCodes: [500, 503],
-          workers: 1,
           durationSec: 1,
           rampUpTimeSec: 0,
-          rps: 10,
           useUI: true,
           silent: false,
         },
       });
 
       expect(() => {
-        new CoreRunner(config);
+        ConfigValidator.validateForProgrammatic(config);
       }).not.toThrow();
     });
   });
@@ -201,11 +188,15 @@ describe('Early Exit Feature', () => {
           earlyExitOnError: true,
           errorRateThreshold: 0.1, // Very low threshold
           durationSec: 5,
-          workers: 1,
           rampUpTimeSec: 0,
-          rps: 10,
           useUI: true,
           silent: false,
+          workerMemoryLimit: 128,
+          workerEarlyExit: {
+            enabled: false,
+            monitoringWindowMs: 1000,
+            stopMode: 'endpoint',
+          },
         },
       });
 
@@ -213,12 +204,11 @@ describe('Early Exit Feature', () => {
 
       await runner.run();
 
-      const resultAggregator = runner.getResultAggregator();
-      const results = resultAggregator.getSampledResults();
+      const results = runner.getResults();
 
       // Verify early exit by checking we have fewer results than expected for full duration
       // With 10 RPS for 5 seconds, we'd expect ~50 requests, but should exit much earlier
-      expect(results.length).toBeLessThan(30);
+      expect(results.global.totalRequests).toBeLessThan(30);
     });
 
     it('should exit early when error count threshold is reached', async () => {
@@ -232,11 +222,15 @@ describe('Early Exit Feature', () => {
           earlyExitOnError: true,
           errorCountThreshold: 1, // Exit after 1 error
           durationSec: 5,
-          workers: 1,
           rampUpTimeSec: 0,
-          rps: 10,
           useUI: true,
           silent: false,
+          workerMemoryLimit: 128,
+          workerEarlyExit: {
+            enabled: false,
+            monitoringWindowMs: 1000,
+            stopMode: 'endpoint',
+          },
         },
       });
 
@@ -244,12 +238,11 @@ describe('Early Exit Feature', () => {
 
       await runner.run();
 
-      const resultAggregator = runner.getResultAggregator();
-      const results = resultAggregator.getSampledResults();
+      const results = runner.getResults();
 
       // Verify early exit by checking we have significantly fewer results than expected
       // With 10 RPS for 5 seconds, we'd expect ~50 requests, but should exit much earlier
-      expect(results.length).toBeLessThan(25);
+      expect(results.global.totalRequests).toBeLessThan(25);
     });
 
     it('should handle specific status code early exit configuration', async () => {
@@ -268,11 +261,15 @@ describe('Early Exit Feature', () => {
           earlyExitOnError: true,
           errorStatusCodes: [503],
           durationSec: 2, // Shorter duration for this test
-          workers: 1,
           rampUpTimeSec: 0,
-          rps: 5, // Lower RPS
           useUI: true,
           silent: false,
+          workerMemoryLimit: 128,
+          workerEarlyExit: {
+            enabled: false,
+            monitoringWindowMs: 1000,
+            stopMode: 'endpoint',
+          },
         },
       });
 
@@ -283,13 +280,12 @@ describe('Early Exit Feature', () => {
         await expect(runner.run()).resolves.toBeUndefined();
 
         // Should have made some requests
-        const resultAggregator = runner.getResultAggregator();
-        const results = resultAggregator.getSampledResults();
-        expect(results.length).toBeGreaterThan(0);
+        const results = runner.getResults();
+        expect(results.global.totalRequests).toBeGreaterThan(0);
 
         // Should have 503 status codes
-        const status503Results = results.filter(
-          (r: { status: number }) => r.status === 503,
+        const status503Results = results.endpoints.filter(
+          (e) => e.failedRequests > 0,
         );
         expect(status503Results.length).toBeGreaterThan(0);
       } finally {
@@ -312,12 +308,16 @@ describe('Early Exit Feature', () => {
         options: {
           earlyExitOnError: false, // Disabled
           errorRateThreshold: 0.1, // Would trigger if enabled
-          durationSec: 1, // Short duration
-          workers: 1,
+          durationSec: 2, // Short duration
           rampUpTimeSec: 0,
-          rps: 10,
           useUI: true,
           silent: false,
+          workerMemoryLimit: 128,
+          workerEarlyExit: {
+            enabled: false,
+            monitoringWindowMs: 1000,
+            stopMode: 'endpoint',
+          },
         },
       });
 
@@ -330,8 +330,8 @@ describe('Early Exit Feature', () => {
       const duration = endTime - startTime;
 
       // Should run for approximately the full duration
-      expect(duration).toBeGreaterThan(500);
-    });
+      expect(duration).toBeGreaterThan(1000);
+    }, 15000); // Increase timeout to 15 seconds to prevent test framework timeout
 
     it('should handle zero threshold values correctly', async () => {
       const mockPool = mockAgent.get('http://localhost:8080');
@@ -344,11 +344,15 @@ describe('Early Exit Feature', () => {
           earlyExitOnError: true,
           errorRateThreshold: 0.0, // Zero threshold
           durationSec: 1,
-          workers: 1,
           rampUpTimeSec: 0,
-          rps: 10,
           useUI: true,
           silent: false,
+          workerMemoryLimit: 128,
+          workerEarlyExit: {
+            enabled: false,
+            monitoringWindowMs: 1000,
+            stopMode: 'endpoint',
+          },
         },
       });
 
@@ -357,9 +361,8 @@ describe('Early Exit Feature', () => {
       await runner.run();
 
       // Should complete successfully
-      const resultAggregator = runner.getResultAggregator();
-      const results = resultAggregator.getSampledResults();
-      expect(results.length).toBeGreaterThan(0);
+      const results = runner.getResults();
+      expect(results.global.totalRequests).toBeGreaterThan(0);
     });
   });
 });

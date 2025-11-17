@@ -1,11 +1,11 @@
-import { getStatusCodeDistributionByCategory } from '../../stats';
 import type {
   EndpointSummary,
   ReportMetadata,
   RequestResult,
-  SafeTressiConfig,
   TestSummary,
+  TressiConfig,
 } from '../../types';
+import { getStatusCodeDistributionByCategory } from '../../utils';
 
 interface LatencyDistribution {
   getTotalCount(): number;
@@ -37,13 +37,12 @@ export class MarkdownGenerator {
   generate(
     summary: TestSummary,
     runner: RunnerInterface,
-    config: SafeTressiConfig,
+    config: TressiConfig,
     metadata?: ReportMetadata,
   ): string {
     const { global: g, endpoints: e } = summary;
 
     const distribution = runner.getDistribution();
-    const { rps } = config.options;
 
     let md = `# Tressi Load Test Report\n\n`;
 
@@ -59,7 +58,7 @@ export class MarkdownGenerator {
     md += `\n`;
 
     // Generate warnings
-    const warnings = this.generateWarnings(g, e, rps);
+    const warnings = this.generateWarnings(g, e);
     if (warnings.length > 0) {
       md += this.formatWarnings(warnings);
     }
@@ -68,7 +67,7 @@ export class MarkdownGenerator {
     md += this.formatConfiguration(config);
 
     // Global summary
-    md += this.formatGlobalSummary(g, rps);
+    md += this.formatGlobalSummary(g);
 
     // Latency distribution
     if (distribution.getTotalCount() > 0) {
@@ -104,26 +103,10 @@ export class MarkdownGenerator {
   }
 
   private generateWarnings(
-    global: TestSummary['global'],
+    _global: TestSummary['global'],
     endpoints: EndpointSummary[],
-    rps?: number,
   ): string[] {
     const warnings: string[] = [];
-
-    if (rps && global.achievedPercentage && global.achievedPercentage < 80) {
-      const maxRpsPerWorker = 1000 / global.avgLatencyMs + 1;
-      const suggestedWorkers = Math.ceil(rps / maxRpsPerWorker) + 1;
-
-      warnings.push(
-        `**Target RPS Unreachable**: The target of ${rps} RPS was not met. The test achieved ~${global.actualRps.toFixed(
-          0,
-        )} RPS (${global.achievedPercentage.toFixed(
-          0,
-        )}% of the target). Based on the average latency of ${global.avgLatencyMs.toFixed(
-          0,
-        )}ms, you would need at least **${suggestedWorkers}** workers to meet the target.`,
-      );
-    }
 
     for (const endpoint of endpoints) {
       const failureRate =
@@ -151,7 +134,7 @@ export class MarkdownGenerator {
     return md;
   }
 
-  private formatConfiguration(config: SafeTressiConfig): string {
+  private formatConfiguration(config: TressiConfig): string {
     let md = `<details>\n`;
     md += `<summary>View Full Test Configuration</summary>\n\n`;
     md += '```json\n';
@@ -163,17 +146,13 @@ export class MarkdownGenerator {
     md += `> *This table shows the main parameters used for the load test run.*\n\n`;
     md += `| Option | Setting | Argument |\n`;
     md += `|---|---|---|\n`;
-    md += `| Max Workers | Up to ${config.options.workers} | \`--workers\` |\n`;
-    md += `| Duration | ${config.options.durationSec}s | \`--duration\` |\n`;
-    md += `| Target Req/s | ${config.options.rps} | \`--rps\` |\n\n`;
+    md += `| Concurrency | Adaptive (based on system metrics) | N/A |\n`;
+    md += `| Duration | ${config.options.durationSec}s | \`--duration\` |\n\n`;
 
     return md;
   }
 
-  private formatGlobalSummary(
-    global: TestSummary['global'],
-    rps?: number,
-  ): string {
+  private formatGlobalSummary(global: TestSummary['global']): string {
     let md = `## Global Summary\n\n`;
     md += `> *A high-level overview of the entire test performance across all endpoints.*\n\n`;
     md += `| Stat | Value |\n| --- | --- |\n`;
@@ -181,17 +160,8 @@ export class MarkdownGenerator {
     md += `| Total Requests | ${global.totalRequests} |\n`;
     md += `| Successful | ${global.successfulRequests} |\n`;
     md += `| Failed | ${global.failedRequests} |\n`;
-
-    if (rps && global.theoreticalMaxRps) {
-      md += `| Req/s (Actual/Target) | ${global.actualRps.toFixed(0)} / ${rps} |\n`;
-      md += `| Req/m (Actual/Target) | ${(global.actualRps * 60).toFixed(0)} / ${rps * 60} |\n`;
-      md += `| Theoretical Max Req/s | ${global.theoreticalMaxRps.toFixed(0)} |\n`;
-      md += `| Achieved % | ${global.achievedPercentage.toFixed(0)}% |\n`;
-    } else {
-      md += `| Req/s | ${global.actualRps.toFixed(0)} |\n`;
-      md += `| Req/m | ${(global.actualRps * 60).toFixed(0)} |\n`;
-    }
-
+    md += `| Req/s | ${global.actualRps.toFixed(0)} |\n`;
+    md += `| Req/m | ${(global.actualRps * 60).toFixed(0)} |\n`;
     md += `| Avg Latency | ${global.avgLatencyMs.toFixed(0)}ms |\n`;
     md += `| Min Latency | ${global.minLatencyMs.toFixed(0)}ms |\n`;
     md += `| Max Latency | ${global.maxLatencyMs.toFixed(0)}ms |\n`;

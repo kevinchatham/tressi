@@ -18,15 +18,21 @@ describe('InitCommand', () => {
     it('should create minimal config when full option is false', async () => {
       const mockConfig = {
         $schema: 'http://example.com/schema.json',
-        requests: [{ url: 'http://example.com', method: 'GET' as const }],
+        requests: [
+          { url: 'http://example.com', method: 'GET' as const, rps: 10 },
+        ],
         options: {
           durationSec: 30,
-          workers: 1,
-          rps: 1,
           rampUpTimeSec: 0,
           useUI: true,
           silent: false,
           earlyExitOnError: false,
+          workerMemoryLimit: 128,
+          workerEarlyExit: {
+            enabled: false,
+            monitoringWindowMs: 1000,
+            stopMode: 'endpoint',
+          },
         },
       };
 
@@ -40,15 +46,21 @@ describe('InitCommand', () => {
     it('should create full config when full option is true', async () => {
       const mockConfig = {
         $schema: 'http://example.com/schema.json',
-        requests: [{ url: 'http://example.com', method: 'GET' as const }],
+        requests: [
+          { url: 'http://example.com', method: 'GET' as const, rps: 10 },
+        ],
         options: {
           durationSec: 30,
-          workers: 1,
-          rps: 1,
           rampUpTimeSec: 0,
           useUI: true,
           silent: false,
           earlyExitOnError: false,
+          workerMemoryLimit: 128,
+          workerEarlyExit: {
+            enabled: false,
+            monitoringWindowMs: 1000,
+            stopMode: 'endpoint',
+          },
         },
       };
 

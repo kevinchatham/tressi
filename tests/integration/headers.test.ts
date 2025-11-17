@@ -9,8 +9,8 @@ import {
   vi,
 } from 'vitest';
 
-import { CoreRunner } from '../../src/core/runner/core-runner';
-import type { SafeTressiConfig } from '../../src/types';
+import { CoreRunner } from '../../src/core/core-runner';
+import type { TressiConfig } from '../../src/types';
 
 let mockAgent: MockAgent;
 
@@ -28,19 +28,21 @@ afterAll(() => {
   mockAgent.close();
 });
 
-const createTestConfig = (
-  overrides?: Partial<SafeTressiConfig>,
-): SafeTressiConfig => ({
+const createTestConfig = (overrides?: Partial<TressiConfig>): TressiConfig => ({
   $schema: 'https://example.com/schema.json',
-  requests: [{ url: 'http://localhost:8080/test', method: 'GET' }],
+  requests: [{ url: 'http://localhost:8080/test', method: 'GET', rps: 10 }],
   options: {
-    workers: 1,
     durationSec: 1,
     rampUpTimeSec: 0,
-    rps: 10,
     useUI: true,
     silent: false,
     earlyExitOnError: false,
+    workerMemoryLimit: 128,
+    workerEarlyExit: {
+      enabled: false,
+      monitoringWindowMs: 1000,
+      stopMode: 'endpoint',
+    },
     ...overrides?.options,
   },
   ...overrides,
@@ -63,17 +65,22 @@ describe('Headers Merging Tests', () => {
           url: 'http://localhost:8080/test',
           method: 'GET',
           headers: requestHeaders,
+          rps: 10,
         },
       ],
       options: {
         headers: globalHeaders,
         durationSec: 1,
-        workers: 1,
         rampUpTimeSec: 0,
-        rps: 10,
         useUI: true,
         silent: false,
         earlyExitOnError: false,
+        workerMemoryLimit: 128,
+        workerEarlyExit: {
+          enabled: false,
+          monitoringWindowMs: 1000,
+          stopMode: 'endpoint',
+        },
       },
     });
 
@@ -81,11 +88,9 @@ describe('Headers Merging Tests', () => {
 
     await runner.run();
 
-    const resultAggregator = runner.getResultAggregator();
-    const results = resultAggregator.getSampledResults();
-    expect(results.length).toBeGreaterThan(0);
-    expect(results[0].status).toBe(200);
-    expect(results[0].success).toBe(true);
+    const results = runner.getResults();
+    expect(results.global.totalRequests).toBeGreaterThan(0);
+    expect(results.endpoints[0].successfulRequests).toBeGreaterThan(0);
   });
 
   it('should handle empty global headers', async () => {
@@ -100,17 +105,22 @@ describe('Headers Merging Tests', () => {
           url: 'http://localhost:8080/test',
           method: 'GET',
           headers: requestHeaders,
+          rps: 10,
         },
       ],
       options: {
         headers: {},
         durationSec: 1,
-        workers: 1,
         rampUpTimeSec: 0,
-        rps: 10,
         useUI: true,
         silent: false,
         earlyExitOnError: false,
+        workerMemoryLimit: 128,
+        workerEarlyExit: {
+          enabled: false,
+          monitoringWindowMs: 1000,
+          stopMode: 'endpoint',
+        },
       },
     });
 
@@ -118,11 +128,9 @@ describe('Headers Merging Tests', () => {
 
     await runner.run();
 
-    const resultAggregator = runner.getResultAggregator();
-    const results = resultAggregator.getSampledResults();
-    expect(results.length).toBeGreaterThan(0);
-    expect(results[0].status).toBe(200);
-    expect(results[0].success).toBe(true);
+    const results = runner.getResults();
+    expect(results.global.totalRequests).toBeGreaterThan(0);
+    expect(results.endpoints[0].successfulRequests).toBeGreaterThan(0);
   });
 
   it('should handle empty request headers', async () => {
@@ -137,17 +145,22 @@ describe('Headers Merging Tests', () => {
           url: 'http://localhost:8080/test',
           method: 'GET',
           headers: {},
+          rps: 10,
         },
       ],
       options: {
         headers: globalHeaders,
         durationSec: 1,
-        workers: 1,
         rampUpTimeSec: 0,
-        rps: 10,
         useUI: true,
         silent: false,
         earlyExitOnError: false,
+        workerMemoryLimit: 128,
+        workerEarlyExit: {
+          enabled: false,
+          monitoringWindowMs: 1000,
+          stopMode: 'endpoint',
+        },
       },
     });
 
@@ -155,10 +168,8 @@ describe('Headers Merging Tests', () => {
 
     await runner.run();
 
-    const resultAggregator = runner.getResultAggregator();
-    const results = resultAggregator.getSampledResults();
-    expect(results.length).toBeGreaterThan(0);
-    expect(results[0].status).toBe(200);
-    expect(results[0].success).toBe(true);
+    const results = runner.getResults();
+    expect(results.global.totalRequests).toBeGreaterThan(0);
+    expect(results.endpoints[0].successfulRequests).toBeGreaterThan(0);
   });
 });
