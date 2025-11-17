@@ -130,7 +130,7 @@ Examples:
   # View configuration from a specific file
   $ tressi --config ./my-config.json config
 
-  # Start the Tressi server on default port (3000)
+  # Start the Tressi server on default port (3108 - the speed of light in m/s)
   $ tressi serve
 
   # Start the Tressi server on a custom port
