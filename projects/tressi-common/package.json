@@ -1,0 +1,10 @@
+{
+  "name": "tressi-common",
+  "private": true,
+  "main": "../../dist/common/index.js",
+  "types": "../../dist/common/index.d.ts",
+  "scripts": {
+    "build": "npm run typecheck && tsup",
+    "typecheck": "tsc --noEmit"
+  }
+}

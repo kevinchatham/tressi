@@ -1,0 +1,33 @@
+import { defineConfig } from 'tsup';
+
+export default defineConfig([
+  {
+    entry: ['src/index.ts'],
+    outDir: '../../dist',
+    format: ['cjs'],
+    dts: true,
+    sourcemap: true,
+    clean: true,
+    tsconfig: 'tsconfig.json',
+  },
+  {
+    entry: ['src/cli.ts'],
+    outDir: '../../dist',
+    format: ['cjs'],
+    sourcemap: true,
+    clean: false, // Don't clean the dist folder for the second entry
+    banner: {
+      js: '#!/usr/bin/env node',
+    },
+    // Enable TypeScript strict checking to match tsconfig.json
+    tsconfig: 'tsconfig.json',
+  },
+  {
+    entry: ['src/workers/worker-thread.ts'],
+    outDir: '../../dist/workers',
+    format: ['cjs'],
+    sourcemap: true,
+    clean: false,
+    tsconfig: 'tsconfig.json',
+  },
+]);

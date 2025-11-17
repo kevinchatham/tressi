@@ -28,10 +28,4 @@ export default [
       'simple-import-sort/imports': ['warn'],
     },
   },
-  {
-    files: ['scripts/generate-schema.ts'],
-    rules: {
-      'no-console': 'off',
-    },
-  },
 ];
