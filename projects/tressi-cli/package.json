@@ -1,0 +1,21 @@
+{
+  "name": "tressi-cli",
+  "private": true,
+  "scripts": {
+    "build": "npm run generate:schema && npm run typecheck && tsup",
+    "run": "npm run build && node ./dist/cli.js",
+    "serve": "npm run build && node ./dist/cli.js serve",
+    "generate:schema": "tsx generate-schema.ts",
+    "test:all": "npm run test:unit && npm run test:integration && npm run test:e2e",
+    "test:coverage": "vitest --coverage",
+    "test:e2e": "npm run typecheck:tests && vitest run tests/e2e",
+    "test:integration": "npm run typecheck:tests && vitest run tests/integration",
+    "test:server": "vitest run tests/server",
+    "test:ui": "vitest --ui",
+    "test:unit": "npm run typecheck:tests && vitest run tests/unit",
+    "test:watch": "vitest --watch",
+    "test": "npm run typecheck:tests && vitest run",
+    "typecheck:tests": "tsc -p tsconfig.tests.json --noEmit",
+    "typecheck": "tsc --noEmit"
+  }
+}

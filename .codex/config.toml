@@ -1,0 +1,10 @@
+[model_providers.llamacpp]
+name = "llamacpp"
+base_url = "http://desktop:8080/v1"
+
+[profiles.llamacpp]
+model_provider = "llamacpp"
+model = ".\\models\\unsloth-gpt-oss-20b-q4_k_xl.gguf"
+
+[projects."/home/kevin/tressi"]
+trust_level = "trusted"

@@ -1,0 +1,10 @@
+{
+  "name": "tressi-ui",
+  "private": true,
+  "scripts": {
+    "serve": "ng serve",
+    "build": "ng build",
+    "watch": "ng build --watch --configuration development",
+    "test": "ng test"
+  }
+}

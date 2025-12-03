@@ -1,0 +1,81 @@
+/* ! Tooltip Styling ! */
+:host ::ng-deep .apexcharts-tooltip {
+  background: var(--color-base-100) !important;
+  color: var(--color-base-content) !important;
+  border: 1px solid var(--color-neutral) !important;
+  border-radius: 6px !important;
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+}
+
+:host ::ng-deep .apexcharts-tooltip-title {
+  background: var(--color-base-200) !important;
+  color: var(--color-base-content) !important;
+  border-bottom: 1px solid var(--color-neutral) !important;
+  font-weight: 600 !important;
+}
+
+:host ::ng-deep .apexcharts-tooltip-series-group {
+  background: transparent !important;
+}
+
+:host ::ng-deep .apexcharts-tooltip-text {
+  color: var(--color-base-content) !important;
+}
+
+:host ::ng-deep .apexcharts-tooltip-text-value,
+:host ::ng-deep .apexcharts-tooltip-text-label {
+  color: var(--color-base-content) !important;
+}
+
+:host ::ng-deep .apexcharts-tooltip-marker {
+  display: none !important;
+}
+
+/* ! Crosshair Styling ! */
+:host ::ng-deep .apexcharts-xcrosshairs,
+:host ::ng-deep .apexcharts-ycrosshairs {
+  stroke: var(--color-primary) !important;
+  stroke-width: 1 !important;
+}
+
+:host ::ng-deep .apexcharts-gridline {
+  stroke: var(--color-neutral) !important;
+}
+
+/* ! Toolbar Styling ! */
+:host ::ng-deep .apexcharts-toolbar {
+  background: var(--color-base-200) !important;
+  border: 1px solid var(--color-neutral) !important;
+  border-radius: 4px !important;
+  padding: 0px !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  right: 8px !important;
+}
+
+:host ::ng-deep .apexcharts-toolbar div {
+  margin: 0 !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  width: auto !important;
+  height: auto !important;
+}
+
+:host ::ng-deep .apexcharts-toolbar .apexcharts-selected span {
+  color: var(--color-primary) !important;
+  vertical-align: middle !important;
+}
+
+:host ::ng-deep .material-symbols-outlined:hover {
+  color: var(--color-primary);
+}
+
+:host ::ng-deep .material-symbols-outlined {
+  color: var(--color-base-content);
+  font-size: 2em;
+  transition: all 0.2s ease !important;
+}
