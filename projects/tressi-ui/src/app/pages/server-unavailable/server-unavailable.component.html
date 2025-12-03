@@ -1,0 +1,37 @@
+<div
+  class="bg-base-200 flex min-h-screen flex-col items-center justify-center px-6 pt-32 pb-6"
+>
+  <!-- Logo -->
+  <img
+    src="tressi-logo-512.png"
+    alt="Tressi Logo"
+    class="mb-4 h-20 w-20 opacity-90"
+  />
+
+  <div class="w-full max-w-lg space-y-8 text-center">
+    <!-- Hero Heading + Spinner -->
+    <div class="flex flex-col items-center gap-4">
+      <h1 class="text-lg font-bold">
+        Tressi is offline, please start the server
+      </h1>
+
+      <div class="mockup-code mx-auto w-full max-w-xs text-left">
+        <pre data-prefix=">"><code>npx tressi serve</code></pre>
+      </div>
+
+      <p class="text-base-content/50 text-xs">
+        {{ retryMessage() }}
+      </p>
+
+      <span class="loading loading-spinner loading-lg text-warning"></span>
+    </div>
+  </div>
+  <div class="mt-auto text-center">
+    <p class="text-base-content/50 mt-auto text-xs">
+      Last checked: {{ formattedLastCheckTime() }}
+    </p>
+    <p class="text-base-content/50 mt-auto text-xs">
+      This page will redirect automatically once the server is online.
+    </p>
+  </div>
+</div>

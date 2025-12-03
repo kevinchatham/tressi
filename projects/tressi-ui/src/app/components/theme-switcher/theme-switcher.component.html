@@ -1,0 +1,11 @@
+<select
+  class="select select-bordered transition-all duration-200 ease-in-out hover:-translate-y-px hover:shadow-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+  (change)="changeTheme($event)"
+  [value]="currentTheme"
+>
+  @for (theme of themes; track theme) {
+    <option [selected]="currentTheme === theme" [value]="theme">
+      {{ theme | titlecase }}
+    </option>
+  }
+</select>

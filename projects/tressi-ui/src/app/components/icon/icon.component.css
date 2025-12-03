@@ -1,0 +1,16 @@
+/* Icon component styles */
+.material-symbols-outlined {
+  font-size: 24px;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+/* Ensure icons are properly sized in buttons */
+.btn .material-symbols-outlined {
+  font-size: 20px;
+}
+
+/* Make icons more visible */
+.material-symbols-outlined {
+  color: currentColor;
+}

@@ -7,34 +7,47 @@
   "sessions": {
     "default": [
       {
+        "name": "serve-ui",
+        "autoExecuteCommands": true,
+        "icon": "browser",
+        "color": "terminal.ansiMagenta",
+        "commands": ["npm run serve -w projects/tressi-ui"]
+      },
+      {
+        "name": "serve-cli",
+        "autoExecuteCommands": true,
+        "icon": "server",
+        "color": "terminal.ansiRed",
+        "commands": ["npm run cli:serve"]
+      },
+      {
+        "name": "start-test-server",
+        "autoExecuteCommands": true,
+        "icon": "beaker",
+        "color": "terminal.ansiGreen",
+        "commands": ["npm run test:server"]
+      },
+      {
+        "name": "format-watch",
+        "icon": "bracket",
+        "color": "terminal.ansiWhite",
+        "autoExecuteCommands": true,
+        "commands": ["npm run format:watch"]
+      },
+      {
+        "name": "lint-watch",
+        "icon": "checklist",
+        "color": "terminal.ansiWhite",
+        "autoExecuteCommands": true,
+        "commands": ["npm run lint:watch"]
+      },
+      {
         "name": "terminal",
         "icon": "terminal",
         "color": "terminal.ansiBlue",
         "focus": false,
         "commands": []
-      },
-      {
-        "name": "start-server",
-        "autoExecuteCommands": true,
-        "icon": "server",
-        "color": "terminal.ansiRed",
-        "commands": ["npm run serve"]
-      },
-      {
-        "name": "lint-watch",
-        "icon": "search",
-        "color": "terminal.ansiYellow",
-        "autoExecuteCommands": true,
-        "commands": ["npm run lint:watch"]
-      },
-      {
-        "name": "format-watch",
-        "icon": "wrench",
-        "color": "terminal.ansiCyan",
-        "autoExecuteCommands": true,
-        "commands": ["npm run format:watch"]
       }
-    ],
-    "single-commands": []
+    ]
   }
 }

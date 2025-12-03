@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "lib": ["ES2022", "ES2020.SharedMemory", "WebWorker"],
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "outDir": "./dist",
+    "moduleResolution": "bundler",
+    "sourceMap": true,
+    "declaration": true,
+    "declarationMap": true,
+    "resolveJsonModule": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "types": ["node"],
+    "paths": {
+      "tressi-common": [
+        "../tressi-common/src/api/index.ts",
+        "../tressi-common/src/config/index.ts",
+        "../tressi-common/src/metrics/index.ts"
+      ]
+    }
+  },
+  "include": ["src/**/*.ts", "generate-schema.ts"],
+  "exclude": ["node_modules"]
+}

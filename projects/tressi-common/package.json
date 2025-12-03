@@ -1,0 +1,25 @@
+{
+  "name": "tressi-common",
+  "private": true,
+  "exports": {
+    "./api": {
+      "types": "./src/api/index.ts",
+      "import": "./dist/api/index.js",
+      "require": "./dist/api/index.js"
+    },
+    "./config": {
+      "types": "./src/config/index.ts",
+      "import": "./dist/config/index.js",
+      "require": "./dist/config/index.js"
+    },
+    "./metrics": {
+      "types": "./src/metrics/index.ts",
+      "import": "./dist/metrics/index.js",
+      "require": "./dist/metrics/index.js"
+    }
+  },
+  "scripts": {
+    "build": "npm run typecheck && tsup",
+    "typecheck": "tsc --noEmit"
+  }
+}

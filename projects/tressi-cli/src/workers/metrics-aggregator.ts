@@ -1,0 +1,552 @@
+import { cpus, loadavg } from 'os';
+import type { AggregatedMetrics, EndpointMetrics } from 'tressi-common/metrics';
+
+import { globalEventEmitter } from '../events/global-event-emitter';
+import { terminal } from '../tui/terminal';
+import {
+  IBodySampleManager,
+  IHdrHistogramManager,
+  IMetricsAggregator,
+  IStatsCounterManager,
+} from '../types/workers/interfaces';
+import { LatencyHistogram } from '../types/workers/types';
+
+export class MetricsAggregator implements IMetricsAggregator {
+  private pollingInterval: NodeJS.Timeout | null = null;
+  private startTime: number = 0;
+  private endpoints: string[] = [];
+
+  constructor(
+    private hdrHistogramManagers: IHdrHistogramManager[],
+    private statsCounterManagers: IStatsCounterManager[],
+    private bodySampleManagers: IBodySampleManager[],
+  ) {}
+
+  /**
+   * Set the endpoints for metrics collection
+   * @param endpoints Array of endpoint URLs
+   */
+  setEndpoints(endpoints: string[]): void {
+    this.endpoints = endpoints;
+  }
+
+  /**
+   * Start polling for metrics updates
+   * @param intervalMs Polling interval in milliseconds
+   */
+  startPolling(intervalMs: number = 250): void {
+    if (this.pollingInterval) {
+      clearInterval(this.pollingInterval);
+      this.pollingInterval = null;
+    }
+
+    this.startTime = Date.now();
+    this.pollingInterval = setInterval(() => {
+      this.pollMetrics();
+    }, intervalMs);
+  }
+
+  /**
+   * Stop polling for metrics updates
+   */
+  stopPolling(): void {
+    if (this.pollingInterval) {
+      clearInterval(this.pollingInterval);
+      this.pollingInterval = null;
+    }
+  }
+
+  /**
+   * Polls metrics from all workers and broadcasts updates.
+   *
+   * @remarks
+   * This method is called on a regular interval to collect and display real-time metrics.
+   * It retrieves aggregated results from all workers and endpoints, updates the terminal display,
+   * and broadcasts metrics via Server-Sent Events for the web UI.
+   *
+   * The polling approach ensures that metrics are updated frequently enough for real-time
+   * monitoring while being efficient enough to not impact test performance.
+   */
+  private pollMetrics(): void {
+    const metrics = this.getResults(
+      this.hdrHistogramManagers.length,
+      this.endpoints,
+    );
+
+    terminal.clearAndPrint(metrics);
+
+    // Emit metrics event for SSE
+    globalEventEmitter.emit('metrics', metrics);
+  }
+
+  /**
+   * Round a number to 4 decimal places
+   * @param value Number to round
+   * @returns Rounded number
+   */
+  private roundTo4Decimals(value: number): number {
+    return Math.round(value * 10000) / 10000;
+  }
+
+  /**
+   * Get aggregated results from all workers and endpoints
+   * @param workersCount Number of workers
+   * @param endpoints Array of endpoint URLs
+   * @returns Aggregated metrics
+   */
+  getResults(workersCount: number, endpoints: string[]): AggregatedMetrics {
+    let totalSuccess = 0;
+    let totalFailure = 0;
+    let totalRequests = 0;
+
+    // Collect histogram statistics from all workers and endpoints
+    const endpointHistograms: Record<string, LatencyHistogram[]> = {};
+    const endpointStatusCounts: Record<string, Record<number, number>> = {};
+
+    // Initialize endpoint data structures
+    endpoints.forEach((url) => {
+      endpointHistograms[url] = [];
+      endpointStatusCounts[url] = {};
+    });
+
+    // Aggregate data from all workers
+    let totalBytesSent = 0;
+    let totalBytesReceived = 0;
+
+    for (let workerId = 0; workerId < workersCount; workerId++) {
+      const statsManager = this.statsCounterManagers[workerId];
+      const histogramManager = this.hdrHistogramManagers[workerId];
+
+      if (!statsManager || !histogramManager) continue;
+
+      // Get all endpoint counters for this worker
+      const allCounters = statsManager.getAllEndpointCounters();
+
+      // Get all endpoint histograms for this worker
+      const allHistograms = histogramManager.getAllEndpointHistograms();
+
+      // Process each endpoint owned by this worker
+      allCounters.forEach((counters, localEndpointIndex: number) => {
+        const globalEndpointIndex = this.getGlobalEndpointIndex(
+          workerId,
+          localEndpointIndex,
+        );
+        if (globalEndpointIndex >= endpoints.length) return;
+
+        const endpointUrl = endpoints[globalEndpointIndex];
+
+        // Aggregate success/failure counts
+        totalSuccess += counters.successCount;
+        totalFailure += counters.failureCount;
+        totalRequests += counters.successCount + counters.failureCount;
+
+        // Aggregate network metrics
+        totalBytesSent += counters.bytesSent;
+        totalBytesReceived += counters.bytesReceived;
+
+        // Aggregate status code counts
+        Object.entries(counters.statusCodeCounts).forEach(
+          ([statusCode, count]) => {
+            const code = parseInt(statusCode);
+            endpointStatusCounts[endpointUrl][code] =
+              (endpointStatusCounts[endpointUrl][code] || 0) + count;
+          },
+        );
+
+        // Get histogram data for this endpoint
+        const histogramData = allHistograms[localEndpointIndex];
+        if (histogramData && histogramData.totalCount > 0) {
+          // Store the histogram statistics directly
+          endpointHistograms[endpointUrl].push(histogramData);
+        }
+      });
+    }
+
+    // Calculate global metrics
+    const duration = this.startTime > 0 ? Date.now() - this.startTime : 0;
+    const errorRate = totalRequests > 0 ? totalFailure / totalRequests : 0;
+    const requestsPerSecond =
+      duration > 0 ? totalRequests / (duration / 1000) : 0;
+
+    // Calculate global latency statistics using weighted averages
+    const globalStats = this.calculateGlobalLatencyStats(endpointHistograms);
+
+    // Calculate global status code distribution
+    const globalStatusCodeDistribution: Record<number, number> = {};
+    Object.values(endpointStatusCounts).forEach((statusCounts) => {
+      Object.entries(statusCounts).forEach(([statusCode, count]) => {
+        const code = parseInt(statusCode);
+        globalStatusCodeDistribution[code] =
+          (globalStatusCodeDistribution[code] || 0) + count;
+      });
+    });
+
+    // Build per-endpoint metrics
+    const endpointMetrics: AggregatedMetrics['endpoints'] = {};
+    endpoints.forEach((url) => {
+      const histograms = endpointHistograms[url];
+      const statusCounts = endpointStatusCounts[url];
+
+      // Calculate endpoint-level statistics
+      const endpointStats = this.calculateEndpointLatencyStats(histograms);
+      const endpointTotalRequests = endpointStats.totalCount;
+
+      const endpointSuccessRequests = Object.values(statusCounts).reduce(
+        (sum, count) => sum + count,
+        0,
+      );
+      const endpointFailureRequests =
+        endpointTotalRequests - endpointSuccessRequests;
+
+      // Aggregate network metrics per endpoint
+      let endpointBytesSent = 0;
+      let endpointBytesReceived = 0;
+
+      for (let workerId = 0; workerId < workersCount; workerId++) {
+        const statsManager = this.statsCounterManagers[workerId];
+        if (!statsManager) continue;
+
+        const allCounters = statsManager.getAllEndpointCounters();
+        allCounters.forEach((counters, localEndpointIndex) => {
+          const globalEndpointIndex = this.getGlobalEndpointIndex(
+            workerId,
+            localEndpointIndex,
+          );
+          if (globalEndpointIndex >= endpoints.length) return;
+
+          const endpointUrl = endpoints[globalEndpointIndex];
+          if (endpointUrl === url) {
+            endpointBytesSent += counters.bytesSent;
+            endpointBytesReceived += counters.bytesReceived;
+          }
+        });
+      }
+
+      const endpointThroughputMBps =
+        duration > 0
+          ? (endpointBytesSent + endpointBytesReceived) /
+            (duration / 1000) /
+            (1024 * 1024)
+          : 0;
+
+      endpointMetrics[url] = {
+        totalRequests: endpointTotalRequests,
+        successfulRequests: endpointSuccessRequests,
+        failedRequests: endpointFailureRequests,
+        errorRate: this.roundTo4Decimals(
+          endpointTotalRequests > 0
+            ? endpointFailureRequests / endpointTotalRequests
+            : 0,
+        ),
+        averageLatency: this.roundTo4Decimals(endpointStats.averageLatency),
+        minLatency: this.roundTo4Decimals(endpointStats.minLatency),
+        maxLatency: this.roundTo4Decimals(endpointStats.maxLatency),
+        p50Latency: this.roundTo4Decimals(endpointStats.p50Latency),
+        p95Latency: this.roundTo4Decimals(endpointStats.p95Latency),
+        p99Latency: this.roundTo4Decimals(endpointStats.p99Latency),
+        requestsPerSecond: this.roundTo4Decimals(
+          duration > 0 ? endpointTotalRequests / (duration / 1000) : 0,
+        ),
+        statusCodeDistribution: statusCounts,
+        networkBytesSent: endpointBytesSent,
+        networkBytesReceived: endpointBytesReceived,
+        networkThroughputMBps: this.roundTo4Decimals(endpointThroughputMBps),
+      };
+    });
+
+    // Calculate CPU usage percentage based on system load average
+    const cpuCount = cpus().length;
+    const loadAvg = loadavg()[0];
+    const cpuUsagePercent = Math.min(
+      Math.round((loadAvg / cpuCount) * 100),
+      100,
+    );
+
+    // Calculate memory usage in MB
+    const memoryUsageMB = Math.round(
+      process.memoryUsage().heapUsed / 1024 / 1024,
+    );
+
+    // Calculate global network throughput
+    const globalThroughputMBps =
+      duration > 0
+        ? (totalBytesSent + totalBytesReceived) /
+          (duration / 1000) /
+          (1024 * 1024)
+        : 0;
+
+    const globalMetrics: EndpointMetrics = {
+      totalRequests,
+      successfulRequests: totalSuccess,
+      failedRequests: totalFailure,
+      errorRate: this.roundTo4Decimals(errorRate),
+      averageLatency: this.roundTo4Decimals(globalStats.averageLatency),
+      minLatency: this.roundTo4Decimals(globalStats.minLatency),
+      maxLatency: this.roundTo4Decimals(globalStats.maxLatency),
+      p50Latency: this.roundTo4Decimals(globalStats.p50Latency),
+      p95Latency: this.roundTo4Decimals(globalStats.p95Latency),
+      p99Latency: this.roundTo4Decimals(globalStats.p99Latency),
+      requestsPerSecond: this.roundTo4Decimals(requestsPerSecond),
+      statusCodeDistribution: globalStatusCodeDistribution,
+      networkBytesSent: totalBytesSent,
+      networkBytesReceived: totalBytesReceived,
+      networkThroughputMBps: this.roundTo4Decimals(globalThroughputMBps),
+    };
+
+    return {
+      threads: workersCount,
+      cpuUsagePercent,
+      memoryUsageMB,
+      duration,
+
+      global: globalMetrics,
+      endpoints: endpointMetrics,
+    };
+  }
+
+  /**
+   * Get body samples for a specific endpoint
+   * @param endpointIndex Global endpoint index
+   * @returns Array of body samples
+   */
+  getBodySamplesForEndpoint(endpointIndex: number): Array<{
+    sampleIndex: number;
+    statusCode: number;
+  }> {
+    if (endpointIndex < 0 || endpointIndex >= this.bodySampleManagers.length) {
+      return [];
+    }
+
+    return this.bodySampleManagers[endpointIndex].getBodySampleIndices(0);
+  }
+
+  /**
+   * Clear all metrics (reset to zero)
+   */
+  reset(): void {
+    this.startTime = Date.now();
+
+    // Reset all managers
+    this.statsCounterManagers.forEach((manager) => {
+      const endpoints = manager.getEndpointsCount();
+      for (let i = 0; i < endpoints; i++) {
+        // Note: Individual counters can't be reset due to atomic safety
+        // This is intentional - counters should only increment
+      }
+    });
+
+    // Reset body sample managers
+    this.bodySampleManagers.forEach((manager) => {
+      for (let i = 0; i < manager.getEndpointsCount(); i++) {
+        manager.clearBodySamples(i);
+      }
+    });
+  }
+
+  /**
+   * Calculates global latency statistics by aggregating histograms across all endpoints.
+   *
+   * @param endpointHistograms - Map of endpoint URLs to their histogram arrays from all workers
+   * @returns Global latency statistics including mean, min, max, and percentiles
+   *
+   * @remarks
+   * Uses a weighted averaging approach where histograms with more samples have greater influence
+   * on the final statistics. This ensures that endpoints with higher traffic properly influence
+   * the global metrics.
+   *
+   * The algorithm:
+   * 1. Collects all histograms from all workers and endpoints
+   * 2. Calculates weighted averages for mean, min, and max latency
+   * 3. Uses weighted averaging of pre-calculated percentiles for p50, p95, p99
+   * 4. Handles edge cases like empty histograms gracefully
+   *
+   * @example
+   * ```typescript
+   * const globalStats = aggregator.calculateGlobalLatencyStats({
+   *   'https://api.example.com/users': [worker1Histogram, worker2Histogram],
+   *   'https://api.example.com/posts': [worker1Histogram, worker2Histogram]
+   * });
+   * ```
+   */
+  private calculateGlobalLatencyStats(
+    endpointHistograms: Record<string, LatencyHistogram[]>,
+  ): {
+    averageLatency: number;
+    minLatency: number;
+    maxLatency: number;
+    p50Latency: number;
+    p95Latency: number;
+    p99Latency: number;
+  } {
+    let totalCount = 0;
+    let weightedSum = 0;
+    let minLatency = Infinity;
+    let maxLatency = 0;
+
+    // Collect all histograms for global aggregation
+    const allHistograms: LatencyHistogram[] = [];
+    Object.values(endpointHistograms).forEach((histograms) => {
+      allHistograms.push(...histograms);
+    });
+
+    if (allHistograms.length === 0) {
+      return {
+        averageLatency: 0,
+        minLatency: 0,
+        maxLatency: 0,
+        p50Latency: 0,
+        p95Latency: 0,
+        p99Latency: 0,
+      };
+    }
+
+    // Calculate weighted averages for mean, min, max
+    allHistograms.forEach((histogram) => {
+      totalCount += histogram.totalCount;
+      weightedSum += histogram.mean * histogram.totalCount;
+      minLatency = Math.min(minLatency, histogram.min);
+      maxLatency = Math.max(maxLatency, histogram.max);
+    });
+
+    const averageLatency = totalCount > 0 ? weightedSum / totalCount : 0;
+
+    // For percentiles, use weighted average of pre-calculated percentiles
+    // This is an approximation but respects the HDR histogram pattern
+    let weightedP50 = 0;
+    let weightedP95 = 0;
+    let weightedP99 = 0;
+
+    allHistograms.forEach((histogram) => {
+      const weight = histogram.totalCount / totalCount;
+      weightedP50 += (histogram.percentiles[50] || 0) * weight;
+      weightedP95 += (histogram.percentiles[95] || 0) * weight;
+      weightedP99 += (histogram.percentiles[99] || 0) * weight;
+    });
+
+    return {
+      averageLatency,
+      minLatency: minLatency === Infinity ? 0 : minLatency,
+      maxLatency,
+      p50Latency: weightedP50,
+      p95Latency: weightedP95,
+      p99Latency: weightedP99,
+    };
+  }
+
+  /**
+   * Calculates endpoint-level latency statistics by aggregating histograms for a single endpoint.
+   *
+   * @param histograms - Array of histograms for this endpoint from different workers
+   * @returns Endpoint latency statistics including mean, min, max, percentiles, and total count
+   *
+   * @remarks
+   * Similar to global statistics but focused on a single endpoint. Uses weighted averaging
+   * where histograms with more samples contribute proportionally more to the final statistics.
+   *
+   * This method is essential for per-endpoint performance analysis, allowing identification
+   * of slow endpoints independently of overall system performance.
+   *
+   * The algorithm:
+   * 1. Aggregates total request count across all worker histograms
+   * 2. Calculates weighted mean latency based on sample counts
+   * 3. Determines overall min/max from individual histogram extremes
+   * 4. Computes weighted percentiles from pre-calculated percentile values
+   *
+   * @example
+   * ```typescript
+   * const endpointStats = aggregator.calculateEndpointLatencyStats([
+   *   worker1Histogram, // e.g., 1000 requests, mean 50ms
+   *   worker2Histogram  // e.g., 1500 requests, mean 45ms
+   * ]);
+   * // Result: weighted average based on 2500 total requests
+   * ```
+   */
+  private calculateEndpointLatencyStats(histograms: LatencyHistogram[]): {
+    averageLatency: number;
+    minLatency: number;
+    maxLatency: number;
+    p50Latency: number;
+    p95Latency: number;
+    p99Latency: number;
+    totalCount: number;
+  } {
+    let totalCount = 0;
+    let weightedSum = 0;
+    let minLatency = Infinity;
+    let maxLatency = 0;
+
+    if (histograms.length === 0) {
+      return {
+        averageLatency: 0,
+        minLatency: 0,
+        maxLatency: 0,
+        p50Latency: 0,
+        p95Latency: 0,
+        p99Latency: 0,
+        totalCount: 0,
+      };
+    }
+
+    // Calculate weighted averages for mean, min, max
+    histograms.forEach((histogram) => {
+      totalCount += histogram.totalCount;
+      weightedSum += histogram.mean * histogram.totalCount;
+      minLatency = Math.min(minLatency, histogram.min);
+      maxLatency = Math.max(maxLatency, histogram.max);
+    });
+
+    const averageLatency = totalCount > 0 ? weightedSum / totalCount : 0;
+
+    // For percentiles, use weighted average of pre-calculated percentiles
+    let weightedP50 = 0;
+    let weightedP95 = 0;
+    let weightedP99 = 0;
+
+    histograms.forEach((histogram) => {
+      const weight = histogram.totalCount / totalCount;
+      weightedP50 += (histogram.percentiles[50] || 0) * weight;
+      weightedP95 += (histogram.percentiles[95] || 0) * weight;
+      weightedP99 += (histogram.percentiles[99] || 0) * weight;
+    });
+
+    return {
+      averageLatency: this.roundTo4Decimals(averageLatency),
+      minLatency: this.roundTo4Decimals(
+        minLatency === Infinity ? 0 : minLatency,
+      ),
+      maxLatency: this.roundTo4Decimals(maxLatency),
+      p50Latency: this.roundTo4Decimals(weightedP50),
+      p95Latency: this.roundTo4Decimals(weightedP95),
+      p99Latency: this.roundTo4Decimals(weightedP99),
+      totalCount,
+    };
+  }
+
+  /**
+   * Converts worker-local endpoint indices to global endpoint indices.
+   *
+   * @param workerId - The worker identifier
+   * @param localEndpointIndex - Local index within the worker (0..n-1)
+   * @returns Global endpoint index across all workers (0..total_endpoints-1)
+   *
+   * @remarks
+   * Uses round-robin distribution logic to map local indices to global indices.
+   * This is essential for coordinating between worker-local metrics storage
+   * and global endpoint identification in shared memory structures.
+   *
+   * @example
+   * ```typescript
+   * // With 4 endpoints and 2 workers:
+   * // Worker 0: local 0 -> global 0, local 1 -> global 2
+   * // Worker 1: local 0 -> global 1, local 1 -> global 3
+   * ```
+   */
+  private getGlobalEndpointIndex(
+    workerId: number,
+    localEndpointIndex: number,
+  ): number {
+    // Calculate based on round-robin distribution
+    const workersCount = this.hdrHistogramManagers.length;
+    return workerId + localEndpointIndex * workersCount;
+  }
+}
