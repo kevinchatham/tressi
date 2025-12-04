@@ -33,13 +33,16 @@ export const TressiOptionsConfigSchema = z
     /** The total duration of the test in seconds. Defaults to 10. */
     durationSec: z.number().int().positive().default(10),
     /** The time in seconds to ramp up to the target RPS. Defaults to 0. */
-    rampUpTimeSec: z.number().int().nonnegative().optional(),
+    rampUpTimeSec: z.number().int().nonnegative().default(0),
     /** The base path for the exported report. If not provided, no report will be generated. */
-    exportPath: z.string().nullable().optional(),
+    exportPath: z.string().nullable().default('./tressi-report'),
     /** Suppress all console output. Defaults to false. */
-    silent: z.boolean().optional(),
+    silent: z.boolean().default(false),
     /** Global headers to be sent with every request. */
-    headers: z.record(z.string(), z.string()).nullable().optional(),
+    headers: z
+      .record(z.string(), z.string())
+      .nullable()
+      .default({ 'User-Agent': 'Tressi/1.0.0' }),
     threads: z
       .number()
       .int()
@@ -52,16 +55,16 @@ export const TressiOptionsConfigSchema = z
       .int()
       .min(16)
       .max(512)
-      .optional()
+      .default(128)
       .describe('Memory limit per worker in MB'),
     workerEarlyExit: z
       .object({
         /** Enable early exit coordination across all workers */
-        enabled: z.boolean().optional(),
+        enabled: z.boolean().default(true),
         /** Global error rate threshold (0.0-1.0) across all workers */
-        globalErrorRateThreshold: z.number().min(0).max(1).optional(),
+        globalErrorRateThreshold: z.number().min(0).max(1).default(0.1),
         /** Global error count threshold across all workers */
-        globalErrorCountThreshold: z.number().int().positive().optional(),
+        globalErrorCountThreshold: z.number().int().positive().default(100),
         /** Per-endpoint error rate thresholds */
         perEndpointThresholds: z
           .array(
@@ -71,15 +74,25 @@ export const TressiOptionsConfigSchema = z
               errorCountThreshold: z.number().int().positive().optional(),
             }),
           )
-          .optional(),
+          .default([]),
         /** Specific HTTP status codes that trigger immediate worker shutdown */
-        workerExitStatusCodes: z.array(z.number().int().positive()).optional(),
+        workerExitStatusCodes: z
+          .array(z.number().int().positive())
+          .default([500, 502, 503, 504]),
         /** Time window in milliseconds for threshold calculation */
-        monitoringWindowMs: z.number().int().positive().optional(),
+        monitoringWindowMs: z.number().int().positive().default(5000),
         /** Whether to stop individual endpoints vs entire test */
-        stopMode: z.enum(['endpoint', 'global']).optional(),
+        stopMode: z.enum(['endpoint', 'global']).default('global'),
       })
-      .optional(),
+      .default({
+        enabled: true,
+        globalErrorRateThreshold: 0.1,
+        globalErrorCountThreshold: 100,
+        perEndpointThresholds: [],
+        workerExitStatusCodes: [500, 502, 503, 504],
+        monitoringWindowMs: 5000,
+        stopMode: 'global' as const,
+      }),
   })
   .refine(
     (data) => {
@@ -108,11 +121,17 @@ export const TressiOptionsConfigSchema = z
 /**
  * Zod schema for the main Tressi configuration.
  */
-export const TressiConfigSchema = z.object({
-  /** A URL to the JSON schema for this configuration file. */
-  $schema: z.string(),
-  /** An array of request configurations. */
-  requests: z.array(TressiRequestConfigSchema),
-  /** Configuration options for the test runner. */
-  options: TressiOptionsConfigSchema,
-});
+export const TressiConfigSchema = z
+  .object({
+    /** A URL to the JSON schema for this configuration file. */
+    $schema: z.string(),
+    /** An array of request configurations. */
+    requests: z.array(TressiRequestConfigSchema),
+    /** Configuration options for the test runner. */
+    options: TressiOptionsConfigSchema,
+  })
+  .transform((config) => ({
+    ...config,
+    // Ensure all request defaults are applied (Zod already handles this, but keep for explicitness)
+    requests: config.requests.map((req) => req),
+  }));

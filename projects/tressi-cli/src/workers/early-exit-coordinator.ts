@@ -1,4 +1,4 @@
-import type { SafeTressiConfig } from 'tressi-common/config';
+import type { TressiConfig } from 'tressi-common/config';
 
 import {
   IEarlyExitCoordinator,
@@ -31,7 +31,7 @@ export class EarlyExitCoordinator implements IEarlyExitCoordinator {
   private thresholds: EarlyExitThresholds;
   private monitoringInterval?: NodeJS.Timeout;
   constructor(
-    private config: SafeTressiConfig,
+    private config: TressiConfig,
     private statsCounterManagers: IStatsCounterManager[],
     private endpointStateManager: IEndpointStateManager,
   ) {

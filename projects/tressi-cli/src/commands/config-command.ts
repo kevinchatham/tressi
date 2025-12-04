@@ -1,9 +1,9 @@
 import chalk from 'chalk';
 import {
   defaultTressiConfig,
-  SafeTressiConfig,
-  SafeTressiOptionsConfig,
-  SafeTressiRequestConfig,
+  TressiConfig,
+  TressiOptionsConfig,
+  TressiRequestConfig,
 } from 'tressi-common/config';
 
 import { loadConfig } from '../core/config';
@@ -39,10 +39,7 @@ export class ConfigCommand {
     }
   }
 
-  private displayConfig(
-    config: SafeTressiConfig,
-    options: DisplayOptions,
-  ): void {
+  private displayConfig(config: TressiConfig, options: DisplayOptions): void {
     if (options.json) {
       terminal.print(
         JSON.stringify(this.formatConfigAsJson(config, options), null, 2),
@@ -59,7 +56,7 @@ export class ConfigCommand {
   }
 
   private displayHumanReadable(
-    config: SafeTressiConfig,
+    config: TressiConfig,
     options: DisplayOptions,
   ): void {
     terminal.print(chalk.bold('\n📋 Current Tressi Configuration'));
@@ -84,7 +81,7 @@ export class ConfigCommand {
     });
   }
 
-  private displayOptionsWithDefaults(options: SafeTressiOptionsConfig): void {
+  private displayOptionsWithDefaults(options: TressiOptionsConfig): void {
     const entries = [
       {
         key: 'concurrency',
@@ -129,10 +126,7 @@ export class ConfigCommand {
     });
   }
 
-  private displayRequest(
-    index: number,
-    request: SafeTressiRequestConfig,
-  ): void {
+  private displayRequest(index: number, request: TressiRequestConfig): void {
     terminal.print(`  ${index}. ${request.method || 'GET'} ${request.url}`);
     terminal.print(`     RPS: ${request.rps || 1}`);
     if (request.headers && Object.keys(request.headers).length > 0) {
@@ -148,7 +142,7 @@ export class ConfigCommand {
   }
 
   private formatConfigAsJson(
-    config: SafeTressiConfig,
+    config: TressiConfig,
     options: DisplayOptions,
   ): Record<string, unknown> {
     return {

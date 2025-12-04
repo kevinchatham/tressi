@@ -1,6 +1,6 @@
 import ora from 'ora';
 import { performance } from 'perf_hooks';
-import type { SafeTressiConfig } from 'tressi-common/config';
+import type { TressiConfig } from 'tressi-common/config';
 
 import type { Runner } from '../core/runner';
 
@@ -10,9 +10,9 @@ import type { Runner } from '../core/runner';
 export class MinimalTUI {
   private spinner: ReturnType<typeof ora>;
   private interval: NodeJS.Timeout | undefined;
-  private config: SafeTressiConfig;
+  private config: TressiConfig;
 
-  constructor(config: SafeTressiConfig) {
+  constructor(config: TressiConfig) {
     this.config = config;
     this.spinner = ora({ text: 'Test starting...' });
   }

@@ -1,4 +1,3 @@
-import type { AgentConfig } from 'tressi-common/config';
 import { Agent } from 'undici';
 import { beforeEach, describe, expect, it } from 'vitest';
 
@@ -6,6 +5,7 @@ import {
   AgentManager,
   globalAgentManager,
 } from '../../../src/http/agent-manager';
+import { AgentConfig } from '../../../src/types/reporting/types';
 
 describe('AgentManager', () => {
   let manager: AgentManager;

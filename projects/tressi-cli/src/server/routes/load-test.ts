@@ -10,7 +10,7 @@ import {
 } from 'tressi-common/api';
 
 import { runLoadTest } from '../..';
-import { validateAndMergeConfig } from '../../core/config';
+import { validateConfig } from '../../core/config';
 import { ConfigValidationError } from '../../types';
 import {
   createApiErrorResponse,
@@ -52,7 +52,7 @@ export const loadTestHandler = factory.createHandlers(
       const request = c.req.valid('json');
 
       // Validate config using the safe validation function
-      const validationResult = validateAndMergeConfig(request);
+      const validationResult = validateConfig(request);
 
       if (!validationResult.success) {
         if (validationResult.error instanceof ConfigValidationError) {
@@ -68,13 +68,13 @@ export const loadTestHandler = factory.createHandlers(
         // For other validation errors, use generic API error
         return c.json(
           createApiErrorResponse('Invalid configuration', 'VALIDATION_ERROR', [
-            validationResult.error.message,
+            'Configuration validation failed',
           ]),
           400,
         );
       }
 
-      // TypeScript narrows type to SafeTressiConfig
+      // TypeScript narrows type to TressiConfig
       // Generate job ID
       const jobId = `job_${Date.now()}`;
 

@@ -2,7 +2,7 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "target": "ES2022",
-    "module": "esnext",
+    "module": "ESNext",
     "lib": ["ES2022", "DOM"],
     "strict": true,
     "esModuleInterop": true,
@@ -13,7 +13,10 @@
     "resolveJsonModule": true,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    "types": ["vitest/globals", "node"]
+    "types": ["vitest/globals", "node"],
+    "paths": {
+      "tressi-common/*": ["../tressi-common/src/*/index.ts"]
+    }
   },
   "include": ["tests/**/*", "src/**/*"],
   "exclude": ["node_modules"]

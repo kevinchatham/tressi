@@ -1,4 +1,4 @@
-import { SafeTressiConfig } from '../config';
+import { TressiConfig } from '../config';
 
 /**
  * Health check response
@@ -69,5 +69,5 @@ export type ConfigMetadataApiResponse = {
  * Complete configuration record with metadata and full config
  */
 export type ConfigRecordApiResponse = ConfigMetadataApiResponse & {
-  config: SafeTressiConfig;
+  config: TressiConfig;
 };

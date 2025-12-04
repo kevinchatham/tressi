@@ -1,14 +1,14 @@
-import type {
-  IEndpointStateManager,
-  IStatsCounterManager,
-  SafeTressiConfig,
-} from 'tressi-common/config';
+import { TressiConfig } from 'tressi-common/config';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import {
+  IEndpointStateManager,
+  IStatsCounterManager,
+} from '../../../src/types/workers/interfaces';
 import { EarlyExitCoordinator } from '../../../src/workers/early-exit-coordinator';
 
 describe('EarlyExitCoordinator', () => {
-  let mockConfig: SafeTressiConfig;
+  let mockConfig: TressiConfig;
   let mockStatsCounterManagers: IStatsCounterManager[];
   let mockEndpointStateManager: IEndpointStateManager;
   let coordinator: EarlyExitCoordinator;
@@ -38,7 +38,7 @@ describe('EarlyExitCoordinator', () => {
           monitoringWindowMs: 100,
         },
       },
-    } as SafeTressiConfig;
+    } as TressiConfig;
 
     // Mock stats counter managers
     mockStatsCounterManagers = [
@@ -104,7 +104,7 @@ describe('EarlyExitCoordinator', () => {
 
   describe('constructor', () => {
     it('should initialize with disabled early exit when not configured', () => {
-      const disabledConfig: SafeTressiConfig = {
+      const disabledConfig: TressiConfig = {
         $schema: 'http://example.com/schema.json',
         requests: [],
         options: {
@@ -149,7 +149,7 @@ describe('EarlyExitCoordinator', () => {
 
   describe('startMonitoring', () => {
     it('should not start monitoring when disabled', () => {
-      const disabledConfig: SafeTressiConfig = {
+      const disabledConfig: TressiConfig = {
         $schema: 'http://example.com/schema.json',
         requests: [],
         options: {

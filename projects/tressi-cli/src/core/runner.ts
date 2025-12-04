@@ -1,7 +1,7 @@
 import EventEmitter from 'eventemitter3';
 import { cpus } from 'os';
 import { performance } from 'perf_hooks';
-import type { SafeTressiConfig } from 'tressi-common/config';
+import type { TressiConfig } from 'tressi-common/config';
 import type { AggregatedMetrics } from 'tressi-common/metrics';
 
 import { IRunnerEvents } from '../types/workers/interfaces';
@@ -12,7 +12,7 @@ import { WorkerPoolManager } from '../workers/worker-pool-manager';
  * This class coordinates between all specialized components and manages the test lifecycle.
  */
 export class Runner extends EventEmitter<IRunnerEvents> {
-  private config: SafeTressiConfig;
+  private config: TressiConfig;
   private workerPool: WorkerPoolManager | null = null;
   private startTime: number = 0;
 
@@ -20,7 +20,7 @@ export class Runner extends EventEmitter<IRunnerEvents> {
    * Creates a new CoreRunner instance.
    * @param config The Tressi configuration
    */
-  constructor(config: SafeTressiConfig) {
+  constructor(config: TressiConfig) {
     super();
     this.config = config;
   }

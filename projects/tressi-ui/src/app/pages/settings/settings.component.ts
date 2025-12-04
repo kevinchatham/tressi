@@ -13,7 +13,7 @@ import {
   ConfigMetadataApiResponse,
   ConfigRecordApiResponse,
 } from 'tressi-common/api';
-import { SafeTressiConfig } from 'tressi-common/config';
+import { TressiConfig } from 'tressi-common/config';
 import { defaultTressiConfig } from 'tressi-common/config';
 
 import { IconComponent } from '../../components/icon/icon.component';
@@ -186,7 +186,7 @@ export class SettingsComponent implements OnInit {
     if (!this.isFormValid()) return;
 
     const data = this.formData();
-    let config: SafeTressiConfig;
+    let config: TressiConfig;
 
     try {
       const requests = JSON.parse(data.endpoints);

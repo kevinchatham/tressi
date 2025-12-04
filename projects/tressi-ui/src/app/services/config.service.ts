@@ -5,7 +5,7 @@ import {
   ConfigRecordApiResponse,
 } from 'tressi-common/api';
 import { serverRoutes } from 'tressi-common/api';
-import { SafeTressiConfig } from 'tressi-common/config';
+import { TressiConfig } from 'tressi-common/config';
 
 import { HttpService } from './http.service';
 
@@ -37,10 +37,10 @@ export class ConfigService {
    */
   saveConfig(
     name: string,
-    config: SafeTressiConfig,
+    config: TressiConfig,
   ): Observable<ConfigRecordApiResponse> {
     return this.http.request<
-      { name: string; config: SafeTressiConfig },
+      { name: string; config: TressiConfig },
       ConfigRecordApiResponse
     >(serverRoutes.saveConfig, { name, config });
   }

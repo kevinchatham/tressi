@@ -1,4 +1,4 @@
-import { SafeTressiConfig } from 'tressi-common/config';
+import { TressiConfig } from 'tressi-common/config';
 import { AggregatedMetrics, GlobalMetrics } from 'tressi-common/metrics';
 
 import { EndpointCounters, LatencyHistogram, WorkerState } from './types';
@@ -18,7 +18,7 @@ export interface IGlobalServerEvents {
 }
 
 export interface IRunnerEvents {
-  start: (data: { config: SafeTressiConfig; startTime: number }) => void;
+  start: (data: { config: TressiConfig; startTime: number }) => void;
   complete: (results: AggregatedMetrics | undefined) => void;
   error: (err: unknown) => void;
 }

@@ -1,14 +1,14 @@
-import { SafeTressiConfig } from 'tressi-common/config';
+import { TressiConfig } from 'tressi-common/config';
 import { ZodError } from 'zod';
 
 /**
  * Discriminated union result type for configuration validation
- * Success path contains fully typed SafeTressiConfig
+ * Success path contains fully typed TressiConfig
  * Failure path contains structured error information
  */
 export type ConfigValidationResult =
-  | { success: true; data: SafeTressiConfig }
-  | { success: false; error: ConfigValidationError | ConfigMergeError };
+  | { success: true; data: TressiConfig }
+  | { success: false; error: ConfigValidationError };
 
 /**
  * Error class for Zod validation failures

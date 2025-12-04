@@ -10,7 +10,7 @@ import {
   serverRoutes,
   TressiServerRoute,
 } from 'tressi-common/api';
-import { SafeTressiConfig } from 'tressi-common/config';
+import { TressiConfig } from 'tressi-common/config';
 import { AggregatedMetrics } from 'tressi-common/metrics';
 
 import { LogService } from './log.service';
@@ -125,8 +125,8 @@ export class HttpService {
   /**
    * Convenience method for starting a load test
    */
-  startLoadTest(config: SafeTressiConfig): Observable<LoadTestApiResponse> {
-    return this.request<SafeTressiConfig, LoadTestApiResponse>(
+  startLoadTest(config: TressiConfig): Observable<LoadTestApiResponse> {
+    return this.request<TressiConfig, LoadTestApiResponse>(
       serverRoutes.test,
       config,
     );

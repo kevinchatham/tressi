@@ -1,10 +1,10 @@
-import type { SafeTressiRequestConfig } from 'tressi-common/config';
+import type { TressiRequestConfig } from 'tressi-common/config';
 import { describe, expect, it } from 'vitest';
 
 import { SharedMemoryFactory } from '../../../../src/workers/shared-memory/shared-memory-factory';
 
 describe('SharedMemoryFactory', () => {
-  const mockEndpoints: SafeTressiRequestConfig[] = [
+  const mockEndpoints: TressiRequestConfig[] = [
     {
       url: 'http://example.com/api/1',
       method: 'GET',

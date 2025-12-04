@@ -1,4 +1,4 @@
-import { SafeTressiConfig } from 'tressi-common/config';
+import { TressiConfig } from 'tressi-common/config';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { runLoadTest } from '../../src/index';
@@ -19,7 +19,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
 
   describe('Endpoint-specific rate limiting', () => {
     it('should apply different RPS limits to different endpoints', async () => {
-      const config: SafeTressiConfig = {
+      const config: TressiConfig = {
         $schema:
           'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json',
         requests: [
@@ -88,7 +88,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
     });
 
     it('should handle minimum RPS for specific endpoints', async () => {
-      const config: SafeTressiConfig = {
+      const config: TressiConfig = {
         $schema:
           'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json',
         requests: [
@@ -153,7 +153,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
     });
 
     it('should support very high per-endpoint RPS', async () => {
-      const config: SafeTressiConfig = {
+      const config: TressiConfig = {
         $schema:
           'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json',
         requests: [
@@ -200,7 +200,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
     });
 
     it('should support very low per-endpoint RPS', async () => {
-      const config: SafeTressiConfig = {
+      const config: TressiConfig = {
         $schema:
           'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json',
         requests: [
@@ -249,7 +249,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
 
   describe('Mixed configuration scenarios', () => {
     it('should combine per-endpoint and global RPS correctly', async () => {
-      const config: SafeTressiConfig = {
+      const config: TressiConfig = {
         $schema:
           'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json',
         requests: [
@@ -303,7 +303,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
     });
 
     it('should handle all endpoints using global RPS', async () => {
-      const config: SafeTressiConfig = {
+      const config: TressiConfig = {
         $schema:
           'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json',
         requests: [
@@ -359,7 +359,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
 
   describe('Edge cases', () => {
     it('should handle single endpoint with per-endpoint RPS', async () => {
-      const config: SafeTressiConfig = {
+      const config: TressiConfig = {
         $schema:
           'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json',
         requests: [
@@ -398,7 +398,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
     });
 
     it('should handle low RPS values', async () => {
-      const config: SafeTressiConfig = {
+      const config: TressiConfig = {
         $schema:
           'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json',
         requests: [
@@ -442,7 +442,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
     it('should maintain reasonable accuracy for single endpoint', async () => {
       const targetRps = 75;
 
-      const config: SafeTressiConfig = {
+      const config: TressiConfig = {
         $schema:
           'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json',
         requests: [],
@@ -480,7 +480,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
     it('should maintain reasonable accuracy for multiple endpoints', async () => {
       const expectedTotal = 30 + 20 + 10; // 60 RPS
 
-      const config: SafeTressiConfig = {
+      const config: TressiConfig = {
         $schema:
           'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json',
         requests: [],

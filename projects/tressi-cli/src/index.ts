@@ -4,11 +4,7 @@ import { promises as fs } from 'fs';
 import ora from 'ora';
 import path from 'path';
 import { performance } from 'perf_hooks';
-import type {
-  SafeTressiConfig,
-  SafeTressiOptionsConfig,
-  TressiOptionsConfig,
-} from 'tressi-common/config';
+import type { TressiConfig, TressiOptionsConfig } from 'tressi-common/config';
 
 import pkg from '../../../package.json';
 import { Runner } from './core/runner';
@@ -21,8 +17,8 @@ import { FileUtils } from './utils/file-utils';
 
 export { TestSummary };
 export type { TressiConfig } from 'tressi-common/config';
-export { validateAndMergeConfig } from './core/config';
-export { ConfigValidationError, ConfigMergeError } from './types';
+export { validateConfig } from './core/config';
+export { ConfigValidationError } from './types';
 
 /**
  * Prints a detailed summary of the load test results to the console.
@@ -32,8 +28,8 @@ export { ConfigValidationError, ConfigMergeError } from './types';
  */
 function printSummary(
   summary: TestSummary,
-  options: SafeTressiOptionsConfig,
-  config: SafeTressiConfig,
+  options: TressiOptionsConfig,
+  config: TressiConfig,
 ): void {
   printReportInfo(summary, options);
   printRunConfiguration(options, config);
@@ -70,7 +66,7 @@ function printReportInfo(
  */
 function printRunConfiguration(
   options: TressiOptionsConfig,
-  config: SafeTressiConfig,
+  config: TressiConfig,
 ): void {
   const { durationSec = 10, rampUpTimeSec, threads } = options;
 
@@ -180,12 +176,10 @@ function printEndpointSummary(summary: TestSummary): void {
 /**
  * The main function to execute a Tressi load test using the worker-based architecture.
  * It initializes the core components, manages the test execution, and handles reporting.
- * @param config The SafeTressiConfig for the test.
+ * @param config The TressiConfig for the test.
  * @returns A Promise that resolves with the TestSummary object.
  */
-export async function runLoadTest(
-  config: SafeTressiConfig,
-): Promise<TestSummary> {
+export async function runLoadTest(config: TressiConfig): Promise<TestSummary> {
   const { silent, exportPath } = config.options;
 
   const runner = new Runner(config);

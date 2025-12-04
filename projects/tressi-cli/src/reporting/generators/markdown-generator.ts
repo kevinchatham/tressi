@@ -1,4 +1,4 @@
-import type { SafeTressiConfig } from 'tressi-common/config';
+import type { TressiConfig } from 'tressi-common/config';
 
 import {
   EndpointSummary,
@@ -38,7 +38,7 @@ export class MarkdownGenerator {
   generate(
     summary: TestSummary,
     runner: RunnerInterface,
-    config: SafeTressiConfig,
+    config: TressiConfig,
     metadata?: ReportMetadata,
   ): string {
     const { global: g, endpoints: e } = summary;
@@ -135,7 +135,7 @@ export class MarkdownGenerator {
     return md;
   }
 
-  private formatConfiguration(config: SafeTressiConfig): string {
+  private formatConfiguration(config: TressiConfig): string {
     let md = `<details>\n`;
     md += `<summary>View Full Test Configuration</summary>\n\n`;
     md += '```json\n';

@@ -9,7 +9,7 @@ import {
   ValidationErrorApiResponse,
 } from 'tressi-common/api';
 
-import { validateAndMergeConfig } from '../../core/config';
+import { validateConfig } from '../../core/config';
 import { configStorage } from '../../core/config-storage';
 import { ConfigValidationError } from '../../types';
 import {
@@ -141,7 +141,7 @@ export const saveConfigHandler = factory.createHandlers(
     try {
       const { name, config } = c.req.valid('json');
 
-      const validationResult = validateAndMergeConfig(config);
+      const validationResult = validateConfig(config);
 
       if (validationResult.success === false) {
         if (validationResult.error instanceof ConfigValidationError) {
@@ -161,7 +161,7 @@ export const saveConfigHandler = factory.createHandlers(
         );
       }
 
-      // Success path - TypeScript knows validationResult.data is SafeTressiConfig
+      // Success path - TypeScript knows validationResult.data is TressiConfig
       const saved = await configStorage.save(name, validationResult.data);
       return c.json(saved, 201);
     } catch (error) {

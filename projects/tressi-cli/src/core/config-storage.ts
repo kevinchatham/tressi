@@ -7,7 +7,7 @@ import {
   ConfigMetadataApiResponse,
   ConfigRecordApiResponse,
 } from 'tressi-common/api';
-import type { SafeTressiConfig } from 'tressi-common/config';
+import type { TressiConfig } from 'tressi-common/config';
 
 import { ConfigDatabase } from '../types/db/types';
 
@@ -58,7 +58,7 @@ export class ConfigStorage {
    */
   async save(
     name: string,
-    config: SafeTressiConfig,
+    config: TressiConfig,
   ): Promise<ConfigRecordApiResponse> {
     await db.read();
 

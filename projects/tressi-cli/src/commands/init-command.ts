@@ -1,10 +1,6 @@
 import { promises as fs } from 'fs';
 import path from 'path';
-import {
-  defaultTressiConfig,
-  TressiConfig,
-  TressiOptionsConfig,
-} from 'tressi-common/config';
+import { defaultTressiConfig, TressiConfig } from 'tressi-common/config';
 
 /**
  * Handles the 'init' command for creating Tressi configuration files.
@@ -44,11 +40,7 @@ export class InitCommand {
    * @returns A minimal Tressi configuration object.
    */
   private generateMinimalConfig(): TressiConfig {
-    const options: TressiOptionsConfig = {
-      durationSec: 10,
-    };
-
-    const { $schema, requests } = defaultTressiConfig;
+    const { $schema, requests, options } = defaultTressiConfig;
 
     return {
       $schema,
