@@ -206,7 +206,7 @@ export class StatsCounterManager implements IStatsCounterManager {
 
     // Check if we've already recorded this status code using bitmap
     const bitmapOffset = this.getBitmapOffset(endpointIndex, statusIndex);
-    const bitMask = 1 << statusIndex % 32;
+    const bitMask = 1 << (statusIndex % 32);
 
     // Use compareExchange to enforce "one body per status code"
     const current = Atomics.load(this.statusCodeBitmap, bitmapOffset);

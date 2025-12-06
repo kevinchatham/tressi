@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -11,7 +10,7 @@ import { HealthService } from '../../services/health.service';
 @Component({
   selector: 'app-server-unavailable',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './server-unavailable.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
