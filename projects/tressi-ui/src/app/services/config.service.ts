@@ -1,25 +1,27 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { from, Observable } from 'rxjs';
 import type { TressiConfig } from 'tressi-common/config';
 
 import {
-  client,
-  CreateConfig,
-  GetAllConfigs,
-  GetConfigById,
-} from './rpc-client';
+  CreateConfigRequest,
+  GetAllConfigsResponse,
+  GetConfigByIdResponse,
+  RPCService,
+} from './rpc.service';
 
 @Injectable({
   providedIn: 'root',
 })
 export class ConfigService {
-  getAllConfigMetadata(): Observable<GetAllConfigs> {
-    return from(client.config.$get().then((r: Response) => r.json()));
+  private readonly rpc = inject(RPCService);
+
+  getAllConfigMetadata(): Observable<GetAllConfigsResponse> {
+    return from(this.rpc.client.config.$get().then((r: Response) => r.json()));
   }
 
-  getConfig(id: string): Observable<GetConfigById> {
+  getConfig(id: string): Observable<GetConfigByIdResponse> {
     return from(
-      client.config[':id']
+      this.rpc.client.config[':id']
         .$get({
           param: { id },
         })
@@ -27,9 +29,12 @@ export class ConfigService {
     );
   }
 
-  saveConfig(name: string, config: TressiConfig): Observable<CreateConfig> {
+  saveConfig(
+    name: string,
+    config: TressiConfig,
+  ): Observable<CreateConfigRequest> {
     return from(
-      client.config
+      this.rpc.client.config
         .$post({
           json: { name, config },
         })
@@ -39,7 +44,7 @@ export class ConfigService {
 
   deleteConfig(id: string): Observable<void> {
     return from(
-      client.config[':id']
+      this.rpc.client.config[':id']
         .$delete({
           param: { id },
         })

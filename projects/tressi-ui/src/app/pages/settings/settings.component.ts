@@ -15,7 +15,7 @@ import { defaultTressiConfig } from 'tressi-common/config';
 import { IconComponent } from '../../components/icon/icon.component';
 import { ConfigService } from '../../services/config.service';
 import { LogService } from '../../services/log.service';
-import { GetAllConfigs } from '../../services/rpc-client';
+import { GetAllConfigsResponse } from '../../services/rpc.service';
 
 interface ConfigMetadata {
   id: string;
@@ -52,7 +52,7 @@ export class SettingsComponent implements OnInit {
   private readonly router = inject(Router);
 
   /** Reactive signals for state management */
-  readonly configs = signal<GetAllConfigs>([]);
+  readonly configs = signal<GetAllConfigsResponse>([]);
   readonly isLoading = signal<boolean>(true);
   readonly isEditing = signal<boolean>(false);
   readonly editingConfig = signal<ConfigMetadata | null>(null);

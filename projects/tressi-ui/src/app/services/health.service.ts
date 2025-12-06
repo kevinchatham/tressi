@@ -5,7 +5,7 @@ import { catchError, finalize, tap } from 'rxjs/operators';
 
 import { HealthState } from '../types';
 import { LogService } from './log.service';
-import { client, GetHealthResponse } from './rpc-client';
+import { GetHealthResponse, RPCService } from './rpc.service';
 
 /**
  * Service responsible for monitoring the health of the backend server
@@ -31,6 +31,7 @@ import { client, GetHealthResponse } from './rpc-client';
 export class HealthService {
   private readonly log = inject(LogService);
   private readonly router = inject(Router);
+  private readonly rpc = inject(RPCService);
 
   /** Interval between health checks in milliseconds (10 seconds) */
   private readonly healthCheckInterval = 10_000;
@@ -123,7 +124,7 @@ export class HealthService {
       lastCheck: new Date(),
     }));
 
-    return from(client.health.$get().then((r) => r.json())).pipe(
+    return from(this.rpc.client.health.$get().then((r) => r.json())).pipe(
       tap({
         next: (health: GetHealthResponse) => {
           const ok = health?.status === 'ok';

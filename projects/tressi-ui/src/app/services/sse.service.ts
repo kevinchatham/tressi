@@ -1,18 +1,19 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { AggregatedMetrics } from 'tressi-common/metrics';
 
-import { client } from './rpc-client';
+import { RPCService } from './rpc.service';
 
 @Injectable({
   providedIn: 'root',
 })
 export class SSEService {
+  private readonly rpc = inject(RPCService);
   /**
    * Convenience method for metrics stream
    */
   getMetrics(): Observable<AggregatedMetrics> {
-    const url = client.metrics.stream.$url();
+    const url = this.rpc.client.metrics.stream.$url();
 
     return new Observable((observer) => {
       const eventSource = new EventSource(url);

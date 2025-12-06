@@ -15,10 +15,10 @@ import { LineChartComponent } from '../../components/line-chart/line-chart.compo
 import { ConfigService } from '../../services/config.service';
 import { LogService } from '../../services/log.service';
 import {
-  client,
-  GetAllConfigs,
-  GetConfigById,
-} from '../../services/rpc-client';
+  GetAllConfigsResponse,
+  GetConfigByIdResponse,
+  RPCService,
+} from '../../services/rpc.service';
 import { SSEService } from '../../services/sse.service';
 
 @Component({
@@ -34,15 +34,16 @@ export class DashboardComponent implements OnInit {
   private readonly configService = inject(ConfigService);
   private readonly logService = inject(LogService);
   private readonly router = inject(Router);
+  private readonly rpc = inject(RPCService);
 
   /** Reactive signal holding the history of aggregated metrics. */
   private readonly metricsHistory = signal<AggregatedMetrics[]>([]);
 
   /** Reactive signal holding available configurations. */
-  readonly configs = signal<GetAllConfigs>([]);
+  readonly configs = signal<GetAllConfigsResponse>([]);
 
   /** Reactive signal holding the selected configuration. */
-  readonly selectedConfig = signal<GetConfigById | null>(null);
+  readonly selectedConfig = signal<GetConfigByIdResponse | null>(null);
 
   /** Reactive signal for loading state. */
   readonly isLoading = signal<boolean>(true);
@@ -180,7 +181,7 @@ export class DashboardComponent implements OnInit {
 
     const config = selected?.config || defaultTressiConfig;
 
-    client.test
+    this.rpc.client.test
       .$post({ json: config })
       .then(async (response) => {
         if (!response.ok) {
