@@ -9,16 +9,20 @@ import {
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { ThemeSwitcherComponent } from 'src/app/components/theme-switcher/theme-switcher.component';
-import {
-  ConfigMetadataApiResponse,
-  ConfigRecordApiResponse,
-} from 'tressi-common/api';
 import { TressiConfig } from 'tressi-common/config';
 import { defaultTressiConfig } from 'tressi-common/config';
 
 import { IconComponent } from '../../components/icon/icon.component';
 import { ConfigService } from '../../services/config.service';
 import { LogService } from '../../services/log.service';
+import { GetAllConfigs } from '../../services/rpc-client';
+
+interface ConfigMetadata {
+  id: string;
+  name: string;
+  createdAt: number;
+  updatedAt: number;
+}
 
 interface ConfigFormData {
   name: string;
@@ -48,12 +52,12 @@ export class SettingsComponent implements OnInit {
   private readonly router = inject(Router);
 
   /** Reactive signals for state management */
-  readonly configs = signal<ConfigMetadataApiResponse[]>([]);
+  readonly configs = signal<GetAllConfigs>([]);
   readonly isLoading = signal<boolean>(true);
   readonly isEditing = signal<boolean>(false);
-  readonly editingConfig = signal<ConfigRecordApiResponse | null>(null);
+  readonly editingConfig = signal<ConfigMetadata | null>(null);
   readonly showDeleteModal = signal<boolean>(false);
-  readonly configToDelete = signal<ConfigMetadataApiResponse | null>(null);
+  readonly configToDelete = signal<ConfigMetadata | null>(null);
 
   /** Form data signal */
   readonly formData = signal<ConfigFormData>({
@@ -66,6 +70,24 @@ export class SettingsComponent implements OnInit {
   readonly isFormValid = computed<boolean>(() => {
     const data = this.formData();
     return data.name.trim().length > 0 && data.endpoints.trim().length > 0;
+  });
+
+  /** Computed signal that returns only the array of configs (or empty array) */
+  readonly safeConfigs = computed(() => {
+    const cfg = this.configs();
+    if (!cfg || 'error' in cfg) return [];
+    return cfg;
+  });
+
+  /** Computed signal to check if there are no configs to display */
+  readonly hasNoConfigs = computed(() => {
+    return this.safeConfigs().length === 0;
+  });
+
+  /** Computed signal to check if there's an error */
+  readonly hasError = computed(() => {
+    const cfg = this.configs();
+    return cfg && 'error' in cfg;
   });
 
   ngOnInit(): void {
@@ -113,10 +135,20 @@ export class SettingsComponent implements OnInit {
   /**
    * Starts editing an existing configuration.
    */
-  startEdit(config: ConfigMetadataApiResponse): void {
+  startEdit(config: ConfigMetadata): void {
+    if ('error' in config) return;
+
     this.isLoading.set(true);
     this.configService.getConfig(config.id).subscribe({
       next: (configRecord) => {
+        if (!configRecord || 'error' in configRecord) return;
+        if (!configRecord.config || !configRecord.config.requests) {
+          this.logService.error(
+            'Invalid configuration data: missing config or requests',
+          );
+          this.isLoading.set(false);
+          return;
+        }
         this.isEditing.set(true);
         this.editingConfig.set(configRecord);
         this.formData.set({
@@ -145,7 +177,7 @@ export class SettingsComponent implements OnInit {
   /**
    * Shows delete confirmation modal.
    */
-  showDeleteConfirm(config: ConfigMetadataApiResponse): void {
+  showDeleteConfirm(config: ConfigMetadata): void {
     this.configToDelete.set(config);
     this.showDeleteModal.set(true);
   }
@@ -163,7 +195,7 @@ export class SettingsComponent implements OnInit {
    */
   deleteConfig(): void {
     const config = this.configToDelete();
-    if (!config) return;
+    if (!config || 'error' in config) return;
 
     this.isLoading.set(true);
     this.configService.deleteConfig(config.id).subscribe({
@@ -266,7 +298,9 @@ export class SettingsComponent implements OnInit {
    * Gets the name of the config to delete safely.
    */
   getConfigToDeleteName(): string {
-    return this.configToDelete()?.name || 'this configuration';
+    const config = this.configToDelete();
+    if (config && 'error' in config) return 'error';
+    return config?.name || 'this configuration';
   }
 
   /**

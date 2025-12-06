@@ -15,7 +15,7 @@ import { terminal } from './tui/terminal';
 import { TestSummary } from './types/reporting/types';
 import { FileUtils } from './utils/file-utils';
 
-export { TestSummary };
+export type { TestSummary };
 export type { TressiConfig } from 'tressi-common/config';
 export { validateConfig } from './core/config';
 export { ConfigValidationError } from './types';

@@ -1,13 +1,6 @@
 import { sValidator } from '@hono/standard-validator';
-import type { TypedResponse } from 'hono';
-import { createFactory } from 'hono/factory';
-import {
-  ErrorApiResponse,
-  JobStatusApiResponse,
-  LoadTestApiResponse,
-  LoadTestRequestSchema,
-  ValidationErrorApiResponse,
-} from 'tressi-common/api';
+import { Hono } from 'hono';
+import { LoadTestRequestSchema } from 'tressi-common/api';
 
 import { runLoadTest } from '../..';
 import { validateConfig } from '../../core/config';
@@ -17,43 +10,37 @@ import {
   createZodValidationErrorResponse,
 } from '../utils/error-response-generator';
 
-// Single job tracking (only one job at a time)
+/**
+ * Load test management routes for starting and monitoring load tests.
+ * Supports single job execution with status tracking.
+ */
 let currentJob: {
   id: string;
   status: 'running' | 'completed' | 'failed';
   error?: string;
 } | null = null;
 
-const factory = createFactory();
-
-/**
- * POST /api/load-test - Start a load test (async only)
- */
-export const loadTestHandler = factory.createHandlers(
-  sValidator('json', LoadTestRequestSchema),
-  async (
-    c,
-  ): Promise<
-    | TypedResponse<LoadTestApiResponse>
-    | TypedResponse<ValidationErrorApiResponse>
-    | TypedResponse<ErrorApiResponse>
-  > => {
+const app = new Hono()
+  /**
+   * POST / - Starts a new load test job
+   * Validates configuration and ensures only one job runs at a time
+   * @param {LoadTestRequest} body - Load test configuration from request body
+   * @returns {Promise<Response>} Job acceptance/rejection response with 202/409 status
+   */
+  .post('/', sValidator('json', LoadTestRequestSchema), async (c) => {
     try {
-      // Check if a job is already running
       if (currentJob?.status === 'running') {
-        const response: LoadTestApiResponse = {
-          status: 'rejected',
-          message:
-            'A load test is already running. Please wait for it to complete.',
-        };
-        return c.json(response, 409);
+        return c.json(
+          {
+            status: 'rejected' as const,
+            message:
+              'A load test is already running. Please wait for it to complete.',
+          },
+          409,
+        );
       }
-
       const request = c.req.valid('json');
-
-      // Validate config using the safe validation function
       const validationResult = validateConfig(request);
-
       if (!validationResult.success) {
         if (validationResult.error instanceof ConfigValidationError) {
           return c.json(
@@ -64,8 +51,6 @@ export const loadTestHandler = factory.createHandlers(
             400,
           );
         }
-
-        // For other validation errors, use generic API error
         return c.json(
           createApiErrorResponse('Invalid configuration', 'VALIDATION_ERROR', [
             'Configuration validation failed',
@@ -73,18 +58,11 @@ export const loadTestHandler = factory.createHandlers(
           400,
         );
       }
-
-      // TypeScript narrows type to TressiConfig
-      // Generate job ID
       const jobId = `job_${Date.now()}`;
-
-      // Set current job to running
       currentJob = {
         id: jobId,
         status: 'running',
       };
-
-      // Start execution in background (don't await)
       (async (): Promise<void> => {
         try {
           await runLoadTest(validationResult.data);
@@ -99,13 +77,14 @@ export const loadTestHandler = factory.createHandlers(
           }
         }
       })();
-
-      const response: LoadTestApiResponse = {
-        status: 'accepted',
-        message: 'Load test started successfully',
-        jobId,
-      };
-      return c.json(response, 202);
+      return c.json(
+        {
+          status: 'accepted' as const,
+          message: 'Load test started successfully',
+          jobId,
+        },
+        202,
+      );
     } catch (error) {
       return c.json(
         createApiErrorResponse(
@@ -115,27 +94,23 @@ export const loadTestHandler = factory.createHandlers(
         400,
       );
     }
-  },
-);
-
-/**
- * GET /api/load-test/status - Get current job status
- */
-export const jobStatusHandler = factory.createHandlers(
-  async (c): Promise<TypedResponse<JobStatusApiResponse>> => {
+  })
+  /**
+   * GET /status - Retrieves the current load test job status
+   * @returns {Promise<Response>} Current job status including running state, job ID, and any errors
+   */
+  .get('/status', async (c) => {
     if (!currentJob) {
-      const response: JobStatusApiResponse = {
+      return c.json({
         isRunning: false,
-      };
-      return c.json(response);
+      });
     }
-
-    const response: JobStatusApiResponse = {
+    return c.json({
       isRunning: currentJob.status === 'running',
       jobId: currentJob.id,
       status: currentJob.status,
       error: currentJob.error,
-    };
-    return c.json(response);
-  },
-);
+    });
+  });
+
+export default app;

@@ -55,3 +55,29 @@ export class ConfigMergeError extends Error {
     this.name = 'ConfigMergeError';
   }
 }
+
+/**
+ * Error response structure
+ */
+export type ErrorApiResponse = {
+  error: {
+    message: string;
+    code?: string;
+    details?: string[];
+    timestamp: string;
+    path?: string;
+  };
+};
+
+/**
+ * Validation error response with detailed field errors
+ */
+export type ValidationErrorApiResponse = {
+  error: {
+    message: string;
+    code: 'VALIDATION_ERROR';
+    details: string[];
+    timestamp: string;
+    path?: string;
+  };
+};

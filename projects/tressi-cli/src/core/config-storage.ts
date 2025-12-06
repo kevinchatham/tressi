@@ -3,13 +3,13 @@ import { Low } from 'lowdb';
 import { JSONFile } from 'lowdb/node';
 import { homedir } from 'os';
 import { join } from 'path';
-import {
-  ConfigMetadataApiResponse,
-  ConfigRecordApiResponse,
-} from 'tressi-common/api';
 import type { TressiConfig } from 'tressi-common/config';
 
-import { ConfigDatabase } from '../types/db/types';
+import {
+  ConfigDatabase,
+  ConfigMetadataApiResponse,
+  ConfigRecordApiResponse,
+} from '../types/db/types';
 
 const configDir = join(homedir(), '.tressi');
 const configPath = join(configDir, 'configs.json');

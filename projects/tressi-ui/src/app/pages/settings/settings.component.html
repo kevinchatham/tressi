@@ -31,7 +31,7 @@
   <!-- Configuration List -->
   @if (!isEditing() && !isLoading()) {
     <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-      @for (config of configs(); track config.id) {
+      @for (config of safeConfigs(); track config.id) {
         <div
           class="card bg-base-100 shadow-xl transition-all duration-200 ease-in-out hover:-translate-y-0.5 hover:shadow-2xl"
         >
@@ -64,7 +64,7 @@
       }
     </div>
 
-    @if (configs().length === 0) {
+    @if (hasNoConfigs()) {
       <div class="py-12 text-center">
         <p class="text-base-content/70 mb-4 text-lg">No configurations found</p>
         <button (click)="startCreate()" class="btn btn-primary">

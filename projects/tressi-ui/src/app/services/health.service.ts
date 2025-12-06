@@ -1,12 +1,11 @@
 import { computed, inject, Injectable, Signal, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { EMPTY, Observable, Subscription } from 'rxjs';
+import { EMPTY, from, Observable, Subscription } from 'rxjs';
 import { catchError, finalize, tap } from 'rxjs/operators';
-import { HealthApiResponse } from 'tressi-common/api';
 
 import { HealthState } from '../types';
-import { HttpService } from './http.service';
 import { LogService } from './log.service';
+import { client, GetHealthResponse } from './rpc-client';
 
 /**
  * Service responsible for monitoring the health of the backend server
@@ -30,7 +29,6 @@ import { LogService } from './log.service';
  */
 @Injectable({ providedIn: 'root' })
 export class HealthService {
-  private readonly http = inject(HttpService);
   private readonly log = inject(LogService);
   private readonly router = inject(Router);
 
@@ -118,16 +116,16 @@ export class HealthService {
    * @returns Observable that emits the health response
    * @private
    */
-  private performHealthCheck(): Observable<HealthApiResponse> {
+  private performHealthCheck(): Observable<GetHealthResponse> {
     this.state.update((s) => ({
       ...s,
       isChecking: true,
       lastCheck: new Date(),
     }));
 
-    return this.http.getHealth().pipe(
+    return from(client.health.$get().then((r) => r.json())).pipe(
       tap({
-        next: (health: HealthApiResponse) => {
+        next: (health: GetHealthResponse) => {
           const ok = health?.status === 'ok';
           this.updateHealthState(
             ok,

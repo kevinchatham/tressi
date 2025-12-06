@@ -1,3 +1,2 @@
-export * from './contracts';
-export * from './routes';
+// Export only Zod schemas and basic types
 export * from './schemas';

@@ -1,9 +1,9 @@
 import {
+  ConfigMergeError,
+  ConfigValidationError,
   ErrorApiResponse,
   ValidationErrorApiResponse,
-} from 'tressi-common/api';
-
-import { ConfigMergeError, ConfigValidationError } from '../../types';
+} from '../../types';
 
 /**
  * Creates a standard API error response

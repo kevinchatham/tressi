@@ -14,7 +14,7 @@
             (change)="onConfigSelectEvent($event)"
           >
             <option value="">Default Config</option>
-            @for (config of configs(); track config.id) {
+            @for (config of safeConfigs(); track config.id) {
               <option [value]="config.id">{{ config.name }}</option>
             }
           </select>

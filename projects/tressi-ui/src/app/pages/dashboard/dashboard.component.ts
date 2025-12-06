@@ -7,18 +7,19 @@ import {
   signal,
 } from '@angular/core';
 import { Router } from '@angular/router';
-import {
-  ConfigMetadataApiResponse,
-  ConfigRecordApiResponse,
-} from 'tressi-common/api';
 import { defaultTressiConfig } from 'tressi-common/config';
 import { AggregatedMetrics } from 'tressi-common/metrics';
 
 import { IconComponent } from '../../components/icon/icon.component';
 import { LineChartComponent } from '../../components/line-chart/line-chart.component';
 import { ConfigService } from '../../services/config.service';
-import { HttpService } from '../../services/http.service';
 import { LogService } from '../../services/log.service';
+import {
+  client,
+  GetAllConfigs,
+  GetConfigById,
+} from '../../services/rpc-client';
+import { SSEService } from '../../services/sse.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -29,7 +30,7 @@ import { LogService } from '../../services/log.service';
 })
 export class DashboardComponent implements OnInit {
   /** Service injection */
-  private readonly http = inject(HttpService);
+  private readonly sseService = inject(SSEService);
   private readonly configService = inject(ConfigService);
   private readonly logService = inject(LogService);
   private readonly router = inject(Router);
@@ -38,10 +39,10 @@ export class DashboardComponent implements OnInit {
   private readonly metricsHistory = signal<AggregatedMetrics[]>([]);
 
   /** Reactive signal holding available configurations. */
-  readonly configs = signal<ConfigMetadataApiResponse[]>([]);
+  readonly configs = signal<GetAllConfigs>([]);
 
   /** Reactive signal holding the selected configuration. */
-  readonly selectedConfig = signal<ConfigRecordApiResponse | null>(null);
+  readonly selectedConfig = signal<GetConfigById | null>(null);
 
   /** Reactive signal for loading state. */
   readonly isLoading = signal<boolean>(true);
@@ -86,9 +87,18 @@ export class DashboardComponent implements OnInit {
     );
   });
 
+  /** Computed signal that returns only the array of configs (or empty array) */
+  readonly safeConfigs = computed(() => {
+    const cfg = this.configs();
+    if (!cfg || 'error' in cfg) return [];
+    return cfg;
+  });
+
   ngOnInit(): void {
     this.loadConfigurations();
-    this.http.getMetrics().subscribe((metrics) => this.updateCharts(metrics));
+    this.sseService
+      .getMetrics()
+      .subscribe((metrics) => this.updateCharts(metrics));
   }
 
   /**
@@ -112,7 +122,11 @@ export class DashboardComponent implements OnInit {
    * Handles configuration selection change.
    */
   onConfigSelect(configId: string): void {
-    const config = this.configs().find((c) => c.id === configId);
+    const allConfigs = this.configs();
+
+    if ('error' in allConfigs) return;
+
+    const config = allConfigs.find((c) => c.id === configId);
     if (config) {
       this.configService.getConfig(configId).subscribe({
         next: (configRecord) => {
@@ -156,8 +170,32 @@ export class DashboardComponent implements OnInit {
    */
   start(): void {
     this.metricsHistory.set([]);
-    const config = this.selectedConfig()?.config || defaultTressiConfig;
-    this.http.startLoadTest(config).subscribe();
+
+    const selected = this.selectedConfig();
+
+    if (selected && 'error' in selected) {
+      this.logService.error('No valid configuration selected');
+      return;
+    }
+
+    const config = selected?.config || defaultTressiConfig;
+
+    client.test
+      .$post({ json: config })
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then((data) => {
+        this.logService.info('Load test started successfully:', data);
+        // You could also update UI state here
+      })
+      .catch((error) => {
+        this.logService.error('Failed to start load test:', error);
+        // Show user-friendly error message
+      });
   }
 
   /**

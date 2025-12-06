@@ -1,21 +1,21 @@
-import type { TypedResponse } from 'hono';
-import { createFactory } from 'hono/factory';
-import { HealthApiResponse } from 'tressi-common/api';
-
-const factory = createFactory();
+import { Hono } from 'hono';
 
 /**
- * Health check endpoint handler
+ * Health check endpoint for monitoring service status.
+ * Provides basic health information including service name, timestamp, and uptime.
  */
-export const healthHandler = factory.createHandlers(
-  (c): TypedResponse<HealthApiResponse> => {
-    const response: HealthApiResponse = {
+const app = new Hono()
+  /**
+   * GET / - Returns health status of the service
+   * @returns {Response} JSON response with health status information
+   */
+  .get('/', (c) => {
+    return c.json({
       status: 'ok',
       service: 'tressi-server',
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
-    };
+    });
+  });
 
-    return c.json(response);
-  },
-);
+export default app;

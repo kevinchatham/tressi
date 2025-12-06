@@ -1,57 +1,49 @@
-import { inject, Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
-import {
-  ConfigMetadataApiResponse,
-  ConfigRecordApiResponse,
-} from 'tressi-common/api';
-import { serverRoutes } from 'tressi-common/api';
-import { TressiConfig } from 'tressi-common/config';
+import { Injectable } from '@angular/core';
+import { from, Observable } from 'rxjs';
+import type { TressiConfig } from 'tressi-common/config';
 
-import { HttpService } from './http.service';
+import {
+  client,
+  CreateConfig,
+  GetAllConfigs,
+  GetConfigById,
+} from './rpc-client';
 
 @Injectable({
   providedIn: 'root',
 })
 export class ConfigService {
-  private readonly http = inject(HttpService);
-
-  /**
-   * Get all configuration metadata (without full config data)
-   */
-  getAllConfigMetadata(): Observable<ConfigMetadataApiResponse[]> {
-    return this.http.request<ConfigMetadataApiResponse[]>(serverRoutes.configs);
+  getAllConfigMetadata(): Observable<GetAllConfigs> {
+    return from(client.config.$get().then((r: Response) => r.json()));
   }
 
-  /**
-   * Get a specific configuration by ID
-   */
-  getConfig(id: string): Observable<ConfigRecordApiResponse> {
-    return this.http.request<ConfigRecordApiResponse>({
-      route: serverRoutes.configById.route.replace(':id', id),
-      method: serverRoutes.configById.method,
-    });
+  getConfig(id: string): Observable<GetConfigById> {
+    return from(
+      client.config[':id']
+        .$get({
+          param: { id },
+        })
+        .then((r: Response) => r.json()),
+    );
   }
 
-  /**
-   * Save a configuration (creates new or updates existing by name)
-   */
-  saveConfig(
-    name: string,
-    config: TressiConfig,
-  ): Observable<ConfigRecordApiResponse> {
-    return this.http.request<
-      { name: string; config: TressiConfig },
-      ConfigRecordApiResponse
-    >(serverRoutes.saveConfig, { name, config });
+  saveConfig(name: string, config: TressiConfig): Observable<CreateConfig> {
+    return from(
+      client.config
+        .$post({
+          json: { name, config },
+        })
+        .then((r: Response) => r.json()),
+    );
   }
 
-  /**
-   * Delete a configuration by ID
-   */
   deleteConfig(id: string): Observable<void> {
-    return this.http.request<void>({
-      route: serverRoutes.deleteConfig.route.replace(':id', id),
-      method: serverRoutes.deleteConfig.method,
-    });
+    return from(
+      client.config[':id']
+        .$delete({
+          param: { id },
+        })
+        .then(() => undefined),
+    );
   }
 }
