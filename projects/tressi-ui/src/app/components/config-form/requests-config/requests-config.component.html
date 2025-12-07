@@ -1,32 +1,31 @@
-<div class="card bg-base-100 shadow-xl">
-  <div class="card-body">
-    <div class="flex items-center justify-between">
-      <h2 class="card-title text-lg">
-        <app-icon name="send" class="h-5 w-5" />
-        Request Configuration
-      </h2>
-      <button
-        type="button"
-        class="btn btn-primary btn-sm"
-        (click)="addRequest.emit()"
-      >
-        <app-icon name="add" class="h-4 w-4" />
-        Add Request
-      </button>
-    </div>
-
-    @if (configModel().requests.length === 0) {
-      <div class="alert alert-info">
-        <app-icon name="info" class="h-6 w-6 shrink-0" />
-        <span>No requests configured. Add at least one request to start.</span>
-      </div>
-    }
-
-    @for (request of configModel().requests; track $index) {
-      <app-request-item [configForm]="configForm()"
-        [requestIndex]="$index"
-        (removeRequest)="removeRequest.emit($index)"
-       />
-    }
+<div class="bg-base-100 ring-neutral rounded p-6 ring-1">
+  <div class="mb-4 flex items-center justify-between">
+    <h2 class="flex items-center gap-2 text-lg font-semibold">
+      <app-icon name="send" class="h-5 w-5" />
+      Request Configuration
+    </h2>
+    <button
+      type="button"
+      class="btn btn-primary btn-sm"
+      (click)="addRequest.emit()"
+    >
+      <app-icon name="add" class="h-4 w-4" />
+      Add Request
+    </button>
   </div>
+
+  @if (configModel().requests.length === 0) {
+    <div class="alert alert-info">
+      <app-icon name="info" class="h-6 w-6 shrink-0" />
+      <span>No requests configured. Add at least one request to start.</span>
+    </div>
+  }
+
+  @for (request of configModel().requests; track $index) {
+    <app-request-item
+      [configForm]="configForm()"
+      [requestIndex]="$index"
+      (removeRequest)="removeRequest.emit($index)"
+    />
+  }
 </div>

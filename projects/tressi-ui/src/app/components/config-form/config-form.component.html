@@ -1,42 +1,60 @@
 <form (submit)="onSubmit($event)" class="space-y-6 p-8">
   <!-- Tabs Navigation -->
-  <div class="tabs tabs-box">
-    <button
-      type="button"
-      class="tab"
-      [class.tab-active]="activeTab() === 'basic'"
-      (click)="setActiveTab('basic')"
-    >
-      <app-icon name="settings" class="h-4 w-4" />
-      Basic
-    </button>
-    <button
-      type="button"
-      class="tab"
-      [class.tab-active]="activeTab() === 'headers'"
-      (click)="setActiveTab('headers')"
-    >
-      <app-icon name="notes" class="h-4 w-4" />
-      Headers
-    </button>
-    <button
-      type="button"
-      class="tab"
-      [class.tab-active]="activeTab() === 'requests'"
-      (click)="setActiveTab('requests')"
-    >
-      <app-icon name="send" class="h-4 w-4" />
-      Requests
-    </button>
-    <button
-      type="button"
-      class="tab"
-      [class.tab-active]="activeTab() === 'worker-exit'"
-      (click)="setActiveTab('worker-exit')"
-    >
-      <app-icon name="warning" class="h-4 w-4" />
-      Worker Exit
-    </button>
+  <div class="border-b border-neutral">
+    <nav class="flex space-x-8">
+      <button
+        type="button"
+        class="flex items-center gap-2 border-b-2 px-1 py-4 text-sm font-medium transition-colors"
+        [class.border-primary]="activeTab() === 'basic'"
+        [class.text-primary]="activeTab() === 'basic'"
+        [class.border-transparent]="activeTab() !== 'basic'"
+        [class.text-base-content/60]="activeTab() !== 'basic'"
+        [class.hover:text-base-content]="activeTab() !== 'basic'"
+        (click)="setActiveTab('basic')"
+      >
+        <app-icon name="settings" class="h-4 w-4" />
+        Basic
+      </button>
+      <button
+        type="button"
+        class="flex items-center gap-2 border-b-2 px-1 py-4 text-sm font-medium transition-colors"
+        [class.border-primary]="activeTab() === 'headers'"
+        [class.text-primary]="activeTab() === 'headers'"
+        [class.border-transparent]="activeTab() !== 'headers'"
+        [class.text-base-content/60]="activeTab() !== 'headers'"
+        [class.hover:text-base-content]="activeTab() !== 'headers'"
+        (click)="setActiveTab('headers')"
+      >
+        <app-icon name="notes" class="h-4 w-4" />
+        Headers
+      </button>
+      <button
+        type="button"
+        class="flex items-center gap-2 border-b-2 px-1 py-4 text-sm font-medium transition-colors"
+        [class.border-primary]="activeTab() === 'requests'"
+        [class.text-primary]="activeTab() === 'requests'"
+        [class.border-transparent]="activeTab() !== 'requests'"
+        [class.text-base-content/60]="activeTab() !== 'requests'"
+        [class.hover:text-base-content]="activeTab() !== 'requests'"
+        (click)="setActiveTab('requests')"
+      >
+        <app-icon name="send" class="h-4 w-4" />
+        Requests
+      </button>
+      <button
+        type="button"
+        class="flex items-center gap-2 border-b-2 px-1 py-4 text-sm font-medium transition-colors"
+        [class.border-primary]="activeTab() === 'worker-exit'"
+        [class.text-primary]="activeTab() === 'worker-exit'"
+        [class.border-transparent]="activeTab() !== 'worker-exit'"
+        [class.text-base-content/60]="activeTab() !== 'worker-exit'"
+        [class.hover:text-base-content]="activeTab() !== 'worker-exit'"
+        (click)="setActiveTab('worker-exit')"
+      >
+        <app-icon name="warning" class="h-4 w-4" />
+        Worker Exit
+      </button>
+    </nav>
   </div>
 
   <!-- Tab Content -->
@@ -77,34 +95,32 @@
   </div>
 
   <!-- Form Actions -->
-  <div class="card bg-base-100 shadow-xl">
-    <div class="card-body">
-      <div class="card-actions justify-end">
-        <button
-          type="button"
-          class="btn btn-ghost"
-          (click)="configSaved.emit(configModel())"
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          class="btn btn-primary"
-          [disabled]="!isFormValid() || isLoading()"
-        >
-          @if (isLoading()) {
-            <span class="loading loading-spinner loading-sm"></span>
-          }
-          Save Configuration
-        </button>
-      </div>
-
-      @if (!isFormValid()) {
-        <div class="alert alert-warning mt-4">
-          <app-icon name="warning" class="h-6 w-6 shrink-0" />
-          <span>Please fix the validation errors above before saving.</span>
-        </div>
-      }
+  <div class="bg-base-100 ring-1 ring-neutral rounded p-4">
+    <div class="flex justify-end gap-3">
+      <button
+        type="button"
+        class="btn btn-ghost"
+        (click)="configSaved.emit(configModel())"
+      >
+        Cancel
+      </button>
+      <button
+        type="submit"
+        class="btn btn-primary"
+        [disabled]="!isFormValid() || isLoading()"
+      >
+        @if (isLoading()) {
+          <span class="loading loading-spinner loading-sm"></span>
+        }
+        Save Configuration
+      </button>
     </div>
+
+    @if (!isFormValid()) {
+      <div class="alert alert-warning mt-4">
+        <app-icon name="warning" class="h-6 w-6 shrink-0" />
+        <span>Please fix the validation errors above before saving.</span>
+      </div>
+    }
   </div>
 </form>
