@@ -1,0 +1,19 @@
+<form (submit)="onSubmit($event)">
+  <div>
+    <label>
+      Duration:
+      <input type="number" [field]="configForm.options.durationSec" />
+    </label>
+    @if (
+      configForm.options.durationSec().touched() &&
+      configForm.options.durationSec().invalid()
+    ) {
+      <ul class="error-list">
+        @for (error of configForm.options.durationSec().errors(); track error) {
+          <li>{{ error.message }}</li>
+        }
+      </ul>
+    }
+  </div>
+  <button type="submit">Save</button>
+</form>
