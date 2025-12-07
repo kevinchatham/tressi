@@ -7,7 +7,7 @@
       [class.tab-active]="activeTab() === 'basic'"
       (click)="setActiveTab('basic')"
     >
-      <app-icon name="settings" class="h-4 w-4"></app-icon>
+      <app-icon name="settings" class="h-4 w-4" />
       Basic
     </button>
     <button
@@ -16,7 +16,7 @@
       [class.tab-active]="activeTab() === 'headers'"
       (click)="setActiveTab('headers')"
     >
-      <app-icon name="notes" class="h-4 w-4"></app-icon>
+      <app-icon name="notes" class="h-4 w-4" />
       Headers
     </button>
     <button
@@ -25,7 +25,7 @@
       [class.tab-active]="activeTab() === 'requests'"
       (click)="setActiveTab('requests')"
     >
-      <app-icon name="send" class="h-4 w-4"></app-icon>
+      <app-icon name="send" class="h-4 w-4" />
       Requests
     </button>
     <button
@@ -34,7 +34,7 @@
       [class.tab-active]="activeTab() === 'worker-exit'"
       (click)="setActiveTab('worker-exit')"
     >
-      <app-icon name="warning" class="h-4 w-4"></app-icon>
+      <app-icon name="warning" class="h-4 w-4" />
       Worker Exit
     </button>
   </div>
@@ -43,40 +43,36 @@
   <div class="space-y-6">
     <!-- Basic Configuration Tab -->
     @if (activeTab() === 'basic') {
-      <app-basic-config
-        [configForm]="configForm"
+      <app-basic-config [configForm]="configForm"
         [configModel]="configModel()"
-      ></app-basic-config>
+       />
     }
 
     <!-- Global Headers Tab -->
     @if (activeTab() === 'headers') {
-      <app-global-headers
-        [configForm]="configForm"
+      <app-global-headers [configForm]="configForm"
         [configModel]="configModel()"
-      ></app-global-headers>
+       />
     }
 
     <!-- Requests Configuration Tab -->
     @if (activeTab() === 'requests') {
-      <app-requests-config
-        [configForm]="configForm"
+      <app-requests-config [configForm]="configForm"
         [configModel]="configModel()"
         (addRequest)="addRequest()"
         (removeRequest)="removeRequest($event)"
-      ></app-requests-config>
+       />
     }
 
     <!-- Worker Early Exit Tab -->
     @if (activeTab() === 'worker-exit') {
-      <app-worker-early-exit
-        [configForm]="configForm"
+      <app-worker-early-exit [configForm]="configForm"
         [configModel]="configModel()"
         (addPerEndpointThreshold)="addPerEndpointThreshold()"
         (removePerEndpointThreshold)="removePerEndpointThreshold($event)"
         (addWorkerExitStatusCode)="addWorkerExitStatusCode()"
         (removeWorkerExitStatusCode)="removeWorkerExitStatusCode($event)"
-      ></app-worker-early-exit>
+       />
     }
   </div>
 
@@ -105,7 +101,7 @@
 
       @if (!isFormValid()) {
         <div class="alert alert-warning mt-4">
-          <app-icon name="warning" class="h-6 w-6 shrink-0"></app-icon>
+          <app-icon name="warning" class="h-6 w-6 shrink-0" />
           <span>Please fix the validation errors above before saving.</span>
         </div>
       }
