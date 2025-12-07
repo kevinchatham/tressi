@@ -1,10 +1,9 @@
 import { sValidator } from '@hono/standard-validator';
 import { Hono } from 'hono';
 import { LoadTestRequestSchema } from 'tressi-common/api';
+import { ConfigValidationError, validateConfig } from 'tressi-common/config';
 
 import { runLoadTest } from '../..';
-import { validateConfig } from '../../core/config';
-import { ConfigValidationError } from '../../types';
 import {
   createApiErrorResponse,
   createZodValidationErrorResponse,

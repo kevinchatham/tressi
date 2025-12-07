@@ -9,14 +9,14 @@ import type {
 /**
  * Type representing the Tressi configuration.
  */
-export type TressiConfig = z.infer<typeof TressiConfigSchema>;
+export type TressiConfig = z.output<typeof TressiConfigSchema>;
 
 /**
  * Type representing the options configuration.
  */
-export type TressiOptionsConfig = z.infer<typeof TressiOptionsConfigSchema>;
+export type TressiOptionsConfig = z.output<typeof TressiOptionsConfigSchema>;
 
 /**
  * Type representing a single request configuration.
  */
-export type TressiRequestConfig = z.infer<typeof TressiRequestConfigSchema>;
+export type TressiRequestConfig = z.input<typeof TressiRequestConfigSchema>;

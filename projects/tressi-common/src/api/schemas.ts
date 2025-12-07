@@ -48,11 +48,11 @@ export const MetricsStreamRequestSchema = z.object({});
 /**
  * Inferred TypeScript types from schemas
  */
-export type SaveConfigRequest = z.infer<typeof SaveConfigRequestSchema>;
-export type LoadTestRequest = z.infer<typeof LoadTestRequestSchema>;
-export type HealthCheckRequest = z.infer<typeof HealthCheckRequestSchema>;
-export type JobStatusRequest = z.infer<typeof JobStatusRequestSchema>;
-export type GetAllConfigsRequest = z.infer<typeof GetAllConfigsRequestSchema>;
-export type GetConfigRequest = z.infer<typeof GetConfigRequestSchema>;
-export type DeleteConfigRequest = z.infer<typeof DeleteConfigRequestSchema>;
-export type MetricsStreamRequest = z.infer<typeof MetricsStreamRequestSchema>;
+export type SaveConfigRequest = z.output<typeof SaveConfigRequestSchema>;
+export type LoadTestRequest = z.output<typeof LoadTestRequestSchema>;
+export type HealthCheckRequest = z.output<typeof HealthCheckRequestSchema>;
+export type JobStatusRequest = z.output<typeof JobStatusRequestSchema>;
+export type GetAllConfigsRequest = z.output<typeof GetAllConfigsRequestSchema>;
+export type GetConfigRequest = z.output<typeof GetConfigRequestSchema>;
+export type DeleteConfigRequest = z.output<typeof DeleteConfigRequestSchema>;
+export type MetricsStreamRequest = z.output<typeof MetricsStreamRequestSchema>;

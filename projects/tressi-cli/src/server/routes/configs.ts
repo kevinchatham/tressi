@@ -1,10 +1,9 @@
 import { sValidator } from '@hono/standard-validator';
 import { Hono } from 'hono';
 import { SaveConfigRequestSchema } from 'tressi-common/api';
+import { ConfigValidationError, validateConfig } from 'tressi-common/config';
 
-import { validateConfig } from '../../core/config';
 import { configStorage } from '../../core/config-storage';
-import { ConfigValidationError } from '../../types';
 import {
   createApiErrorResponse,
   createConfigMergeErrorResponse,

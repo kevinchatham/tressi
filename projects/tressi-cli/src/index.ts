@@ -17,8 +17,6 @@ import { FileUtils } from './utils/file-utils';
 
 export type { TestSummary };
 export type { TressiConfig } from 'tressi-common/config';
-export { validateConfig } from './core/config';
-export { ConfigValidationError } from './types';
 
 /**
  * Prints a detailed summary of the load test results to the console.

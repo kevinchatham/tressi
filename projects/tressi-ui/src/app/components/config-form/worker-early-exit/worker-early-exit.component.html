@@ -1,0 +1,308 @@
+<div class="card bg-base-100 shadow-xl">
+  <div class="card-body">
+    <h2 class="card-title text-lg">
+      <app-icon name="warning" class="h-5 w-5"></app-icon>
+      Worker Early Exit Configuration
+    </h2>
+
+    <div class="form-control">
+      <label class="label cursor-pointer">
+        <span class="label-text font-medium">Enable Early Exit</span>
+        <input
+          type="checkbox"
+          class="checkbox checkbox-primary"
+          [field]="configForm().options.workerEarlyExit.enabled"
+        />
+      </label>
+    </div>
+
+    @if (configModel().options.workerEarlyExit.enabled) {
+      <div class="mt-4 space-y-4">
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <!-- Global Error Rate Threshold -->
+          <div class="form-control">
+            <label class="label">
+              <span class="label-text font-medium"
+                >Global Error Rate Threshold</span
+              >
+              <span class="label-text-alt">0.0 - 1.0</span>
+            </label>
+            <input
+              type="number"
+              class="input input-bordered"
+              [field]="
+                configForm().options.workerEarlyExit.globalErrorRateThreshold
+              "
+            />
+            @if (
+              configForm()
+                .options.workerEarlyExit.globalErrorRateThreshold()
+                .touched() &&
+              configForm()
+                .options.workerEarlyExit.globalErrorRateThreshold()
+                .invalid()
+            ) {
+              <label class="label">
+                <span class="label-text-alt text-error">
+                  @for (
+                    error of configForm()
+                      .options.workerEarlyExit.globalErrorRateThreshold()
+                      .errors();
+                    track error
+                  ) {
+                    {{ error.message }}
+                  }
+                </span>
+              </label>
+            }
+          </div>
+
+          <!-- Global Error Count Threshold -->
+          <div class="form-control">
+            <label class="label">
+              <span class="label-text font-medium"
+                >Global Error Count Threshold</span
+              >
+            </label>
+            <input
+              type="number"
+              class="input input-bordered"
+              [field]="
+                configForm().options.workerEarlyExit.globalErrorCountThreshold
+              "
+            />
+            @if (
+              configForm()
+                .options.workerEarlyExit.globalErrorCountThreshold()
+                .touched() &&
+              configForm()
+                .options.workerEarlyExit.globalErrorCountThreshold()
+                .invalid()
+            ) {
+              <label class="label">
+                <span class="label-text-alt text-error">
+                  @for (
+                    error of configForm()
+                      .options.workerEarlyExit.globalErrorCountThreshold()
+                      .errors();
+                    track error
+                  ) {
+                    {{ error.message }}
+                  }
+                </span>
+              </label>
+            }
+          </div>
+
+          <!-- Monitoring Window -->
+          <div class="form-control">
+            <label class="label">
+              <span class="label-text font-medium">Monitoring Window (ms)</span>
+            </label>
+            <input
+              type="number"
+              class="input input-bordered"
+              [field]="configForm().options.workerEarlyExit.monitoringWindowMs"
+            />
+            @if (
+              configForm()
+                .options.workerEarlyExit.monitoringWindowMs()
+                .touched() &&
+              configForm()
+                .options.workerEarlyExit.monitoringWindowMs()
+                .invalid()
+            ) {
+              <label class="label">
+                <span class="label-text-alt text-error">
+                  @for (
+                    error of configForm()
+                      .options.workerEarlyExit.monitoringWindowMs()
+                      .errors();
+                    track error
+                  ) {
+                    {{ error.message }}
+                  }
+                </span>
+              </label>
+            }
+          </div>
+
+          <!-- Stop Mode -->
+          <div class="form-control">
+            <label class="label">
+              <span class="label-text font-medium">Stop Mode</span>
+            </label>
+            <select
+              class="select select-bordered"
+              [field]="configForm().options.workerEarlyExit.stopMode"
+            >
+              <option value="global">Stop entire test</option>
+              <option value="endpoint">Stop individual endpoints</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Worker Exit Status Codes -->
+        <div>
+          <div class="mb-2 flex items-center justify-between">
+            <label class="label-text font-medium"
+              >Worker Exit Status Codes</label
+            >
+            <button
+              type="button"
+              class="btn btn-primary btn-sm"
+              (click)="addWorkerExitStatusCode.emit()"
+            >
+              <app-icon name="add" class="h-4 w-4"></app-icon>
+              Add Code
+            </button>
+          </div>
+          <div class="space-y-2">
+            @for (
+              code of configModel().options.workerEarlyExit
+                .workerExitStatusCodes;
+              track $index
+            ) {
+              <div class="flex items-center gap-2">
+                <input
+                  type="number"
+                  class="input input-bordered input-sm"
+                  [field]="
+                    configForm().options.workerEarlyExit.workerExitStatusCodes[
+                      $index
+                    ]
+                  "
+                />
+                <button
+                  type="button"
+                  class="btn btn-error btn-sm btn-square"
+                  (click)="removeWorkerExitStatusCode.emit($index)"
+                >
+                  <app-icon name="delete" class="h-4 w-4"></app-icon>
+                </button>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Per-Endpoint Thresholds -->
+        <div>
+          <div class="mb-2 flex items-center justify-between">
+            <label class="label-text font-medium"
+              >Per-Endpoint Thresholds</label
+            >
+            <button
+              type="button"
+              class="btn btn-primary btn-sm"
+              (click)="addPerEndpointThreshold.emit()"
+            >
+              <app-icon name="add" class="h-4 w-4"></app-icon>
+              Add Threshold
+            </button>
+          </div>
+          @for (
+            threshold of configModel().options.workerEarlyExit
+              .perEndpointThresholds;
+            track $index
+          ) {
+            <div class="card bg-base-200 mb-2 p-4">
+              <div class="grid grid-cols-1 gap-2 md:grid-cols-3">
+                <input
+                  type="url"
+                  class="input input-bordered input-sm"
+                  [field]="
+                    configForm().options.workerEarlyExit.perEndpointThresholds[
+                      $index
+                    ].url
+                  "
+                  placeholder="https://api.example.com/endpoint"
+                />
+                <input
+                  type="number"
+                  class="input input-bordered input-sm"
+                  [field]="
+                    configForm().options.workerEarlyExit.perEndpointThresholds[
+                      $index
+                    ].errorRateThreshold
+                  "
+                  placeholder="Error rate (0-1)"
+                />
+                <div class="flex items-center gap-2">
+                  <!-- 
+                  TODO: Not sure how to make this work yet
+                  <input
+                    type="number"
+                    class="input input-bordered input-sm"
+                    [field]="
+                      configForm().options.workerEarlyExit
+                        .perEndpointThresholds[$index].errorCountThreshold
+                    "
+                    placeholder="Count threshold"
+                  /> 
+                  -->
+                  <button
+                    type="button"
+                    class="btn btn-error btn-sm btn-square"
+                    (click)="removePerEndpointThreshold.emit($index)"
+                  >
+                    <app-icon name="delete" class="h-4 w-4"></app-icon>
+                  </button>
+                </div>
+              </div>
+              @if (
+                configForm()
+                  .options.workerEarlyExit.perEndpointThresholds[$index].url()
+                  .touched() &&
+                configForm()
+                  .options.workerEarlyExit.perEndpointThresholds[$index].url()
+                  .invalid()
+              ) {
+                <label class="label">
+                  <span class="label-text-alt text-error">
+                    @for (
+                      error of configForm()
+                        .options.workerEarlyExit.perEndpointThresholds[
+                          $index
+                        ].url()
+                        .errors();
+                      track error
+                    ) {
+                      {{ error.message }}
+                    }
+                  </span>
+                </label>
+              }
+              @if (
+                configForm()
+                  .options.workerEarlyExit.perEndpointThresholds[
+                    $index
+                  ].errorRateThreshold()
+                  .touched() &&
+                configForm()
+                  .options.workerEarlyExit.perEndpointThresholds[
+                    $index
+                  ].errorRateThreshold()
+                  .invalid()
+              ) {
+                <label class="label">
+                  <span class="label-text-alt text-error">
+                    @for (
+                      error of configForm()
+                        .options.workerEarlyExit.perEndpointThresholds[
+                          $index
+                        ].errorRateThreshold()
+                        .errors();
+                      track error
+                    ) {
+                      {{ error.message }}
+                    }
+                  </span>
+                </label>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    }
+  </div>
+</div>

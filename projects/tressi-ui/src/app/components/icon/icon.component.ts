@@ -12,7 +12,11 @@ export type IconName =
   | 'settings'
   | 'delete'
   | 'edit'
-  | 'add';
+  | 'add'
+  | 'notes'
+  | 'send'
+  | 'info'
+  | 'warning';
 
 @Component({
   selector: 'app-icon',

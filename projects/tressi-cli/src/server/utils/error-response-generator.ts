@@ -3,7 +3,7 @@ import {
   ConfigValidationError,
   ErrorApiResponse,
   ValidationErrorApiResponse,
-} from '../../types';
+} from 'tressi-common/config';
 
 /**
  * Creates a standard API error response

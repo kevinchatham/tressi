@@ -1,19 +1,114 @@
-<form (submit)="onSubmit($event)">
-  <div>
-    <label>
-      Duration:
-      <input type="number" [field]="configForm.options.durationSec" />
-    </label>
-    @if (
-      configForm.options.durationSec().touched() &&
-      configForm.options.durationSec().invalid()
-    ) {
-      <ul class="error-list">
-        @for (error of configForm.options.durationSec().errors(); track error) {
-          <li>{{ error.message }}</li>
-        }
-      </ul>
+<form (submit)="onSubmit($event)" class="space-y-6 p-8">
+  <!-- Tabs Navigation -->
+  <div class="tabs tabs-box">
+    <button
+      type="button"
+      class="tab"
+      [class.tab-active]="activeTab() === 'basic'"
+      (click)="setActiveTab('basic')"
+    >
+      <app-icon name="settings" class="h-4 w-4"></app-icon>
+      Basic
+    </button>
+    <button
+      type="button"
+      class="tab"
+      [class.tab-active]="activeTab() === 'headers'"
+      (click)="setActiveTab('headers')"
+    >
+      <app-icon name="notes" class="h-4 w-4"></app-icon>
+      Headers
+    </button>
+    <button
+      type="button"
+      class="tab"
+      [class.tab-active]="activeTab() === 'requests'"
+      (click)="setActiveTab('requests')"
+    >
+      <app-icon name="send" class="h-4 w-4"></app-icon>
+      Requests
+    </button>
+    <button
+      type="button"
+      class="tab"
+      [class.tab-active]="activeTab() === 'worker-exit'"
+      (click)="setActiveTab('worker-exit')"
+    >
+      <app-icon name="warning" class="h-4 w-4"></app-icon>
+      Worker Exit
+    </button>
+  </div>
+
+  <!-- Tab Content -->
+  <div class="space-y-6">
+    <!-- Basic Configuration Tab -->
+    @if (activeTab() === 'basic') {
+      <app-basic-config
+        [configForm]="configForm"
+        [configModel]="configModel()"
+      ></app-basic-config>
+    }
+
+    <!-- Global Headers Tab -->
+    @if (activeTab() === 'headers') {
+      <app-global-headers
+        [configForm]="configForm"
+        [configModel]="configModel()"
+      ></app-global-headers>
+    }
+
+    <!-- Requests Configuration Tab -->
+    @if (activeTab() === 'requests') {
+      <app-requests-config
+        [configForm]="configForm"
+        [configModel]="configModel()"
+        (addRequest)="addRequest()"
+        (removeRequest)="removeRequest($event)"
+      ></app-requests-config>
+    }
+
+    <!-- Worker Early Exit Tab -->
+    @if (activeTab() === 'worker-exit') {
+      <app-worker-early-exit
+        [configForm]="configForm"
+        [configModel]="configModel()"
+        (addPerEndpointThreshold)="addPerEndpointThreshold()"
+        (removePerEndpointThreshold)="removePerEndpointThreshold($event)"
+        (addWorkerExitStatusCode)="addWorkerExitStatusCode()"
+        (removeWorkerExitStatusCode)="removeWorkerExitStatusCode($event)"
+      ></app-worker-early-exit>
     }
   </div>
-  <button type="submit">Save</button>
+
+  <!-- Form Actions -->
+  <div class="card bg-base-100 shadow-xl">
+    <div class="card-body">
+      <div class="card-actions justify-end">
+        <button
+          type="button"
+          class="btn btn-ghost"
+          (click)="configSaved.emit(configModel())"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          class="btn btn-primary"
+          [disabled]="!isFormValid() || isLoading()"
+        >
+          @if (isLoading()) {
+            <span class="loading loading-spinner loading-sm"></span>
+          }
+          Save Configuration
+        </button>
+      </div>
+
+      @if (!isFormValid()) {
+        <div class="alert alert-warning mt-4">
+          <app-icon name="warning" class="h-6 w-6 shrink-0"></app-icon>
+          <span>Please fix the validation errors above before saving.</span>
+        </div>
+      }
+    </div>
+  </div>
 </form>

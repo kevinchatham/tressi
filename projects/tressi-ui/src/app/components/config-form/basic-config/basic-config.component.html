@@ -1,0 +1,137 @@
+<div class="card bg-base-100 shadow-xl">
+  <div class="card-body">
+    <h2 class="card-title text-lg">
+      <app-icon name="settings" class="h-5 w-5"></app-icon>
+      Basic Configuration
+    </h2>
+
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <!-- Duration -->
+      <div class="form-control">
+        <label class="label">
+          <span class="label-text font-medium">Duration (seconds)</span>
+          <span class="label-text-alt">Total test duration</span>
+        </label>
+        <input
+          type="number"
+          class="input input-bordered"
+          [field]="configForm().options.durationSec"
+        />
+        @if (
+          configForm().options.durationSec().touched() &&
+          configForm().options.durationSec().invalid()
+        ) {
+          <label class="label">
+            <span class="label-text-alt text-error">
+              @for (
+                error of configForm().options.durationSec().errors();
+                track error
+              ) {
+                {{ error.message }}
+              }
+            </span>
+          </label>
+        }
+      </div>
+
+      <!-- Ramp Up Time -->
+      <div class="form-control">
+        <label class="label">
+          <span class="label-text font-medium">Ramp Up Time (seconds)</span>
+          <span class="label-text-alt">Time to reach target RPS</span>
+        </label>
+        <input
+          type="number"
+          class="input input-bordered"
+          [field]="configForm().options.rampUpTimeSec"
+        />
+        @if (
+          configForm().options.rampUpTimeSec().touched() &&
+          configForm().options.rampUpTimeSec().invalid()
+        ) {
+          <label class="label">
+            <span class="label-text-alt text-error">
+              @for (
+                error of configForm().options.rampUpTimeSec().errors();
+                track error
+              ) {
+                {{ error.message }}
+              }
+            </span>
+          </label>
+        }
+      </div>
+
+      <!-- Threads -->
+      <div class="form-control">
+        <label class="label">
+          <span class="label-text font-medium">Worker Threads</span>
+          <span class="label-text-alt">Leave empty for auto-detect</span>
+        </label>
+        <input
+          type="number"
+          class="input input-bordered"
+          [field]="configForm().options.threads"
+          placeholder="Auto-detect"
+        />
+      </div>
+
+      <!-- Worker Memory Limit -->
+      <div class="form-control">
+        <label class="label">
+          <span class="label-text font-medium">Worker Memory Limit (MB)</span>
+          <span class="label-text-alt">Memory per worker thread</span>
+        </label>
+        <input
+          type="number"
+          class="input input-bordered"
+          [field]="configForm().options.workerMemoryLimit"
+        />
+        @if (
+          configForm().options.workerMemoryLimit().touched() &&
+          configForm().options.workerMemoryLimit().invalid()
+        ) {
+          <label class="label">
+            <span class="label-text-alt text-error">
+              @for (
+                error of configForm().options.workerMemoryLimit().errors();
+                track error
+              ) {
+                {{ error.message }}
+              }
+            </span>
+          </label>
+        }
+      </div>
+
+      <!-- Export Path -->
+      <div class="form-control md:col-span-2">
+        <label class="label">
+          <span class="label-text font-medium">Export Path</span>
+          <span class="label-text-alt">Directory for test reports</span>
+        </label>
+        <input
+          type="text"
+          class="input input-bordered"
+          [field]="configForm().options.exportPath"
+          placeholder="./tressi-report"
+        />
+      </div>
+
+      <!-- Silent Mode -->
+      <div class="form-control">
+        <label class="label cursor-pointer">
+          <span class="label-text font-medium">Silent Mode</span>
+          <input
+            type="checkbox"
+            class="checkbox checkbox-primary"
+            [field]="configForm().options.silent"
+          />
+        </label>
+        <span class="text-base-content/70 text-sm"
+          >Suppress console output</span
+        >
+      </div>
+    </div>
+  </div>
+</div>

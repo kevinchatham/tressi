@@ -1,9 +1,7 @@
 import { promises as fs } from 'fs';
 import * as path from 'path';
-import { type TressiConfig, TressiConfigSchema } from 'tressi-common/config';
+import { type TressiConfig, validateConfig } from 'tressi-common/config';
 import { request } from 'undici';
-
-import { ConfigValidationError, ConfigValidationResult } from '../types';
 
 class TressiConfigLoader {
   /**
@@ -17,7 +15,7 @@ class TressiConfigLoader {
 
     // Handle direct object input
     if (typeof potentialConfig === 'object') {
-      const result = TressiConfigLoader.validateConfig(potentialConfig);
+      const result = validateConfig(potentialConfig);
       if (!result.success) {
         // Convert to error for backward compat at this boundary
         throw new Error(result.error.message);
@@ -31,7 +29,7 @@ class TressiConfigLoader {
     // Handle URL input
     if (this.isUrl(potentialConfig)) {
       const rawContent = await this.fetchRemoteConfig(potentialConfig);
-      const result = TressiConfigLoader.validateConfig(rawContent);
+      const result = validateConfig(rawContent);
       if (!result.success) {
         throw new Error(result.error.message);
       }
@@ -43,7 +41,7 @@ class TressiConfigLoader {
 
     // Handle file input
     const rawContent = await this.loadFileConfig(potentialConfig);
-    const result = TressiConfigLoader.validateConfig(rawContent);
+    const result = validateConfig(rawContent);
     if (!result.success) {
       throw new Error(result.error.message);
     }
@@ -100,23 +98,6 @@ class TressiConfigLoader {
       );
     }
   }
-
-  static validateConfig(rawContent: unknown): ConfigValidationResult {
-    // Use Zod's safeParse to avoid exceptions
-    const parseResult = TressiConfigSchema.safeParse(rawContent);
-
-    if (!parseResult.success) {
-      return {
-        success: false,
-        error: new ConfigValidationError(parseResult.error),
-      };
-    }
-
-    return {
-      success: true,
-      data: parseResult.data, // Now fully populated with defaults
-    };
-  }
 }
 
 const loader = new TressiConfigLoader();
@@ -126,5 +107,3 @@ export async function loadConfig(
 ): Promise<{ config: TressiConfig; path: string }> {
   return await loader.load(configInput);
 }
-
-export const validateConfig = TressiConfigLoader.validateConfig;

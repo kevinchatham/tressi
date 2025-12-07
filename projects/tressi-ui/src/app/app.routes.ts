@@ -1,6 +1,7 @@
 import { inject } from '@angular/core';
 import { Router, Routes } from '@angular/router';
 
+import { ConfigFormComponent } from './components/config-form/config-form.component';
 import { DashboardComponent } from './pages/dashboard/dashboard.component';
 import { ServerUnavailableComponent } from './pages/server-unavailable/server-unavailable.component';
 import { SettingsComponent } from './pages/settings/settings.component';
@@ -37,6 +38,10 @@ export const routes: Routes = [
       {
         path: 'settings',
         component: SettingsComponent,
+      },
+      {
+        path: 'config',
+        component: ConfigFormComponent,
       },
       {
         path: '**',

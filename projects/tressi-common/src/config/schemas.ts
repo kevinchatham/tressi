@@ -1,5 +1,7 @@
 import z from 'zod';
 
+import pkg from '../../../../package.json';
+
 /**
  * Zod schema for a single request configuration.
  */
@@ -10,7 +12,6 @@ export const TressiRequestConfigSchema = z.object({
   payload: z
     .record(z.string(), z.unknown())
     .or(z.array(z.unknown()))
-    .nullable()
     .optional(),
   /** The HTTP method to use for the request. Defaults to GET. */
   method: z
@@ -20,7 +21,10 @@ export const TressiRequestConfigSchema = z.object({
     )
     .default('GET'),
   /** Headers to be sent with this specific request. Merged with global headers. */
-  headers: z.record(z.string(), z.string()).nullable().optional(),
+  headers: z
+    .record(z.string(), z.string())
+    .optional()
+    .default({ 'User-Agent': 'Tressi' }),
   /** Per-endpoint requests per second limit. Defaults to 1. */
   rps: z.number().int().min(1).default(1),
 });
@@ -35,21 +39,22 @@ export const TressiOptionsConfigSchema = z
     /** The time in seconds to ramp up to the target RPS. Defaults to 0. */
     rampUpTimeSec: z.number().int().nonnegative().default(0),
     /** The base path for the exported report. If not provided, no report will be generated. */
-    exportPath: z.string().nullable().default('./tressi-report'),
+    exportPath: z.string().optional().default('./tressi-report'),
     /** Suppress all console output. Defaults to false. */
     silent: z.boolean().default(false),
     /** Global headers to be sent with every request. */
     headers: z
       .record(z.string(), z.string())
-      .nullable()
-      .default({ 'User-Agent': 'Tressi/1.0.0' }),
+      .optional()
+      .default({ 'User-Agent': 'Tressi' }),
     threads: z
       .number()
       .int()
       .min(1)
       .max(32)
       .optional()
-      .describe('Number of worker threads to use (defaults to CPU count)'),
+      .describe('Number of worker threads to use (defaults to CPU count)')
+      .default(1),
     workerMemoryLimit: z
       .number()
       .int()
@@ -121,17 +126,15 @@ export const TressiOptionsConfigSchema = z
 /**
  * Zod schema for the main Tressi configuration.
  */
-export const TressiConfigSchema = z
-  .object({
-    /** A URL to the JSON schema for this configuration file. */
-    $schema: z.string(),
-    /** An array of request configurations. */
-    requests: z.array(TressiRequestConfigSchema),
-    /** Configuration options for the test runner. */
-    options: TressiOptionsConfigSchema,
-  })
-  .transform((config) => ({
-    ...config,
-    // Ensure all request defaults are applied (Zod already handles this, but keep for explicitness)
-    requests: config.requests.map((req) => req),
-  }));
+export const TressiConfigSchema = z.object({
+  /** A URL to the JSON schema for this configuration file. */
+  $schema: z
+    .string()
+    .default(
+      `https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v${pkg.version}.json`,
+    ),
+  /** An array of request configurations. */
+  requests: z.array(TressiRequestConfigSchema).default([]),
+  /** Configuration options for the test runner. */
+  options: TressiOptionsConfigSchema.default({}),
+});

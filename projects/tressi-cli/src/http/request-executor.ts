@@ -1,5 +1,8 @@
 import { performance } from 'perf_hooks';
-import type { TressiRequestConfig } from 'tressi-common/config';
+import {
+  type TressiRequestConfig,
+  TressiRequestConfigSchema,
+} from 'tressi-common/config';
 import { request } from 'undici';
 
 import { RequestResult } from '../types/reporting/types';
@@ -37,13 +40,17 @@ export class RequestExecutor {
     const headers = this.getHeadersObject();
     const result = this.getResultObject();
 
+    const parsedReq = TressiRequestConfigSchema.parse(req);
+
     try {
       // Reuse headers object instead of creating new one
-      Object.assign(headers, globalHeaders, req.headers);
+      Object.assign(headers, globalHeaders, parsedReq.headers);
 
       // Calculate request body size for bandwidth tracking
       const requestBody =
-        req.payload === undefined ? undefined : JSON.stringify(req.payload);
+        parsedReq.payload === undefined
+          ? undefined
+          : JSON.stringify(parsedReq.payload);
       const bytesSent = requestBody
         ? Buffer.byteLength(requestBody, 'utf8')
         : 0;
@@ -51,21 +58,21 @@ export class RequestExecutor {
       // Use per-endpoint agents in production, global dispatcher in tests
       const dispatcher =
         process.env.NODE_ENV !== 'test'
-          ? globalAgentManager.getAgent(req.url)
+          ? globalAgentManager.getAgent(parsedReq.url)
           : undefined; // When undefined, undici will use the global dispatcher
 
       const {
         statusCode,
         body: responseBody,
         headers: responseHeaders,
-      } = await request(req.url, {
-        method: req.method || 'GET',
+      } = await request(parsedReq.url, {
+        method: parsedReq.method || 'GET',
         headers,
         body: requestBody,
         dispatcher,
       });
 
-      const method = req.method || 'GET';
+      const method = parsedReq.method || 'GET';
       const latencyMs = Math.max(0, performance.now() - start);
 
       // Calculate response body size for bandwidth tracking
@@ -75,7 +82,7 @@ export class RequestExecutor {
       // Check if we should sample this status code for this endpoint
       const shouldSampleBody = this.responseSampler.shouldSampleResponse(
         method,
-        req.url,
+        parsedReq.url,
         statusCode,
       );
 
@@ -102,7 +109,7 @@ export class RequestExecutor {
 
       // Populate result object from pool
       result.method = method;
-      result.url = req.url;
+      result.url = parsedReq.url;
       result.status = statusCode;
       result.latencyMs = latencyMs;
       result.success = statusCode >= 200 && statusCode < 300;
@@ -123,8 +130,8 @@ export class RequestExecutor {
         : 0;
 
       // Populate result object for error case
-      result.method = req.method || 'GET';
-      result.url = req.url;
+      result.method = parsedReq.method || 'GET';
+      result.url = parsedReq.url;
       result.status = 0;
       result.latencyMs = latencyMs;
       result.success = false;

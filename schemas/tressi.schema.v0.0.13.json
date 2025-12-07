@@ -5,7 +5,8 @@
       "type": "object",
       "properties": {
         "$schema": {
-          "type": "string"
+          "type": "string",
+          "default": "https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json"
         },
         "requests": {
           "type": "array",
@@ -19,19 +20,12 @@
               "payload": {
                 "anyOf": [
                   {
-                    "anyOf": [
-                      {
-                        "type": "object",
-                        "additionalProperties": {}
-                      },
-                      {
-                        "type": "array",
-                        "items": {}
-                      }
-                    ]
+                    "type": "object",
+                    "additionalProperties": {}
                   },
                   {
-                    "type": "null"
+                    "type": "array",
+                    "items": {}
                   }
                 ]
               },
@@ -49,17 +43,13 @@
                 "default": "GET"
               },
               "headers": {
-                "anyOf": [
-                  {
-                    "type": "object",
-                    "additionalProperties": {
-                      "type": "string"
-                    }
-                  },
-                  {
-                    "type": "null"
-                  }
-                ]
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "default": {
+                  "User-Agent": "Tressi"
+                }
               },
               "rps": {
                 "type": "integer",
@@ -69,7 +59,8 @@
             },
             "required": ["url"],
             "additionalProperties": false
-          }
+          },
+          "default": []
         },
         "options": {
           "type": "object",
@@ -85,7 +76,7 @@
               "default": 0
             },
             "exportPath": {
-              "type": ["string", "null"],
+              "type": "string",
               "default": "./tressi-report"
             },
             "silent": {
@@ -93,26 +84,20 @@
               "default": false
             },
             "headers": {
-              "anyOf": [
-                {
-                  "type": "object",
-                  "additionalProperties": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "null"
-                }
-              ],
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              },
               "default": {
-                "User-Agent": "Tressi/1.0.0"
+                "User-Agent": "Tressi"
               }
             },
             "threads": {
               "type": "integer",
               "minimum": 1,
               "maximum": 32,
-              "description": "Number of worker threads to use (defaults to CPU count)"
+              "description": "Number of worker threads to use (defaults to CPU count)",
+              "default": 1
             },
             "workerMemoryLimit": {
               "type": "integer",
@@ -193,10 +178,10 @@
               }
             }
           },
-          "additionalProperties": false
+          "additionalProperties": false,
+          "default": {}
         }
       },
-      "required": ["$schema", "requests", "options"],
       "additionalProperties": false
     }
   },

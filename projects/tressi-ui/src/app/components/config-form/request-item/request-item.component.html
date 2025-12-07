@@ -1,0 +1,129 @@
+<div
+  class="collapse-arrow border-base-300 bg-base-100 rounded-box collapse border"
+>
+  <input type="checkbox" />
+  <div class="collapse-title text-lg font-medium">
+    Request {{ requestIndex() + 1 }}:
+    {{ configForm().requests[requestIndex()].url() || 'New Request' }}
+  </div>
+  <div class="collapse-content">
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <!-- URL -->
+      <div class="form-control md:col-span-2">
+        <label class="label">
+          <span class="label-text font-medium">URL</span>
+        </label>
+        <input
+          type="url"
+          class="input input-bordered"
+          [field]="configForm().requests[requestIndex()].url"
+          placeholder="https://api.example.com/endpoint"
+        />
+        @if (
+          configForm().requests[requestIndex()].url().touched() &&
+          configForm().requests[requestIndex()].url().invalid()
+        ) {
+          <label class="label">
+            <span class="label-text-alt text-error">
+              @for (
+                error of configForm().requests[requestIndex()].url().errors();
+                track error
+              ) {
+                {{ error.message }}
+              }
+            </span>
+          </label>
+        }
+      </div>
+
+      <!-- Method -->
+      <div class="form-control">
+        <label class="label">
+          <span class="label-text font-medium">HTTP Method</span>
+        </label>
+        <select
+          class="select select-bordered"
+          [field]="configForm().requests[requestIndex()].method"
+        >
+          <option value="GET">GET</option>
+          <option value="POST">POST</option>
+          <option value="PUT">PUT</option>
+          <option value="PATCH">PATCH</option>
+          <option value="DELETE">DELETE</option>
+          <option value="HEAD">HEAD</option>
+          <option value="OPTIONS">OPTIONS</option>
+        </select>
+      </div>
+
+      <!-- RPS -->
+      <div class="form-control">
+        <label class="label">
+          <span class="label-text font-medium">RPS</span>
+          <span class="label-text-alt">Requests per second</span>
+        </label>
+        <input
+          type="number"
+          class="input input-bordered"
+          [field]="configForm().requests[requestIndex()].rps"
+        />
+        @if (
+          configForm().requests[requestIndex()].rps().touched() &&
+          configForm().requests[requestIndex()].rps().invalid()
+        ) {
+          <label class="label">
+            <span class="label-text-alt text-error">
+              @for (
+                error of configForm().requests[requestIndex()].rps().errors();
+                track error
+              ) {
+                {{ error.message }}
+              }
+            </span>
+          </label>
+        }
+      </div>
+
+      <!-- Headers -->
+      <div class="form-control md:col-span-2">
+        <label class="label">
+          <span class="label-text font-medium">Headers (JSON)</span>
+        </label>
+        <!-- TODO: Not sure how to make this work yet
+         <textarea
+          class="textarea textarea-bordered font-mono text-sm"
+          rows="3"
+          [field]="configForm().requests[requestIndex()].headers"
+          placeholder='{"Content-Type": "application/json", "Authorization": "Bearer token"}'
+        ></textarea>
+         -->
+      </div>
+
+      <!-- Payload -->
+      <div class="form-control md:col-span-2">
+        <label class="label">
+          <span class="label-text font-medium">Payload (JSON)</span>
+        </label>
+        <!-- 
+        TODO: Not sure how to make this work yet
+        <textarea
+          class="textarea textarea-bordered font-mono text-sm"
+          rows="4"
+          [field]="configForm().requests[requestIndex()].payload"
+          placeholder='{"key": "value", "array": [1, 2, 3]}'
+        ></textarea> 
+        -->
+      </div>
+    </div>
+
+    <div class="card-actions mt-4 justify-end">
+      <button
+        type="button"
+        class="btn btn-error btn-sm"
+        (click)="removeRequest.emit()"
+      >
+        <app-icon name="delete" class="h-4 w-4"></app-icon>
+        Remove
+      </button>
+    </div>
+  </div>
+</div>
