@@ -19,7 +19,6 @@ import { WorkerEarlyExitComponent } from './worker-early-exit/worker-early-exit.
 
 @Component({
   selector: 'app-config-form',
-  standalone: true,
   imports: [
     IconComponent,
     BasicConfigComponent,

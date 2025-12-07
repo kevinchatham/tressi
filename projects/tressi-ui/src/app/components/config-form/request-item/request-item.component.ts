@@ -6,7 +6,6 @@ import { TressiConfigForm } from '../config-form.component';
 
 @Component({
   selector: 'app-request-item',
-  standalone: true,
   imports: [Field, IconComponent],
   templateUrl: './request-item.component.html',
 })

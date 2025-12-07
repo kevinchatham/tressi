@@ -45,7 +45,6 @@ export type LineChartOptions = {
 
 @Component({
   selector: 'app-line-chart',
-  standalone: true,
   imports: [NgApexchartsModule],
   templateUrl: './line-chart.component.html',
   styleUrls: ['./line-chart.component.css'],

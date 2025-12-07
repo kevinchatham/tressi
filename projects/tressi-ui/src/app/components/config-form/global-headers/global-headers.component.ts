@@ -6,7 +6,6 @@ import { TressiConfigForm } from '../config-form.component';
 
 @Component({
   selector: 'app-global-headers',
-  standalone: true,
   imports: [IconComponent],
   templateUrl: './global-headers.component.html',
 })

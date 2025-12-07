@@ -7,7 +7,6 @@ import { TressiConfigForm } from '../config-form.component';
 
 @Component({
   selector: 'app-basic-config',
-  standalone: true,
   imports: [Field, IconComponent],
   templateUrl: './basic-config.component.html',
 })

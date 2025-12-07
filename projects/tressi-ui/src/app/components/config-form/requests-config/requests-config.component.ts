@@ -7,7 +7,6 @@ import { RequestItemComponent } from '../request-item/request-item.component';
 
 @Component({
   selector: 'app-requests-config',
-  standalone: true,
   imports: [IconComponent, RequestItemComponent],
   templateUrl: './requests-config.component.html',
 })

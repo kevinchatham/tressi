@@ -9,7 +9,6 @@ import { HealthService } from '../../services/health.service';
 
 @Component({
   selector: 'app-server-unavailable',
-  standalone: true,
   imports: [],
   templateUrl: './server-unavailable.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

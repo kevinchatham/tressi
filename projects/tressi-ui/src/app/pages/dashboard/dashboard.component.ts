@@ -23,7 +23,6 @@ import { SSEService } from '../../services/sse.service';
 
 @Component({
   selector: 'app-dashboard',
-  standalone: true,
   imports: [LineChartComponent, IconComponent],
   templateUrl: './dashboard.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

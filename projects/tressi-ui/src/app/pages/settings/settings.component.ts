@@ -40,7 +40,6 @@ interface RequestConfig {
 
 @Component({
   selector: 'app-settings',
-  standalone: true,
   imports: [IconComponent, DatePipe, ThemeSwitcherComponent],
   templateUrl: './settings.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

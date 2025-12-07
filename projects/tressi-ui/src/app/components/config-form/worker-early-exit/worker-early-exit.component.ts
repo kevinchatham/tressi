@@ -7,7 +7,6 @@ import { TressiConfigForm } from '../config-form.component';
 
 @Component({
   selector: 'app-worker-early-exit',
-  standalone: true,
   imports: [Field, IconComponent],
   templateUrl: './worker-early-exit.component.html',
 })
