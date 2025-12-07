@@ -65,7 +65,7 @@ export const TressiOptionsConfigSchema = z
     workerEarlyExit: z
       .object({
         /** Enable early exit coordination across all workers */
-        enabled: z.boolean().default(true),
+        enabled: z.boolean().default(false),
         /** Global error rate threshold (0.0-1.0) across all workers */
         globalErrorRateThreshold: z.number().min(0).max(1).default(0.1),
         /** Global error count threshold across all workers */
@@ -90,7 +90,7 @@ export const TressiOptionsConfigSchema = z
         stopMode: z.enum(['endpoint', 'global']).default('global'),
       })
       .default({
-        enabled: true,
+        enabled: false,
         globalErrorRateThreshold: 0.1,
         globalErrorCountThreshold: 100,
         perEndpointThresholds: [],

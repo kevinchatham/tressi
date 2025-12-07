@@ -111,7 +111,7 @@
               "properties": {
                 "enabled": {
                   "type": "boolean",
-                  "default": true
+                  "default": false
                 },
                 "globalErrorRateThreshold": {
                   "type": "number",
@@ -168,7 +168,7 @@
               },
               "additionalProperties": false,
               "default": {
-                "enabled": true,
+                "enabled": false,
                 "globalErrorRateThreshold": 0.1,
                 "globalErrorCountThreshold": 100,
                 "perEndpointThresholds": [],

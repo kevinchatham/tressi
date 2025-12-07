@@ -1,6 +1,7 @@
 import { Component, computed, input, output, signal } from '@angular/core';
 import { form, validate } from '@angular/forms/signals';
 import {
+  defaultTressiConfig,
   TressiConfig,
   TressiRequestConfig,
   TressiRequestConfigSchema,
@@ -33,6 +34,9 @@ export class ConfigFormComponent {
 
   /** Output event when configuration is saved */
   readonly configSaved = output<TressiConfig>();
+
+  /** Output event when closed */
+  readonly closed = output<void>();
 
   /** Loading state */
   readonly isLoading = signal(false);
@@ -173,28 +177,6 @@ export class ConfigFormComponent {
 
   /** Create an empty configuration structure */
   private createEmptyConfig(): TressiConfig {
-    return {
-      $schema:
-        'https://raw.githubusercontent.com/kevinmichaelchen/tressi/main/schemas/tressi.schema.v0.0.13.json',
-      requests: [],
-      options: {
-        durationSec: 10,
-        rampUpTimeSec: 0,
-        exportPath: './tressi-report',
-        silent: false,
-        headers: { 'User-Agent': 'Tressi' },
-        threads: 1,
-        workerMemoryLimit: 128,
-        workerEarlyExit: {
-          enabled: true,
-          globalErrorRateThreshold: 0.1,
-          globalErrorCountThreshold: 100,
-          perEndpointThresholds: [],
-          workerExitStatusCodes: [500, 502, 503, 504],
-          monitoringWindowMs: 5000,
-          stopMode: 'global',
-        },
-      },
-    };
+    return defaultTressiConfig;
   }
 }
