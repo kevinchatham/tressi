@@ -7,7 +7,6 @@ import {
   signal,
 } from '@angular/core';
 import { Router } from '@angular/router';
-import { defaultTressiConfig } from 'tressi-common/config';
 import { AggregatedMetrics } from 'tressi-common/metrics';
 
 import { IconComponent } from '../../components/icon/icon.component';
@@ -173,15 +172,18 @@ export class DashboardComponent implements OnInit {
 
     const selected = this.selectedConfig();
 
-    if (selected && 'error' in selected) {
+    if (!selected || 'error' in selected) {
       this.logService.error('No valid configuration selected');
       return;
     }
 
-    const config = selected?.config || defaultTressiConfig;
+    if (!selected.config) {
+      this.logService.error('Configuration data is missing');
+      return;
+    }
 
     this.rpc.client.test
-      .$post({ json: config })
+      .$post({ json: selected.config })
       .then(async (response) => {
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);

@@ -2,11 +2,8 @@
   <!-- Header -->
   <div class="mb-6 flex items-center justify-between">
     <h1 class="text-3xl font-bold">Configuration Settings</h1>
-    <div class="flex items-center gap-2">
-      <button
-        (click)="navigateToDashboard()"
-        class="btn btn-ghost hover:bg-base-content/10"
-      >
+    <div class="flex items-center gap-4">
+      <button (click)="navigateToDashboard()" class="btn btn-ghost">
         Back to Dashboard
       </button>
       <button
@@ -17,8 +14,8 @@
         <app-icon name="add" />
         New Config
       </button>
+      <app-theme-switcher />
     </div>
-    <app-theme-switcher />
   </div>
 
   <!-- Loading State -->
@@ -32,142 +29,83 @@
   @if (!isEditing() && !isLoading()) {
     <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       @for (config of safeConfigs(); track config.id) {
-        <div
-          class="card bg-base-100 shadow-xl transition-all duration-200 ease-in-out hover:-translate-y-0.5 hover:shadow-2xl"
-        >
-          <div class="card-body sm:p-4">
-            <h2 class="card-title">{{ config.name }}</h2>
-            <p class="text-base-content/70 text-sm">
+        <div class="ring-neutral bg-base-100 rounded-lg p-4 ring-1">
+          <h3 class="text-lg font-semibold">{{ config.name }}</h3>
+          <div class="mt-2 space-y-1 text-sm">
+            <p class="text-base-content/70">
               Created: {{ config.createdAt | date: 'medium' }}
             </p>
-            <p class="text-base-content/70 text-sm">
+            <p class="text-base-content/70">
               Updated: {{ config.updatedAt | date: 'medium' }}
             </p>
-            <div class="card-actions justify-end">
-              <button
-                (click)="startEdit(config)"
-                class="btn btn-ghost btn-sm hover:bg-base-content/10"
-                title="Edit"
-              >
-                <app-icon name="edit" />
-              </button>
-              <button
-                (click)="showDeleteConfirm(config)"
-                class="btn btn-ghost btn-sm text-error hover:bg-base-content/10"
-                title="Delete"
-              >
-                <app-icon name="delete" />
-              </button>
-            </div>
+          </div>
+          <div class="mt-4 flex justify-end gap-2">
+            <button
+              (click)="startEdit(config)"
+              class="btn btn-ghost btn-sm"
+              title="Edit"
+            >
+              <app-icon name="edit" />
+            </button>
+            <button
+              (click)="showDeleteConfirm(config)"
+              class="btn btn-ghost btn-sm text-error"
+              title="Delete"
+            >
+              <app-icon name="delete" />
+            </button>
           </div>
         </div>
       }
     </div>
 
     @if (hasNoConfigs()) {
-      <div class="py-12 text-center">
-        <p class="text-base-content/70 mb-4 text-lg">No configurations found</p>
-        <button (click)="startCreate()" class="btn btn-primary">
-          <app-icon name="add" />
-          Create your first configuration
-        </button>
+      <div class="ring-neutral mx-auto max-w-md rounded-lg p-8 ring-1">
+        <div class="text-center">
+          <p class="text-base-content/70 mb-4 text-lg">
+            No configurations found
+          </p>
+          <button (click)="startCreate()" class="btn btn-primary">
+            <app-icon name="add" />
+            Create your first configuration
+          </button>
+        </div>
       </div>
     }
   }
 
   <!-- Edit/Create Form -->
   @if (isEditing()) {
-    <div class="mx-auto max-w-2xl">
-      <div class="card bg-base-100 shadow-xl">
-        <div class="card-body">
-          <h2 class="card-title">
-            {{
-              editingConfig()
-                ? 'Edit Configuration'
-                : 'Create New Configuration'
-            }}
-          </h2>
+    <div class="mx-auto max-w-4xl">
+      <div class="ring-neutral bg-base-100 rounded-lg p-6 ring-1">
+        <h2 class="mb-4 text-xl font-semibold">
+          {{
+            editingConfig() ? 'Edit Configuration' : 'Create New Configuration'
+          }}
+        </h2>
 
-          <form (ngSubmit)="saveConfig()" class="space-y-4">
-            <!-- Name Field -->
-            <div class="form-control">
-              <label class="label" for="config-name">
-                <span class="label-text">Configuration Name</span>
-              </label>
-              <input
-                id="config-name"
-                type="text"
-                placeholder="Enter configuration name"
-                class="input input-bordered"
-                [value]="formData().name"
-                (input)="onNameInput($event)"
-                [disabled]="isLoading()"
-                required
-              />
-            </div>
+        @if (!editingConfig()) {
+          <div class="form-control mb-4">
+            <label class="label" for="config-name">
+              <span class="label-text">Configuration Name</span>
+            </label>
+            <input
+              id="config-name"
+              type="text"
+              placeholder="Enter configuration name"
+              class="input input-bordered"
+              [value]="configName()"
+              (input)="onNameInput($event)"
+              [disabled]="isLoading()"
+              required
+            />
+          </div>
+        }
 
-            <!-- Description Field -->
-            <div class="form-control">
-              <label class="label" for="config-description">
-                <span class="label-text">Description (Optional)</span>
-              </label>
-              <textarea
-                id="config-description"
-                placeholder="Enter configuration description"
-                class="textarea textarea-bordered"
-                rows="3"
-                [value]="formData().description"
-                (input)="onDescriptionInput($event)"
-                [disabled]="isLoading()"
-              ></textarea>
-            </div>
-
-            <!-- Endpoints Field -->
-            <div class="form-control">
-              <label class="label" for="config-endpoints">
-                <span class="label-text">Endpoints (JSON Format)</span>
-              </label>
-              <textarea
-                id="config-endpoints"
-                placeholder='[{"url": "https://api.example.com/endpoint", "method": "GET", "rps": 10}]'
-                class="textarea textarea-bordered font-mono text-sm"
-                rows="10"
-                [value]="formData().endpoints"
-                (input)="onEndpointsInput($event)"
-                [disabled]="isLoading()"
-                required
-              ></textarea>
-              <label class="label">
-                <span class="label-text-alt">
-                  Enter endpoints as JSON array with url, method, and rps
-                  properties
-                </span>
-              </label>
-            </div>
-
-            <!-- Form Actions -->
-            <div class="card-actions justify-end">
-              <button
-                type="button"
-                (click)="cancelEdit()"
-                class="btn btn-ghost hover:bg-base-content/10"
-                [disabled]="isLoading()"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                class="btn btn-primary"
-                [disabled]="!isFormValid() || isLoading()"
-              >
-                @if (isLoading()) {
-                  <span class="loading loading-spinner loading-sm"></span>
-                }
-                {{ editingConfig() ? 'Update' : 'Create' }} Configuration
-              </button>
-            </div>
-          </form>
-        </div>
+        <app-config-form
+          [config]="currentConfig()"
+          (configSaved)="onConfigSaved($event)"
+        />
       </div>
     </div>
   }
@@ -175,17 +113,19 @@
 
 <!-- Delete Confirmation Modal -->
 <div class="modal" [class.modal-open]="showDeleteModal()">
-  <div class="modal-box max-w-[500px] sm:m-4 sm:max-w-[calc(100%-2rem)]">
-    <h3 class="text-lg font-bold">Delete Configuration</h3>
+  <div
+    class="ring-neutral bg-base-100 rounded-lg p-6 ring-1 sm:m-4 sm:max-w-[calc(100%-2rem)]"
+  >
+    <h3 class="text-lg font-semibold">Delete Configuration</h3>
     <p class="py-4">
       Are you sure you want to delete
       <strong>{{ getConfigToDeleteName() }}</strong
       >? This action cannot be undone.
     </p>
-    <div class="modal-action">
+    <div class="mt-6 flex justify-end gap-3">
       <button
         (click)="cancelDelete()"
-        class="btn btn-ghost hover:bg-base-content/10"
+        class="btn btn-ghost"
         [disabled]="isLoading()"
       >
         Cancel

@@ -16,7 +16,8 @@ export type IconName =
   | 'notes'
   | 'send'
   | 'info'
-  | 'warning';
+  | 'warning'
+  | 'rocket';
 
 @Component({
   selector: 'app-icon',

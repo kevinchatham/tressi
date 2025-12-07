@@ -10,8 +10,8 @@ import {
 import { Router } from '@angular/router';
 import { ThemeSwitcherComponent } from 'src/app/components/theme-switcher/theme-switcher.component';
 import { TressiConfig } from 'tressi-common/config';
-import { defaultTressiConfig } from 'tressi-common/config';
 
+import { ConfigFormComponent } from '../../components/config-form/config-form.component';
 import { IconComponent } from '../../components/icon/icon.component';
 import { ConfigService } from '../../services/config.service';
 import { LogService } from '../../services/log.service';
@@ -30,17 +30,16 @@ interface ConfigFormData {
   endpoints: string;
 }
 
-interface RequestConfig {
-  url: string;
-  method: string;
-  rps: number;
-  payload?: unknown;
-  headers?: Record<string, string> | null;
-}
+// RequestConfig interface is no longer needed as we use TressiConfig from tressi-common
 
 @Component({
   selector: 'app-settings',
-  imports: [IconComponent, DatePipe, ThemeSwitcherComponent],
+  imports: [
+    IconComponent,
+    DatePipe,
+    ThemeSwitcherComponent,
+    ConfigFormComponent,
+  ],
   templateUrl: './settings.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -58,14 +57,19 @@ export class SettingsComponent implements OnInit {
   readonly showDeleteModal = signal<boolean>(false);
   readonly configToDelete = signal<ConfigMetadata | null>(null);
 
-  /** Form data signal */
+  /** Current configuration being edited */
+  readonly currentConfig = signal<TressiConfig | null>(null);
+  readonly configName = signal<string>('');
+  readonly configDescription = signal<string>('');
+
+  /** Form data signal (deprecated - will be replaced by config-form) */
   readonly formData = signal<ConfigFormData>({
     name: '',
     description: '',
     endpoints: '',
   });
 
-  /** Computed signal for form validation */
+  /** Computed signal for form validation (deprecated) */
   readonly isFormValid = computed<boolean>(() => {
     const data = this.formData();
     return data.name.trim().length > 0 && data.endpoints.trim().length > 0;
@@ -116,19 +120,9 @@ export class SettingsComponent implements OnInit {
   startCreate(): void {
     this.isEditing.set(true);
     this.editingConfig.set(null);
-    this.formData.set({
-      name: '',
-      description: '',
-      endpoints: JSON.stringify(
-        defaultTressiConfig.requests.map((e: RequestConfig) => ({
-          url: e.url,
-          method: e.method,
-          rps: e.rps,
-        })),
-        null,
-        2,
-      ),
-    });
+    this.currentConfig.set(null);
+    this.configName.set('');
+    this.configDescription.set('');
   }
 
   /**
@@ -141,29 +135,18 @@ export class SettingsComponent implements OnInit {
     this.configService.getConfig(config.id).subscribe({
       next: (configRecord) => {
         if (!configRecord || 'error' in configRecord) return;
-        if (!configRecord.config || !configRecord.config.requests) {
-          this.logService.error(
-            'Invalid configuration data: missing config or requests',
-          );
+        if (!configRecord.config) {
+          this.logService.error('Invalid configuration data: missing config');
           this.isLoading.set(false);
           return;
         }
         this.isEditing.set(true);
         this.editingConfig.set(configRecord);
-        this.formData.set({
-          name: configRecord.name,
-          description:
-            (configRecord.config as { description?: string }).description || '',
-          endpoints: JSON.stringify(
-            configRecord.config.requests.map((e: RequestConfig) => ({
-              url: e.url,
-              method: e.method,
-              rps: e.rps,
-            })),
-            null,
-            2,
-          ),
-        });
+        this.currentConfig.set(configRecord.config);
+        this.configName.set(configRecord.name);
+        this.configDescription.set(
+          (configRecord.config as { description?: string }).description || '',
+        );
         this.isLoading.set(false);
       },
       error: (error) => {
@@ -211,33 +194,28 @@ export class SettingsComponent implements OnInit {
   }
 
   /**
-   * Saves the configuration (create or update).
+   * Handles configuration saved event from config-form component.
    */
-  saveConfig(): void {
-    if (!this.isFormValid()) return;
+  onConfigSaved(config: TressiConfig): void {
+    if (!config) return;
 
-    const data = this.formData();
-    let config: TressiConfig;
+    // Add description to config if provided
+    const configWithDescription = {
+      ...config,
+      description: this.configDescription(),
+    };
 
-    try {
-      const requests = JSON.parse(data.endpoints);
-      config = {
-        ...defaultTressiConfig,
-        requests: requests.map((e: RequestConfig) => ({
-          url: e.url,
-          method: e.method || 'GET',
-          rps: e.rps || 1,
-          payload: e.payload || null,
-          headers: e.headers || null,
-        })),
-      };
-    } catch (error) {
-      this.logService.error('Invalid endpoints JSON:', error);
+    const name = this.editingConfig()
+      ? this.editingConfig()!.name
+      : this.configName();
+
+    if (!name.trim()) {
+      this.logService.error('Configuration name is required');
       return;
     }
 
     this.isLoading.set(true);
-    this.configService.saveConfig(data.name, config).subscribe({
+    this.configService.saveConfig(name, configWithDescription).subscribe({
       next: () => {
         this.loadConfigurations();
         this.cancelEdit();
@@ -255,6 +233,9 @@ export class SettingsComponent implements OnInit {
   cancelEdit(): void {
     this.isEditing.set(false);
     this.editingConfig.set(null);
+    this.currentConfig.set(null);
+    this.configName.set('');
+    this.configDescription.set('');
     this.formData.set({
       name: '',
       description: '',
@@ -270,23 +251,23 @@ export class SettingsComponent implements OnInit {
   }
 
   /**
-   * Handles input events from template.
+   * Handles name input events for new configurations.
    */
   onNameInput(event: Event): void {
     const target = event.target as HTMLInputElement;
-    this.updateFormData('name', target.value);
+    this.configName.set(target.value);
   }
 
   /**
-   * Handles textarea events from template.
+   * Handles description input events.
    */
   onDescriptionInput(event: Event): void {
     const target = event.target as HTMLTextAreaElement;
-    this.updateFormData('description', target.value);
+    this.configDescription.set(target.value);
   }
 
   /**
-   * Handles endpoints textarea events from template.
+   * Deprecated: Handles input events from old template.
    */
   onEndpointsInput(event: Event): void {
     const target = event.target as HTMLTextAreaElement;

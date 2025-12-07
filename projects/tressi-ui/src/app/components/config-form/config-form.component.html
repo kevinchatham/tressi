@@ -1,6 +1,6 @@
-<form (submit)="onSubmit($event)" class="space-y-6 p-8">
+<form (submit)="onSubmit($event)" class="space-y-6">
   <!-- Tabs Navigation -->
-  <div class="border-b border-neutral">
+  <div class="border-neutral border-b">
     <nav class="flex space-x-8">
       <button
         type="button"
@@ -61,41 +61,45 @@
   <div class="space-y-6">
     <!-- Basic Configuration Tab -->
     @if (activeTab() === 'basic') {
-      <app-basic-config [configForm]="configForm"
+      <app-basic-config
+        [configForm]="configForm"
         [configModel]="configModel()"
-       />
+      />
     }
 
     <!-- Global Headers Tab -->
     @if (activeTab() === 'headers') {
-      <app-global-headers [configForm]="configForm"
+      <app-global-headers
+        [configForm]="configForm"
         [configModel]="configModel()"
-       />
+      />
     }
 
     <!-- Requests Configuration Tab -->
     @if (activeTab() === 'requests') {
-      <app-requests-config [configForm]="configForm"
+      <app-requests-config
+        [configForm]="configForm"
         [configModel]="configModel()"
         (addRequest)="addRequest()"
         (removeRequest)="removeRequest($event)"
-       />
+      />
     }
 
     <!-- Worker Early Exit Tab -->
     @if (activeTab() === 'worker-exit') {
-      <app-worker-early-exit [configForm]="configForm"
+      <app-worker-early-exit
+        [configForm]="configForm"
         [configModel]="configModel()"
         (addPerEndpointThreshold)="addPerEndpointThreshold()"
         (removePerEndpointThreshold)="removePerEndpointThreshold($event)"
         (addWorkerExitStatusCode)="addWorkerExitStatusCode()"
         (removeWorkerExitStatusCode)="removeWorkerExitStatusCode($event)"
-       />
+      />
     }
   </div>
 
   <!-- Form Actions -->
-  <div class="bg-base-100 ring-1 ring-neutral rounded p-4">
+  <div class="bg-base-100 ring-neutral rounded p-4 ring-1">
     <div class="flex justify-end gap-3">
       <button
         type="button"
