@@ -1,6 +1,7 @@
 {
   "name": "tressi-common",
   "private": true,
+  "type": "module",
   "exports": {
     "./config": {
       "types": "./src/config/index.ts",
