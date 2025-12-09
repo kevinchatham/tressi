@@ -12,10 +12,10 @@ import { RequestItemComponent } from '../request-item/request-item.component';
 })
 export class RequestsConfigComponent {
   /** Form instance from parent */
-  readonly configForm = input.required<ModifyConfigRequestFormType>();
+  readonly form = input.required<ModifyConfigRequestFormType>();
 
   /** Config model from parent */
-  readonly configModel = input.required<ModifyConfigRequest>();
+  readonly model = input.required<ModifyConfigRequest>();
 
   /** Event to add a new request */
   readonly addRequest = output<void>();

@@ -2,7 +2,7 @@
   <div class="mb-3 flex items-center justify-between">
     <h3 class="text-lg font-medium">
       Request {{ requestIndex() + 1 }}:
-      {{ configForm().config.requests![requestIndex()].url() || 'New Request' }}
+      {{ form().config.requests![requestIndex()].url() || 'New Request' }}
     </h3>
     <button
       type="button"
@@ -21,18 +21,16 @@
       <input
         type="url"
         class="input"
-        [field]="configForm().config.requests![requestIndex()].url"
+        [field]="form().config.requests![requestIndex()].url"
         placeholder="https://api.example.com/endpoint"
       />
       @if (
-        configForm().config.requests![requestIndex()].url().touched() &&
-        configForm().config.requests![requestIndex()].url().invalid()
+        form().config.requests![requestIndex()].url().touched() &&
+        form().config.requests![requestIndex()].url().invalid()
       ) {
         <p class="label text-error">
           @for (
-            error of configForm()
-              .config.requests![requestIndex()].url()
-              .errors();
+            error of form().config.requests![requestIndex()].url().errors();
             track error
           ) {
             {{ error.message }}
@@ -46,7 +44,7 @@
       <legend class="fieldset-legend">HTTP Method</legend>
       <select
         class="select"
-        [field]="configForm().config.requests![requestIndex()].method!"
+        [field]="form().config.requests![requestIndex()].method!"
       >
         <option value="GET">GET</option>
         <option value="POST">POST</option>
@@ -64,19 +62,17 @@
       <input
         type="number"
         class="input"
-        [field]="configForm().config.requests![requestIndex()].rps!"
+        [field]="form().config.requests![requestIndex()].rps!"
         placeholder="Requests per second"
       />
       <p class="label">Requests per second</p>
       @if (
-        configForm().config.requests![requestIndex()]?.rps()?.touched() &&
-        configForm().config.requests![requestIndex()]?.rps()?.invalid()
+        form().config.requests![requestIndex()]?.rps()?.touched() &&
+        form().config.requests![requestIndex()]?.rps()?.invalid()
       ) {
         <p class="label text-error">
           @for (
-            error of configForm()
-              .config.requests![requestIndex()]?.rps()!
-              .errors();
+            error of form().config.requests![requestIndex()]?.rps()!.errors();
             track error
           ) {
             {{ error.message }}
@@ -92,7 +88,7 @@
        <textarea
         class="textarea font-mono text-sm"
         rows="3"
-        [field]="configForm().config.requests![requestIndex()].headers"
+        [field]="form().config.requests![requestIndex()].headers"
         placeholder='{"Content-Type": "application/json", "Authorization": "Bearer token"}'
       ></textarea>
        -->
@@ -106,7 +102,7 @@
       <textarea
         class="textarea font-mono text-sm"
         rows="4"
-        [field]="configForm().config.requests![requestIndex()].payload"
+        [field]="form().config.requests![requestIndex()].payload"
         placeholder='{"key": "value", "array": [1, 2, 3]}'
       ></textarea>
       -->

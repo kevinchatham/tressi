@@ -12,10 +12,10 @@ import { ModifyConfigRequestFormType } from '../config-form.component';
 })
 export class WorkerEarlyExitComponent {
   /** Form instance from parent */
-  readonly configForm = input.required<ModifyConfigRequestFormType>();
+  readonly form = input.required<ModifyConfigRequestFormType>();
 
   /** Config model from parent */
-  readonly configModel = input.required<ModifyConfigRequest>();
+  readonly model = input.required<ModifyConfigRequest>();
 
   /** Event to add a new per-endpoint threshold */
   readonly addPerEndpointThreshold = output<void>();

@@ -13,16 +13,16 @@
     </button>
   </div>
 
-  @if (configModel().config.requests?.length === 0) {
+  @if (model().config.requests?.length === 0) {
     <div class="alert alert-info">
       <app-icon name="info" class="h-6 w-6 shrink-0" />
       <span>No requests configured. Add at least one request to start.</span>
     </div>
   }
 
-  @for (request of configModel().config.requests; track $index) {
+  @for (request of model().config.requests; track $index) {
     <app-request-item
-      [configForm]="configForm()"
+      [form]="form()"
       [requestIndex]="$index"
       (removeRequest)="removeRequest.emit($index)"
     />

@@ -54,12 +54,12 @@ export class ConfigFormComponent {
   readonly isLoading = signal(false);
 
   /** Form model with complete TressiConfig structure */
-  readonly configFormModel = signal<ModifyConfigRequest>(
+  readonly model = signal<ModifyConfigRequest>(
     this.configInput() ?? this.createEmptyConfig(),
   );
 
   /** Angular signals form with validation */
-  readonly configForm = form(this.configFormModel, (schemaPath) => {
+  readonly form = form(this.model, (schemaPath) => {
     required(schemaPath.name);
     validate(schemaPath, ({ value }) => {
       const isValid = validateConfig(value());
@@ -88,14 +88,14 @@ export class ConfigFormComponent {
 
   /** Computed signal for form validity */
   readonly isFormValid = computed(() => {
-    return this.configForm().valid();
+    return this.form().valid();
   });
 
   /** Handle form submission */
   onSubmit(event: Event): void {
     event.preventDefault();
     this.isLoading.set(true);
-    this.configOutput.emit(this.configFormModel());
+    this.configOutput.emit(this.model());
     this.isLoading.set(false);
   }
 
@@ -114,7 +114,7 @@ export class ConfigFormComponent {
 
     const newRequest = TressiRequestConfigSchema.parse(newRequestInput);
 
-    this.configFormModel.update((model) => ({
+    this.model.update((model) => ({
       ...model,
       requests: [...(model.config.requests ?? []), newRequest],
     }));
@@ -122,7 +122,7 @@ export class ConfigFormComponent {
 
   /** Remove a request from the requests array */
   removeRequest(index: number): void {
-    this.configFormModel.update((model) => ({
+    this.model.update((model) => ({
       ...model,
       requests: model.config.requests?.filter((_, i) => i !== index) ?? [],
     }));
@@ -130,7 +130,7 @@ export class ConfigFormComponent {
 
   /** Add a new per-endpoint threshold */
   addPerEndpointThreshold(): void {
-    this.configFormModel.update((model) => ({
+    this.model.update((model) => ({
       ...model,
       options: {
         ...model.config.options,
@@ -148,7 +148,7 @@ export class ConfigFormComponent {
 
   /** Remove a per-endpoint threshold */
   removePerEndpointThreshold(index: number): void {
-    this.configFormModel.update((model) => ({
+    this.model.update((model) => ({
       ...model,
       options: {
         ...model.config.options,
@@ -165,7 +165,7 @@ export class ConfigFormComponent {
 
   /** Add a worker exit status code */
   addWorkerExitStatusCode(): void {
-    this.configFormModel.update((model) => ({
+    this.model.update((model) => ({
       ...model,
       options: {
         ...model.config.options,
@@ -183,7 +183,7 @@ export class ConfigFormComponent {
 
   /** Remove a worker exit status code */
   removeWorkerExitStatusCode(index: number): void {
-    this.configFormModel.update((model) => ({
+    this.model.update((model) => ({
       ...model,
       options: {
         ...model.config.options,

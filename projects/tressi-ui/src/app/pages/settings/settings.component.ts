@@ -65,21 +65,6 @@ export class SettingsComponent implements OnInit {
     return cfg && 'error' in cfg;
   });
 
-  /** Computed signal for config form metadata */
-  readonly configFormMetadata = computed(() => {
-    const editing = this.editingConfig();
-    const current = this.currentConfig();
-
-    if (!editing || !current) {
-      return null;
-    }
-
-    return {
-      name: editing.name,
-      description: (current as { description?: string }).description || '',
-    };
-  });
-
   ngOnInit(): void {
     this.loadConfigurations();
   }

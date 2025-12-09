@@ -11,7 +11,7 @@ import { ModifyConfigRequestFormType } from '../config-form.component';
 })
 export class RequestItemComponent {
   /** Form instance from parent */
-  readonly configForm = input.required<ModifyConfigRequestFormType>();
+  readonly form = input.required<ModifyConfigRequestFormType>();
 
   /** Index of this request in the array */
   readonly requestIndex = input.required<number>();

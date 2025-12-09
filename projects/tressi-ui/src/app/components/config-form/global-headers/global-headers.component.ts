@@ -11,8 +11,8 @@ import { ModifyConfigRequestFormType } from '../config-form.component';
 })
 export class GlobalHeadersComponent {
   /** Form instance from parent */
-  readonly configForm = input.required<ModifyConfigRequestFormType>();
+  readonly form = input.required<ModifyConfigRequestFormType>();
 
   /** Config model from parent */
-  readonly configModel = input.required<ModifyConfigRequest>();
+  readonly model = input.required<ModifyConfigRequest>();
 }

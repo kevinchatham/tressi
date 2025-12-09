@@ -9,12 +9,12 @@
         type="text"
         class="input"
         placeholder="Enter configuration name"
-        [field]="configForm.name"
+        [field]="form.name"
       />
       <p class="label">A unique name for this configuration</p>
-      @if (configForm.name().touched() && configForm.name().invalid()) {
+      @if (form.name().touched() && form.name().invalid()) {
         <p class="label text-error">
-          @for (error of configForm.name().errors(); track error) {
+          @for (error of form.name().errors(); track error) {
             {{ error.message }}
           }
         </p>
@@ -81,25 +81,19 @@
   <div class="space-y-6">
     <!-- Basic Configuration Tab -->
     @if (activeTab() === 'basic') {
-      <app-basic-config
-        [configForm]="configForm"
-        [configModel]="configFormModel()"
-      />
+      <app-basic-config [form]="form" [model]="model()" />
     }
 
     <!-- Global Headers Tab -->
     @if (activeTab() === 'headers') {
-      <app-global-headers
-        [configForm]="configForm"
-        [configModel]="configFormModel()"
-      />
+      <app-global-headers [form]="form" [model]="model()" />
     }
 
     <!-- Requests Configuration Tab -->
     @if (activeTab() === 'requests') {
       <app-requests-config
-        [configForm]="configForm"
-        [configModel]="configFormModel()"
+        [form]="form"
+        [model]="model()"
         (addRequest)="addRequest()"
         (removeRequest)="removeRequest($event)"
       />
@@ -108,8 +102,8 @@
     <!-- Worker Early Exit Tab -->
     @if (activeTab() === 'worker-exit') {
       <app-worker-early-exit
-        [configForm]="configForm"
-        [configModel]="configFormModel()"
+        [form]="form"
+        [model]="model()"
         (addPerEndpointThreshold)="addPerEndpointThreshold()"
         (removePerEndpointThreshold)="removePerEndpointThreshold($event)"
         (addWorkerExitStatusCode)="addWorkerExitStatusCode()"
@@ -142,7 +136,7 @@
           <app-icon name="warning" class="mt-0.5 h-6 w-6 shrink-0" />
           <div class="ml-3">
             <ul class="list-disc pl-5 text-sm">
-              @for (error of configForm().errors(); track error.message) {
+              @for (error of form().errors(); track error.message) {
                 <li>{{ error.message }}</li>
               }
             </ul>
