@@ -1,8 +1,8 @@
 import { Component, input, output } from '@angular/core';
-import { TressiConfig } from 'tressi-common/config';
 
+import { ModifyConfigRequest } from '../../../services/rpc.service';
 import { IconComponent } from '../../icon/icon.component';
-import { TressiConfigForm } from '../config-form.component';
+import { ModifyConfigRequestFormType } from '../config-form.component';
 import { RequestItemComponent } from '../request-item/request-item.component';
 
 @Component({
@@ -12,10 +12,10 @@ import { RequestItemComponent } from '../request-item/request-item.component';
 })
 export class RequestsConfigComponent {
   /** Form instance from parent */
-  readonly configForm = input.required<TressiConfigForm>();
+  readonly configForm = input.required<ModifyConfigRequestFormType>();
 
   /** Config model from parent */
-  readonly configModel = input.required<TressiConfig>();
+  readonly configModel = input.required<ModifyConfigRequest>();
 
   /** Event to add a new request */
   readonly addRequest = output<void>();

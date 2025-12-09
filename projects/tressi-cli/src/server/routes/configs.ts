@@ -1,7 +1,11 @@
 import { sValidator } from '@hono/standard-validator';
 import { Hono } from 'hono';
-import { SaveConfigRequestSchema } from 'tressi-common/api';
-import { ConfigValidationError, validateConfig } from 'tressi-common/config';
+import {
+  ConfigValidationError,
+  TressiConfigSchema,
+  validateConfig,
+} from 'tressi-common/config';
+import z from 'zod';
 
 import { configStorage } from '../../core/config-storage';
 import {
@@ -11,13 +15,28 @@ import {
 } from '../utils/error-response-generator';
 
 /**
+ * Request schema for saving a configuration
+ */
+export const ConfigRequestSchema = z.object({
+  id: z.string().optional().default(crypto.randomUUID()),
+  name: z.string(),
+  config: TressiConfigSchema,
+  createdAt: z.number().optional().default(Date.now),
+  updatedAt: z.number().optional().default(Date.now),
+});
+
+export type ConfigRequestInferType = z.infer<typeof ConfigRequestSchema>;
+
+export type ConfigRequestOutputType = z.output<typeof ConfigRequestSchema>;
+
+/**
  * Configuration management routes for handling CRUD operations on load test configurations.
  * Provides endpoints for listing, retrieving, creating, and deleting configurations.
  */
 const app = new Hono()
   /**
-   * GET / - Retrieves all configuration metadata
-   * @returns {Promise<Response>} JSON array of configuration metadata
+   * GET / - Retrieves all configurations
+   * @returns {Promise<Response>} JSON array of configurations
    */
   .get('/', async (c) => {
     try {
@@ -73,10 +92,10 @@ const app = new Hono()
    * @param {SaveConfigRequest} body - Configuration data from request body
    * @returns {Promise<Response>} Created configuration with 201 status or error response
    */
-  .post('/', sValidator('json', SaveConfigRequestSchema), async (c) => {
+  .post('/', sValidator('json', ConfigRequestSchema), async (c) => {
     try {
-      const { name, config } = c.req.valid('json');
-      const validationResult = validateConfig(config);
+      const model = c.req.valid('json');
+      const validationResult = validateConfig(model.config);
       if (validationResult.success === false) {
         if (validationResult.error instanceof ConfigValidationError) {
           return c.json(
@@ -92,7 +111,7 @@ const app = new Hono()
           400,
         );
       }
-      const saved = await configStorage.save(name, validationResult.data);
+      const saved = await configStorage.save(model);
       return c.json(saved, 201);
     } catch (error) {
       return c.json(

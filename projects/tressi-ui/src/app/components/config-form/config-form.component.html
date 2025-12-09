@@ -1,6 +1,26 @@
 <form (submit)="onSubmit($event)" class="space-y-4">
   <!-- Tabs Navigation -->
   <div class="border-neutral border-b">
+    <!-- Metadata Form -->
+    <fieldset class="fieldset mb-4">
+      <legend class="fieldset-legend">Configuration Name</legend>
+      <input
+        id="config-name"
+        type="text"
+        class="input"
+        placeholder="Enter configuration name"
+        [field]="configForm.name"
+      />
+      <p class="label">A unique name for this configuration</p>
+      @if (configForm.name().touched() && configForm.name().invalid()) {
+        <p class="label text-error">
+          @for (error of configForm.name().errors(); track error) {
+            {{ error.message }}
+          }
+        </p>
+      }
+    </fieldset>
+    <!-- Sub Component Navigation -->
     <nav class="flex space-x-8">
       <button
         type="button"
@@ -63,7 +83,7 @@
     @if (activeTab() === 'basic') {
       <app-basic-config
         [configForm]="configForm"
-        [configModel]="configModel()"
+        [configModel]="configFormModel()"
       />
     }
 
@@ -71,7 +91,7 @@
     @if (activeTab() === 'headers') {
       <app-global-headers
         [configForm]="configForm"
-        [configModel]="configModel()"
+        [configModel]="configFormModel()"
       />
     }
 
@@ -79,7 +99,7 @@
     @if (activeTab() === 'requests') {
       <app-requests-config
         [configForm]="configForm"
-        [configModel]="configModel()"
+        [configModel]="configFormModel()"
         (addRequest)="addRequest()"
         (removeRequest)="removeRequest($event)"
       />
@@ -89,7 +109,7 @@
     @if (activeTab() === 'worker-exit') {
       <app-worker-early-exit
         [configForm]="configForm"
-        [configModel]="configModel()"
+        [configModel]="configFormModel()"
         (addPerEndpointThreshold)="addPerEndpointThreshold()"
         (removePerEndpointThreshold)="removePerEndpointThreshold($event)"
         (addWorkerExitStatusCode)="addWorkerExitStatusCode()"
@@ -99,7 +119,7 @@
   </div>
 
   <!-- Form Actions -->
-  <div class="bg-base-100 ring-neutral rounded p-4 ring-1">
+  <div class="bg-base-100 p-4">
     <div class="flex justify-end gap-3">
       <button type="button" class="btn btn-ghost" (click)="closed.emit()">
         Cancel
@@ -112,7 +132,7 @@
         @if (isLoading()) {
           <span class="loading loading-spinner loading-sm"></span>
         }
-        Save Configuration
+        Save
       </button>
     </div>
 

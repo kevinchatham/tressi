@@ -2,11 +2,6 @@
   "name": "tressi-common",
   "private": true,
   "exports": {
-    "./api": {
-      "types": "./src/api/index.ts",
-      "import": "./dist/api/index.js",
-      "require": "./dist/api/index.js"
-    },
     "./config": {
       "types": "./src/config/index.ts",
       "import": "./dist/config/index.js",

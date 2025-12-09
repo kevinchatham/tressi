@@ -2,7 +2,7 @@
   <div class="mb-3 flex items-center justify-between">
     <h3 class="text-lg font-medium">
       Request {{ requestIndex() + 1 }}:
-      {{ configForm().requests[requestIndex()].url() || 'New Request' }}
+      {{ configForm().config.requests![requestIndex()].url() || 'New Request' }}
     </h3>
     <button
       type="button"
@@ -16,41 +16,37 @@
 
   <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
     <!-- URL -->
-    <div class="form-control md:col-span-2">
-      <label class="label">
-        <span class="label-text font-medium">URL</span>
-      </label>
+    <fieldset class="fieldset md:col-span-2">
+      <legend class="fieldset-legend">URL</legend>
       <input
         type="url"
-        class="input input-bordered"
-        [field]="configForm().requests[requestIndex()].url"
+        class="input"
+        [field]="configForm().config.requests![requestIndex()].url"
         placeholder="https://api.example.com/endpoint"
       />
       @if (
-        configForm().requests[requestIndex()].url().touched() &&
-        configForm().requests[requestIndex()].url().invalid()
+        configForm().config.requests![requestIndex()].url().touched() &&
+        configForm().config.requests![requestIndex()].url().invalid()
       ) {
-        <label class="label">
-          <span class="label-text-alt text-error">
-            @for (
-              error of configForm().requests[requestIndex()].url().errors();
-              track error
-            ) {
-              {{ error.message }}
-            }
-          </span>
-        </label>
+        <p class="label text-error">
+          @for (
+            error of configForm()
+              .config.requests![requestIndex()].url()
+              .errors();
+            track error
+          ) {
+            {{ error.message }}
+          }
+        </p>
       }
-    </div>
+    </fieldset>
 
     <!-- Method -->
-    <div class="form-control">
-      <label class="label">
-        <span class="label-text font-medium">HTTP Method</span>
-      </label>
+    <!-- <fieldset class="fieldset">
+      <legend class="fieldset-legend">HTTP Method</legend>
       <select
-        class="select select-bordered"
-        [field]="configForm().requests[requestIndex()].method"
+        class="select"
+        [field]="configForm().config.requests![requestIndex()].method!"
       >
         <option value="GET">GET</option>
         <option value="POST">POST</option>
@@ -60,65 +56,60 @@
         <option value="HEAD">HEAD</option>
         <option value="OPTIONS">OPTIONS</option>
       </select>
-    </div>
+    </fieldset> -->
 
     <!-- RPS -->
-    <div class="form-control">
-      <label class="label">
-        <span class="label-text font-medium">RPS</span>
-        <span class="label-text-alt">Requests per second</span>
-      </label>
+    <fieldset class="fieldset">
+      <legend class="fieldset-legend">RPS</legend>
       <input
         type="number"
-        class="input input-bordered"
-        [field]="configForm().requests[requestIndex()].rps"
+        class="input"
+        [field]="configForm().config.requests![requestIndex()].rps!"
+        placeholder="Requests per second"
       />
+      <p class="label">Requests per second</p>
       @if (
-        configForm().requests[requestIndex()].rps().touched() &&
-        configForm().requests[requestIndex()].rps().invalid()
+        configForm().config.requests![requestIndex()]?.rps()?.touched() &&
+        configForm().config.requests![requestIndex()]?.rps()?.invalid()
       ) {
-        <label class="label">
-          <span class="label-text-alt text-error">
-            @for (
-              error of configForm().requests[requestIndex()].rps().errors();
-              track error
-            ) {
-              {{ error.message }}
-            }
-          </span>
-        </label>
+        <p class="label text-error">
+          @for (
+            error of configForm()
+              .config.requests![requestIndex()]?.rps()!
+              .errors();
+            track error
+          ) {
+            {{ error.message }}
+          }
+        </p>
       }
-    </div>
+    </fieldset>
 
     <!-- Headers -->
-    <div class="form-control md:col-span-2">
-      <label class="label">
-        <span class="label-text font-medium">Headers (JSON)</span>
-      </label>
+    <fieldset class="fieldset md:col-span-2">
+      <legend class="fieldset-legend">Headers (JSON)</legend>
       <!-- TODO: Not sure how to make this work yet
        <textarea
-        class="textarea textarea-bordered font-mono text-sm"
+        class="textarea font-mono text-sm"
         rows="3"
-        [field]="configForm().requests[requestIndex()].headers"
+        [field]="configForm().config.requests![requestIndex()].headers"
         placeholder='{"Content-Type": "application/json", "Authorization": "Bearer token"}'
       ></textarea>
        -->
-    </div>
+    </fieldset>
 
     <!-- Payload -->
-    <div class="form-control md:col-span-2">
-      <label class="label">
-        <span class="label-text font-medium">Payload (JSON)</span>
-      </label>
+    <fieldset class="fieldset md:col-span-2">
+      <legend class="fieldset-legend">Payload (JSON)</legend>
       <!--
       TODO: Not sure how to make this work yet
       <textarea
-        class="textarea textarea-bordered font-mono text-sm"
+        class="textarea font-mono text-sm"
         rows="4"
-        [field]="configForm().requests[requestIndex()].payload"
+        [field]="configForm().config.requests![requestIndex()].payload"
         placeholder='{"key": "value", "array": [1, 2, 3]}'
       ></textarea>
       -->
-    </div>
+    </fieldset>
   </div>
 </div>

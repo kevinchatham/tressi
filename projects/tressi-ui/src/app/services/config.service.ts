@@ -1,11 +1,10 @@
 import { inject, Injectable } from '@angular/core';
 import { from, Observable } from 'rxjs';
-import type { TressiConfig } from 'tressi-common/config';
 
 import {
-  CreateConfigRequest,
   GetAllConfigsResponse,
   GetConfigByIdResponse,
+  ModifyConfigRequest,
   RPCService,
 } from './rpc.service';
 
@@ -29,14 +28,11 @@ export class ConfigService {
     );
   }
 
-  saveConfig(
-    name: string,
-    config: TressiConfig,
-  ): Observable<CreateConfigRequest> {
+  saveConfig(config: ModifyConfigRequest): Observable<ModifyConfigRequest> {
     return from(
       this.rpc.client.config
         .$post({
-          json: { name, config },
+          json: config,
         })
         .then((r: Response) => r.json()),
     );

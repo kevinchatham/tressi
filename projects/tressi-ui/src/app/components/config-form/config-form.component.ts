@@ -1,21 +1,22 @@
 import { Component, computed, input, output, signal } from '@angular/core';
-import { form, validate } from '@angular/forms/signals';
+import { Field, form, required, validate } from '@angular/forms/signals';
 import {
   defaultTressiConfig,
-  TressiConfig,
   TressiRequestConfig,
   TressiRequestConfigSchema,
   validateConfig,
 } from 'tressi-common/config';
 
-// Type for the form structure matching TressiConfig
-export type TressiConfigForm = ReturnType<typeof form<TressiConfig>>;
-
+import { ModifyConfigRequest } from '../../services/rpc.service';
 import { IconComponent } from '../icon/icon.component';
 import { BasicConfigComponent } from './basic-config/basic-config.component';
 import { GlobalHeadersComponent } from './global-headers/global-headers.component';
 import { RequestsConfigComponent } from './requests-config/requests-config.component';
 import { WorkerEarlyExitComponent } from './worker-early-exit/worker-early-exit.component';
+
+export type ModifyConfigRequestFormType = ReturnType<
+  typeof form<ModifyConfigRequest>
+>;
 
 @Component({
   selector: 'app-config-form',
@@ -25,15 +26,16 @@ import { WorkerEarlyExitComponent } from './worker-early-exit/worker-early-exit.
     GlobalHeadersComponent,
     RequestsConfigComponent,
     WorkerEarlyExitComponent,
+    Field,
   ],
   templateUrl: './config-form.component.html',
 })
 export class ConfigFormComponent {
   /** Input configuration to edit */
-  readonly config = input<TressiConfig | null>(null);
+  readonly configInput = input<ModifyConfigRequest | null>(null);
 
   /** Output event when configuration is saved */
-  readonly configSaved = output<TressiConfig>();
+  readonly configOutput = output<ModifyConfigRequest>();
 
   /** Output event when closed */
   readonly closed = output<void>();
@@ -42,12 +44,13 @@ export class ConfigFormComponent {
   readonly isLoading = signal(false);
 
   /** Form model with complete TressiConfig structure */
-  readonly configModel = signal<TressiConfig>(
-    this.config() ?? this.createEmptyConfig(),
+  readonly configFormModel = signal<ModifyConfigRequest>(
+    this.configInput() ?? this.createEmptyConfig(),
   );
 
   /** Angular signals form with validation */
-  readonly configForm = form(this.configModel, (schemaPath) => {
+  readonly configForm = form(this.configFormModel, (schemaPath) => {
+    required(schemaPath.name);
     validate(schemaPath, ({ value }) => {
       const isValid = validateConfig(value);
       if ('error' in isValid) {
@@ -67,14 +70,14 @@ export class ConfigFormComponent {
 
   /** Computed signal for form validity */
   readonly isFormValid = computed(() => {
-    return this.configForm.options().valid();
+    return this.configForm().valid();
   });
 
   /** Handle form submission */
   onSubmit(event: Event): void {
     event.preventDefault();
     this.isLoading.set(true);
-    this.configSaved.emit(this.configModel());
+    this.configOutput.emit(this.configFormModel());
     this.isLoading.set(false);
   }
 
@@ -93,30 +96,31 @@ export class ConfigFormComponent {
 
     const newRequest = TressiRequestConfigSchema.parse(newRequestInput);
 
-    this.configModel.update((config) => ({
-      ...config,
-      requests: [...config.requests, newRequest],
+    this.configFormModel.update((model) => ({
+      ...model,
+      requests: [...(model.config.requests ?? []), newRequest],
     }));
   }
 
   /** Remove a request from the requests array */
   removeRequest(index: number): void {
-    this.configModel.update((config) => ({
-      ...config,
-      requests: config.requests.filter((_, i) => i !== index),
+    this.configFormModel.update((model) => ({
+      ...model,
+      requests: model.config.requests?.filter((_, i) => i !== index) ?? [],
     }));
   }
 
   /** Add a new per-endpoint threshold */
   addPerEndpointThreshold(): void {
-    this.configModel.update((config) => ({
-      ...config,
+    this.configFormModel.update((model) => ({
+      ...model,
       options: {
-        ...config.options,
+        ...model.config.options,
         workerEarlyExit: {
-          ...config.options.workerEarlyExit,
+          ...model.config.options?.workerEarlyExit,
           perEndpointThresholds: [
-            ...config.options.workerEarlyExit.perEndpointThresholds,
+            ...(model.config.options?.workerEarlyExit?.perEndpointThresholds ??
+              []),
             { url: '', errorRateThreshold: 0.1 },
           ],
         },
@@ -126,16 +130,16 @@ export class ConfigFormComponent {
 
   /** Remove a per-endpoint threshold */
   removePerEndpointThreshold(index: number): void {
-    this.configModel.update((config) => ({
-      ...config,
+    this.configFormModel.update((model) => ({
+      ...model,
       options: {
-        ...config.options,
+        ...model.config.options,
         workerEarlyExit: {
-          ...config.options.workerEarlyExit,
+          ...model.config.options?.workerEarlyExit,
           perEndpointThresholds:
-            config.options.workerEarlyExit.perEndpointThresholds.filter(
+            model.config.options?.workerEarlyExit?.perEndpointThresholds?.filter(
               (_, i) => i !== index,
-            ),
+            ) ?? [],
         },
       },
     }));
@@ -143,14 +147,15 @@ export class ConfigFormComponent {
 
   /** Add a worker exit status code */
   addWorkerExitStatusCode(): void {
-    this.configModel.update((config) => ({
-      ...config,
+    this.configFormModel.update((model) => ({
+      ...model,
       options: {
-        ...config.options,
+        ...model.config.options,
         workerEarlyExit: {
-          ...config.options.workerEarlyExit,
+          ...model.config.options?.workerEarlyExit,
           workerExitStatusCodes: [
-            ...config.options.workerEarlyExit.workerExitStatusCodes,
+            ...(model.config.options?.workerEarlyExit?.workerExitStatusCodes ??
+              []),
             500,
           ],
         },
@@ -160,23 +165,26 @@ export class ConfigFormComponent {
 
   /** Remove a worker exit status code */
   removeWorkerExitStatusCode(index: number): void {
-    this.configModel.update((config) => ({
-      ...config,
+    this.configFormModel.update((model) => ({
+      ...model,
       options: {
-        ...config.options,
+        ...model.config.options,
         workerEarlyExit: {
-          ...config.options.workerEarlyExit,
+          ...model.config.options?.workerEarlyExit,
           workerExitStatusCodes:
-            config.options.workerEarlyExit.workerExitStatusCodes.filter(
+            model.config.options?.workerEarlyExit?.workerExitStatusCodes?.filter(
               (_, i) => i !== index,
-            ),
+            ) ?? [],
         },
       },
     }));
   }
 
   /** Create an empty configuration structure */
-  private createEmptyConfig(): TressiConfig {
-    return defaultTressiConfig;
+  private createEmptyConfig(): ModifyConfigRequest {
+    return {
+      name: 'Random Name',
+      config: defaultTressiConfig,
+    };
   }
 }

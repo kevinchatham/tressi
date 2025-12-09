@@ -9,28 +9,15 @@ import {
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { ThemeSwitcherComponent } from 'src/app/components/theme-switcher/theme-switcher.component';
-import { TressiConfig } from 'tressi-common/config';
 
 import { ConfigFormComponent } from '../../components/config-form/config-form.component';
 import { IconComponent } from '../../components/icon/icon.component';
 import { ConfigService } from '../../services/config.service';
 import { LogService } from '../../services/log.service';
-import { GetAllConfigsResponse } from '../../services/rpc.service';
-
-interface ConfigMetadata {
-  id: string;
-  name: string;
-  createdAt: number;
-  updatedAt: number;
-}
-
-interface ConfigFormData {
-  name: string;
-  description: string;
-  endpoints: string;
-}
-
-// RequestConfig interface is no longer needed as we use TressiConfig from tressi-common
+import {
+  GetAllConfigsResponse,
+  ModifyConfigRequest,
+} from '../../services/rpc.service';
 
 @Component({
   selector: 'app-settings',
@@ -53,27 +40,12 @@ export class SettingsComponent implements OnInit {
   readonly configs = signal<GetAllConfigsResponse>([]);
   readonly isLoading = signal<boolean>(true);
   readonly isEditing = signal<boolean>(false);
-  readonly editingConfig = signal<ConfigMetadata | null>(null);
+  readonly editingConfig = signal<ModifyConfigRequest | null>(null);
   readonly showDeleteModal = signal<boolean>(false);
-  readonly configToDelete = signal<ConfigMetadata | null>(null);
+  readonly configToDelete = signal<ModifyConfigRequest | null>(null);
 
   /** Current configuration being edited */
-  readonly currentConfig = signal<TressiConfig | null>(null);
-  readonly configName = signal<string>('');
-  readonly configDescription = signal<string>('');
-
-  /** Form data signal (deprecated - will be replaced by config-form) */
-  readonly formData = signal<ConfigFormData>({
-    name: '',
-    description: '',
-    endpoints: '',
-  });
-
-  /** Computed signal for form validation (deprecated) */
-  readonly isFormValid = computed<boolean>(() => {
-    const data = this.formData();
-    return data.name.trim().length > 0 && data.endpoints.trim().length > 0;
-  });
+  readonly currentConfig = signal<ModifyConfigRequest | null>(null);
 
   /** Computed signal that returns only the array of configs (or empty array) */
   readonly safeConfigs = computed(() => {
@@ -91,6 +63,21 @@ export class SettingsComponent implements OnInit {
   readonly hasError = computed(() => {
     const cfg = this.configs();
     return cfg && 'error' in cfg;
+  });
+
+  /** Computed signal for config form metadata */
+  readonly configFormMetadata = computed(() => {
+    const editing = this.editingConfig();
+    const current = this.currentConfig();
+
+    if (!editing || !current) {
+      return null;
+    }
+
+    return {
+      name: editing.name,
+      description: (current as { description?: string }).description || '',
+    };
   });
 
   ngOnInit(): void {
@@ -121,45 +108,23 @@ export class SettingsComponent implements OnInit {
     this.isEditing.set(true);
     this.editingConfig.set(null);
     this.currentConfig.set(null);
-    this.configName.set('');
-    this.configDescription.set('');
   }
 
   /**
    * Starts editing an existing configuration.
    */
-  startEdit(config: ConfigMetadata): void {
+  startEdit(config: ModifyConfigRequest): void {
     if ('error' in config) return;
-
-    this.isLoading.set(true);
-    this.configService.getConfig(config.id).subscribe({
-      next: (configRecord) => {
-        if (!configRecord || 'error' in configRecord) return;
-        if (!configRecord.config) {
-          this.logService.error('Invalid configuration data: missing config');
-          this.isLoading.set(false);
-          return;
-        }
-        this.isEditing.set(true);
-        this.editingConfig.set(configRecord);
-        this.currentConfig.set(configRecord.config);
-        this.configName.set(configRecord.name);
-        this.configDescription.set(
-          (configRecord.config as { description?: string }).description || '',
-        );
-        this.isLoading.set(false);
-      },
-      error: (error) => {
-        this.logService.error('Failed to load configuration:', error);
-        this.isLoading.set(false);
-      },
-    });
+    this.isEditing.set(true);
+    this.editingConfig.set(config);
+    this.currentConfig.set(config);
+    this.isLoading.set(false);
   }
 
   /**
    * Shows delete confirmation modal.
    */
-  showDeleteConfirm(config: ConfigMetadata): void {
+  showDeleteConfirm(config: ModifyConfigRequest): void {
     this.configToDelete.set(config);
     this.showDeleteModal.set(true);
   }
@@ -177,7 +142,7 @@ export class SettingsComponent implements OnInit {
    */
   deleteConfig(): void {
     const config = this.configToDelete();
-    if (!config || 'error' in config) return;
+    if (!config || 'error' in config || !config.id) return;
 
     this.isLoading.set(true);
     this.configService.deleteConfig(config.id).subscribe({
@@ -196,26 +161,10 @@ export class SettingsComponent implements OnInit {
   /**
    * Handles configuration saved event from config-form component.
    */
-  onConfigSaved(config: TressiConfig): void {
-    if (!config) return;
-
-    // Add description to config if provided
-    const configWithDescription = {
-      ...config,
-      description: this.configDescription(),
-    };
-
-    const name = this.editingConfig()
-      ? this.editingConfig()!.name
-      : this.configName();
-
-    if (!name.trim()) {
-      this.logService.error('Configuration name is required');
-      return;
-    }
-
+  onConfigSaved(event: ModifyConfigRequest): void {
+    if (!event.config) return;
     this.isLoading.set(true);
-    this.configService.saveConfig(name, configWithDescription).subscribe({
+    this.configService.saveConfig(event).subscribe({
       next: () => {
         this.loadConfigurations();
         this.cancelEdit();
@@ -234,44 +183,6 @@ export class SettingsComponent implements OnInit {
     this.isEditing.set(false);
     this.editingConfig.set(null);
     this.currentConfig.set(null);
-    this.configName.set('');
-    this.configDescription.set('');
-    this.formData.set({
-      name: '',
-      description: '',
-      endpoints: '',
-    });
-  }
-
-  /**
-   * Updates form data.
-   */
-  updateFormData(field: keyof ConfigFormData, value: string): void {
-    this.formData.update((data) => ({ ...data, [field]: value }));
-  }
-
-  /**
-   * Handles name input events for new configurations.
-   */
-  onNameInput(event: Event): void {
-    const target = event.target as HTMLInputElement;
-    this.configName.set(target.value);
-  }
-
-  /**
-   * Handles description input events.
-   */
-  onDescriptionInput(event: Event): void {
-    const target = event.target as HTMLTextAreaElement;
-    this.configDescription.set(target.value);
-  }
-
-  /**
-   * Deprecated: Handles input events from old template.
-   */
-  onEndpointsInput(event: Event): void {
-    const target = event.target as HTMLTextAreaElement;
-    this.updateFormData('endpoints', target.value);
   }
 
   /**

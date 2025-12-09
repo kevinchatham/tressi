@@ -3,13 +3,13 @@ import { Low } from 'lowdb';
 import { JSONFile } from 'lowdb/node';
 import { homedir } from 'os';
 import { join } from 'path';
-import type { TressiConfig } from 'tressi-common/config';
 
 import {
-  ConfigDatabase,
-  ConfigMetadataApiResponse,
-  ConfigRecordApiResponse,
-} from '../types/db/types';
+  ConfigRequestInferType,
+  ConfigRequestOutputType,
+  ConfigRequestSchema,
+} from '../server/routes/configs';
+import { ConfigDatabase } from '../types/db/types';
 
 const configDir = join(homedir(), '.tressi');
 const configPath = join(configDir, 'configs.json');
@@ -27,20 +27,15 @@ export class ConfigStorage {
   /**
    * Get all saved configurations (without the full config data)
    */
-  async getAllMetadata(): Promise<ConfigMetadataApiResponse[]> {
+  async getAllMetadata(): Promise<ConfigRequestOutputType[]> {
     await db.read();
-    return db.data.configs.map(({ id, name, createdAt, updatedAt }) => ({
-      id,
-      name,
-      createdAt,
-      updatedAt,
-    }));
+    return db.data.configs;
   }
 
   /**
    * Get a single configuration by ID
    */
-  async getById(id: string): Promise<ConfigRecordApiResponse | undefined> {
+  async getById(id: string): Promise<ConfigRequestOutputType | undefined> {
     await db.read();
     return db.data.configs.find((c) => c.id === id);
   }
@@ -48,7 +43,7 @@ export class ConfigStorage {
   /**
    * Get a configuration by name
    */
-  async getByName(name: string): Promise<ConfigRecordApiResponse | undefined> {
+  async getByName(name: string): Promise<ConfigRequestOutputType | undefined> {
     await db.read();
     return db.data.configs.find((c) => c.name === name);
   }
@@ -56,36 +51,23 @@ export class ConfigStorage {
   /**
    * Save a new configuration or update existing one by name
    */
-  async save(
-    name: string,
-    config: TressiConfig,
-  ): Promise<ConfigRecordApiResponse> {
+  async save(input: ConfigRequestInferType): Promise<ConfigRequestOutputType> {
     await db.read();
 
-    const existingIndex = db.data.configs.findIndex((c) => c.name === name);
-    const now = Date.now();
+    const existingIndex = db.data.configs.findIndex(
+      (c) => c.name === input.name,
+    );
+
+    const model = ConfigRequestSchema.parse(input);
 
     if (existingIndex !== -1) {
-      // Update existing
-      db.data.configs[existingIndex] = {
-        ...db.data.configs[existingIndex],
-        config,
-        updatedAt: now,
-      };
+      db.data.configs[existingIndex] = model;
     } else {
-      // Create new
-      const newConfig: ConfigRecordApiResponse = {
-        id: `config_${now}_${Math.random().toString(36).substr(2, 9)}`,
-        name,
-        config,
-        createdAt: now,
-        updatedAt: now,
-      };
-      db.data.configs.push(newConfig);
+      db.data.configs.push(model);
     }
 
     await db.write();
-    return db.data.configs.find((c) => c.name === name)!;
+    return db.data.configs.find((c) => c.name === input.name)!;
   }
 
   /**

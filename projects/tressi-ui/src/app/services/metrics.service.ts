@@ -1,8 +1,8 @@
 import { inject, Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { from, Observable } from 'rxjs';
 import { AggregatedMetrics } from 'tressi-common/metrics';
 
-import { RPCService } from './rpc.service';
+import { GetSystemMetricsResponse, RPCService } from './rpc.service';
 
 @Injectable({
   providedIn: 'root',
@@ -12,7 +12,7 @@ export class SSEService {
   /**
    * Convenience method for metrics stream
    */
-  getMetrics(): Observable<AggregatedMetrics> {
+  getMetricsStream(): Observable<AggregatedMetrics> {
     const url = this.rpc.client.metrics.stream.$url();
 
     return new Observable((observer) => {
@@ -29,5 +29,11 @@ export class SSEService {
 
       return () => eventSource.close();
     });
+  }
+
+  getSystemMetrics(): Observable<GetSystemMetricsResponse> {
+    return from(
+      this.rpc.client.metrics.system.$get().then((r: Response) => r.json()),
+    );
   }
 }

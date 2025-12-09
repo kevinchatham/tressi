@@ -51,7 +51,6 @@ export const TressiOptionsConfigSchema = z
       .number()
       .int()
       .min(1)
-      .max(32)
       .optional()
       .describe('Number of worker threads to use (defaults to CPU count)')
       .default(1),

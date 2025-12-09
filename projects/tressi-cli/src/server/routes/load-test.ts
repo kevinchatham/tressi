@@ -1,7 +1,10 @@
 import { sValidator } from '@hono/standard-validator';
 import { Hono } from 'hono';
-import { LoadTestRequestSchema } from 'tressi-common/api';
-import { ConfigValidationError, validateConfig } from 'tressi-common/config';
+import {
+  ConfigValidationError,
+  TressiConfigSchema,
+  validateConfig,
+} from 'tressi-common/config';
 
 import { runLoadTest } from '../..';
 import {
@@ -26,7 +29,7 @@ const app = new Hono()
    * @param {LoadTestRequest} body - Load test configuration from request body
    * @returns {Promise<Response>} Job acceptance/rejection response with 202/409 status
    */
-  .post('/', sValidator('json', LoadTestRequestSchema), async (c) => {
+  .post('/', sValidator('json', TressiConfigSchema), async (c) => {
     try {
       if (currentJob?.status === 'running') {
         return c.json(

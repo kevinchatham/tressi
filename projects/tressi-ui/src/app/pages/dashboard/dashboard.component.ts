@@ -13,12 +13,12 @@ import { IconComponent } from '../../components/icon/icon.component';
 import { LineChartComponent } from '../../components/line-chart/line-chart.component';
 import { ConfigService } from '../../services/config.service';
 import { LogService } from '../../services/log.service';
+import { SSEService } from '../../services/metrics.service';
 import {
   GetAllConfigsResponse,
   GetConfigByIdResponse,
   RPCService,
 } from '../../services/rpc.service';
-import { SSEService } from '../../services/sse.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -96,7 +96,7 @@ export class DashboardComponent implements OnInit {
   ngOnInit(): void {
     this.loadConfigurations();
     this.sseService
-      .getMetrics()
+      .getMetricsStream()
       .subscribe((metrics) => this.updateCharts(metrics));
   }
 

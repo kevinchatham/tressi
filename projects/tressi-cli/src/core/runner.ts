@@ -1,5 +1,5 @@
 import EventEmitter from 'eventemitter3';
-import { cpus } from 'os';
+import os from 'os';
 import { performance } from 'perf_hooks';
 import type { TressiConfig } from 'tressi-common/config';
 import type { AggregatedMetrics } from 'tressi-common/metrics';
@@ -52,12 +52,12 @@ export class Runner extends EventEmitter<IRunnerEvents> {
   }
 
   private async runWithWorkers(): Promise<void> {
-    const cpuCount = cpus().length;
+    const cpuCount = os.cpus().length;
 
     const requestedThreads = this.config.options.threads ?? cpuCount;
 
     const maxWorkers =
-      cpuCount > requestedThreads ? cpuCount : requestedThreads;
+      requestedThreads > cpuCount ? cpuCount : requestedThreads;
 
     this.workerPool = new WorkerPoolManager(this.config, maxWorkers);
 

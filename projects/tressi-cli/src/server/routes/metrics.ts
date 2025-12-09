@@ -1,6 +1,5 @@
 import { Hono } from 'hono';
-import { BlankEnv } from 'hono/types';
-import { StatusCode } from 'hono/utils/http-status';
+import os from 'os';
 
 import { ISSEClientManager } from '../../types/workers/interfaces';
 
@@ -11,20 +10,8 @@ import { ISSEClientManager } from '../../types/workers/interfaces';
  * @param {ISSEClientManager} sseManager - Manager for handling SSE client connections
  * @returns {Hono} Hono app with metrics streaming endpoint
  */
-function createMetricsApp(sseManager: ISSEClientManager): Hono<
-  BlankEnv,
-  {
-    '/stream': {
-      $get: {
-        input: object;
-        output: object;
-        outputFormat: string;
-        status: StatusCode;
-      };
-    };
-  },
-  '/'
-> {
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+function createMetricsApp(sseManager: ISSEClientManager) {
   return (
     new Hono()
       /**
@@ -54,6 +41,16 @@ function createMetricsApp(sseManager: ISSEClientManager): Hono<
             Connection: 'keep-alive',
             'Access-Control-Allow-Origin': '*',
           },
+        });
+      })
+      .get('/system', (c) => {
+        return c.json({
+          arch: os.arch(),
+          cpuCount: os.cpus().length,
+          freeMemory: os.freemem(),
+          nodeVersion: process.version,
+          platform: os.platform(),
+          totalMemory: os.totalmem(),
         });
       })
   );

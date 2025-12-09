@@ -2,11 +2,8 @@ import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
 
 import { terminal } from '../tui/terminal';
-import createApp, { type AppType } from './routes';
+import createApp from './routes';
 import { SSEManager } from './utils/sse-manager';
-
-// Export type for client usage
-export type { AppType };
 
 export class TressiServer {
   private app: Hono;

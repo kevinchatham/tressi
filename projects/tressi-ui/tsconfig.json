@@ -17,11 +17,12 @@
     "baseUrl": "./",
     "paths": {
       "tressi-common": [
-        "../tressi-common/src/api/index.ts",
         "../tressi-common/src/config/index.ts",
         "../tressi-common/src/metrics/index.ts"
       ],
-      "tressi-cli/src/server": ["../tressi-cli/src/server/index.ts"]
+      "tressi-cli/src/server/routes/types": [
+        "../tressi-cli/src/server/routes/types.ts"
+      ]
     }
   },
   "angularCompilerOptions": {
