@@ -138,8 +138,16 @@
 
     @if (!isFormValid()) {
       <div class="alert alert-warning mt-4">
-        <app-icon name="warning" class="h-6 w-6 shrink-0" />
-        <span>Please fix the validation errors above before saving.</span>
+        <div class="flex items-center">
+          <app-icon name="warning" class="mt-0.5 h-6 w-6 shrink-0" />
+          <div class="ml-3">
+            <ul class="list-disc pl-5 text-sm">
+              @for (error of configForm().errors(); track error.message) {
+                <li>{{ error.message }}</li>
+              }
+            </ul>
+          </div>
+        </div>
       </div>
     }
   </div>

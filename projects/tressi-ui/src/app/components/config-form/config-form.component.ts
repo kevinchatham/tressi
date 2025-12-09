@@ -63,12 +63,20 @@ export class ConfigFormComponent {
     required(schemaPath.name);
     validate(schemaPath, ({ value }) => {
       const isValid = validateConfig(value());
-      if ('error' in isValid) {
+      if ('error' in isValid)
         return {
           kind: 'error',
           message: isValid.error.message,
         };
-      }
+      return null;
+    });
+    validate(schemaPath, ({ value }) => {
+      const hasRequests = value().config.requests?.length || 0 > 0;
+      if (!hasRequests)
+        return {
+          kind: 'error',
+          message: 'You should have at least one request',
+        };
       return null;
     });
   });
