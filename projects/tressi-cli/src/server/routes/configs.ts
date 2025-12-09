@@ -1,18 +1,10 @@
 import { sValidator } from '@hono/standard-validator';
 import { Hono } from 'hono';
-import {
-  ConfigValidationError,
-  TressiConfigSchema,
-  validateConfig,
-} from 'tressi-common/config';
+import { TressiConfigSchema, validateConfig } from 'tressi-common/config';
 import z from 'zod';
 
 import { configStorage } from '../../core/config-storage';
-import {
-  createApiErrorResponse,
-  createConfigMergeErrorResponse,
-  createZodValidationErrorResponse,
-} from '../utils/error-response-generator';
+import { createApiErrorResponse } from '../utils/error-response-generator';
 
 /**
  * Request schema for saving a configuration
@@ -97,19 +89,7 @@ const app = new Hono()
       const model = c.req.valid('json');
       const validationResult = validateConfig(model.config);
       if (validationResult.success === false) {
-        if (validationResult.error instanceof ConfigValidationError) {
-          return c.json(
-            createZodValidationErrorResponse(
-              validationResult.error,
-              c.req.path,
-            ),
-            400,
-          );
-        }
-        return c.json(
-          createConfigMergeErrorResponse(validationResult.error, c.req.path),
-          400,
-        );
+        return c.json(validationResult.error, 400);
       }
       const saved = await configStorage.save(model);
       return c.json(saved, 201);

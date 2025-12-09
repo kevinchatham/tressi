@@ -7,13 +7,28 @@ export * from './schemas';
 export * from './types';
 export * from './defaults';
 
+/**
+ * Discriminated union result type for configuration validation
+ * Success path contains fully typed TressiConfig
+ * Failure path contains structured error information
+ */
+export type ConfigValidationResult =
+  | {
+      success: false;
+      error: ZodError;
+    }
+  | {
+      success: true;
+      data: TressiConfig;
+    };
+
 export function validateConfig(rawContent: unknown): ConfigValidationResult {
   const parseResult = TressiConfigSchema.safeParse(rawContent);
 
   if (!parseResult.success) {
     return {
       success: false,
-      error: new ConfigValidationError(parseResult.error),
+      error: parseResult.error,
     };
   }
 
@@ -21,43 +36,6 @@ export function validateConfig(rawContent: unknown): ConfigValidationResult {
     success: true,
     data: parseResult.data,
   };
-}
-
-/**
- * Discriminated union result type for configuration validation
- * Success path contains fully typed TressiConfig
- * Failure path contains structured error information
- */
-export type ConfigValidationResult =
-  | { success: true; data: TressiConfig }
-  | { success: false; error: ConfigValidationError };
-
-/**
- * Error class for Zod validation failures
- * Preserves full ZodError structure for detailed error reporting
- */
-export class ConfigValidationError extends Error {
-  public readonly fieldErrors: ReadonlyArray<{
-    readonly path: string;
-    readonly message: string;
-    readonly code: string;
-    readonly received?: unknown;
-    readonly expected?: unknown;
-  }>;
-
-  constructor(public readonly zodError: ZodError) {
-    const fieldErrors = zodError.errors.map((err) => ({
-      path: err.path.join('.'),
-      message: err.message,
-      code: err.code,
-      received: 'received' in err ? err.received : undefined,
-      expected: 'expected' in err ? err.expected : undefined,
-    }));
-
-    super(`Configuration validation failed: ${fieldErrors.length} error(s)`);
-    this.name = 'ConfigValidationError';
-    this.fieldErrors = Object.freeze(fieldErrors);
-  }
 }
 
 /**
@@ -86,19 +64,6 @@ export type ErrorApiResponse = {
     message: string;
     code?: string;
     details?: string[];
-    timestamp: string;
-    path?: string;
-  };
-};
-
-/**
- * Validation error response with detailed field errors
- */
-export type ValidationErrorApiResponse = {
-  error: {
-    message: string;
-    code: 'VALIDATION_ERROR';
-    details: string[];
     timestamp: string;
     path?: string;
   };

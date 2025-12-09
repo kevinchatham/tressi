@@ -1,4 +1,11 @@
-import { Component, computed, input, output, signal } from '@angular/core';
+import {
+  Component,
+  computed,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { Field, form, required, validate } from '@angular/forms/signals';
 import {
   defaultTressiConfig,
@@ -7,6 +14,7 @@ import {
   validateConfig,
 } from 'tressi-common/config';
 
+import { NameService } from '../../services/name.service';
 import { ModifyConfigRequest } from '../../services/rpc.service';
 import { IconComponent } from '../icon/icon.component';
 import { BasicConfigComponent } from './basic-config/basic-config.component';
@@ -31,6 +39,8 @@ export type ModifyConfigRequestFormType = ReturnType<
   templateUrl: './config-form.component.html',
 })
 export class ConfigFormComponent {
+  private readonly nameService = inject(NameService);
+
   /** Input configuration to edit */
   readonly configInput = input<ModifyConfigRequest | null>(null);
 
@@ -52,7 +62,7 @@ export class ConfigFormComponent {
   readonly configForm = form(this.configFormModel, (schemaPath) => {
     required(schemaPath.name);
     validate(schemaPath, ({ value }) => {
-      const isValid = validateConfig(value);
+      const isValid = validateConfig(value());
       if ('error' in isValid) {
         return {
           kind: 'error',
@@ -182,9 +192,10 @@ export class ConfigFormComponent {
 
   /** Create an empty configuration structure */
   private createEmptyConfig(): ModifyConfigRequest {
-    return {
-      name: 'Random Name',
+    const defaultConfig: ModifyConfigRequest = {
+      name: this.nameService.generate(),
       config: defaultTressiConfig,
     };
+    return defaultConfig;
   }
 }

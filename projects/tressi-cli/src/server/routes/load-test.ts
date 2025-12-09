@@ -1,16 +1,10 @@
 import { sValidator } from '@hono/standard-validator';
 import { Hono } from 'hono';
-import {
-  ConfigValidationError,
-  TressiConfigSchema,
-  validateConfig,
-} from 'tressi-common/config';
+import { TressiConfigSchema, validateConfig } from 'tressi-common/config';
+import { ZodError } from 'zod/v4';
 
 import { runLoadTest } from '../..';
-import {
-  createApiErrorResponse,
-  createZodValidationErrorResponse,
-} from '../utils/error-response-generator';
+import { createApiErrorResponse } from '../utils/error-response-generator';
 
 /**
  * Load test management routes for starting and monitoring load tests.
@@ -44,14 +38,8 @@ const app = new Hono()
       const request = c.req.valid('json');
       const validationResult = validateConfig(request);
       if (!validationResult.success) {
-        if (validationResult.error instanceof ConfigValidationError) {
-          return c.json(
-            createZodValidationErrorResponse(
-              validationResult.error,
-              c.req.path,
-            ),
-            400,
-          );
+        if (validationResult.error instanceof ZodError) {
+          return c.json(validationResult.error, 400);
         }
         return c.json(
           createApiErrorResponse('Invalid configuration', 'VALIDATION_ERROR', [
