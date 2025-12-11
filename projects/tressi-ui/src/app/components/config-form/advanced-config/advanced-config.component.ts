@@ -1,15 +1,16 @@
 import { Component, input } from '@angular/core';
+import { Field } from '@angular/forms/signals';
 
 import { ModifyConfigRequest } from '../../../services/rpc.service';
 import { IconComponent } from '../../icon/icon.component';
 import { ModifyConfigRequestFormType } from '../config-form.component';
 
 @Component({
-  selector: 'app-global-headers',
-  imports: [IconComponent],
-  templateUrl: './global-headers.component.html',
+  selector: 'app-advanced-config',
+  imports: [Field, IconComponent],
+  templateUrl: './advanced-config.component.html',
 })
-export class GlobalHeadersComponent {
+export class AdvancedConfigComponent {
   /** Form instance from parent */
   readonly form = input.required<ModifyConfigRequestFormType>();
 

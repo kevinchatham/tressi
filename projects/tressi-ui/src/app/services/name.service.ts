@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import {
-  adjectives,
   animals,
+  colors,
   Config,
   uniqueNamesGenerator,
 } from 'unique-names-generator';
@@ -11,7 +11,7 @@ import {
 })
 export class NameService {
   private readonly config: Config = {
-    dictionaries: [adjectives, animals],
+    dictionaries: [colors, animals],
     separator: ' ',
     length: 2,
     style: 'capital',
@@ -19,7 +19,6 @@ export class NameService {
 
   /**
    * Generates a fun random name.
-   * Example: "brave-red-wolf"
    */
   generate(): string {
     return uniqueNamesGenerator(this.config);

@@ -133,7 +133,10 @@ export const TressiConfigSchema = z.object({
       `https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v${pkg.version}.json`,
     ),
   /** An array of request configurations. */
-  requests: z.array(TressiRequestConfigSchema).default([]),
+  requests: z
+    .array(TressiRequestConfigSchema)
+    .min(1, 'At least one valid request is required')
+    .default([]),
   /** Configuration options for the test runner. */
-  options: TressiOptionsConfigSchema.default({}),
+  options: TressiOptionsConfigSchema,
 });

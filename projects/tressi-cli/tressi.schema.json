@@ -1,188 +1,212 @@
 {
-  "$ref": "#/definitions/TressiConfigSchema",
-  "definitions": {
-    "TressiConfigSchema": {
-      "type": "object",
-      "properties": {
-        "$schema": {
-          "type": "string",
-          "default": "https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json"
-        },
-        "requests": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "url": {
-                "type": "string",
-                "format": "uri"
-              },
-              "payload": {
-                "anyOf": [
-                  {
-                    "type": "object",
-                    "additionalProperties": {}
-                  },
-                  {
-                    "type": "array",
-                    "items": {}
-                  }
-                ]
-              },
-              "method": {
-                "type": "string",
-                "enum": [
-                  "GET",
-                  "POST",
-                  "PUT",
-                  "PATCH",
-                  "DELETE",
-                  "HEAD",
-                  "OPTIONS"
-                ],
-                "default": "GET"
-              },
-              "headers": {
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "default": "https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json",
+      "type": "string"
+    },
+    "requests": {
+      "default": [],
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "payload": {
+            "anyOf": [
+              {
                 "type": "object",
-                "additionalProperties": {
+                "propertyNames": {
                   "type": "string"
                 },
-                "default": {
-                  "User-Agent": "Tressi"
-                }
+                "additionalProperties": {}
               },
-              "rps": {
-                "type": "integer",
-                "minimum": 1,
-                "default": 1
+              {
+                "type": "array",
+                "items": {}
               }
-            },
-            "required": ["url"],
-            "additionalProperties": false
+            ]
           },
-          "default": []
-        },
-        "options": {
-          "type": "object",
-          "properties": {
-            "durationSec": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "default": 10
+          "method": {
+            "default": "GET",
+            "type": "string",
+            "enum": ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"]
+          },
+          "headers": {
+            "default": {
+              "User-Agent": "Tressi"
             },
-            "rampUpTimeSec": {
-              "type": "integer",
-              "minimum": 0,
-              "default": 0
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
             },
-            "exportPath": {
-              "type": "string",
-              "default": "./tressi-report"
-            },
-            "silent": {
-              "type": "boolean",
-              "default": false
-            },
-            "headers": {
-              "type": "object",
-              "additionalProperties": {
-                "type": "string"
-              },
-              "default": {
-                "User-Agent": "Tressi"
-              }
-            },
-            "threads": {
-              "type": "integer",
-              "minimum": 1,
-              "description": "Number of worker threads to use (defaults to CPU count)",
-              "default": 1
-            },
-            "workerMemoryLimit": {
-              "type": "integer",
-              "minimum": 16,
-              "maximum": 512,
-              "default": 128,
-              "description": "Memory limit per worker in MB"
-            },
-            "workerEarlyExit": {
-              "type": "object",
-              "properties": {
-                "enabled": {
-                  "type": "boolean",
-                  "default": false
-                },
-                "globalErrorRateThreshold": {
-                  "type": "number",
-                  "minimum": 0,
-                  "maximum": 1,
-                  "default": 0.1
-                },
-                "globalErrorCountThreshold": {
-                  "type": "integer",
-                  "exclusiveMinimum": 0,
-                  "default": 100
-                },
-                "perEndpointThresholds": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "properties": {
-                      "url": {
-                        "type": "string"
-                      },
-                      "errorRateThreshold": {
-                        "type": "number",
-                        "minimum": 0,
-                        "maximum": 1
-                      },
-                      "errorCountThreshold": {
-                        "type": "integer",
-                        "exclusiveMinimum": 0
-                      }
-                    },
-                    "required": ["url", "errorRateThreshold"],
-                    "additionalProperties": false
-                  },
-                  "default": []
-                },
-                "workerExitStatusCodes": {
-                  "type": "array",
-                  "items": {
-                    "type": "integer",
-                    "exclusiveMinimum": 0
-                  },
-                  "default": [500, 502, 503, 504]
-                },
-                "monitoringWindowMs": {
-                  "type": "integer",
-                  "exclusiveMinimum": 0,
-                  "default": 5000
-                },
-                "stopMode": {
-                  "type": "string",
-                  "enum": ["endpoint", "global"],
-                  "default": "global"
-                }
-              },
-              "additionalProperties": false,
-              "default": {
-                "enabled": false,
-                "globalErrorRateThreshold": 0.1,
-                "globalErrorCountThreshold": 100,
-                "perEndpointThresholds": [],
-                "workerExitStatusCodes": [500, 502, 503, 504],
-                "monitoringWindowMs": 5000,
-                "stopMode": "global"
-              }
+            "additionalProperties": {
+              "type": "string"
             }
           },
-          "additionalProperties": false,
-          "default": {}
+          "rps": {
+            "default": 1,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": ["url", "method", "headers", "rps"],
+        "additionalProperties": false
+      }
+    },
+    "options": {
+      "type": "object",
+      "properties": {
+        "durationSec": {
+          "default": 10,
+          "type": "integer",
+          "exclusiveMinimum": 0,
+          "maximum": 9007199254740991
+        },
+        "rampUpTimeSec": {
+          "default": 0,
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "exportPath": {
+          "default": "./tressi-report",
+          "type": "string"
+        },
+        "silent": {
+          "default": false,
+          "type": "boolean"
+        },
+        "headers": {
+          "default": {
+            "User-Agent": "Tressi"
+          },
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "threads": {
+          "default": 1,
+          "description": "Number of worker threads to use (defaults to CPU count)",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "workerMemoryLimit": {
+          "description": "Memory limit per worker in MB",
+          "default": 128,
+          "type": "integer",
+          "minimum": 16,
+          "maximum": 512
+        },
+        "workerEarlyExit": {
+          "default": {
+            "enabled": false,
+            "globalErrorRateThreshold": 0.1,
+            "globalErrorCountThreshold": 100,
+            "perEndpointThresholds": [],
+            "workerExitStatusCodes": [500, 502, 503, 504],
+            "monitoringWindowMs": 5000,
+            "stopMode": "global"
+          },
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "default": false,
+              "type": "boolean"
+            },
+            "globalErrorRateThreshold": {
+              "default": 0.1,
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "globalErrorCountThreshold": {
+              "default": 100,
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "perEndpointThresholds": {
+              "default": [],
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "url": {
+                    "type": "string"
+                  },
+                  "errorRateThreshold": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "errorCountThreshold": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": ["url", "errorRateThreshold"],
+                "additionalProperties": false
+              }
+            },
+            "workerExitStatusCodes": {
+              "default": [500, 502, 503, 504],
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              }
+            },
+            "monitoringWindowMs": {
+              "default": 5000,
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "stopMode": {
+              "default": "global",
+              "type": "string",
+              "enum": ["endpoint", "global"]
+            }
+          },
+          "required": [
+            "enabled",
+            "globalErrorRateThreshold",
+            "globalErrorCountThreshold",
+            "perEndpointThresholds",
+            "workerExitStatusCodes",
+            "monitoringWindowMs",
+            "stopMode"
+          ],
+          "additionalProperties": false
         }
       },
+      "required": [
+        "durationSec",
+        "rampUpTimeSec",
+        "exportPath",
+        "silent",
+        "headers",
+        "threads",
+        "workerMemoryLimit",
+        "workerEarlyExit"
+      ],
       "additionalProperties": false
     }
   },
-  "$schema": "http://json-schema.org/draft-07/schema#"
+  "required": ["$schema", "requests", "options"],
+  "additionalProperties": false
 }

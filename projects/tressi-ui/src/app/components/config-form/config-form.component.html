@@ -21,10 +21,10 @@
       }
     </fieldset>
     <!-- Sub Component Navigation -->
-    <nav class="flex space-x-8">
+    <nav class="flex items-center justify-around">
       <button
         type="button"
-        class="flex items-center gap-2 border-b-2 px-1 py-4 text-sm font-medium transition-colors"
+        class="flex w-full cursor-pointer items-center justify-center gap-2 border-b-2 px-1 py-4 text-sm font-medium transition-colors"
         [class.border-primary]="activeTab() === 'basic'"
         [class.text-primary]="activeTab() === 'basic'"
         [class.border-transparent]="activeTab() !== 'basic'"
@@ -37,42 +37,29 @@
       </button>
       <button
         type="button"
-        class="flex items-center gap-2 border-b-2 px-1 py-4 text-sm font-medium transition-colors"
-        [class.border-primary]="activeTab() === 'headers'"
-        [class.text-primary]="activeTab() === 'headers'"
-        [class.border-transparent]="activeTab() !== 'headers'"
-        [class.text-base-content/60]="activeTab() !== 'headers'"
-        [class.hover:text-base-content]="activeTab() !== 'headers'"
-        (click)="setActiveTab('headers')"
+        class="flex w-full cursor-pointer items-center justify-center gap-2 border-b-2 px-1 py-4 text-sm font-medium transition-colors"
+        [class.border-primary]="activeTab() === 'global'"
+        [class.text-primary]="activeTab() === 'global'"
+        [class.border-transparent]="activeTab() !== 'global'"
+        [class.text-base-content/60]="activeTab() !== 'global'"
+        [class.hover:text-base-content]="activeTab() !== 'global'"
+        (click)="setActiveTab('global')"
       >
         <app-icon name="notes" />
-        Headers
+        Global
       </button>
       <button
         type="button"
-        class="flex items-center gap-2 border-b-2 px-1 py-4 text-sm font-medium transition-colors"
-        [class.border-primary]="activeTab() === 'requests'"
-        [class.text-primary]="activeTab() === 'requests'"
-        [class.border-transparent]="activeTab() !== 'requests'"
-        [class.text-base-content/60]="activeTab() !== 'requests'"
-        [class.hover:text-base-content]="activeTab() !== 'requests'"
-        (click)="setActiveTab('requests')"
+        class="flex w-full cursor-pointer items-center justify-center gap-2 border-b-2 px-1 py-4 text-sm font-medium transition-colors"
+        [class.border-primary]="activeTab() === 'advanced'"
+        [class.text-primary]="activeTab() === 'advanced'"
+        [class.border-transparent]="activeTab() !== 'advanced'"
+        [class.text-base-content/60]="activeTab() !== 'advanced'"
+        [class.hover:text-base-content]="activeTab() !== 'advanced'"
+        (click)="setActiveTab('advanced')"
       >
-        <app-icon name="send" />
-        Requests
-      </button>
-      <button
-        type="button"
-        class="flex items-center gap-2 border-b-2 px-1 py-4 text-sm font-medium transition-colors"
-        [class.border-primary]="activeTab() === 'worker-exit'"
-        [class.text-primary]="activeTab() === 'worker-exit'"
-        [class.border-transparent]="activeTab() !== 'worker-exit'"
-        [class.text-base-content/60]="activeTab() !== 'worker-exit'"
-        [class.hover:text-base-content]="activeTab() !== 'worker-exit'"
-        (click)="setActiveTab('worker-exit')"
-      >
-        <app-icon name="warning" />
-        Worker Exit
+        <app-icon name="settings" />
+        Advanced
       </button>
     </nav>
   </div>
@@ -81,17 +68,7 @@
   <div class="space-y-6">
     <!-- Basic Configuration Tab -->
     @if (activeTab() === 'basic') {
-      <app-basic-config [form]="form" [model]="model()" />
-    }
-
-    <!-- Global Headers Tab -->
-    @if (activeTab() === 'headers') {
-      <app-global-headers [form]="form" [model]="model()" />
-    }
-
-    <!-- Requests Configuration Tab -->
-    @if (activeTab() === 'requests') {
-      <app-requests-config
+      <app-basic-config
         [form]="form"
         [model]="model()"
         (addRequest)="addRequest()"
@@ -99,9 +76,9 @@
       />
     }
 
-    <!-- Worker Early Exit Tab -->
-    @if (activeTab() === 'worker-exit') {
-      <app-worker-early-exit
+    <!-- Global Configuration Tab -->
+    @if (activeTab() === 'global') {
+      <app-global-config
         [form]="form"
         [model]="model()"
         (addPerEndpointThreshold)="addPerEndpointThreshold()"
@@ -109,6 +86,11 @@
         (addWorkerExitStatusCode)="addWorkerExitStatusCode()"
         (removeWorkerExitStatusCode)="removeWorkerExitStatusCode($event)"
       />
+    }
+
+    <!-- Advanced Configuration Tab -->
+    @if (activeTab() === 'advanced') {
+      <app-advanced-config [form]="form" [model]="model()" />
     }
   </div>
 
@@ -118,31 +100,19 @@
       <button type="button" class="btn btn-ghost" (click)="closed.emit()">
         Cancel
       </button>
-      <button
-        type="submit"
-        class="btn btn-primary"
-        [disabled]="!isFormValid() || isLoading()"
-      >
-        @if (isLoading()) {
-          <span class="loading loading-spinner loading-sm"></span>
-        }
-        Save
-      </button>
-    </div>
-
-    @if (!isFormValid()) {
-      <div class="alert alert-warning mt-4">
-        <div class="flex items-center">
-          <app-icon name="warning" class="mt-0.5 h-6 w-6 shrink-0" />
-          <div class="ml-3">
-            <ul class="list-disc pl-5 text-sm">
-              @for (error of form().errors(); track error.message) {
-                <li>{{ error.message }}</li>
-              }
-            </ul>
-          </div>
-        </div>
+      <div class="flex items-center gap-2">
+        <!-- Save Button -->
+        <button
+          type="submit"
+          class="btn btn-primary"
+          [disabled]="!isFormValid() || isLoading()"
+        >
+          @if (isLoading()) {
+            <span class="loading loading-spinner loading-sm"></span>
+          }
+          Save
+        </button>
       </div>
-    }
+    </div>
   </div>
 </form>

@@ -6,4 +6,4 @@ import { TressiConfig } from './types';
  * This configuration provides a starting point for new users.
  */
 export const defaultTressiConfig: TressiConfig = ((): TressiConfig =>
-  TressiConfigSchema.parse({}))();
+  TressiConfigSchema.parse({ options: {} }))();

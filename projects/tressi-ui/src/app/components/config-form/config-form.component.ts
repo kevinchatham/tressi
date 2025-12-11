@@ -6,21 +6,31 @@ import {
   output,
   signal,
 } from '@angular/core';
-import { Field, form, required, validate } from '@angular/forms/signals';
+import {
+  applyEach,
+  Field,
+  form,
+  required,
+  SchemaPathTree,
+  validate,
+} from '@angular/forms/signals';
 import {
   defaultTressiConfig,
   TressiRequestConfig,
-  TressiRequestConfigSchema,
   validateConfig,
 } from 'tressi-common/config';
 
 import { NameService } from '../../services/name.service';
 import { ModifyConfigRequest } from '../../services/rpc.service';
 import { IconComponent } from '../icon/icon.component';
+import { AdvancedConfigComponent } from './advanced-config/advanced-config.component';
 import { BasicConfigComponent } from './basic-config/basic-config.component';
-import { GlobalHeadersComponent } from './global-headers/global-headers.component';
-import { RequestsConfigComponent } from './requests-config/requests-config.component';
-import { WorkerEarlyExitComponent } from './worker-early-exit/worker-early-exit.component';
+import { GlobalConfigComponent } from './global-config/global-config.component';
+
+// Schema function for validating individual request configuration
+function RequestSchema(request: SchemaPathTree<TressiRequestConfig>): void {
+  required(request.url, { message: 'URL is required' });
+}
 
 export type ModifyConfigRequestFormType = ReturnType<
   typeof form<ModifyConfigRequest>
@@ -30,10 +40,9 @@ export type ModifyConfigRequestFormType = ReturnType<
   selector: 'app-config-form',
   imports: [
     IconComponent,
+    AdvancedConfigComponent,
     BasicConfigComponent,
-    GlobalHeadersComponent,
-    RequestsConfigComponent,
-    WorkerEarlyExitComponent,
+    GlobalConfigComponent,
     Field,
   ],
   templateUrl: './config-form.component.html',
@@ -61,8 +70,15 @@ export class ConfigFormComponent {
   /** Angular signals form with validation */
   readonly form = form(this.model, (schemaPath) => {
     required(schemaPath.name);
+
+    // Apply validation to each request in the array
+    if (schemaPath.config.requests) {
+      applyEach(schemaPath.config.requests, RequestSchema);
+    }
+
     validate(schemaPath, ({ value }) => {
-      const isValid = validateConfig(value());
+      const isValid = validateConfig(value().config);
+
       if ('error' in isValid)
         return {
           kind: 'error',
@@ -82,41 +98,42 @@ export class ConfigFormComponent {
   });
 
   /** Active tab state */
-  readonly activeTab = signal<'basic' | 'headers' | 'requests' | 'worker-exit'>(
-    'basic',
-  );
+  readonly activeTab = signal<'basic' | 'global' | 'advanced'>('basic');
 
   /** Computed signal for form validity */
   readonly isFormValid = computed(() => {
     return this.form().valid();
   });
-
   /** Handle form submission */
   onSubmit(event: Event): void {
     event.preventDefault();
-    this.isLoading.set(true);
-    this.configOutput.emit(this.model());
-    this.isLoading.set(false);
+
+    if (this.isFormValid()) {
+      this.isLoading.set(true);
+      this.configOutput.emit(this.model());
+      this.isLoading.set(false);
+    }
   }
 
   /** Set active tab */
-  setActiveTab(tab: 'basic' | 'headers' | 'requests' | 'worker-exit'): void {
+  setActiveTab(tab: 'basic' | 'global' | 'advanced'): void {
     this.activeTab.set(tab);
   }
 
   /** Add a new request to the requests array */
   addRequest(): void {
-    const newRequestInput: TressiRequestConfig = {
-      url: 'http://localhost:8080',
+    const newRequest: TressiRequestConfig = {
+      url: '',
       method: 'GET',
       rps: 1,
     };
 
-    const newRequest = TressiRequestConfigSchema.parse(newRequestInput);
-
     this.model.update((model) => ({
       ...model,
-      requests: [...(model.config.requests ?? []), newRequest],
+      config: {
+        ...model.config,
+        requests: [...(model.config.requests ?? []), newRequest],
+      },
     }));
   }
 
@@ -124,7 +141,10 @@ export class ConfigFormComponent {
   removeRequest(index: number): void {
     this.model.update((model) => ({
       ...model,
-      requests: model.config.requests?.filter((_, i) => i !== index) ?? [],
+      config: {
+        ...model.config,
+        requests: model.config.requests?.filter((_, i) => i !== index) ?? [],
+      },
     }));
   }
 
@@ -202,7 +222,16 @@ export class ConfigFormComponent {
   private createEmptyConfig(): ModifyConfigRequest {
     const defaultConfig: ModifyConfigRequest = {
       name: this.nameService.generate(),
-      config: defaultTressiConfig,
+      config: {
+        ...defaultTressiConfig,
+        requests: [
+          {
+            url: '',
+            method: 'GET',
+            rps: 1,
+          },
+        ],
+      },
     };
     return defaultConfig;
   }

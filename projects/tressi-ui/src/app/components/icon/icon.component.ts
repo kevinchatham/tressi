@@ -17,7 +17,9 @@ export type IconName =
   | 'send'
   | 'info'
   | 'warning'
-  | 'rocket';
+  | 'rocket'
+  | 'keyboard_arrow_up'
+  | 'keyboard_arrow_down';
 
 @Component({
   selector: 'app-icon',

@@ -2,11 +2,11 @@
 import fs from 'fs';
 import path from 'path';
 import { TressiConfigSchema } from 'tressi-common/config';
-import { zodToJsonSchema } from 'zod-to-json-schema';
+import { z } from 'zod';
 
 import pkg from '../../package.json';
 
-const schema = zodToJsonSchema(TressiConfigSchema, 'TressiConfigSchema');
+const schema = z.toJSONSchema(TressiConfigSchema);
 
 const schemaString = JSON.stringify(schema, null, 2);
 

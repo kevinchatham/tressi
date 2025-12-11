@@ -6,11 +6,11 @@ import { IconComponent } from '../../icon/icon.component';
 import { ModifyConfigRequestFormType } from '../config-form.component';
 
 @Component({
-  selector: 'app-worker-early-exit',
+  selector: 'app-global-config',
   imports: [Field, IconComponent],
-  templateUrl: './worker-early-exit.component.html',
+  templateUrl: './global-config.component.html',
 })
-export class WorkerEarlyExitComponent {
+export class GlobalConfigComponent {
   /** Form instance from parent */
   readonly form = input.required<ModifyConfigRequestFormType>();
 
