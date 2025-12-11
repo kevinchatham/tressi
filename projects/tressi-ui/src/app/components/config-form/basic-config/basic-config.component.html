@@ -140,28 +140,21 @@
               <!-- Headers -->
               <fieldset class="fieldset md:col-span-2">
                 <legend class="fieldset-legend">Headers (JSON)</legend>
-                <!-- TODO: Not sure how to make this work yet
-                 <textarea
-                  class="textarea font-mono text-sm"
-                  rows="3"
-                  [field]="form().config.requests![$index].headers"
+                <app-json-textarea
+                  [value]="form().config.requests![$index].headers"
+                  [rows]="3"
                   placeholder='{"Content-Type": "application/json", "Authorization": "Bearer token"}'
-                ></textarea>
-                 -->
+                />
               </fieldset>
 
               <!-- Payload -->
               <fieldset class="fieldset md:col-span-2">
                 <legend class="fieldset-legend">Payload (JSON)</legend>
-                <!--
-                TODO: Not sure how to make this work yet
-                <textarea
-                  class="textarea font-mono text-sm"
-                  rows="4"
-                  [field]="form().config.requests![$index].payload"
+                <app-json-textarea
+                  [value]="form().config.requests![$index].payload"
+                  [rows]="4"
                   placeholder='{"key": "value", "array": [1, 2, 3]}'
-                ></textarea>
-                -->
+                />
               </fieldset>
             </div>
           </div>

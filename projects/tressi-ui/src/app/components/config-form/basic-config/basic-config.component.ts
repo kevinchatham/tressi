@@ -10,11 +10,12 @@ import { Field } from '@angular/forms/signals';
 
 import { ModifyConfigRequest } from '../../../services/rpc.service';
 import { IconComponent } from '../../icon/icon.component';
+import { JsonTextareaComponent } from '../../json-textarea/json-textarea.component';
 import { ModifyConfigRequestFormType } from '../config-form.component';
 
 @Component({
   selector: 'app-basic-config',
-  imports: [Field, IconComponent],
+  imports: [Field, IconComponent, JsonTextareaComponent],
   templateUrl: './basic-config.component.html',
 })
 export class BasicConfigComponent implements AfterViewInit {

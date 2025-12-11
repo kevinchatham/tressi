@@ -1,0 +1,10 @@
+<textarea
+  class="textarea font-mono text-sm"
+  rows="{{ rows() }}"
+  [value]="displayValue()"
+  (input)="handleInput($event)"
+  [placeholder]="placeholder()"
+></textarea>
+@if (error()) {
+  <p class="label text-error">{{ error() }}</p>
+}
