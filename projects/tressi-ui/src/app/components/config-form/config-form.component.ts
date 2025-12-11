@@ -104,15 +104,17 @@ export class ConfigFormComponent {
   readonly isFormValid = computed(() => {
     return this.form().valid();
   });
+
+  onJsonTextAreaChange(): void {
+    this.model.update((current) => ({ ...current }));
+  }
+
   /** Handle form submission */
   onSubmit(event: Event): void {
     event.preventDefault();
-
-    if (this.isFormValid()) {
-      this.isLoading.set(true);
-      this.configOutput.emit(this.model());
-      this.isLoading.set(false);
-    }
+    this.isLoading.set(true);
+    this.configOutput.emit(this.model());
+    this.isLoading.set(false);
   }
 
   /** Set active tab */

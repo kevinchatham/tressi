@@ -31,6 +31,8 @@ export class BasicConfigComponent implements AfterViewInit {
   /** Event to remove a request */
   readonly removeRequest = output<number>();
 
+  readonly jsonTextareaChange = output<void>();
+
   /** Track expanded/collapsed state for each request */
   expandedRequests = new Set<number>();
 
@@ -78,6 +80,10 @@ export class BasicConfigComponent implements AfterViewInit {
 
     // Default behavior: expanded unless explicitly collapsed
     return !this.expandedRequests.has(index);
+  }
+
+  onJsonTextareaValueChange(): void {
+    this.jsonTextareaChange.emit();
   }
 
   /** Focus the last URL input element */

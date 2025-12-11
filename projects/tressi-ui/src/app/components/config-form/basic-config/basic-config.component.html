@@ -141,8 +141,9 @@
               <fieldset class="fieldset md:col-span-2">
                 <legend class="fieldset-legend">Headers (JSON)</legend>
                 <app-json-textarea
-                  [value]="form().config.requests![$index].headers"
+                  [(value)]="model().config.requests![$index].headers"
                   [rows]="3"
+                  (valueChange)="onJsonTextareaValueChange()"
                   placeholder='{"Content-Type": "application/json", "Authorization": "Bearer token"}'
                 />
               </fieldset>
@@ -151,8 +152,9 @@
               <fieldset class="fieldset md:col-span-2">
                 <legend class="fieldset-legend">Payload (JSON)</legend>
                 <app-json-textarea
-                  [value]="form().config.requests![$index].payload"
+                  [(value)]="model().config.requests![$index].payload"
                   [rows]="4"
+                  (valueChange)="onJsonTextareaValueChange()"
                   placeholder='{"key": "value", "array": [1, 2, 3]}'
                 />
               </fieldset>
