@@ -14,12 +14,7 @@ export const TressiRequestConfigSchema = z.object({
     .or(z.array(z.unknown()))
     .optional(),
   /** The HTTP method to use for the request. Defaults to GET. */
-  method: z
-    .preprocess(
-      (val) => (typeof val === 'string' ? val.toUpperCase() : val),
-      z.enum(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS']),
-    )
-    .default('GET'),
+  method: z.enum(['GET', 'POST', 'PUT', 'PATCH', 'DELETE']).default('GET'),
   /** Headers to be sent with this specific request. Merged with global headers. */
   headers: z
     .record(z.string(), z.string())

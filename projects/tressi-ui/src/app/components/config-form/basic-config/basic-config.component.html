@@ -87,16 +87,26 @@
             [class.hidden]="!isRequestExpanded($index)"
           >
             <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <!-- URL -->
+              <!-- URL and Method -->
               <fieldset class="fieldset md:col-span-2">
                 <legend class="fieldset-legend">URL</legend>
-                <input
-                  #urlInput
-                  type="url"
-                  class="input"
-                  [field]="form().config.requests![$index].url"
-                  placeholder="https://api.example.com/endpoint"
-                />
+                <div class="flex gap-2">
+                  <input
+                    #urlInput
+                    type="url"
+                    class="input flex-1"
+                    [field]="form().config.requests![$index].url"
+                    placeholder="https://api.example.com/endpoint"
+                  />
+                  <select
+                    class="select select-bordered w-24"
+                    [field]="form().config.requests![$index].method!"
+                  >
+                    @for (method of httpMethods; track method) {
+                      <option [value]="method">{{ method }}</option>
+                    }
+                  </select>
+                </div>
                 @if (
                   form().config.requests![$index].url().touched() &&
                   form().config.requests![$index].url().invalid()
@@ -149,15 +159,21 @@
               </fieldset>
 
               <!-- Payload -->
-              <fieldset class="fieldset md:col-span-2">
-                <legend class="fieldset-legend">Payload (JSON)</legend>
-                <app-json-textarea
-                  [(value)]="model().config.requests![$index].payload"
-                  [rows]="4"
-                  (valueChange)="onJsonTextareaValueChange()"
-                  placeholder='{"key": "value", "array": [1, 2, 3]}'
-                />
-              </fieldset>
+              @if (
+                supportsRequestBody(
+                  model().config.requests![$index].method || 'GET'
+                )
+              ) {
+                <fieldset class="fieldset md:col-span-2">
+                  <legend class="fieldset-legend">Payload (JSON)</legend>
+                  <app-json-textarea
+                    [(value)]="model().config.requests![$index].payload"
+                    [rows]="4"
+                    (valueChange)="onJsonTextareaValueChange()"
+                    placeholder='{"key": "value", "array": [1, 2, 3]}'
+                  />
+                </fieldset>
+              }
             </div>
           </div>
         </div>

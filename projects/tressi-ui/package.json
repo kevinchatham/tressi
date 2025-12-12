@@ -2,8 +2,9 @@
   "name": "tressi-ui",
   "private": true,
   "scripts": {
-    "serve": "npx rimraf --glob \"**/.angular\" && ng serve",
-    "build": "ng build",
+    "clean": "npx rimraf --glob \"**/.angular\"",
+    "serve": "npm run clean && ng serve",
+    "build": "npm run clean && ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   }

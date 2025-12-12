@@ -86,6 +86,23 @@ export class BasicConfigComponent implements AfterViewInit {
     this.jsonTextareaChange.emit();
   }
 
+  /** Available HTTP methods from schema */
+  readonly httpMethods = [
+    'GET',
+    'POST',
+    'PUT',
+    'PATCH',
+    'DELETE',
+    'HEAD',
+    'OPTIONS',
+  ] as const;
+
+  /** Check if the HTTP method supports a request body */
+  supportsRequestBody(method: string): boolean {
+    const bodyMethods = ['POST', 'PUT', 'PATCH'];
+    return bodyMethods.includes(method.toUpperCase());
+  }
+
   /** Focus the last URL input element */
   private focusLastUrlInput(): void {
     const inputs = this.urlInputs();
