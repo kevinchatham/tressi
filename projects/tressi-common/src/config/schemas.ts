@@ -6,6 +6,17 @@ export const schemaDefault = `https://raw.githubusercontent.com/kevinchatham/tre
 
 export const headerDefaults = { 'User-Agent': 'Tressi' };
 
+/**
+ * Available HTTP methods for Tressi requests
+ */
+export const httpMethodDefaults = [
+  'GET',
+  'POST',
+  'PUT',
+  'PATCH',
+  'DELETE',
+] as const;
+
 export const earlyExitDefaults = {
   enabled: false,
   errorRateThreshold: 0,
@@ -66,7 +77,7 @@ export const TressiRequestConfigSchema = z
       .or(z.array(z.unknown()))
       .describe('The request payload. Can be a JSON object or an array.'),
     method: z
-      .enum(['GET', 'POST', 'PUT', 'PATCH', 'DELETE'])
+      .enum(httpMethodDefaults)
       .describe('The HTTP method to use for the request. Defaults to GET.'),
     headers: z
       .record(z.string(), z.string())

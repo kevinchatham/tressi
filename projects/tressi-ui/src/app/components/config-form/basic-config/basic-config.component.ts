@@ -7,6 +7,7 @@ import {
   viewChildren,
 } from '@angular/core';
 import { Field } from '@angular/forms/signals';
+import { httpMethodDefaults } from 'tressi-common/config';
 
 import { ModifyConfigRequest } from '../../../services/rpc.service';
 import { IconComponent } from '../../icon/icon.component';
@@ -87,15 +88,7 @@ export class BasicConfigComponent implements AfterViewInit {
   }
 
   /** Available HTTP methods from schema */
-  readonly httpMethods = [
-    'GET',
-    'POST',
-    'PUT',
-    'PATCH',
-    'DELETE',
-    'HEAD',
-    'OPTIONS',
-  ] as const;
+  readonly httpMethods = httpMethodDefaults;
 
   /** Check if the HTTP method supports a request body */
   supportsRequestBody(method: string): boolean {

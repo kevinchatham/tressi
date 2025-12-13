@@ -315,6 +315,8 @@ export class ConfigFormComponent {
   private createEmptyConfig(): ModifyConfigRequest {
     const config = { ...defaultTressiConfig };
 
+    config.requests.push(requestDefaults);
+
     const defaultConfig: ModifyConfigRequest = {
       name: this.nameService.generate(),
       config,
