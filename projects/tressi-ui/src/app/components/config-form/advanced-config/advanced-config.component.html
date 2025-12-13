@@ -11,17 +11,17 @@
       <input
         type="number"
         class="input"
-        [field]="form().config.options.rampUpTimeSec!"
+        [field]="form().config.options.rampUpTimeSec"
         placeholder="Time to reach target RPS"
       />
       <p class="label">Time to reach target RPS</p>
       @if (
-        form().config.options.rampUpTimeSec?.()?.touched() &&
-        form().config.options.rampUpTimeSec?.()?.invalid()
+        form().config.options.rampUpTimeSec().touched() &&
+        form().config.options.rampUpTimeSec().invalid()
       ) {
         <p class="label text-error">
           @for (
-            error of form().config.options.rampUpTimeSec?.()?.errors();
+            error of form().config.options.rampUpTimeSec().errors();
             track error
           ) {
             {{ error.message }}
@@ -36,17 +36,17 @@
       <input
         type="number"
         class="input"
-        [field]="form().config.options.threads!"
+        [field]="form().config.options.threads"
         placeholder="Auto-detect"
       />
       <p class="label">Leave empty for auto-detect</p>
       @if (
-        form().config.options.threads?.()!.touched() &&
-        form().config.options.threads?.()!.invalid()
+        form().config.options.threads().touched() &&
+        form().config.options.threads().invalid()
       ) {
         <p class="label text-error">
           @for (
-            error of form().config.options.threads?.()!.errors();
+            error of form().config.options.threads().errors();
             track error
           ) {
             {{ error.message }}
@@ -61,17 +61,17 @@
       <input
         type="number"
         class="input"
-        [field]="form().config.options.workerMemoryLimit!"
+        [field]="form().config.options.workerMemoryLimit"
         placeholder="Memory per worker thread"
       />
       <p class="label">Memory per worker thread</p>
       @if (
-        form().config.options.workerMemoryLimit?.()!.touched() &&
-        form().config.options.workerMemoryLimit?.()!.invalid()
+        form().config.options.workerMemoryLimit().touched() &&
+        form().config.options.workerMemoryLimit().invalid()
       ) {
         <p class="label text-error">
           @for (
-            error of form().config.options.workerMemoryLimit?.()!.errors();
+            error of form().config.options.workerMemoryLimit().errors();
             track error
           ) {
             {{ error.message }}
@@ -86,17 +86,17 @@
       <input
         type="text"
         class="input"
-        [field]="form().config.options.exportPath!"
+        [field]="form().config.options.exportPath"
         placeholder="./tressi-report"
       />
       <p class="label">Directory for test reports</p>
       @if (
-        form().config.options.exportPath?.()!.touched() &&
-        form().config.options.exportPath?.()!.invalid()
+        form().config.options.exportPath().touched() &&
+        form().config.options.exportPath().invalid()
       ) {
         <p class="label text-error">
           @for (
-            error of form().config.options.exportPath?.()!.errors();
+            error of form().config.options.exportPath().errors();
             track error
           ) {
             {{ error.message }}
@@ -113,7 +113,7 @@
         <input
           type="checkbox"
           class="checkbox checkbox-primary"
-          [field]="form().config.options.silent!"
+          [field]="form().config.options.silent"
         />
       </label>
     </fieldset>

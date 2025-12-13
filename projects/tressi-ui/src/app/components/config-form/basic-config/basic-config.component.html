@@ -11,17 +11,17 @@
       <input
         type="number"
         class="input"
-        [field]="form().config.options.durationSec!"
+        [field]="form().config.options.durationSec"
         placeholder="Total test duration"
       />
       <p class="label">Total test duration</p>
       @if (
-        form().config.options.durationSec?.()?.touched() &&
-        form().config.options.durationSec?.()?.invalid()
+        form().config.options.durationSec().touched() &&
+        form().config.options.durationSec().invalid()
       ) {
         <p class="label text-error">
           @for (
-            error of form().config.options.durationSec?.()?.errors();
+            error of form().config.options.durationSec().errors();
             track error
           ) {
             {{ error.message }}
@@ -57,8 +57,8 @@
               <button
                 type="button"
                 class="btn btn-ghost btn-circle btn-error"
-                [disabled]="model().config.requests?.length === 1"
-                [class.btn-disabled]="model().config.requests?.length === 1"
+                [disabled]="model().config.requests.length === 1"
+                [class.btn-disabled]="model().config.requests.length === 1"
                 (click)="removeRequest.emit($index)"
               >
                 <app-icon name="delete" />
@@ -95,12 +95,12 @@
                     #urlInput
                     type="url"
                     class="input flex-1"
-                    [field]="form().config.requests![$index].url"
+                    [field]="form().config.requests[$index].url"
                     placeholder="https://api.example.com/endpoint"
                   />
                   <select
                     class="select select-bordered w-24"
-                    [field]="form().config.requests![$index].method!"
+                    [field]="form().config.requests[$index].method"
                   >
                     @for (method of httpMethods; track method) {
                       <option [value]="method">{{ method }}</option>
@@ -108,12 +108,12 @@
                   </select>
                 </div>
                 @if (
-                  form().config.requests![$index].url().touched() &&
-                  form().config.requests![$index].url().invalid()
+                  form().config.requests[$index].url().touched() &&
+                  form().config.requests[$index].url().invalid()
                 ) {
                   <p class="label text-error">
                     @for (
-                      error of form().config.requests![$index].url().errors();
+                      error of form().config.requests[$index].url().errors();
                       track error
                     ) {
                       {{ error.message }}
@@ -128,17 +128,17 @@
                 <input
                   type="number"
                   class="input"
-                  [field]="form().config.requests![$index].rps!"
+                  [field]="form().config.requests[$index].rps"
                   placeholder="Requests per second"
                 />
                 <p class="label">Requests per second</p>
                 @if (
-                  form().config.requests![$index]?.rps()?.touched() &&
-                  form().config.requests![$index]?.rps()?.invalid()
+                  form().config.requests[$index].rps().touched() &&
+                  form().config.requests[$index].rps().invalid()
                 ) {
                   <p class="label text-error">
                     @for (
-                      error of form().config.requests![$index]?.rps()!.errors();
+                      error of form().config.requests[$index].rps().errors();
                       track error
                     ) {
                       {{ error.message }}
@@ -151,7 +151,7 @@
               <fieldset class="fieldset md:col-span-2">
                 <legend class="fieldset-legend">Headers (JSON)</legend>
                 <app-json-textarea
-                  [(value)]="model().config.requests![$index].headers"
+                  [(value)]="model().config.requests[$index].headers"
                   [rows]="3"
                   (valueChange)="onJsonTextareaValueChange()"
                   placeholder='{"Content-Type": "application/json", "Authorization": "Bearer token"}'
@@ -161,13 +161,13 @@
               <!-- Payload -->
               @if (
                 supportsRequestBody(
-                  model().config.requests![$index].method || 'GET'
+                  model().config.requests[$index].method || 'GET'
                 )
               ) {
                 <fieldset class="fieldset md:col-span-2">
                   <legend class="fieldset-legend">Payload (JSON)</legend>
                   <app-json-textarea
-                    [(value)]="model().config.requests![$index].payload"
+                    [(value)]="model().config.requests[$index].payload"
                     [rows]="4"
                     (valueChange)="onJsonTextareaValueChange()"
                     placeholder='{"key": "value", "array": [1, 2, 3]}'

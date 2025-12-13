@@ -2,111 +2,140 @@ import z from 'zod';
 
 import pkg from '../../../../package.json';
 
+export const schemaDefault = `https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v${pkg.version}.json`;
+
+export const headerDefaults = { 'User-Agent': 'Tressi' };
+
+export const earlyExitDefaults = {
+  enabled: false,
+  errorRateThreshold: 0,
+  exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
+  monitoringWindowMs: 5000,
+};
+
+export const requestDefaults = {
+  url: '',
+  payload: {},
+  method: 'GET' as const,
+  headers: headerDefaults,
+  rps: 1,
+  earlyExit: earlyExitDefaults,
+};
+
+export const optionsDefaults = {
+  durationSec: 10,
+  rampUpTimeSec: 0,
+  exportPath: '',
+  silent: false,
+  headers: headerDefaults,
+  threads: 1,
+  workerMemoryLimit: 128,
+  workerEarlyExit: earlyExitDefaults,
+};
+
+/**
+ * Zod schema for early exit configuration.
+ */
+export const EarlyExitConfigSchema = z
+  .object({
+    enabled: z.boolean().describe('Enable early exit for this endpoint'),
+    errorRateThreshold: z
+      .number()
+      .min(0)
+      .max(1)
+      .describe('Error rate threshold (0.0-1.0)'),
+    exitStatusCodes: z
+      .array(z.number().int().positive())
+      .describe('HTTP status codes that trigger immediate endpoint stop'),
+    monitoringWindowMs: z
+      .number()
+      .int()
+      .positive()
+      .describe('Time window in milliseconds for threshold calculation'),
+  })
+  .default(earlyExitDefaults);
+
 /**
  * Zod schema for a single request configuration.
  */
-export const TressiRequestConfigSchema = z.object({
-  /** The URL to send the request to. */
-  url: z.string().url(),
-  /** The request payload. Can be a JSON object or an array. */
-  payload: z
-    .record(z.string(), z.unknown())
-    .or(z.array(z.unknown()))
-    .optional(),
-  /** The HTTP method to use for the request. Defaults to GET. */
-  method: z.enum(['GET', 'POST', 'PUT', 'PATCH', 'DELETE']).default('GET'),
-  /** Headers to be sent with this specific request. Merged with global headers. */
-  headers: z
-    .record(z.string(), z.string())
-    .optional()
-    .default({ 'User-Agent': 'Tressi' }),
-  /** Per-endpoint requests per second limit. Defaults to 1. */
-  rps: z.number().int().min(1).default(1),
-});
+export const TressiRequestConfigSchema = z
+  .object({
+    url: z.url().describe('The URL to send the request to.'),
+    payload: z
+      .record(z.string(), z.unknown())
+      .or(z.array(z.unknown()))
+      .describe('The request payload. Can be a JSON object or an array.'),
+    method: z
+      .enum(['GET', 'POST', 'PUT', 'PATCH', 'DELETE'])
+      .describe('The HTTP method to use for the request. Defaults to GET.'),
+    headers: z
+      .record(z.string(), z.string())
+      .describe(
+        'Headers to be sent with this specific request. Merged with global headers.',
+      ),
+    rps: z
+      .number()
+      .int()
+      .min(1)
+      .describe('Per-endpoint requests per second limit. Defaults to 1.'),
+    earlyExit: EarlyExitConfigSchema.describe(
+      'Optional early exit configuration for this specific endpoint',
+    ),
+  })
+  .default(requestDefaults);
 
 /**
  * Zod schema for Tressi options configuration.
  */
 export const TressiOptionsConfigSchema = z
   .object({
-    /** The total duration of the test in seconds. Defaults to 10. */
-    durationSec: z.number().int().positive().default(10),
-    /** The time in seconds to ramp up to the target RPS. Defaults to 0. */
-    rampUpTimeSec: z.number().int().nonnegative().default(0),
-    /** The base path for the exported report. If not provided, no report will be generated. */
-    exportPath: z.string().optional().default('./tressi-report'),
-    /** Suppress all console output. Defaults to false. */
-    silent: z.boolean().default(false),
-    /** Global headers to be sent with every request. */
+    durationSec: z
+      .number()
+      .int()
+      .positive()
+      .describe('The total duration of the test in seconds. Defaults to 10.'),
+    rampUpTimeSec: z
+      .number()
+      .int()
+      .nonnegative()
+      .describe(
+        'The time in seconds to ramp up to the target RPS. Defaults to 0.',
+      ),
+    exportPath: z
+      .string()
+      .describe(
+        'The base path for the exported report. If not provided, no report will be generated.',
+      ),
+    silent: z
+      .boolean()
+      .describe('Suppress all console output. Defaults to false.'),
     headers: z
       .record(z.string(), z.string())
-      .optional()
-      .default({ 'User-Agent': 'Tressi' }),
+      .describe('Global headers to be sent with every request.'),
     threads: z
       .number()
       .int()
       .min(1)
-      .optional()
-      .describe('Number of worker threads to use (defaults to CPU count)')
-      .default(1),
+      .describe('Number of worker threads to use (defaults to CPU count)'),
     workerMemoryLimit: z
       .number()
       .int()
       .min(16)
       .max(512)
-      .default(128)
       .describe('Memory limit per worker in MB'),
-    workerEarlyExit: z
-      .object({
-        /** Enable early exit coordination across all workers */
-        enabled: z.boolean().default(false),
-        /** Global error rate threshold (0.0-1.0) across all workers */
-        globalErrorRateThreshold: z.number().min(0).max(1).default(0.1),
-        /** Global error count threshold across all workers */
-        globalErrorCountThreshold: z.number().int().positive().default(100),
-        /** Per-endpoint error rate thresholds */
-        perEndpointThresholds: z
-          .array(
-            z.object({
-              url: z.string(),
-              errorRateThreshold: z.number().min(0).max(1),
-              errorCountThreshold: z.number().int().positive().optional(),
-            }),
-          )
-          .default([]),
-        /** Specific HTTP status codes that trigger immediate worker shutdown */
-        workerExitStatusCodes: z
-          .array(z.number().int().positive())
-          .default([500, 502, 503, 504]),
-        /** Time window in milliseconds for threshold calculation */
-        monitoringWindowMs: z.number().int().positive().default(5000),
-        /** Whether to stop individual endpoints vs entire test */
-        stopMode: z.enum(['endpoint', 'global']).default('global'),
-      })
-      .default({
-        enabled: false,
-        globalErrorRateThreshold: 0.1,
-        globalErrorCountThreshold: 100,
-        perEndpointThresholds: [],
-        workerExitStatusCodes: [500, 502, 503, 504],
-        monitoringWindowMs: 5000,
-        stopMode: 'global' as const,
-      }),
+    workerEarlyExit: EarlyExitConfigSchema.describe(
+      'Global early exit configuration (acts as default for endpoints without specific config)',
+    ),
   })
   .refine(
     (data) => {
       // Validate worker early exit configuration
-      if (data.workerEarlyExit?.enabled) {
-        const hasGlobalThreshold = !!(
-          data.workerEarlyExit.globalErrorRateThreshold ||
-          data.workerEarlyExit.globalErrorCountThreshold ||
-          data.workerEarlyExit.workerExitStatusCodes
+      if (data.workerEarlyExit.enabled) {
+        const hasThreshold = !!(
+          data.workerEarlyExit.errorRateThreshold ||
+          data.workerEarlyExit.exitStatusCodes.length > 0
         );
-        const hasPerEndpoint = !!(
-          data.workerEarlyExit.perEndpointThresholds &&
-          data.workerEarlyExit.perEndpointThresholds.length > 0
-        );
-        return hasGlobalThreshold || hasPerEndpoint;
+        return hasThreshold;
       }
       return true;
     },
@@ -115,23 +144,27 @@ export const TressiOptionsConfigSchema = z
         'At least one threshold must be provided when workerEarlyExit is enabled',
       path: ['workerEarlyExit'],
     },
-  );
+  )
+  .default(optionsDefaults);
 
 /**
  * Zod schema for the main Tressi configuration.
  */
-export const TressiConfigSchema = z.object({
-  /** A URL to the JSON schema for this configuration file. */
-  $schema: z
-    .string()
-    .default(
-      `https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v${pkg.version}.json`,
+export const TressiConfigSchema = z
+  .object({
+    $schema: z
+      .string()
+      .describe('A URL to the JSON schema for this configuration file.'),
+    requests: z
+      .array(TressiRequestConfigSchema)
+      .min(1, 'At least one valid request is required')
+      .describe('An array of request configurations.'),
+    options: TressiOptionsConfigSchema.describe(
+      'Configuration options for the test runner.',
     ),
-  /** An array of request configurations. */
-  requests: z
-    .array(TressiRequestConfigSchema)
-    .min(1, 'At least one valid request is required')
-    .default([]),
-  /** Configuration options for the test runner. */
-  options: TressiOptionsConfigSchema,
-});
+  })
+  .default({
+    $schema: schemaDefault,
+    requests: [],
+    options: optionsDefaults,
+  });

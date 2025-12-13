@@ -14,7 +14,7 @@
         <textarea
           class="textarea font-mono text-sm"
           rows="3"
-          [field]="form().config.options?.headers"
+          [field]="form().config.options.headers"
           placeholder='{"User-Agent": "Tressi/1.0.0", "Accept": "application/json"}'
         ></textarea>
         -->
@@ -22,12 +22,12 @@
           Headers to be sent with every request. Use JSON format
         </p>
         @if (
-          form().config.options.headers?.()!.touched() &&
-          form().config.options.headers?.()!.invalid()
+          form().config.options.headers().touched() &&
+          form().config.options.headers().invalid()
         ) {
           <p class="label text-error">
             @for (
-              error of form().config.options.headers?.()!.errors();
+              error of form().config.options.headers().errors();
               track error
             ) {
               {{ error.message }}
@@ -51,38 +51,36 @@
         <input
           type="checkbox"
           class="checkbox checkbox-primary"
-          [field]="form().config.options.workerEarlyExit?.enabled!"
+          [field]="form().config.options.workerEarlyExit.enabled"
         />
       </label>
     </div>
 
-    @if (model().config.options.workerEarlyExit?.enabled) {
+    @if (model().config.options.workerEarlyExit.enabled) {
       <div class="mt-4 space-y-4">
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <!-- Global Error Rate Threshold -->
+          <!-- Error Rate Threshold -->
           <fieldset class="fieldset">
-            <legend class="fieldset-legend">Global Error Rate Threshold</legend>
+            <legend class="fieldset-legend">Error Rate Threshold</legend>
             <input
               type="number"
               class="input"
-              [field]="
-                form().config.options.workerEarlyExit?.globalErrorRateThreshold!
-              "
+              [field]="form().config.options.workerEarlyExit.errorRateThreshold"
               placeholder="0.0 - 1.0"
             />
             <p class="label">Range: 0.0 - 1.0</p>
             @if (
               form()
-                .config.options.workerEarlyExit?.globalErrorRateThreshold()!
+                .config.options.workerEarlyExit.errorRateThreshold()
                 .touched() &&
               form()
-                .config.options.workerEarlyExit?.globalErrorRateThreshold()!
+                .config.options.workerEarlyExit.errorRateThreshold()
                 .invalid()
             ) {
               <p class="label text-error">
                 @for (
                   error of form()
-                    .config.options.workerEarlyExit?.globalErrorRateThreshold()!
+                    .config.options.workerEarlyExit.errorRateThreshold()
                     .errors();
                   track error
                 ) {
@@ -91,65 +89,27 @@
               </p>
             }
           </fieldset>
-
-          <!-- Global Error Count Threshold -->
-          <fieldset class="fieldset">
-            <legend class="fieldset-legend">
-              Global Error Count Threshold
-            </legend>
-            <input
-              type="number"
-              class="input"
-              [field]="
-                form().config.options.workerEarlyExit
-                  ?.globalErrorCountThreshold!
-              "
-              placeholder="Number of errors"
-            />
-            @if (
-              form()
-                .config.options.workerEarlyExit?.globalErrorCountThreshold()!
-                .touched() &&
-              form()
-                .config.options.workerEarlyExit?.globalErrorCountThreshold()!
-                .invalid()
-            ) {
-              <p class="label text-error">
-                @for (
-                  error of form()
-                    .config.options.workerEarlyExit?.globalErrorCountThreshold()!
-                    .errors();
-                  track error
-                ) {
-                  {{ error.message }}
-                }
-              </p>
-            }
-          </fieldset>
-
           <!-- Monitoring Window -->
           <fieldset class="fieldset">
             <legend class="fieldset-legend">Monitoring Window (ms)</legend>
             <input
               type="number"
               class="input"
-              [field]="
-                form().config.options.workerEarlyExit?.monitoringWindowMs!
-              "
+              [field]="form().config.options.workerEarlyExit.monitoringWindowMs"
               placeholder="Monitoring duration in milliseconds"
             />
             @if (
               form()
-                .config.options.workerEarlyExit?.monitoringWindowMs()!
+                .config.options.workerEarlyExit.monitoringWindowMs()
                 .touched() &&
               form()
-                .config.options.workerEarlyExit?.monitoringWindowMs()!
+                .config.options.workerEarlyExit.monitoringWindowMs()
                 .invalid()
             ) {
               <p class="label text-error">
                 @for (
                   error of form()
-                    .config.options.workerEarlyExit?.monitoringWindowMs()!
+                    .config.options.workerEarlyExit.monitoringWindowMs()
                     .errors();
                   track error
                 ) {
@@ -159,44 +119,82 @@
             }
           </fieldset>
 
-          <!-- Stop Mode -->
-          <fieldset class="fieldset">
-            <legend class="fieldset-legend">Stop Mode</legend>
-            <select
-              class="select"
-              [field]="form().config.options.workerEarlyExit?.stopMode!"
-            >
-              <option value="global">Stop entire test</option>
-              <option value="endpoint">Stop individual endpoints</option>
-            </select>
-            @if (
-              form().config.options.workerEarlyExit?.stopMode()!.touched() &&
-              form().config.options.workerEarlyExit?.stopMode()!.invalid()
-            ) {
-              <p class="label text-error">
-                @for (
-                  error of form()
-                    .config.options.workerEarlyExit?.stopMode()!
-                    .errors();
-                  track error
-                ) {
-                  {{ error.message }}
-                }
-              </p>
-            }
-          </fieldset>
+          <!-- Exit Status Codes -->
+          <div>
+            <div class="mb-2 flex items-center justify-between">
+              <label class="label-text font-medium">Exit Status Codes</label>
+              <button
+                type="button"
+                class="btn btn-primary btn-sm"
+                (click)="addExitStatusCode.emit()"
+              >
+                <app-icon name="add" class="h-4 w-4" />
+                Add Code
+              </button>
+            </div>
+            <div class="space-y-2">
+              @for (
+                code of model().config.options.workerEarlyExit.exitStatusCodes;
+                track $index
+              ) {
+                <fieldset class="fieldset">
+                  <legend class="fieldset-legend">
+                    Status Code {{ $index + 1 }}
+                  </legend>
+                  <div class="flex items-center gap-2">
+                    <input
+                      type="number"
+                      class="input input-sm"
+                      [field]="
+                        form().config.options.workerEarlyExit.exitStatusCodes[
+                          $index
+                        ]
+                      "
+                      placeholder="HTTP status code"
+                    />
+                    <button
+                      type="button"
+                      class="btn btn-error btn-sm btn-square"
+                      (click)="removeExitStatusCode.emit($index)"
+                    >
+                      <app-icon name="delete" class="h-4 w-4" />
+                    </button>
+                  </div>
+                  @if (
+                    form()
+                      .config.options.workerEarlyExit.exitStatusCodes[$index]()
+                      .touched() &&
+                    form()
+                      .config.options.workerEarlyExit.exitStatusCodes[$index]()
+                      .invalid()
+                  ) {
+                    <p class="label text-error">
+                      @for (
+                        error of form()
+                          .config.options.workerEarlyExit.exitStatusCodes[
+                            $index
+                          ]()
+                          .errors();
+                        track error
+                      ) {
+                        {{ error.message }}
+                      }
+                    </p>
+                  }
+                </fieldset>
+              }
+            </div>
+          </div>
         </div>
 
-        <!-- Worker Exit Status Codes -->
+        <!-- Exit Status Codes -->
         <div>
           <div class="mb-2 flex items-center justify-between">
-            <label class="label-text font-medium"
-              >Worker Exit Status Codes</label
-            >
+            <label class="label-text font-medium">Exit Status Codes</label>
             <button
               type="button"
               class="btn btn-primary btn-sm"
-              (click)="addWorkerExitStatusCode.emit()"
+              (click)="addExitStatusCode.emit()"
             >
               <app-icon name="add" class="h-4 w-4" />
               Add Code
@@ -204,8 +202,7 @@
           </div>
           <div class="space-y-2">
             @for (
-              code of model().config.options.workerEarlyExit
-                ?.workerExitStatusCodes;
+              code of model().config.options.workerEarlyExit.exitStatusCodes;
               track $index
             ) {
               <fieldset class="fieldset">
@@ -217,35 +214,32 @@
                     type="number"
                     class="input input-sm"
                     [field]="
-                      form().config.options.workerEarlyExit
-                        ?.workerExitStatusCodes![$index]
+                      form().config.options.workerEarlyExit.exitStatusCodes[
+                        $index
+                      ]
                     "
                     placeholder="HTTP status code"
                   />
                   <button
                     type="button"
                     class="btn btn-error btn-sm btn-square"
-                    (click)="removeWorkerExitStatusCode.emit($index)"
+                    (click)="removeExitStatusCode.emit($index)"
                   >
                     <app-icon name="delete" class="h-4 w-4" />
                   </button>
                 </div>
                 @if (
                   form()
-                    .config.options.workerEarlyExit?.workerExitStatusCodes![
-                      $index
-                    ]()
+                    .config.options.workerEarlyExit.exitStatusCodes[$index]()
                     .touched() &&
                   form()
-                    .config.options.workerEarlyExit?.workerExitStatusCodes![
-                      $index
-                    ]()
+                    .config.options.workerEarlyExit.exitStatusCodes[$index]()
                     .invalid()
                 ) {
                   <p class="label text-error">
                     @for (
                       error of form()
-                        .config.options.workerEarlyExit?.workerExitStatusCodes![
+                        .config.options.workerEarlyExit.exitStatusCodes[
                           $index
                         ]()
                         .errors();
@@ -258,133 +252,6 @@
               </fieldset>
             }
           </div>
-        </div>
-
-        <!-- Per-Endpoint Thresholds -->
-        <div>
-          <div class="mb-2 flex items-center justify-between">
-            <label class="label-text font-medium"
-              >Per-Endpoint Thresholds</label
-            >
-            <button
-              type="button"
-              class="btn btn-primary btn-sm"
-              (click)="addPerEndpointThreshold.emit()"
-            >
-              <app-icon name="add" class="h-4 w-4" />
-              Add Threshold
-            </button>
-          </div>
-          @for (
-            threshold of model().config.options.workerEarlyExit!
-              .perEndpointThresholds;
-            track $index
-          ) {
-            <div class="bg-base-100 ring-neutral mb-2 rounded p-4 ring-1">
-              <div class="grid grid-cols-1 gap-2 md:grid-cols-3">
-                <fieldset class="fieldset">
-                  <legend class="fieldset-legend">Endpoint URL</legend>
-                  <input
-                    type="url"
-                    class="input input-sm"
-                    [field]="
-                      form().config.options.workerEarlyExit
-                        ?.perEndpointThresholds![$index].url
-                    "
-                    placeholder="https://api.example.com/endpoint"
-                  />
-                  @if (
-                    form()
-                      .config.options.workerEarlyExit?.perEndpointThresholds![
-                        $index
-                      ].url()
-                      .touched() &&
-                    form()
-                      .config.options.workerEarlyExit?.perEndpointThresholds![
-                        $index
-                      ].url()
-                      .invalid()
-                  ) {
-                    <p class="label text-error">
-                      @for (
-                        error of form()
-                          .config.options.workerEarlyExit?.perEndpointThresholds![
-                            $index
-                          ].url()
-                          .errors();
-                        track error
-                      ) {
-                        {{ error.message }}
-                      }
-                    </p>
-                  }
-                </fieldset>
-
-                <fieldset class="fieldset">
-                  <legend class="fieldset-legend">Error Rate Threshold</legend>
-                  <input
-                    type="number"
-                    class="input input-sm"
-                    [field]="
-                      form().config.options.workerEarlyExit
-                        ?.perEndpointThresholds![$index].errorRateThreshold
-                    "
-                    placeholder="0.0 - 1.0"
-                  />
-                  @if (
-                    form()
-                      .config.options.workerEarlyExit?.perEndpointThresholds![
-                        $index
-                      ].errorRateThreshold()
-                      .touched() &&
-                    form()
-                      .config.options.workerEarlyExit?.perEndpointThresholds![
-                        $index
-                      ].errorRateThreshold()
-                      .invalid()
-                  ) {
-                    <p class="label text-error">
-                      @for (
-                        error of form()
-                          .config.options.workerEarlyExit?.perEndpointThresholds![
-                            $index
-                          ].errorRateThreshold()
-                          .errors();
-                        track error
-                      ) {
-                        {{ error.message }}
-                      }
-                    </p>
-                  }
-                </fieldset>
-
-                <div class="flex items-center gap-2">
-                  <!--
-                  TODO: Not sure how to make this work yet
-                  <fieldset class="fieldset">
-                    <legend class="fieldset-legend">Error Count Threshold</legend>
-                    <input
-                      type="number"
-                      class="input input-sm"
-                      [field]="
-                        form().options.workerEarlyExit
-                          .perEndpointThresholds[$index].errorCountThreshold
-                      "
-                      placeholder="Count threshold"
-                    />
-                  </fieldset>
-                  -->
-                  <button
-                    type="button"
-                    class="btn btn-error btn-sm btn-square"
-                    (click)="removePerEndpointThreshold.emit($index)"
-                  >
-                    <app-icon name="delete" class="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          }
         </div>
       </div>
     }

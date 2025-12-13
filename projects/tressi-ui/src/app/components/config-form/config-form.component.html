@@ -82,10 +82,8 @@
       <app-global-config
         [form]="form"
         [model]="model()"
-        (addPerEndpointThreshold)="addPerEndpointThreshold()"
-        (removePerEndpointThreshold)="removePerEndpointThreshold($event)"
-        (addWorkerExitStatusCode)="addWorkerExitStatusCode()"
-        (removeWorkerExitStatusCode)="removeWorkerExitStatusCode($event)"
+        (addExitStatusCode)="addGlobalExitStatusCode()"
+        (removeExitStatusCode)="removeGlobalExitStatusCode($event)"
       />
     }
 

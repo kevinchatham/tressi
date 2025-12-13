@@ -14,8 +14,6 @@ export function createTestConfig(
         url: 'http://localhost:8080/test',
         method: 'GET',
         rps: 10,
-        payload: null,
-        headers: null,
       },
     ],
     options: {
@@ -28,12 +26,8 @@ export function createTestConfig(
       workerMemoryLimit: 128,
       workerEarlyExit: {
         enabled: false,
-        globalErrorRateThreshold: 0.1,
-        globalErrorCountThreshold: 100,
-        perEndpointThresholds: [],
-        workerExitStatusCodes: [],
+        exitStatusCodes: [],
         monitoringWindowMs: 1000,
-        stopMode: 'endpoint',
       },
     },
   };
@@ -81,8 +75,6 @@ export function createMinimalTestConfig(
         url: 'http://localhost:8080/test',
         method: 'GET',
         rps: 1,
-        payload: null,
-        headers: null,
       },
     ],
     options: {
@@ -95,12 +87,8 @@ export function createMinimalTestConfig(
       workerMemoryLimit: 64,
       workerEarlyExit: {
         enabled: false,
-        globalErrorRateThreshold: 0.1,
-        globalErrorCountThreshold: 100,
-        perEndpointThresholds: [],
-        workerExitStatusCodes: [],
+        exitStatusCodes: [],
         monitoringWindowMs: 1000,
-        stopMode: 'endpoint',
       },
     },
   };

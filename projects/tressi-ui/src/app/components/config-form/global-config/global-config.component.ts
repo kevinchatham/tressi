@@ -17,15 +17,9 @@ export class GlobalConfigComponent {
   /** Config model from parent */
   readonly model = input.required<ModifyConfigRequest>();
 
-  /** Event to add a new per-endpoint threshold */
-  readonly addPerEndpointThreshold = output<void>();
+  /** Event to add an exit status code */
+  readonly addExitStatusCode = output<void>();
 
-  /** Event to remove a per-endpoint threshold */
-  readonly removePerEndpointThreshold = output<number>();
-
-  /** Event to add a worker exit status code */
-  readonly addWorkerExitStatusCode = output<void>();
-
-  /** Event to remove a worker exit status code */
-  readonly removeWorkerExitStatusCode = output<number>();
+  /** Event to remove an exit status code */
+  readonly removeExitStatusCode = output<number>();
 }

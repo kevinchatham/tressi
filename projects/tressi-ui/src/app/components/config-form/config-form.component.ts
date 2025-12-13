@@ -16,6 +16,7 @@ import {
 } from '@angular/forms/signals';
 import {
   defaultTressiConfig,
+  requestDefaults,
   TressiRequestConfig,
   validateConfig,
 } from 'tressi-common/config';
@@ -124,17 +125,11 @@ export class ConfigFormComponent {
 
   /** Add a new request to the requests array */
   addRequest(): void {
-    const newRequest: TressiRequestConfig = {
-      url: '',
-      method: 'GET',
-      rps: 1,
-    };
-
     this.model.update((model) => ({
       ...model,
       config: {
         ...model.config,
-        requests: [...(model.config.requests ?? []), newRequest],
+        requests: [...(model.config.requests ?? []), requestDefaults],
       },
     }));
   }
@@ -150,52 +145,16 @@ export class ConfigFormComponent {
     }));
   }
 
-  /** Add a new per-endpoint threshold */
-  addPerEndpointThreshold(): void {
+  /** Add a global exit status code */
+  addGlobalExitStatusCode(): void {
     this.model.update((model) => ({
       ...model,
       options: {
         ...model.config.options,
         workerEarlyExit: {
           ...model.config.options?.workerEarlyExit,
-          perEndpointThresholds: [
-            ...(model.config.options?.workerEarlyExit?.perEndpointThresholds ??
-              []),
-            { url: '', errorRateThreshold: 0.1 },
-          ],
-        },
-      },
-    }));
-  }
-
-  /** Remove a per-endpoint threshold */
-  removePerEndpointThreshold(index: number): void {
-    this.model.update((model) => ({
-      ...model,
-      options: {
-        ...model.config.options,
-        workerEarlyExit: {
-          ...model.config.options?.workerEarlyExit,
-          perEndpointThresholds:
-            model.config.options?.workerEarlyExit?.perEndpointThresholds?.filter(
-              (_, i) => i !== index,
-            ) ?? [],
-        },
-      },
-    }));
-  }
-
-  /** Add a worker exit status code */
-  addWorkerExitStatusCode(): void {
-    this.model.update((model) => ({
-      ...model,
-      options: {
-        ...model.config.options,
-        workerEarlyExit: {
-          ...model.config.options?.workerEarlyExit,
-          workerExitStatusCodes: [
-            ...(model.config.options?.workerEarlyExit?.workerExitStatusCodes ??
-              []),
+          exitStatusCodes: [
+            ...(model.config.options?.workerEarlyExit?.exitStatusCodes ?? []),
             500,
           ],
         },
@@ -203,16 +162,16 @@ export class ConfigFormComponent {
     }));
   }
 
-  /** Remove a worker exit status code */
-  removeWorkerExitStatusCode(index: number): void {
+  /** Remove a global exit status code */
+  removeGlobalExitStatusCode(index: number): void {
     this.model.update((model) => ({
       ...model,
       options: {
         ...model.config.options,
         workerEarlyExit: {
           ...model.config.options?.workerEarlyExit,
-          workerExitStatusCodes:
-            model.config.options?.workerEarlyExit?.workerExitStatusCodes?.filter(
+          exitStatusCodes:
+            model.config.options?.workerEarlyExit?.exitStatusCodes?.filter(
               (_, i) => i !== index,
             ) ?? [],
         },
@@ -220,20 +179,145 @@ export class ConfigFormComponent {
     }));
   }
 
+  /** Add early exit configuration to a specific request */
+  addRequestEarlyExitConfig(index: number): void {
+    this.model.update((model) => {
+      const updatedRequests = [...(model.config.requests ?? [])];
+      if (updatedRequests[index]) {
+        updatedRequests[index] = {
+          ...updatedRequests[index],
+          earlyExit: {
+            ...updatedRequests[index].earlyExit,
+            enabled: true,
+            exitStatusCodes: [500, 502, 503, 504],
+            monitoringWindowMs: 5000,
+          },
+        };
+      }
+      return {
+        ...model,
+        config: {
+          ...model.config,
+          requests: updatedRequests,
+        },
+      };
+    });
+  }
+
+  /** Remove early exit configuration from a specific request */
+  removeRequestEarlyExitConfig(index: number): void {
+    this.model.update((model) => {
+      const updatedRequests = [...(model.config.requests ?? [])];
+      if (updatedRequests[index]) {
+        const request = updatedRequests[index];
+        const { ...requestWithoutEarlyExit } = request;
+        updatedRequests[index] = requestWithoutEarlyExit;
+      }
+      return {
+        ...model,
+        config: {
+          ...model.config,
+          requests: updatedRequests,
+        },
+      };
+    });
+  }
+
+  /** Update early exit configuration for a specific request */
+  updateRequestEarlyExitConfig(
+    index: number,
+    config: Partial<{
+      enabled: boolean;
+      errorRateThreshold?: number;
+      errorCountThreshold?: number;
+      exitStatusCodes: number[];
+      monitoringWindowMs: number;
+    }>,
+  ): void {
+    this.model.update((model) => {
+      const updatedRequests = [...(model.config.requests ?? [])];
+      if (updatedRequests[index]) {
+        const currentEarlyExit = updatedRequests[index].earlyExit ?? {
+          enabled: false,
+          exitStatusCodes: [500, 502, 503, 504],
+          monitoringWindowMs: 5000,
+        };
+
+        updatedRequests[index] = {
+          ...updatedRequests[index],
+          earlyExit: {
+            ...currentEarlyExit,
+            ...config,
+          },
+        };
+      }
+      return {
+        ...model,
+        config: {
+          ...model.config,
+          requests: updatedRequests,
+        },
+      };
+    });
+  }
+
+  /** Add a status code to request-level early exit */
+  addRequestExitStatusCode(requestIndex: number): void {
+    this.model.update((model) => {
+      const updatedRequests = [...(model.config.requests ?? [])];
+      if (updatedRequests[requestIndex]?.earlyExit) {
+        const currentCodes =
+          updatedRequests[requestIndex].earlyExit!.exitStatusCodes ?? [];
+        updatedRequests[requestIndex] = {
+          ...updatedRequests[requestIndex],
+          earlyExit: {
+            ...updatedRequests[requestIndex].earlyExit!,
+            exitStatusCodes: [...currentCodes, 500],
+          },
+        };
+      }
+      return {
+        ...model,
+        config: {
+          ...model.config,
+          requests: updatedRequests,
+        },
+      };
+    });
+  }
+
+  /** Remove a status code from request-level early exit */
+  removeRequestExitStatusCode(requestIndex: number, codeIndex: number): void {
+    this.model.update((model) => {
+      const updatedRequests = [...(model.config.requests ?? [])];
+      if (updatedRequests[requestIndex]?.earlyExit?.exitStatusCodes) {
+        const currentCodes =
+          updatedRequests[requestIndex].earlyExit!.exitStatusCodes!;
+        updatedRequests[requestIndex] = {
+          ...updatedRequests[requestIndex],
+          earlyExit: {
+            ...updatedRequests[requestIndex].earlyExit!,
+            exitStatusCodes: currentCodes.filter((_, i) => i !== codeIndex),
+          },
+        };
+      }
+      return {
+        ...model,
+        config: {
+          ...model.config,
+          requests: updatedRequests,
+        },
+      };
+    });
+  }
+
   /** Create an empty configuration structure */
   private createEmptyConfig(): ModifyConfigRequest {
+    const config = { ...defaultTressiConfig };
+
     const defaultConfig: ModifyConfigRequest = {
       name: this.nameService.generate(),
-      config: {
-        ...defaultTressiConfig,
-        requests: [
-          {
-            url: '',
-            method: 'GET',
-            rps: 1,
-          },
-        ],
-      },
+      config,
     };
     return defaultConfig;
   }

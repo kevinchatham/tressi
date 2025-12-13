@@ -1,6 +1,6 @@
 import { sValidator } from '@hono/standard-validator';
 import { Hono } from 'hono';
-import { TressiConfigSchema, validateConfig } from 'tressi-common/config';
+import { TressiConfig, validateConfig } from 'tressi-common/config';
 import z from 'zod';
 
 import { configStorage } from '../../core/config-storage';
@@ -12,7 +12,7 @@ import { createApiErrorResponse } from '../utils/error-response-generator';
 export const ConfigRequestSchema = z.object({
   id: z.string().optional().default(crypto.randomUUID()),
   name: z.string(),
-  config: TressiConfigSchema,
+  config: z.custom<TressiConfig>(),
   createdAt: z.number().optional().default(Date.now),
   updatedAt: z.number().optional().default(Date.now),
 });

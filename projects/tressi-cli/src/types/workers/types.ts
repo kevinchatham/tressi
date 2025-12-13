@@ -83,7 +83,14 @@ export type WorkerData = {
  * Early exit thresholds configuration
  */
 export type EarlyExitThresholds = {
-  perEndpoint: Map<string, { errorRate?: number; errorCount?: number }>;
-  statusCodes: Set<number>;
+  perEndpoint: Map<
+    string,
+    {
+      errorRate?: number;
+      errorCount?: number;
+      exitStatusCodes: Set<number>;
+      monitoringWindowMs: number;
+    }
+  >;
   monitoringWindowMs: number;
 };

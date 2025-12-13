@@ -1,8 +1,5 @@
 import { performance } from 'perf_hooks';
-import {
-  type TressiRequestConfig,
-  TressiRequestConfigSchema,
-} from 'tressi-common/config';
+import { type TressiRequestConfig } from 'tressi-common/config';
 import { request } from 'undici';
 
 import { RequestResult } from '../types/reporting/types';
@@ -40,17 +37,15 @@ export class RequestExecutor {
     const headers = this.getHeadersObject();
     const result = this.getResultObject();
 
-    const parsedReq = TressiRequestConfigSchema.parse(req);
-
     try {
       // Reuse headers object instead of creating new one
-      Object.assign(headers, globalHeaders, parsedReq.headers);
+      Object.assign(headers, globalHeaders, req.headers);
+
+      const requestBody = this.hasValidPayload(req.payload, req.method)
+        ? JSON.stringify(req.payload)
+        : undefined;
 
       // Calculate request body size for bandwidth tracking
-      const requestBody =
-        parsedReq.payload === undefined
-          ? undefined
-          : JSON.stringify(parsedReq.payload);
       const bytesSent = requestBody
         ? Buffer.byteLength(requestBody, 'utf8')
         : 0;
@@ -58,21 +53,21 @@ export class RequestExecutor {
       // Use per-endpoint agents in production, global dispatcher in tests
       const dispatcher =
         process.env.NODE_ENV !== 'test'
-          ? globalAgentManager.getAgent(parsedReq.url)
+          ? globalAgentManager.getAgent(req.url)
           : undefined; // When undefined, undici will use the global dispatcher
 
       const {
         statusCode,
         body: responseBody,
         headers: responseHeaders,
-      } = await request(parsedReq.url, {
-        method: parsedReq.method || 'GET',
+      } = await request(req.url, {
+        method: req.method || 'GET',
         headers,
         body: requestBody,
         dispatcher,
       });
 
-      const method = parsedReq.method || 'GET';
+      const method = req.method || 'GET';
       const latencyMs = Math.max(0, performance.now() - start);
 
       // Calculate response body size for bandwidth tracking
@@ -82,7 +77,7 @@ export class RequestExecutor {
       // Check if we should sample this status code for this endpoint
       const shouldSampleBody = this.responseSampler.shouldSampleResponse(
         method,
-        parsedReq.url,
+        req.url,
         statusCode,
       );
 
@@ -109,7 +104,7 @@ export class RequestExecutor {
 
       // Populate result object from pool
       result.method = method;
-      result.url = parsedReq.url;
+      result.url = req.url;
       result.status = statusCode;
       result.latencyMs = latencyMs;
       result.success = statusCode >= 200 && statusCode < 300;
@@ -130,8 +125,8 @@ export class RequestExecutor {
         : 0;
 
       // Populate result object for error case
-      result.method = parsedReq.method || 'GET';
-      result.url = parsedReq.url;
+      result.method = req.method || 'GET';
+      result.url = req.url;
       result.status = 0;
       result.latencyMs = latencyMs;
       result.success = false;
@@ -193,5 +188,42 @@ export class RequestExecutor {
       result.bytesReceived = 0;
       this.resultPool.push(result);
     }
+  }
+
+  /**
+   * Checks if the payload is valid and should be included in the request
+   */
+  private hasValidPayload(payload: unknown, method?: string): boolean {
+    // Only include body for methods that support it
+    const bodyMethods = ['POST', 'PUT', 'PATCH'];
+    if (!method || !bodyMethods.includes(method.toUpperCase())) {
+      return false;
+    }
+
+    if (payload === null || payload === undefined) {
+      return false;
+    }
+
+    // Check if payload is JSON serializable
+    try {
+      JSON.stringify(payload);
+    } catch {
+      return false;
+    }
+
+    if (payload instanceof Array) {
+      return payload.length > 0;
+    }
+
+    if (typeof payload === 'object') {
+      return Object.keys(payload).length > 0;
+    }
+
+    if (typeof payload === 'string') {
+      return payload.trim().length > 0;
+    }
+
+    // For other primitive types (number, boolean, etc.)
+    return true;
   }
 }

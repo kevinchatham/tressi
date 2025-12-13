@@ -1,23 +1,61 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "default": {
+    "$schema": "https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json",
+    "requests": [],
+    "options": {
+      "durationSec": 10,
+      "rampUpTimeSec": 0,
+      "exportPath": "",
+      "silent": false,
+      "headers": {
+        "User-Agent": "Tressi"
+      },
+      "threads": 1,
+      "workerMemoryLimit": 128,
+      "workerEarlyExit": {
+        "enabled": false,
+        "errorRateThreshold": 0,
+        "exitStatusCodes": [400, 401, 403, 500, 502, 503, 504],
+        "monitoringWindowMs": 5000
+      }
+    }
+  },
   "type": "object",
   "properties": {
     "$schema": {
-      "default": "https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json",
+      "description": "A URL to the JSON schema for this configuration file.",
       "type": "string"
     },
     "requests": {
-      "default": [],
+      "description": "An array of request configurations.",
       "minItems": 1,
       "type": "array",
       "items": {
+        "default": {
+          "url": "",
+          "payload": {},
+          "method": "GET",
+          "headers": {
+            "User-Agent": "Tressi"
+          },
+          "rps": 1,
+          "earlyExit": {
+            "enabled": false,
+            "errorRateThreshold": 0,
+            "exitStatusCodes": [400, 401, 403, 500, 502, 503, 504],
+            "monitoringWindowMs": 5000
+          }
+        },
         "type": "object",
         "properties": {
           "url": {
+            "description": "The URL to send the request to.",
             "type": "string",
             "format": "uri"
           },
           "payload": {
+            "description": "The request payload. Can be a JSON object or an array.",
             "anyOf": [
               {
                 "type": "object",
@@ -33,14 +71,12 @@
             ]
           },
           "method": {
-            "default": "GET",
+            "description": "The HTTP method to use for the request. Defaults to GET.",
             "type": "string",
             "enum": ["GET", "POST", "PUT", "PATCH", "DELETE"]
           },
           "headers": {
-            "default": {
-              "User-Agent": "Tressi"
-            },
+            "description": "Headers to be sent with this specific request. Merged with global headers.",
             "type": "object",
             "propertyNames": {
               "type": "string"
@@ -50,43 +86,103 @@
             }
           },
           "rps": {
-            "default": 1,
+            "description": "Per-endpoint requests per second limit. Defaults to 1.",
             "type": "integer",
             "minimum": 1,
             "maximum": 9007199254740991
+          },
+          "earlyExit": {
+            "description": "Optional early exit configuration for this specific endpoint",
+            "default": {
+              "enabled": false,
+              "errorRateThreshold": 0,
+              "exitStatusCodes": [400, 401, 403, 500, 502, 503, 504],
+              "monitoringWindowMs": 5000
+            },
+            "type": "object",
+            "properties": {
+              "enabled": {
+                "description": "Enable early exit for this endpoint",
+                "type": "boolean"
+              },
+              "errorRateThreshold": {
+                "description": "Error rate threshold (0.0-1.0)",
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "exitStatusCodes": {
+                "description": "HTTP status codes that trigger immediate endpoint stop",
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                }
+              },
+              "monitoringWindowMs": {
+                "description": "Time window in milliseconds for threshold calculation",
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "enabled",
+              "errorRateThreshold",
+              "exitStatusCodes",
+              "monitoringWindowMs"
+            ],
+            "additionalProperties": false
           }
         },
-        "required": ["url", "method", "headers", "rps"],
+        "required": ["url", "payload", "method", "headers", "rps", "earlyExit"],
         "additionalProperties": false
       }
     },
     "options": {
+      "description": "Configuration options for the test runner.",
+      "default": {
+        "durationSec": 10,
+        "rampUpTimeSec": 0,
+        "exportPath": "",
+        "silent": false,
+        "headers": {
+          "User-Agent": "Tressi"
+        },
+        "threads": 1,
+        "workerMemoryLimit": 128,
+        "workerEarlyExit": {
+          "enabled": false,
+          "errorRateThreshold": 0,
+          "exitStatusCodes": [400, 401, 403, 500, 502, 503, 504],
+          "monitoringWindowMs": 5000
+        }
+      },
       "type": "object",
       "properties": {
         "durationSec": {
-          "default": 10,
+          "description": "The total duration of the test in seconds. Defaults to 10.",
           "type": "integer",
           "exclusiveMinimum": 0,
           "maximum": 9007199254740991
         },
         "rampUpTimeSec": {
-          "default": 0,
+          "description": "The time in seconds to ramp up to the target RPS. Defaults to 0.",
           "type": "integer",
           "minimum": 0,
           "maximum": 9007199254740991
         },
         "exportPath": {
-          "default": "./tressi-report",
+          "description": "The base path for the exported report. If not provided, no report will be generated.",
           "type": "string"
         },
         "silent": {
-          "default": false,
+          "description": "Suppress all console output. Defaults to false.",
           "type": "boolean"
         },
         "headers": {
-          "default": {
-            "User-Agent": "Tressi"
-          },
+          "description": "Global headers to be sent with every request.",
           "type": "object",
           "propertyNames": {
             "type": "string"
@@ -96,7 +192,6 @@
           }
         },
         "threads": {
-          "default": 1,
           "description": "Number of worker threads to use (defaults to CPU count)",
           "type": "integer",
           "minimum": 1,
@@ -104,65 +199,32 @@
         },
         "workerMemoryLimit": {
           "description": "Memory limit per worker in MB",
-          "default": 128,
           "type": "integer",
           "minimum": 16,
           "maximum": 512
         },
         "workerEarlyExit": {
+          "description": "Global early exit configuration (acts as default for endpoints without specific config)",
           "default": {
             "enabled": false,
-            "globalErrorRateThreshold": 0.1,
-            "globalErrorCountThreshold": 100,
-            "perEndpointThresholds": [],
-            "workerExitStatusCodes": [500, 502, 503, 504],
-            "monitoringWindowMs": 5000,
-            "stopMode": "global"
+            "errorRateThreshold": 0,
+            "exitStatusCodes": [400, 401, 403, 500, 502, 503, 504],
+            "monitoringWindowMs": 5000
           },
           "type": "object",
           "properties": {
             "enabled": {
-              "default": false,
+              "description": "Enable early exit for this endpoint",
               "type": "boolean"
             },
-            "globalErrorRateThreshold": {
-              "default": 0.1,
+            "errorRateThreshold": {
+              "description": "Error rate threshold (0.0-1.0)",
               "type": "number",
               "minimum": 0,
               "maximum": 1
             },
-            "globalErrorCountThreshold": {
-              "default": 100,
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "maximum": 9007199254740991
-            },
-            "perEndpointThresholds": {
-              "default": [],
-              "type": "array",
-              "items": {
-                "type": "object",
-                "properties": {
-                  "url": {
-                    "type": "string"
-                  },
-                  "errorRateThreshold": {
-                    "type": "number",
-                    "minimum": 0,
-                    "maximum": 1
-                  },
-                  "errorCountThreshold": {
-                    "type": "integer",
-                    "exclusiveMinimum": 0,
-                    "maximum": 9007199254740991
-                  }
-                },
-                "required": ["url", "errorRateThreshold"],
-                "additionalProperties": false
-              }
-            },
-            "workerExitStatusCodes": {
-              "default": [500, 502, 503, 504],
+            "exitStatusCodes": {
+              "description": "HTTP status codes that trigger immediate endpoint stop",
               "type": "array",
               "items": {
                 "type": "integer",
@@ -171,25 +233,17 @@
               }
             },
             "monitoringWindowMs": {
-              "default": 5000,
+              "description": "Time window in milliseconds for threshold calculation",
               "type": "integer",
               "exclusiveMinimum": 0,
               "maximum": 9007199254740991
-            },
-            "stopMode": {
-              "default": "global",
-              "type": "string",
-              "enum": ["endpoint", "global"]
             }
           },
           "required": [
             "enabled",
-            "globalErrorRateThreshold",
-            "globalErrorCountThreshold",
-            "perEndpointThresholds",
-            "workerExitStatusCodes",
-            "monitoringWindowMs",
-            "stopMode"
+            "errorRateThreshold",
+            "exitStatusCodes",
+            "monitoringWindowMs"
           ],
           "additionalProperties": false
         }
