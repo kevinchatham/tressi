@@ -10,7 +10,7 @@ import type {
 /**
  * Type representing early exit configuration.
  */
-export type EarlyExitConfig = z.output<typeof EarlyExitConfigSchema>;
+export type TressiEarlyExitConfig = z.output<typeof EarlyExitConfigSchema>;
 
 /**
  * Type representing the Tressi configuration.

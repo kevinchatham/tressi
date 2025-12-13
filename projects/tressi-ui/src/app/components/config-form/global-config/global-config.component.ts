@@ -1,13 +1,13 @@
 import { Component, input, output } from '@angular/core';
-import { Field } from '@angular/forms/signals';
 
 import { ModifyConfigRequest } from '../../../services/rpc.service';
 import { IconComponent } from '../../icon/icon.component';
 import { ModifyConfigRequestFormType } from '../config-form.component';
+import { EarlyExitConfigComponent } from '../early-exit-config/early-exit-config.component';
 
 @Component({
   selector: 'app-global-config',
-  imports: [Field, IconComponent],
+  imports: [IconComponent, EarlyExitConfigComponent],
   templateUrl: './global-config.component.html',
 })
 export class GlobalConfigComponent {

@@ -149,14 +149,17 @@ export class ConfigFormComponent {
   addGlobalExitStatusCode(): void {
     this.model.update((model) => ({
       ...model,
-      options: {
-        ...model.config.options,
-        workerEarlyExit: {
-          ...model.config.options?.workerEarlyExit,
-          exitStatusCodes: [
-            ...(model.config.options?.workerEarlyExit?.exitStatusCodes ?? []),
-            500,
-          ],
+      config: {
+        ...model.config,
+        options: {
+          ...model.config.options,
+          workerEarlyExit: {
+            ...model.config.options?.workerEarlyExit,
+            exitStatusCodes: [
+              ...(model.config.options?.workerEarlyExit?.exitStatusCodes ?? []),
+              500,
+            ],
+          },
         },
       },
     }));
@@ -166,14 +169,17 @@ export class ConfigFormComponent {
   removeGlobalExitStatusCode(index: number): void {
     this.model.update((model) => ({
       ...model,
-      options: {
-        ...model.config.options,
-        workerEarlyExit: {
-          ...model.config.options?.workerEarlyExit,
-          exitStatusCodes:
-            model.config.options?.workerEarlyExit?.exitStatusCodes?.filter(
-              (_, i) => i !== index,
-            ) ?? [],
+      config: {
+        ...model.config,
+        options: {
+          ...model.config.options,
+          workerEarlyExit: {
+            ...model.config.options?.workerEarlyExit,
+            exitStatusCodes:
+              model.config.options?.workerEarlyExit?.exitStatusCodes?.filter(
+                (_, i) => i !== index,
+              ) ?? [],
+          },
         },
       },
     }));

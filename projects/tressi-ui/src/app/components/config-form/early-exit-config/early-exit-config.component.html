@@ -1,0 +1,122 @@
+<div class="space-y-4">
+  <!-- Enable Early Exit -->
+  <div class="form-control">
+    <label class="label cursor-pointer">
+      <span class="label-text font-medium">Enable Early Exit</span>
+      <input
+        type="checkbox"
+        class="checkbox checkbox-primary"
+        [field]="form().enabled"
+      />
+    </label>
+  </div>
+
+  @if (isEnabled()) {
+    <div class="mt-4 space-y-4">
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <!-- Error Rate Threshold -->
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend">Error Rate Threshold</legend>
+          <input
+            type="number"
+            class="input"
+            [field]="form().errorRateThreshold"
+            placeholder="0.0 - 1.0"
+            step="0.01"
+          />
+          <p class="label">Range: 0.0 - 1.0</p>
+          @if (
+            form().errorRateThreshold().touched() &&
+            form().errorRateThreshold().invalid()
+          ) {
+            <p class="label text-error">
+              @for (
+                error of form().errorRateThreshold().errors();
+                track error
+              ) {
+                {{ error.message }}
+              }
+            </p>
+          }
+        </fieldset>
+
+        <!-- Monitoring Window -->
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend">Monitoring Window (ms)</legend>
+          <input
+            type="number"
+            class="input"
+            [field]="form().monitoringWindowMs"
+            placeholder="Monitoring duration in milliseconds"
+          />
+          <p class="label">Duration to monitor for errors (milliseconds)</p>
+          @if (
+            form().monitoringWindowMs().touched() &&
+            form().monitoringWindowMs().invalid()
+          ) {
+            <p class="label text-error">
+              @for (
+                error of form().monitoringWindowMs().errors();
+                track error
+              ) {
+                {{ error.message }}
+              }
+            </p>
+          }
+        </fieldset>
+      </div>
+
+      <!-- Exit Status Codes -->
+      <div>
+        <div class="mb-2 flex items-center justify-between">
+          <label class="label-text font-medium">Exit Status Codes</label>
+          <button
+            type="button"
+            class="btn btn-primary btn-sm"
+            (click)="addExitStatusCode.emit()"
+          >
+            <app-icon name="add" />
+            Add Code
+          </button>
+        </div>
+        <div class="space-y-2">
+          @for (code of getExitStatusCodes(); track $index) {
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend">
+                Status Code {{ $index + 1 }}
+              </legend>
+              <div class="flex items-center gap-2">
+                <input
+                  type="number"
+                  class="input input-sm"
+                  [field]="form().exitStatusCodes[$index]"
+                  placeholder="HTTP status code"
+                />
+                <button
+                  type="button"
+                  class="btn btn-error btn-sm btn-square"
+                  (click)="removeExitStatusCode.emit($index)"
+                >
+                  <app-icon name="delete" />
+                </button>
+              </div>
+              @if (
+                form().exitStatusCodes[$index]().touched() &&
+                form().exitStatusCodes[$index]().invalid()
+              ) {
+                <p class="label text-error">
+                  @for (
+                    error of form().exitStatusCodes[$index]().errors();
+                    track error
+                  ) {
+                    {{ error.message }}
+                  }
+                </p>
+              }
+            </fieldset>
+          }
+        </div>
+      </div>
+    </div>
+  }
+</div>

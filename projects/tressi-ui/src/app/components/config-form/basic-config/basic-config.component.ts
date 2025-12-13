@@ -13,10 +13,16 @@ import { ModifyConfigRequest } from '../../../services/rpc.service';
 import { IconComponent } from '../../icon/icon.component';
 import { JsonTextareaComponent } from '../../json-textarea/json-textarea.component';
 import { ModifyConfigRequestFormType } from '../config-form.component';
+import { EarlyExitConfigComponent } from '../early-exit-config/early-exit-config.component';
 
 @Component({
   selector: 'app-basic-config',
-  imports: [Field, IconComponent, JsonTextareaComponent],
+  imports: [
+    Field,
+    IconComponent,
+    JsonTextareaComponent,
+    EarlyExitConfigComponent,
+  ],
   templateUrl: './basic-config.component.html',
 })
 export class BasicConfigComponent implements AfterViewInit {
@@ -33,6 +39,15 @@ export class BasicConfigComponent implements AfterViewInit {
   readonly removeRequest = output<number>();
 
   readonly jsonTextareaChange = output<void>();
+
+  /** Event to add an exit status code to a specific request */
+  readonly addRequestExitStatusCode = output<number>();
+
+  /** Event to remove an exit status code from a specific request */
+  readonly removeRequestExitStatusCode = output<{
+    requestIndex: number;
+    codeIndex: number;
+  }>();
 
   /** Track expanded/collapsed state for each request */
   expandedRequests = new Set<number>();

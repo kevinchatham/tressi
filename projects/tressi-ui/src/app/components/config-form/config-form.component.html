@@ -74,6 +74,10 @@
         (addRequest)="addRequest()"
         (removeRequest)="removeRequest($event)"
         (jsonTextareaChange)="onJsonTextAreaChange()"
+        (addRequestExitStatusCode)="addRequestExitStatusCode($event)"
+        (removeRequestExitStatusCode)="
+          removeRequestExitStatusCode($event.requestIndex, $event.codeIndex)
+        "
       />
     }
 
