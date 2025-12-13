@@ -1,4 +1,3 @@
-import { DatePipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -18,15 +17,11 @@ import {
   GetAllConfigsResponse,
   ModifyConfigRequest,
 } from '../../services/rpc.service';
+import { TimeService } from '../../services/time.service';
 
 @Component({
   selector: 'app-settings',
-  imports: [
-    IconComponent,
-    DatePipe,
-    ThemeSwitcherComponent,
-    ConfigFormComponent,
-  ],
+  imports: [IconComponent, ThemeSwitcherComponent, ConfigFormComponent],
   templateUrl: './settings.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -35,6 +30,7 @@ export class SettingsComponent implements OnInit {
   private readonly configService = inject(ConfigService);
   private readonly logService = inject(LogService);
   private readonly router = inject(Router);
+  readonly timeService = inject(TimeService);
 
   /** Reactive signals for state management */
   readonly configs = signal<GetAllConfigsResponse>([]);

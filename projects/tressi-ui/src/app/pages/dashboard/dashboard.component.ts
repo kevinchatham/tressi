@@ -12,6 +12,7 @@ import { AggregatedMetrics } from 'tressi-common/metrics';
 import { IconComponent } from '../../components/icon/icon.component';
 import { LineChartComponent } from '../../components/line-chart/line-chart.component';
 import { ConfigService } from '../../services/config.service';
+import { LocalStorageService } from '../../services/localstorage.service';
 import { LogService } from '../../services/log.service';
 import { SSEService } from '../../services/metrics.service';
 import {
@@ -33,6 +34,7 @@ export class DashboardComponent implements OnInit {
   private readonly logService = inject(LogService);
   private readonly router = inject(Router);
   private readonly rpc = inject(RPCService);
+  private readonly localStorageService = inject(LocalStorageService);
 
   /** Reactive signal holding the history of aggregated metrics. */
   private readonly metricsHistory = signal<AggregatedMetrics[]>([]);
@@ -93,6 +95,13 @@ export class DashboardComponent implements OnInit {
     return cfg;
   });
 
+  /** Computed signal that returns the ID of the selected config, or empty string if none */
+  readonly selectedConfigId = computed(() => {
+    const config = this.selectedConfig();
+    if (!config || 'error' in config) return '';
+    return config.id;
+  });
+
   ngOnInit(): void {
     this.loadConfigurations();
     this.sseService
@@ -108,6 +117,33 @@ export class DashboardComponent implements OnInit {
     this.configService.getAllConfigMetadata().subscribe({
       next: (configs) => {
         this.configs.set(configs);
+
+        // Restore last selected config or select first available
+        if (configs && !('error' in configs) && configs.length > 0) {
+          const lastSelectedConfig =
+            this.localStorageService.getPreferences().lastSelectedConfig;
+
+          if (lastSelectedConfig && !('error' in lastSelectedConfig)) {
+            // Check if the last selected config still exists
+            const existingConfig = configs.find(
+              (c) => c.id === lastSelectedConfig.id,
+            );
+            if (existingConfig) {
+              this.onConfigSelect(existingConfig.id);
+            } else {
+              // Config no longer exists, select first available
+              const firstConfig = configs[0];
+              this.onConfigSelect(firstConfig.id);
+            }
+          } else {
+            // No last selected config, select first available
+            const firstConfig = configs[0];
+            this.onConfigSelect(firstConfig.id);
+          }
+        } else {
+          this.router.navigate(['welcome']);
+        }
+
         this.isLoading.set(false);
       },
       error: (error) => {
@@ -130,6 +166,11 @@ export class DashboardComponent implements OnInit {
       this.configService.getConfig(configId).subscribe({
         next: (configRecord) => {
           this.selectedConfig.set(configRecord);
+          // Save the selected config to localStorage
+          this.localStorageService.savePreferences({
+            ...this.localStorageService.getPreferences(),
+            lastSelectedConfig: configRecord,
+          });
         },
         error: (error) => {
           this.logService.error('Failed to load configuration:', error);

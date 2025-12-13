@@ -13,7 +13,6 @@ export const ConfigRequestSchema = z.object({
   id: z.string().optional().default(crypto.randomUUID()),
   name: z.string(),
   config: z.custom<TressiConfig>(),
-  createdAt: z.number().optional().default(Date.now),
   updatedAt: z.number().optional().default(Date.now),
 });
 

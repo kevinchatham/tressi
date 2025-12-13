@@ -1,4 +1,6 @@
-import { Injectable, signal } from '@angular/core';
+import { inject, Injectable, signal } from '@angular/core';
+
+import { LocalStorageService } from './localstorage.service';
 
 export const AllThemes = [
   'light',
@@ -56,6 +58,8 @@ export class ThemeService {
   public readonly success = signal<string>('');
   public readonly warning = signal<string>('');
   public readonly error = signal<string>('');
+
+  private readonly localStorageService = inject(LocalStorageService);
 
   constructor() {
     this.loadInitialTheme();
@@ -128,16 +132,24 @@ export class ThemeService {
 
   public setTheme(theme: Theme): void {
     document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('theme', theme);
+    const preferences = this.localStorageService.getPreferences();
+    this.localStorageService.savePreferences({
+      ...preferences,
+      selectedTheme: theme,
+    });
     this.extractThemeColors();
   }
 
   public loadInitialTheme(): void {
-    document.documentElement.setAttribute('data-theme', this.getTheme());
+    const preferences = this.localStorageService.getPreferences();
+    document.documentElement.setAttribute(
+      'data-theme',
+      preferences.selectedTheme,
+    );
     this.extractThemeColors();
   }
 
   public getTheme(): Theme {
-    return (localStorage.getItem('theme') as Theme) ?? 'light';
+    return this.localStorageService.getPreferences().selectedTheme;
   }
 }

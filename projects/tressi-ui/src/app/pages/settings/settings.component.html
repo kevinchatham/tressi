@@ -35,10 +35,7 @@
           <h3 class="text-lg font-semibold">{{ config.name }}</h3>
           <div class="mt-2 space-y-1 text-sm">
             <p class="text-base-content/70">
-              Created: {{ config.createdAt | date: 'medium' }}
-            </p>
-            <p class="text-base-content/70">
-              Updated: {{ config.updatedAt | date: 'medium' }}
+              Updated: {{ timeService.getRelativeTimeString(config.updatedAt) }}
             </p>
           </div>
           <div class="mt-4 flex justify-end gap-2">

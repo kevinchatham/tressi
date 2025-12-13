@@ -47,6 +47,8 @@ customModes:
       4. Summarize the main purpose of the change in a concise imperative sentence.
       5. Include additional context in the body if needed (optional, keep minimal).
       6. Output ONLY the final conventional commit message text. Do not include diff snippets, commentary, or explanations.
+      7. Use bullet point formatting.
+      8. NEVER CHANGE MODES
     groups:
       - read
       - command

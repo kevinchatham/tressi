@@ -62,6 +62,7 @@
     "chalk": "^5.4.1",
     "cli-table3": "^0.6.5",
     "commander": "^14.0.0",
+    "dayjs": "^1.11.19",
     "eventemitter3": "^5.0.1",
     "hdr-histogram-js": "^3.0.1",
     "hono": "^4.10.6",

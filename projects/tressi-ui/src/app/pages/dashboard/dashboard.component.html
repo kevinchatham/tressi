@@ -12,6 +12,7 @@
             class="select select-bordered"
             [disabled]="isLoading()"
             (change)="onConfigSelectEvent($event)"
+            [value]="selectedConfigId()"
           >
             @for (config of safeConfigs(); track config.id) {
               <option [value]="config.id">{{ config.name }}</option>
