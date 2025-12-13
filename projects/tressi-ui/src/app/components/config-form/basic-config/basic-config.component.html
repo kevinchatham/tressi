@@ -149,7 +149,9 @@
 
               <!-- Headers -->
               <fieldset class="fieldset md:col-span-2">
-                <legend class="fieldset-legend">Headers (JSON)</legend>
+                <legend class="fieldset-legend">
+                  Headers (JSON) - Overrides Global
+                </legend>
                 <app-json-textarea
                   [(value)]="model().config.requests[$index].headers"
                   [rows]="3"

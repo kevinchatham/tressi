@@ -15,8 +15,9 @@
           (valueChange)="onJsonTextareaValueChange()"
           placeholder='{"User-Agent": "Tressi/1.0.0", "Accept": "application/json"}'
         />
-        <p class="label">
-          Headers to be sent with every request. Use JSON format
+        <p class="label text-wrap">
+          Request-level headers will override these if the same header name is
+          used.
         </p>
         @if (
           form().config.options.headers().touched() &&
