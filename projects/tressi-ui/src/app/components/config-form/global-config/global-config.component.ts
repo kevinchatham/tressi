@@ -2,12 +2,13 @@ import { Component, input, output } from '@angular/core';
 
 import { ModifyConfigRequest } from '../../../services/rpc.service';
 import { IconComponent } from '../../icon/icon.component';
+import { JsonTextareaComponent } from '../../json-textarea/json-textarea.component';
 import { ModifyConfigRequestFormType } from '../config-form.component';
 import { EarlyExitConfigComponent } from '../early-exit-config/early-exit-config.component';
 
 @Component({
   selector: 'app-global-config',
-  imports: [IconComponent, EarlyExitConfigComponent],
+  imports: [IconComponent, EarlyExitConfigComponent, JsonTextareaComponent],
   templateUrl: './global-config.component.html',
 })
 export class GlobalConfigComponent {
@@ -22,4 +23,12 @@ export class GlobalConfigComponent {
 
   /** Event to remove an exit status code */
   readonly removeExitStatusCode = output<number>();
+
+  /** Event emitted when JSON textarea value changes */
+  readonly jsonTextareaChange = output<void>();
+
+  /** Handle JSON textarea value changes */
+  onJsonTextareaValueChange(): void {
+    this.jsonTextareaChange.emit();
+  }
 }

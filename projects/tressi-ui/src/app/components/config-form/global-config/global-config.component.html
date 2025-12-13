@@ -8,16 +8,13 @@
 
     <div class="space-y-2">
       <fieldset class="fieldset">
-        <legend class="fieldset-legend">Global Headers</legend>
-        <!--
-        TODO: Not sure how to make this work yet
-        <textarea
-          class="textarea font-mono text-sm"
-          rows="3"
-          [field]="form().config.options.headers"
+        <legend class="fieldset-legend">Global Headers (JSON)</legend>
+        <app-json-textarea
+          [(value)]="model().config.options.headers"
+          [rows]="3"
+          (valueChange)="onJsonTextareaValueChange()"
           placeholder='{"User-Agent": "Tressi/1.0.0", "Accept": "application/json"}'
-        ></textarea>
-        -->
+        />
         <p class="label">
           Headers to be sent with every request. Use JSON format
         </p>
