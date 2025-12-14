@@ -1,4 +1,6 @@
-import { Component, input } from '@angular/core';
+import { Component, inject } from '@angular/core';
+
+import { TitleService } from '../../services/title.service';
 
 @Component({
   selector: 'app-header',
@@ -6,5 +8,9 @@ import { Component, input } from '@angular/core';
   templateUrl: './header.component.html',
 })
 export class HeaderComponent {
-  title = input.required<string>();
+  private titleService = inject(TitleService);
+
+  get title(): string {
+    return this.titleService.getTitle();
+  }
 }

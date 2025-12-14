@@ -1,6 +1,6 @@
 import { inject, Injectable, signal } from '@angular/core';
 
-import { LocalStorageService } from './localstorage.service';
+import { LocalStorageService } from './local-storage.service';
 
 export const AllThemes = [
   'light',

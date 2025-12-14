@@ -83,21 +83,25 @@ export const routes: Routes = [
   {
     path: 'server-unavailable',
     component: ServerUnavailableComponent,
+    data: { title: 'Tressi Server Unavailable' },
   },
   {
     path: 'welcome',
     component: WelcomeComponent,
     canActivate: [configGuard],
+    data: { title: 'Tressi Welcome' },
   },
   {
     path: 'settings',
     component: SettingsComponent,
     canActivate: [configGuard],
+    data: { title: 'Tressi Settings' },
   },
   {
     path: 'dashboard',
     component: DashboardComponent,
     canActivate: [healthCheckGuard, configGuard],
+    data: { title: 'Tressi Dashboard' },
   },
   {
     path: '',

@@ -13,7 +13,7 @@ import { HeaderComponent } from '../../components/header/header.component';
 import { IconComponent } from '../../components/icon/icon.component';
 import { LineChartComponent } from '../../components/line-chart/line-chart.component';
 import { ConfigService } from '../../services/config.service';
-import { LocalStorageService } from '../../services/localstorage.service';
+import { LocalStorageService } from '../../services/local-storage.service';
 import { LogService } from '../../services/log.service';
 import { SSEService } from '../../services/metrics.service';
 import {

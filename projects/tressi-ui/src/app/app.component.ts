@@ -1,5 +1,12 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  inject,
+  OnInit,
+} from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+
+import { TitleService } from './services/title.service';
 
 @Component({
   selector: 'app-root',
@@ -7,4 +14,10 @@ import { RouterOutlet } from '@angular/router';
   templateUrl: './app.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AppComponent {}
+export class AppComponent implements OnInit {
+  private titleService = inject(TitleService);
+
+  ngOnInit(): void {
+    this.titleService.resetTitle();
+  }
+}
