@@ -101,7 +101,7 @@
   <!-- Form Actions -->
   <div class="bg-base-100 p-4">
     <div class="flex justify-end gap-3">
-      <button type="button" class="btn btn-ghost" (click)="closed.emit()">
+      <button type="button" class="btn btn-ghost" (click)="onCancel($event)">
         Cancel
       </button>
       <div class="flex items-center gap-2">
@@ -109,11 +109,8 @@
         <button
           type="submit"
           class="btn btn-primary"
-          [disabled]="!isFormValid() || isLoading()"
+          [disabled]="!isFormValid()"
         >
-          @if (isLoading()) {
-            <span class="loading loading-spinner loading-sm"></span>
-          }
           Save
         </button>
       </div>

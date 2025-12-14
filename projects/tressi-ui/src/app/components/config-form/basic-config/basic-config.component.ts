@@ -3,7 +3,10 @@ import {
   Component,
   ElementRef,
   input,
+  OnChanges,
+  OnInit,
   output,
+  signal,
   viewChildren,
 } from '@angular/core';
 import { Field } from '@angular/forms/signals';
@@ -25,7 +28,7 @@ import { EarlyExitConfigComponent } from '../early-exit-config/early-exit-config
   ],
   templateUrl: './basic-config.component.html',
 })
-export class BasicConfigComponent implements AfterViewInit {
+export class BasicConfigComponent implements AfterViewInit, OnInit, OnChanges {
   /** Form instance from parent */
   readonly form = input.required<ModifyConfigRequestFormType>();
 
@@ -52,8 +55,8 @@ export class BasicConfigComponent implements AfterViewInit {
   /** Track expanded/collapsed state for each request */
   expandedRequests = new Set<number>();
 
-  /** Track the last request count to detect new requests */
-  private lastRequestCount = 0;
+  /** Signal to track the current request count */
+  private readonly requestCount = signal(0);
 
   /** Query for URL input elements */
   private urlInputs = viewChildren<ElementRef<HTMLInputElement>>('urlInput');
@@ -61,6 +64,36 @@ export class BasicConfigComponent implements AfterViewInit {
   ngAfterViewInit(): void {
     // Focus the first URL input on initialization
     this.focusLastUrlInput();
+  }
+
+  ngOnInit(): void {
+    // Initialize request count
+    this.requestCount.set(this.model().config.requests?.length || 0);
+  }
+
+  ngOnChanges(): void {
+    const currentCount = this.model().config.requests?.length || 0;
+    const previousCount = this.requestCount();
+
+    // If a new request was added, handle expansion logic
+    if (currentCount > previousCount) {
+      // Collapse all existing requests
+      for (let i = 0; i < currentCount - 1; i++) {
+        this.expandedRequests.add(i);
+      }
+
+      // Ensure the new request is expanded
+      this.expandedRequests.delete(currentCount - 1);
+
+      // Update the count
+      this.requestCount.set(currentCount);
+
+      // Focus the new URL input after the view updates
+      setTimeout(() => this.focusLastUrlInput(), 0);
+    } else if (currentCount < previousCount) {
+      // Handle request removal
+      this.requestCount.set(currentCount);
+    }
   }
 
   /** Toggle request section expansion */
@@ -76,22 +109,12 @@ export class BasicConfigComponent implements AfterViewInit {
   isRequestExpanded(index: number): boolean {
     const currentRequestCount = this.model().config.requests?.length || 0;
 
-    // If a new request was added, collapse all others and expand the new one
-    if (currentRequestCount > this.lastRequestCount) {
-      this.lastRequestCount = currentRequestCount;
-
-      // Collapse all existing requests
-      for (let i = 0; i < currentRequestCount - 1; i++) {
-        this.expandedRequests.add(i);
-      }
-
-      // Ensure the new request is expanded
-      this.expandedRequests.delete(currentRequestCount - 1);
-
-      // Focus the new URL input after the view updates
-      setTimeout(() => this.focusLastUrlInput(), 0);
-
-      return index === currentRequestCount - 1;
+    // If this is the newest request, always expand it
+    if (
+      index === currentRequestCount - 1 &&
+      this.expandedRequests.has(index) === false
+    ) {
+      return true;
     }
 
     // Default behavior: expanded unless explicitly collapsed

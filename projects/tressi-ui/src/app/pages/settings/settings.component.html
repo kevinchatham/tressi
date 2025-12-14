@@ -1,34 +1,19 @@
-<div class="container mx-auto p-4 sm:p-4">
-  <!-- Header -->
-  <div class="mb-6 flex items-center justify-between">
-    <h1 class="text-3xl font-bold">Settings</h1>
-    <div class="flex items-center gap-4">
-      <button (click)="navigateToDashboard()" class="btn btn-ghost">
-        Back to Dashboard
+<div class="p-16">
+  <app-header [title]="'Settings'">
+    <button (click)="navigateToDashboard()" class="btn btn-ghost">
+      Back to Dashboard
+    </button>
+    @if (!hasNoConfigs()) {
+      <button (click)="startCreate()" class="btn btn-primary">
+        <app-icon name="add" />
+        New Config
       </button>
-      @if (!hasNoConfigs()) {
-        <button
-          (click)="startCreate()"
-          class="btn btn-primary"
-          [disabled]="isLoading()"
-        >
-          <app-icon name="add" />
-          New Config
-        </button>
-      }
-      <app-theme-switcher />
-    </div>
-  </div>
-
-  <!-- Loading State -->
-  @if (isLoading() && !isEditing()) {
-    <div class="mx-auto my-8 flex justify-center">
-      <span class="loading loading-spinner loading-lg"></span>
-    </div>
-  }
+    }
+    <app-theme-switcher />
+  </app-header>
 
   <!-- Configuration List -->
-  @if (!isEditing() && !isLoading()) {
+  @if (!showForm()) {
     <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       @for (config of safeConfigs(); track config.id) {
         <div class="ring-neutral bg-base-100 rounded-lg p-4 ring-1">
@@ -74,11 +59,13 @@
   }
 
   <!-- Edit/Create Form -->
-  @if (isEditing()) {
+  @if (showForm()) {
     <div class="mx-auto max-w-4xl">
       <div class="ring-neutral bg-base-100 rounded-lg p-6 ring-1">
         <h2 class="mb-4 text-xl font-semibold">
-          {{ editingConfig() ? 'Edit Configuration' : 'Create Configuration' }}
+          {{
+            currentConfig()?.id ? 'Edit Configuration' : 'Create Configuration'
+          }}
         </h2>
         <app-config-form
           [configInput]="currentConfig()"
@@ -102,23 +89,8 @@
       >? This action cannot be undone.
     </p>
     <div class="mt-6 flex justify-end gap-3">
-      <button
-        (click)="cancelDelete()"
-        class="btn btn-ghost"
-        [disabled]="isLoading()"
-      >
-        Cancel
-      </button>
-      <button
-        (click)="deleteConfig()"
-        class="btn btn-error"
-        [disabled]="isLoading()"
-      >
-        @if (isLoading()) {
-          <span class="loading loading-spinner loading-sm"></span>
-        }
-        Delete
-      </button>
+      <button (click)="cancelDelete()" class="btn btn-ghost">Cancel</button>
+      <button (click)="deleteConfig()" class="btn btn-error">Delete</button>
     </div>
   </div>
 </div>

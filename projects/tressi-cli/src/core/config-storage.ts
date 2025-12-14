@@ -54,9 +54,7 @@ export class ConfigStorage {
   async save(input: ConfigRequestInferType): Promise<ConfigRequestOutputType> {
     await db.read();
 
-    const existingIndex = db.data.configs.findIndex(
-      (c) => c.name === input.name,
-    );
+    const existingIndex = db.data.configs.findIndex((c) => c.id === input.id);
 
     const model = ConfigRequestSchema.parse(input);
 

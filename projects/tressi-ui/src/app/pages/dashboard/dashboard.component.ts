@@ -9,6 +9,7 @@ import {
 import { Router } from '@angular/router';
 import { AggregatedMetrics } from 'tressi-common/metrics';
 
+import { HeaderComponent } from '../../components/header/header.component';
 import { IconComponent } from '../../components/icon/icon.component';
 import { LineChartComponent } from '../../components/line-chart/line-chart.component';
 import { ConfigService } from '../../services/config.service';
@@ -23,7 +24,7 @@ import {
 
 @Component({
   selector: 'app-dashboard',
-  imports: [LineChartComponent, IconComponent],
+  imports: [LineChartComponent, HeaderComponent, IconComponent],
   templateUrl: './dashboard.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

@@ -10,6 +10,7 @@ import { Router } from '@angular/router';
 import { ThemeSwitcherComponent } from 'src/app/components/theme-switcher/theme-switcher.component';
 
 import { ConfigFormComponent } from '../../components/config-form/config-form.component';
+import { HeaderComponent } from '../../components/header/header.component';
 import { IconComponent } from '../../components/icon/icon.component';
 import { ConfigService } from '../../services/config.service';
 import { LogService } from '../../services/log.service';
@@ -21,7 +22,12 @@ import { TimeService } from '../../services/time.service';
 
 @Component({
   selector: 'app-settings',
-  imports: [IconComponent, ThemeSwitcherComponent, ConfigFormComponent],
+  imports: [
+    IconComponent,
+    ThemeSwitcherComponent,
+    ConfigFormComponent,
+    HeaderComponent,
+  ],
   templateUrl: './settings.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -34,14 +40,14 @@ export class SettingsComponent implements OnInit {
 
   /** Reactive signals for state management */
   readonly configs = signal<GetAllConfigsResponse>([]);
-  readonly isLoading = signal<boolean>(true);
-  readonly isEditing = signal<boolean>(false);
-  readonly editingConfig = signal<ModifyConfigRequest | null>(null);
   readonly showDeleteModal = signal<boolean>(false);
   readonly configToDelete = signal<ModifyConfigRequest | null>(null);
 
   /** Current configuration being edited */
   readonly currentConfig = signal<ModifyConfigRequest | null>(null);
+
+  /** Signal to track if we're showing the form (for create or edit) */
+  readonly showForm = signal<boolean>(false);
 
   /** Computed signal that returns only the array of configs (or empty array) */
   readonly safeConfigs = computed(() => {
@@ -69,15 +75,12 @@ export class SettingsComponent implements OnInit {
    * Loads all available configurations from the server.
    */
   private loadConfigurations(): void {
-    this.isLoading.set(true);
     this.configService.getAllConfigMetadata().subscribe({
       next: (configs) => {
         this.configs.set(configs);
-        this.isLoading.set(false);
       },
       error: (error) => {
         this.logService.error('Failed to load configurations:', error);
-        this.isLoading.set(false);
       },
     });
   }
@@ -86,9 +89,8 @@ export class SettingsComponent implements OnInit {
    * Starts creating a new configuration.
    */
   startCreate(): void {
-    this.isEditing.set(true);
-    this.editingConfig.set(null);
     this.currentConfig.set(null);
+    this.showForm.set(true);
   }
 
   /**
@@ -96,10 +98,8 @@ export class SettingsComponent implements OnInit {
    */
   startEdit(config: ModifyConfigRequest): void {
     if ('error' in config) return;
-    this.isEditing.set(true);
-    this.editingConfig.set(config);
     this.currentConfig.set(config);
-    this.isLoading.set(false);
+    this.showForm.set(true);
   }
 
   /**
@@ -125,7 +125,6 @@ export class SettingsComponent implements OnInit {
     const config = this.configToDelete();
     if (!config || 'error' in config || !config.id) return;
 
-    this.isLoading.set(true);
     this.configService.deleteConfig(config.id).subscribe({
       next: () => {
         this.loadConfigurations();
@@ -134,7 +133,6 @@ export class SettingsComponent implements OnInit {
       },
       error: (error) => {
         this.logService.error('Failed to delete configuration:', error);
-        this.isLoading.set(false);
       },
     });
   }
@@ -144,7 +142,6 @@ export class SettingsComponent implements OnInit {
    */
   onConfigSaved(event: ModifyConfigRequest): void {
     if (!event.config) return;
-    this.isLoading.set(true);
     this.configService.saveConfig(event).subscribe({
       next: () => {
         this.loadConfigurations();
@@ -152,7 +149,6 @@ export class SettingsComponent implements OnInit {
       },
       error: (error) => {
         this.logService.error('Failed to save configuration:', error);
-        this.isLoading.set(false);
       },
     });
   }
@@ -161,9 +157,8 @@ export class SettingsComponent implements OnInit {
    * Cancels editing and returns to list view.
    */
   cancelEdit(): void {
-    this.isEditing.set(false);
-    this.editingConfig.set(null);
     this.currentConfig.set(null);
+    this.showForm.set(false);
   }
 
   /**

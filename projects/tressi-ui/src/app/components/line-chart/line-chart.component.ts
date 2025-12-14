@@ -8,6 +8,7 @@ import {
   output,
   viewChild,
 } from '@angular/core';
+import humanNumber from 'human-number';
 import { ApexMarkers, ChartComponent, NgApexchartsModule } from 'ng-apexcharts';
 import {
   ApexAxisChartSeries,
@@ -234,19 +235,7 @@ export class LineChartComponent {
             colors: themeColors.text,
           },
           formatter: (value: number): string => {
-            if (value >= 1000000) {
-              return (value / 1000000).toFixed(1) + 'M';
-            } else if (value >= 1000) {
-              return (value / 1000).toFixed(1) + 'K';
-            } else if (value >= 100) {
-              return value.toFixed(1);
-            } else if (value >= 10) {
-              return value.toFixed(2);
-            } else if (value >= 1) {
-              return value.toFixed(2);
-            } else {
-              return value.toFixed(3);
-            }
+            return humanNumber(value);
           },
         },
         axisBorder: {

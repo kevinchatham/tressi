@@ -1,6 +1,7 @@
 import {
   Component,
   computed,
+  effect,
   inject,
   input,
   output,
@@ -60,13 +61,19 @@ export class ConfigFormComponent {
   /** Output event when closed */
   readonly closed = output<void>();
 
-  /** Loading state */
-  readonly isLoading = signal(false);
-
   /** Form model with complete TressiConfig structure */
-  readonly model = signal<ModifyConfigRequest>(
-    this.configInput() ?? this.createEmptyConfig(),
-  );
+  readonly model = signal<ModifyConfigRequest>(this.createEmptyConfig());
+
+  constructor() {
+    effect(() => {
+      const input = this.configInput();
+      if (input !== null) {
+        this.model.set(input);
+      } else {
+        this.model.set(this.createEmptyConfig());
+      }
+    });
+  }
 
   /** Angular signals form with validation */
   readonly form = form(this.model, (schemaPath) => {
@@ -88,7 +95,7 @@ export class ConfigFormComponent {
       return null;
     });
     validate(schemaPath, ({ value }) => {
-      const hasRequests = value().config.requests?.length || 0 > 0;
+      const hasRequests = (value().config.requests?.length || 0) > 0;
       if (!hasRequests)
         return {
           kind: 'error',
@@ -113,9 +120,14 @@ export class ConfigFormComponent {
   /** Handle form submission */
   onSubmit(event: Event): void {
     event.preventDefault();
-    this.isLoading.set(true);
     this.configOutput.emit(this.model());
-    this.isLoading.set(false);
+  }
+
+  onCancel(event: Event): void {
+    event.preventDefault();
+    this.model.set(this.createEmptyConfig());
+    this.form().reset();
+    this.closed.emit();
   }
 
   /** Set active tab */
@@ -129,7 +141,7 @@ export class ConfigFormComponent {
       ...model,
       config: {
         ...model.config,
-        requests: [...(model.config.requests ?? []), requestDefaults],
+        requests: [...(model.config.requests ?? []), { ...requestDefaults }],
       },
     }));
   }
@@ -319,9 +331,8 @@ export class ConfigFormComponent {
 
   /** Create an empty configuration structure */
   private createEmptyConfig(): ModifyConfigRequest {
-    const config = { ...defaultTressiConfig };
-
-    config.requests.push(requestDefaults);
+    const config = JSON.parse(JSON.stringify(defaultTressiConfig));
+    config.requests = [{ ...requestDefaults }];
 
     const defaultConfig: ModifyConfigRequest = {
       name: this.nameService.generate(),
