@@ -1,15 +1,24 @@
 <div class="p-16">
   <app-header [title]="'Settings'">
-    <button (click)="navigateToDashboard()" class="btn btn-ghost">
-      Back to Dashboard
+    <app-theme-switcher />
+
+    <button
+      (click)="navigateToDashboard()"
+      class="btn btn-ghost btn-circle"
+      title="Dashboard"
+    >
+      <app-icon name="home" />
     </button>
-    @if (!hasNoConfigs()) {
-      <button (click)="startCreate()" class="btn btn-primary">
+
+    @if (!hasNoConfigs() && !showForm()) {
+      <button
+        (click)="startCreate()"
+        class="btn btn-sm btn-primary btn-circle btn-outline"
+        title="New Config"
+      >
         <app-icon name="add" />
-        New Config
       </button>
     }
-    <app-theme-switcher />
   </app-header>
 
   <!-- Configuration List -->
@@ -17,27 +26,29 @@
     <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       @for (config of safeConfigs(); track config.id) {
         <div class="ring-neutral bg-base-100 rounded-lg p-4 ring-1">
-          <h3 class="text-lg font-semibold">{{ config.name }}</h3>
+          <div class="flex justify-between">
+            <span class="text-lg font-semibold">{{ config.name }}</span>
+            <div class="-mt-1.5 flex gap-1">
+              <button
+                (click)="startEdit(config)"
+                class="btn btn-ghost btn-circle"
+                title="Edit"
+              >
+                <app-icon name="edit" />
+              </button>
+              <button
+                (click)="showDeleteConfirm(config)"
+                class="btn btn-ghost text-error btn-circle"
+                title="Delete"
+              >
+                <app-icon name="delete" />
+              </button>
+            </div>
+          </div>
           <div class="mt-2 space-y-1 text-sm">
             <p class="text-base-content/70">
               Updated: {{ timeService.getRelativeTimeString(config.updatedAt) }}
             </p>
-          </div>
-          <div class="mt-4 flex justify-end gap-2">
-            <button
-              (click)="startEdit(config)"
-              class="btn btn-ghost btn-sm"
-              title="Edit"
-            >
-              <app-icon name="edit" />
-            </button>
-            <button
-              (click)="showDeleteConfirm(config)"
-              class="btn btn-ghost btn-sm text-error"
-              title="Delete"
-            >
-              <app-icon name="delete" />
-            </button>
           </div>
         </div>
       }
