@@ -1,0 +1,154 @@
+<div class="ring-neutral bg-base-100 rounded-lg p-4 ring-1">
+  <div class="flex justify-between">
+    <span class="text-lg font-semibold">{{ config().name }}</span>
+    <div class="-mt-1.5 ml-2 flex gap-1">
+      <button
+        (click)="toggleCollapsed()"
+        class="btn btn-ghost btn-circle"
+        [title]="collapsed() ? 'Expand' : 'Collapse'"
+      >
+        <app-icon
+          [name]="collapsed() ? 'keyboard_arrow_down' : 'keyboard_arrow_up'"
+        />
+      </button>
+      <button
+        (click)="edit.emit(config())"
+        class="btn btn-ghost text-success btn-circle"
+        title="Edit"
+      >
+        <app-icon name="settings" />
+      </button>
+      <button
+        (click)="delete.emit(config())"
+        class="btn btn-ghost text-error btn-circle"
+        title="Delete"
+      >
+        <app-icon name="delete" />
+      </button>
+    </div>
+  </div>
+  <div class="mt-2 space-y-1 text-sm">
+    <p class="text-base-content/70">
+      Updated:
+      {{ timeService.getRelativeTimeString(config().updatedAt ?? 0) }}
+    </p>
+  </div>
+
+  <!-- Expanded Configuration Details -->
+  @if (!collapsed()) {
+    <div class="border-base-300 mt-4 space-y-3 border-t pt-4">
+      <!-- Requests Section -->
+      <div>
+        <h4 class="text-base-content/70 mb-2 text-sm font-semibold">
+          Requests
+        </h4>
+        <div class="space-y-2">
+          @for (
+            request of config().config.requests.slice(0, 3);
+            track request.url
+          ) {
+            <div
+              class="bg-base-200/50 flex items-center justify-between rounded p-2"
+            >
+              <div class="flex items-center gap-2">
+                <span
+                  class="font-mono text-xs font-semibold uppercase"
+                  [class]="{
+                    'text-success': request.method === 'GET',
+                    'text-warning': request.method === 'POST',
+                    'text-info': request.method === 'PUT',
+                    'text-accent': request.method === 'PATCH',
+                    'text-error': request.method === 'DELETE',
+                  }"
+                >
+                  {{ request.method }}
+                </span>
+                <span class="truncate text-sm" [title]="request.url">
+                  {{ request.url }}
+                </span>
+              </div>
+              <span class="text-base-content/60 text-xs">
+                {{ request.rps }} RPS
+              </span>
+            </div>
+          }
+          @if (config().config.requests.length > 3) {
+            <div class="text-base-content/60 text-center text-sm">
+              +{{ config().config.requests.length - 3 }} more
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Configuration Options -->
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <h4 class="text-base-content/70 mb-1 text-sm font-semibold">
+            Duration
+          </h4>
+          <p class="text-sm">
+            {{ config().config.options.durationSec }} seconds
+          </p>
+        </div>
+        <div>
+          <h4 class="text-base-content/70 mb-1 text-sm font-semibold">
+            Threads
+          </h4>
+          <p class="text-sm">
+            {{ config().config.options.threads }} thread{{
+              config().config.options.threads !== 1 ? 's' : ''
+            }}
+          </p>
+        </div>
+        @if (config().config.options.rampUpTimeSec > 0) {
+          <div>
+            <h4 class="text-base-content/70 mb-1 text-sm font-semibold">
+              Ramp-up
+            </h4>
+            <p class="text-sm">
+              {{ config().config.options.rampUpTimeSec }} seconds
+            </p>
+          </div>
+        }
+        @if (config().config.options.exportPath) {
+          <div>
+            <h4 class="text-base-content/70 mb-1 text-sm font-semibold">
+              Export
+            </h4>
+            <p
+              class="truncate text-sm"
+              [title]="config().config.options.exportPath"
+            >
+              {{ config().config.options.exportPath }}
+            </p>
+          </div>
+        }
+      </div>
+
+      <!-- Global Headers -->
+      @if (getHeadersCount() > 0) {
+        <div>
+          <h4 class="text-base-content/70 mb-2 text-sm font-semibold">
+            Global Headers
+          </h4>
+          <div class="space-y-1">
+            @for (header of getHeadersEntries().slice(0, 3); track header[0]) {
+              <div class="bg-base-200/50 flex justify-between rounded p-2">
+                <span class="font-mono text-sm">{{ header[0] }}:</span>
+                <span class="truncate text-sm" [title]="header[1]">{{
+                  header[1]
+                }}</span>
+              </div>
+            }
+            @if (getHeadersCount() > 3) {
+              <div class="text-base-content/60 text-center text-sm">
+                +{{ getHeadersCount() - 3 }}
+                more
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

@@ -13,6 +13,7 @@
         "build": {
           "builder": "@angular/build:application",
           "options": {
+            "allowedCommonJsDependencies": ["human-number", "dayjs"],
             "deleteOutputPath": false,
             "outputPath": "../tressi-cli/dist",
             "browser": "src/main.ts",

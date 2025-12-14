@@ -10,6 +10,7 @@ import { Router } from '@angular/router';
 import { ThemeSwitcherComponent } from 'src/app/components/theme-switcher/theme-switcher.component';
 
 import { ConfigFormComponent } from '../../components/config-form/config-form.component';
+import { ConfigurationCardComponent } from '../../components/configuration-card/configuration-card.component';
 import { HeaderComponent } from '../../components/header/header.component';
 import { IconComponent } from '../../components/icon/icon.component';
 import { ConfigService } from '../../services/config.service';
@@ -27,6 +28,7 @@ import { TimeService } from '../../services/time.service';
     ThemeSwitcherComponent,
     ConfigFormComponent,
     HeaderComponent,
+    ConfigurationCardComponent,
   ],
   templateUrl: './settings.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

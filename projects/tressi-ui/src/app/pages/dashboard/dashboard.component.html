@@ -14,21 +14,19 @@
       </select>
     </div>
 
-    <!-- Settings Button -->
-    <button
-      (click)="navigateToSettings()"
-      class="btn btn-ghost btn-circle"
-      title="Settings"
-    >
-      <app-icon name="settings" />
-    </button>
-
     <button
       (click)="start()"
       class="btn btn-sm btn-success btn-circle btn-outline"
       title="Start"
     >
       <app-icon name="bolt" />
+    </button>
+    <button
+      (click)="navigateToSettings()"
+      class="btn btn-ghost btn-circle"
+      title="Settings"
+    >
+      <app-icon name="settings" />
     </button>
   </app-header>
   <div class="ring-neutral mx-auto mb-8 rounded p-4 ring-1">

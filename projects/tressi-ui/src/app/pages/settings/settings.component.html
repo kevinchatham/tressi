@@ -2,14 +2,6 @@
   <app-header>
     <app-theme-switcher />
 
-    <button
-      (click)="navigateToDashboard()"
-      class="btn btn-ghost btn-circle"
-      title="Dashboard"
-    >
-      <app-icon name="home" />
-    </button>
-
     @if (!hasNoConfigs() && !showForm()) {
       <button
         (click)="startCreate()"
@@ -18,6 +10,13 @@
       >
         <app-icon name="add" />
       </button>
+      <button
+        (click)="navigateToDashboard()"
+        class="btn btn-ghost btn-circle"
+        title="Dashboard"
+      >
+        <app-icon name="home" />
+      </button>
     }
   </app-header>
 
@@ -25,32 +24,11 @@
   @if (!showForm()) {
     <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       @for (config of safeConfigs(); track config.id) {
-        <div class="ring-neutral bg-base-100 rounded-lg p-4 ring-1">
-          <div class="flex justify-between">
-            <span class="text-lg font-semibold">{{ config.name }}</span>
-            <div class="-mt-1.5 flex gap-1">
-              <button
-                (click)="startEdit(config)"
-                class="btn btn-ghost btn-circle"
-                title="Edit"
-              >
-                <app-icon name="edit" />
-              </button>
-              <button
-                (click)="showDeleteConfirm(config)"
-                class="btn btn-ghost text-error btn-circle"
-                title="Delete"
-              >
-                <app-icon name="delete" />
-              </button>
-            </div>
-          </div>
-          <div class="mt-2 space-y-1 text-sm">
-            <p class="text-base-content/70">
-              Updated: {{ timeService.getRelativeTimeString(config.updatedAt) }}
-            </p>
-          </div>
-        </div>
+        <app-configuration-card
+          [config]="config"
+          (edit)="startEdit($event)"
+          (delete)="showDeleteConfirm($event)"
+        />
       }
     </div>
 
