@@ -8,6 +8,7 @@
         (change)="onConfigSelectEvent($event)"
         [value]="selectedConfigId()"
       >
+        <option disabled>Select Configuration</option>
         @for (config of safeConfigs(); track config.id) {
           <option [value]="config.id">{{ config.name }}</option>
         }

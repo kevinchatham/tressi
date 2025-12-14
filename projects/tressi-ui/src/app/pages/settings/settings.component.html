@@ -22,8 +22,16 @@
 
   <!-- Configuration List -->
   @if (!showForm()) {
+    <!-- Search Bar -->
+    <div class="mb-6 flex justify-start">
+      <app-search-bar
+        [query]="searchQuery()"
+        (queryChange)="onSearchQueryChange($event)"
+      />
+    </div>
+
     <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-      @for (config of safeConfigs(); track config.id) {
+      @for (config of filteredConfigs(); track config.id) {
         <app-configuration-card
           [config]="config"
           (edit)="startEdit($event)"

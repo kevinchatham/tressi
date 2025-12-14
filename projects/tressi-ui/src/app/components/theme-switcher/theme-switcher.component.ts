@@ -7,10 +7,11 @@ import {
 } from '@angular/core';
 
 import { AllThemes, Theme, ThemeService } from '../../services/theme.service';
+import { IconComponent } from '../icon/icon.component';
 
 @Component({
   selector: 'app-theme-switcher',
-  imports: [CommonModule],
+  imports: [CommonModule, IconComponent],
   templateUrl: './theme-switcher.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

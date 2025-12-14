@@ -1,0 +1,10 @@
+<label class="input input-bordered flex w-full items-center gap-2">
+  <app-icon name="search" class="opacity-50" />
+  <input
+    type="search"
+    placeholder="Search..."
+    class="grow"
+    [value]="query"
+    (input)="onInputChange($event)"
+  />
+</label>

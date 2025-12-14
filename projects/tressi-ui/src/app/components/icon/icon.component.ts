@@ -21,7 +21,8 @@ export type IconName =
   | 'keyboard_arrow_up'
   | 'keyboard_arrow_down'
   | 'bolt'
-  | 'home';
+  | 'home'
+  | 'search';
 
 @Component({
   selector: 'app-icon',

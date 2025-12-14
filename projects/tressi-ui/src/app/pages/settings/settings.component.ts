@@ -13,6 +13,7 @@ import { ConfigFormComponent } from '../../components/config-form/config-form.co
 import { ConfigurationCardComponent } from '../../components/configuration-card/configuration-card.component';
 import { HeaderComponent } from '../../components/header/header.component';
 import { IconComponent } from '../../components/icon/icon.component';
+import { SearchBarComponent } from '../../components/search-bar/search-bar.component';
 import { ConfigService } from '../../services/config.service';
 import { LogService } from '../../services/log.service';
 import {
@@ -29,6 +30,7 @@ import { TimeService } from '../../services/time.service';
     ConfigFormComponent,
     HeaderComponent,
     ConfigurationCardComponent,
+    SearchBarComponent,
   ],
   templateUrl: './settings.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -51,11 +53,38 @@ export class SettingsComponent implements OnInit {
   /** Signal to track if we're showing the form (for create or edit) */
   readonly showForm = signal<boolean>(false);
 
+  /** Signal for the current search query */
+  readonly searchQuery = signal<string>('');
+
   /** Computed signal that returns only the array of configs (or empty array) */
   readonly safeConfigs = computed(() => {
     const cfg = this.configs();
     if (!cfg || 'error' in cfg) return [];
     return cfg;
+  });
+
+  /** Computed signal that filters configs based on search query */
+  readonly filteredConfigs = computed(() => {
+    const query = this.searchQuery().toLowerCase().trim();
+    if (!query) return this.safeConfigs();
+
+    return this.safeConfigs().filter((config) => {
+      if ('error' in config) return false;
+
+      // Search in config name
+      if (config.name.toLowerCase().includes(query)) {
+        return true;
+      }
+
+      // Search in request URLs
+      if (config.config?.requests) {
+        return config.config.requests.some((request) =>
+          request.url?.toLowerCase().includes(query),
+        );
+      }
+
+      return false;
+    });
   });
 
   /** Computed signal to check if there are no configs to display */
@@ -177,5 +206,12 @@ export class SettingsComponent implements OnInit {
    */
   navigateToDashboard(): void {
     this.router.navigate(['/']);
+  }
+
+  /**
+   * Updates the search query when it changes from the search bar.
+   */
+  onSearchQueryChange(query: string): void {
+    this.searchQuery.set(query);
   }
 }
