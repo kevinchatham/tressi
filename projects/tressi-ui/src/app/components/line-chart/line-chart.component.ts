@@ -22,6 +22,7 @@ import {
   ApexYAxis,
 } from 'ng-apexcharts';
 
+import { ChartSyncService } from '../../services/chart-sync.service';
 import { ThemeService } from '../../services/theme.service';
 import { IconComponent } from '../icon/icon.component';
 
@@ -62,18 +63,44 @@ export class LineChartComponent {
   readonly height = input<number>(350);
   readonly enableToolbar = input<boolean>(true);
   readonly smoothCurve = input<boolean>(true);
+  readonly chartId = input<string>();
+  readonly syncGroup = input<string>();
 
   readonly chartClick = output<ChartEventData>();
   readonly chartMouseMove = output<ChartEventData>();
 
   private readonly themeService = inject(ThemeService);
+  private readonly syncService = inject(ChartSyncService);
 
   public readonly chartOptions = computed(() => this.createChartOptions());
+  public readonly isMaster = computed(
+    () => this.chartId() === this.syncService.lastInteractedChartId(),
+  );
 
   constructor() {
     effect(() => {
       this.themeService.getChartColors();
       this.updateChart();
+    });
+
+    effect(() => {
+      const chartId = this.chartId();
+      if (chartId) {
+        this.syncService.registerChart(chartId);
+      }
+    });
+
+    effect(() => {
+      const syncGroup = this.syncGroup();
+      const chartId = this.chartId();
+
+      if (
+        syncGroup &&
+        chartId &&
+        chartId !== this.syncService.lastInteractedChartId()
+      ) {
+        this.syncToMasterState();
+      }
     });
   }
 
@@ -146,21 +173,24 @@ export class LineChartComponent {
           },
           autoSelected: 'zoom' as const,
         },
-        // animations: {
-        //   enabled: true,
-        //   speed: 100,
-        //   dynamicAnimation: {
-        //     speed: 100,
-        //   },
-        // },
         background: themeColors.background,
         foreColor: themeColors.text,
         events: {
           click: (event, chartContext, config): void => {
+            this.handleChartClick();
             this.chartClick.emit({ event, chartContext, config });
           },
           mouseMove: (event, chartContext, config): void => {
             this.chartMouseMove.emit({ event, chartContext, config });
+          },
+          zoomed: (_chartContext, { xaxis }): void => {
+            this.handleZoomOrPan(xaxis);
+          },
+          selection: (_chartContext, { xaxis }): void => {
+            this.handleSelection(xaxis);
+          },
+          scrolled: (_chartContext, { xaxis }): void => {
+            this.handleZoomOrPan(xaxis);
           },
         },
       },
@@ -273,6 +303,76 @@ export class LineChartComponent {
         },
       },
     };
+  }
+
+  private handleChartClick(): void {
+    const chartId = this.chartId();
+    const syncGroup = this.syncGroup();
+
+    if (chartId && syncGroup) {
+      this.syncService.setAsMaster(chartId, syncGroup);
+    }
+  }
+
+  private handleZoomOrPan(xaxis: { min: number; max: number }): void {
+    const chartId = this.chartId();
+    const syncGroup = this.syncGroup();
+
+    if (chartId && syncGroup) {
+      this.syncService.setAsMaster(chartId, syncGroup);
+      this.syncService.broadcastState({
+        xAxisMin: xaxis.min,
+        xAxisMax: xaxis.max,
+        selectionStart: null,
+        selectionEnd: null,
+      });
+    }
+  }
+
+  private handleSelection(xaxis: { min: number; max: number }): void {
+    const chartId = this.chartId();
+    const syncGroup = this.syncGroup();
+
+    if (chartId && syncGroup) {
+      this.syncService.setAsMaster(chartId, syncGroup);
+      this.syncService.broadcastState({
+        selectionStart: xaxis.min,
+        selectionEnd: xaxis.max,
+        xAxisMin: null,
+        xAxisMax: null,
+      });
+    }
+  }
+
+  private syncToMasterState(): void {
+    const chart = this.chart();
+    if (!chart) return;
+
+    const state = this.syncService.getState();
+
+    if (state.xAxisMin !== null && state.xAxisMax !== null) {
+      chart.updateOptions(
+        {
+          xaxis: {
+            min: state.xAxisMin,
+            max: state.xAxisMax,
+          },
+        },
+        false,
+        false,
+      );
+    } else if (state.selectionStart !== null && state.selectionEnd !== null) {
+      chart.updateOptions(
+        {
+          xaxis: {
+            min: state.selectionStart,
+            max: state.selectionEnd,
+          },
+        },
+        false,
+        false,
+      );
+    }
   }
 
   private updateChart(): void {

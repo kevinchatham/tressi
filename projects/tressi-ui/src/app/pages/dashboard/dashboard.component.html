@@ -57,6 +57,8 @@
       [labels]="timeLabels()"
       [height]="350"
       [smoothCurve]="true"
+      [chartId]="'throughput-chart'"
+      [syncGroup]="'dashboard-main'"
     />
   </div>
   <div class="ring-neutral mx-auto mb-8 rounded p-4 ring-1">
@@ -72,6 +74,8 @@
       [labels]="timeLabels()"
       [height]="350"
       [smoothCurve]="false"
+      [chartId]="'latency-chart'"
+      [syncGroup]="'dashboard-main'"
     />
   </div>
   <div class="ring-neutral mx-auto rounded p-4 ring-1">
@@ -87,6 +91,8 @@
       [labels]="timeLabels()"
       [height]="350"
       [smoothCurve]="true"
+      [chartId]="'error-rate-chart'"
+      [syncGroup]="'dashboard-main'"
     />
   </div>
 </div>

@@ -13,6 +13,7 @@ import { AggregatedMetrics } from 'tressi-common/metrics';
 import { HeaderComponent } from '../../components/header/header.component';
 import { IconComponent } from '../../components/icon/icon.component';
 import { LineChartComponent } from '../../components/line-chart/line-chart.component';
+import { ChartSyncService } from '../../services/chart-sync.service';
 import { ConfigService } from '../../services/config.service';
 import { LocalStorageService } from '../../services/local-storage.service';
 import { LogService } from '../../services/log.service';
@@ -28,6 +29,7 @@ import {
   imports: [LineChartComponent, HeaderComponent, IconComponent, SlicePipe],
   templateUrl: './dashboard.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [ChartSyncService],
 })
 export class DashboardComponent implements OnInit {
   /** Service injection */

@@ -79,3 +79,38 @@
   font-size: 2em;
   transition: all 0.2s ease !important;
 }
+
+/* ! Master Chart Indicator ! */
+:host ::ng-deep .chart-master {
+  position: relative;
+}
+
+:host ::ng-deep .chart-master::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -6px;
+  bottom: 0;
+  width: 4px;
+  background: var(--color-neutral);
+  border-radius: 0 2px 2px 0;
+  opacity: 70%;
+  z-index: 1;
+}
+
+:host ::ng-deep .chart-master .apexcharts-title-text {
+  position: relative;
+}
+
+:host ::ng-deep .chart-master .apexcharts-title-text::after {
+  content: 'Master';
+  position: absolute;
+  top: -2px;
+  right: -60px;
+  font-size: 10px;
+  color: var(--color-primary);
+  background: var(--color-base-200);
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-weight: 600;
+}
