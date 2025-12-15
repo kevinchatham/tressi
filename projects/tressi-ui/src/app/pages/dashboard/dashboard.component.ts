@@ -1,3 +1,4 @@
+import { SlicePipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -24,7 +25,7 @@ import {
 
 @Component({
   selector: 'app-dashboard',
-  imports: [LineChartComponent, HeaderComponent, IconComponent],
+  imports: [LineChartComponent, HeaderComponent, IconComponent, SlicePipe],
   templateUrl: './dashboard.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -49,32 +50,61 @@ export class DashboardComponent implements OnInit {
   /** Reactive signal for loading state. */
   readonly isLoading = signal<boolean>(true);
 
+  /** Reactive signal holding the current view mode ('global' or endpoint URL). */
+  readonly currentViewMode = signal<string>('global');
+
+  /** Computed signal that returns available endpoints from latest metrics. */
+  readonly availableEndpoints = computed<string[]>(() => {
+    const latestMetrics =
+      this.metricsHistory()[this.metricsHistory().length - 1];
+    if (!latestMetrics) return [];
+    return Object.keys(latestMetrics.endpoints || {});
+  });
+
   /**
    * Computed array of requests per second values extracted from the metric history.
    *
    * The returned array is used by LineChartComponent to render the throughput chart.
    */
-  public readonly throughputData = computed<number[]>(() =>
-    this.metricsHistory().map((m) => m.global.requestsPerSecond),
-  );
+  public readonly throughputData = computed<number[]>(() => {
+    const viewMode = this.currentViewMode();
+    return this.metricsHistory().map((m) => {
+      if (viewMode === 'global') {
+        return m.global.requestsPerSecond;
+      }
+      return m.endpoints[viewMode]?.requestsPerSecond ?? 0;
+    });
+  });
 
   /**
    * Computed array of error rate percentages extracted from the metric history.
    *
    * The returned array is used by LineChartComponent to render the error‑rate chart.
    */
-  public readonly errorRateData = computed<number[]>(() =>
-    this.metricsHistory().map((m) => m.global.errorRate),
-  );
+  public readonly errorRateData = computed<number[]>(() => {
+    const viewMode = this.currentViewMode();
+    return this.metricsHistory().map((m) => {
+      if (viewMode === 'global') {
+        return m.global.errorRate;
+      }
+      return m.endpoints[viewMode]?.errorRate ?? 0;
+    });
+  });
 
   /**
    * Computed array of average latency values extracted from the metric history.
    *
    * The returned array is used by LineChartComponent to render the latency chart.
    */
-  public readonly latencyData = computed<number[]>(() =>
-    this.metricsHistory().map((m) => m.global.averageLatency),
-  );
+  public readonly latencyData = computed<number[]>(() => {
+    const viewMode = this.currentViewMode();
+    return this.metricsHistory().map((m) => {
+      if (viewMode === 'global') {
+        return m.global.averageLatency;
+      }
+      return m.endpoints[viewMode]?.averageLatency ?? 0;
+    });
+  });
 
   /**
    * Computed timestamps (in milliseconds) for each metric entry, relative to now.
@@ -191,6 +221,14 @@ export class DashboardComponent implements OnInit {
     } else {
       this.selectedConfig.set(null);
     }
+  }
+
+  /**
+   * Handles view mode selection change.
+   */
+  onViewModeChange(event: Event): void {
+    const target = event.target as HTMLSelectElement;
+    this.currentViewMode.set(target.value);
   }
 
   /**

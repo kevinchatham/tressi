@@ -30,9 +30,27 @@
       <app-icon name="settings" />
     </button>
   </app-header>
+  <!-- View Mode Selector -->
+  <div class="form-control mb-4 w-fit max-w-full">
+    <select
+      class="select select-bordered w-auto min-w-0"
+      [disabled]="isLoading()"
+      (change)="onViewModeChange($event)"
+      [value]="currentViewMode()"
+    >
+      <option value="global">Global View</option>
+      @for (endpoint of availableEndpoints(); track endpoint) {
+        <option [value]="endpoint">{{ endpoint | slice: 0 : 50 }}</option>
+      }
+    </select>
+  </div>
   <div class="ring-neutral mx-auto mb-8 rounded p-4 ring-1">
     <app-line-chart
-      [title]="'Global Throughput'"
+      [title]="
+        currentViewMode() === 'global'
+          ? 'Global Throughput'
+          : 'Throughput - ' + (currentViewMode() | slice: 0 : 50)
+      "
       [yAxisLabel]="'Rate'"
       [seriesName]="'Requests/Second'"
       [data]="throughputData()"
@@ -43,7 +61,11 @@
   </div>
   <div class="ring-neutral mx-auto mb-8 rounded p-4 ring-1">
     <app-line-chart
-      [title]="'Latency (ms)'"
+      [title]="
+        currentViewMode() === 'global'
+          ? 'Latency (ms)'
+          : 'Latency - ' + (currentViewMode() | slice: 0 : 50)
+      "
       [yAxisLabel]="'Milliseconds'"
       [seriesName]="'Avg Latency'"
       [data]="latencyData()"
@@ -54,7 +76,11 @@
   </div>
   <div class="ring-neutral mx-auto rounded p-4 ring-1">
     <app-line-chart
-      [title]="'Error Rate'"
+      [title]="
+        currentViewMode() === 'global'
+          ? 'Error Rate'
+          : 'Error Rate - ' + (currentViewMode() | slice: 0 : 50)
+      "
       [yAxisLabel]="'%'"
       [seriesName]="'Errors/Second'"
       [data]="errorRateData()"

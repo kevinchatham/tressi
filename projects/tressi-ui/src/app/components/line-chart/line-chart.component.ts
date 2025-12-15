@@ -235,7 +235,7 @@ export class LineChartComponent {
             colors: themeColors.text,
           },
           formatter: (value: number): string => {
-            return humanNumber(value);
+            return humanNumber(Math.round(value));
           },
         },
         axisBorder: {
