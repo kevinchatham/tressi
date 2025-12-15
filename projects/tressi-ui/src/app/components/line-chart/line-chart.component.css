@@ -94,7 +94,7 @@
   width: 4px;
   background: var(--color-neutral);
   border-radius: 0 2px 2px 0;
-  opacity: 70%;
+  opacity: 0.3;
   z-index: 1;
 }
 

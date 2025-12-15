@@ -135,6 +135,9 @@ export class DashboardComponent implements OnInit {
     return config.id;
   });
 
+  /** Computed signal that returns true when there are metrics to display */
+  readonly hasMetrics = computed(() => this.metricsHistory().length > 0);
+
   ngOnInit(): void {
     this.loadConfigurations();
     this.sseService

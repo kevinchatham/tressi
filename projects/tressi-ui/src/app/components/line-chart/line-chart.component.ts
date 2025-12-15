@@ -209,6 +209,7 @@ export class LineChartComponent {
           color: themeColors.text,
           fontSize: '16px',
           fontWeight: 'bold',
+          fontFamily: 'Open Sans, sans-serif',
         },
       },
       grid: {
@@ -225,6 +226,8 @@ export class LineChartComponent {
           show: data.length > 1,
           style: {
             colors: themeColors.text,
+            fontFamily: 'Roboto Mono, monospace',
+            fontSize: '11px',
           },
           datetimeFormatter: {
             year: 'yyyy',
@@ -258,11 +261,14 @@ export class LineChartComponent {
             color: themeColors.text,
             fontSize: '12px',
             fontWeight: 'normal',
+            fontFamily: 'Open Sans, sans-serif',
           },
         },
         labels: {
           style: {
             colors: themeColors.text,
+            fontFamily: 'Roboto Mono, monospace',
+            fontSize: '11px',
           },
           formatter: (value: number): string => {
             return humanNumber(Math.round(value));
@@ -279,6 +285,7 @@ export class LineChartComponent {
         theme: 'false',
         style: {
           fontSize: '12px',
+          fontFamily: 'Roboto Mono, monospace',
         },
         fillSeriesColor: false,
       },
