@@ -45,15 +45,23 @@ export class ChartSyncService {
     }));
   }
 
+  private batchMs = 16; // 60 frames per second
+  private lastUpdate = 0;
+
   broadcastState(
     updates: Partial<
       Omit<ChartSyncState, 'lastInteractedChartId' | 'syncGroup'>
     >,
   ): void {
-    this.state.update((current) => ({
-      ...current,
-      ...updates,
-    }));
+    const now = performance.now();
+    const span = now - this.lastUpdate;
+    if (span > this.batchMs) {
+      this.state.update((current) => ({
+        ...current,
+        ...updates,
+      }));
+      this.lastUpdate = performance.now();
+    }
   }
 
   getState(): ChartSyncState {

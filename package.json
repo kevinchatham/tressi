@@ -58,6 +58,8 @@
     "@codemirror/language-data": "^6.5.2",
     "@hono/node-server": "^1.19.6",
     "@hono/standard-validator": "^0.2.0",
+    "@signaldb/core": "^1.7.1",
+    "@signaldb/fs": "^1.0.1",
     "@tailwindcss/postcss": "^4.1.17",
     "chalk": "^5.4.1",
     "cli-table3": "^0.6.5",

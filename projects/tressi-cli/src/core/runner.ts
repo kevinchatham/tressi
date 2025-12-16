@@ -2,7 +2,7 @@ import EventEmitter from 'eventemitter3';
 import os from 'os';
 import { performance } from 'perf_hooks';
 import type { TressiConfig } from 'tressi-common/config';
-import type { AggregatedMetrics } from 'tressi-common/metrics';
+import type { AggregatedMetric } from 'tressi-common/metrics';
 
 import { IRunnerEvents } from '../types/workers/interfaces';
 import { WorkerPoolManager } from '../workers/worker-pool-manager';
@@ -25,7 +25,7 @@ export class Runner extends EventEmitter<IRunnerEvents> {
     this.config = config;
   }
 
-  getAggregatedMetrics(): AggregatedMetrics | undefined {
+  getAggregatedMetrics(): AggregatedMetric | undefined {
     return this.workerPool?.getAggregatedResults();
   }
 

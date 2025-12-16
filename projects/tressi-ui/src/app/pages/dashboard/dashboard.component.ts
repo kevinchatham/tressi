@@ -8,7 +8,7 @@ import {
   signal,
 } from '@angular/core';
 import { Router } from '@angular/router';
-import { AggregatedMetrics } from 'tressi-common/metrics';
+import { AggregatedMetric } from 'tressi-common/metrics';
 
 import { HeaderComponent } from '../../components/header/header.component';
 import { IconComponent } from '../../components/icon/icon.component';
@@ -41,7 +41,7 @@ export class DashboardComponent implements OnInit {
   private readonly localStorageService = inject(LocalStorageService);
 
   /** Reactive signal holding the history of aggregated metrics. */
-  private readonly metricsHistory = signal<AggregatedMetrics[]>([]);
+  private readonly metricsHistory = signal<AggregatedMetric[]>([]);
 
   /** Reactive signal holding available configurations. */
   readonly configs = signal<GetAllConfigsResponse>([]);
@@ -288,7 +288,7 @@ export class DashboardComponent implements OnInit {
   /**
    * Processes a new set of aggregated metrics and updates the chart data streams.
    *
-   * @param metrics - The latest {@link AggregatedMetrics} received from the load test.
+   * @param metrics - The latest {@link AggregatedMetric} received from the load test.
    *
    * @remarks
    * 1. Validates that `metrics` is defined (runtime guard).
@@ -297,7 +297,7 @@ export class DashboardComponent implements OnInit {
    *
    * The method does not return a value; its side effects are reflected through reactive signals.
    */
-  private updateCharts(metrics: AggregatedMetrics): void {
+  private updateCharts(metrics: AggregatedMetric): void {
     this.metricsHistory.update((history) => [...history, metrics]);
   }
 }

@@ -1,6 +1,6 @@
 import { cpus } from 'os';
 import { TressiConfig, TressiRequestConfig } from 'tressi-common/config';
-import type { AggregatedMetrics } from 'tressi-common/metrics';
+import type { AggregatedMetric } from 'tressi-common/metrics';
 import { Worker } from 'worker_threads';
 
 import { WorkerState } from '../types/workers/types';
@@ -280,7 +280,7 @@ export class WorkerPoolManager {
    * It combines histogram data, counters, and network metrics from all workers
    * into a single comprehensive metrics object.
    */
-  getAggregatedResults(): AggregatedMetrics {
+  getAggregatedResults(): AggregatedMetric {
     const endpoints = this.config.requests.map((req) => req.url);
     return this.metricsAggregator.getResults(this.workers.length, endpoints);
   }

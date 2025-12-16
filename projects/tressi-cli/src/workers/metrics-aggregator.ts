@@ -1,5 +1,5 @@
 import { cpus, loadavg } from 'os';
-import type { AggregatedMetrics, EndpointMetrics } from 'tressi-common/metrics';
+import type { AggregatedMetric, EndpointMetric } from 'tressi-common/metrics';
 
 import { globalEventEmitter } from '../events/global-event-emitter';
 import { terminal } from '../tui/terminal';
@@ -94,7 +94,7 @@ export class MetricsAggregator implements IMetricsAggregator {
    * @param endpoints Array of endpoint URLs
    * @returns Aggregated metrics
    */
-  getResults(workersCount: number, endpoints: string[]): AggregatedMetrics {
+  getResults(workersCount: number, endpoints: string[]): AggregatedMetric {
     let totalSuccess = 0;
     let totalFailure = 0;
     let totalRequests = 0;
@@ -182,7 +182,7 @@ export class MetricsAggregator implements IMetricsAggregator {
     });
 
     // Build per-endpoint metrics
-    const endpointMetrics: AggregatedMetrics['endpoints'] = {};
+    const endpointMetrics: AggregatedMetric['endpoints'] = {};
     endpoints.forEach((url) => {
       const histograms = endpointHistograms[url];
       const statusCounts = endpointStatusCounts[url];
@@ -275,7 +275,7 @@ export class MetricsAggregator implements IMetricsAggregator {
           (1024 * 1024)
         : 0;
 
-    const globalMetrics: EndpointMetrics = {
+    const globalMetrics: EndpointMetric = {
       totalRequests,
       successfulRequests: totalSuccess,
       failedRequests: totalFailure,
@@ -294,10 +294,9 @@ export class MetricsAggregator implements IMetricsAggregator {
     };
 
     return {
-      threads: workersCount,
+      epoch: Date.now(),
       cpuUsagePercent,
       memoryUsageMB,
-      duration,
 
       global: globalMetrics,
       endpoints: endpointMetrics,
