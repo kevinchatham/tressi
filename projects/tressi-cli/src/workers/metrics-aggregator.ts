@@ -34,7 +34,7 @@ export class MetricsAggregator implements IMetricsAggregator {
    * Start polling for metrics updates
    * @param intervalMs Polling interval in milliseconds
    */
-  startPolling(intervalMs: number = 250): void {
+  startPolling(intervalMs: number = 1000): void {
     if (this.pollingInterval) {
       clearInterval(this.pollingInterval);
       this.pollingInterval = null;

@@ -77,6 +77,9 @@ export class LineChartComponent {
     () => this.chartId() === this.syncService.lastInteractedChartId(),
   );
 
+  // State tracking for efficient updates
+  private lastDataLength = 0;
+
   constructor() {
     effect(() => {
       this.themeService.getChartColors();
@@ -390,7 +393,6 @@ export class LineChartComponent {
     const yAxisLabel = this.yAxisLabel();
 
     const chart = this.chart();
-
     if (!chart) return;
 
     // Convert data and labels to proper format for datetime chart
@@ -399,16 +401,37 @@ export class LineChartComponent {
       y: value,
     }));
 
-    chart.updateSeries(
-      [
-        {
-          name: seriesName,
-          data: seriesData,
-        },
-      ],
-      true,
-    );
+    // Determine if we should use incremental update
+    const shouldUseIncremental = this.shouldUseIncrementalUpdate(data);
 
+    if (shouldUseIncremental && this.lastDataLength > 0) {
+      // Use appendData for incremental updates
+      const newDataPoints = this.getIncrementalDataPoints(seriesData);
+      if (newDataPoints.length > 0) {
+        chart.appendData([
+          {
+            name: seriesName,
+            data: newDataPoints,
+          },
+        ]);
+      }
+    } else {
+      // Use full update for initial load or major data changes
+      chart.updateSeries(
+        [
+          {
+            name: seriesName,
+            data: seriesData,
+          },
+        ],
+        data.length <= 10, // Animate only for small datasets
+      );
+    }
+
+    // Update tracking state
+    this.lastDataLength = data.length;
+
+    // Always update options (lightweight operation)
     chart.updateOptions(
       {
         title: {
@@ -423,5 +446,38 @@ export class LineChartComponent {
       false,
       false,
     );
+  }
+
+  private shouldUseIncrementalUpdate(newData: number[]): boolean {
+    // Use incremental update if:
+    // 1. We have existing data
+    // 2. Data is being appended (not replaced)
+    // 3. The change is small and incremental
+
+    if (this.lastDataLength === 0) {
+      return false; // First load, use full update
+    }
+
+    if (newData.length < this.lastDataLength) {
+      return false; // Data reset, use full update
+    }
+
+    if (newData.length - this.lastDataLength > 20) {
+      return false; // Large batch, use full update
+    }
+
+    return newData.length > this.lastDataLength;
+  }
+
+  private getIncrementalDataPoints(
+    seriesData: { x: number; y: number }[],
+  ): { x: number; y: number }[] {
+    // Return only the new data points since last update
+    const expectedLength = this.lastDataLength;
+    if (seriesData.length <= expectedLength) {
+      return [];
+    }
+
+    return seriesData.slice(expectedLength);
   }
 }

@@ -6,6 +6,7 @@ import {
 } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 
+import { ThemeService } from './services/theme.service';
 import { TitleService } from './services/title.service';
 
 @Component({
@@ -16,8 +17,10 @@ import { TitleService } from './services/title.service';
 })
 export class AppComponent implements OnInit {
   private titleService = inject(TitleService);
+  private themeService = inject(ThemeService);
 
   ngOnInit(): void {
     this.titleService.resetTitle();
+    this.themeService.loadInitialTheme();
   }
 }

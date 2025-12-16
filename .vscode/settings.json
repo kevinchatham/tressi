@@ -1,15 +1,21 @@
 {
   "cSpell.words": [
     "Apexcharts",
+    "caramellatte",
     "ISSE",
     "lezer",
     "linestep",
+    "lofi",
+    "nord",
+    "synthwave",
     "titlecase",
     "Tressi",
     "xaxis",
     "xcrosshairs",
     "yaxis",
-    "ycrosshairs"
+    "ycrosshairs",
+    "zoomin",
+    "zoomout"
   ],
   "typescript.tsserver.experimental.enableProjectDiagnostics": true,
   "typescript.validate.enable": true,
