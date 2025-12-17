@@ -15,6 +15,7 @@ import { IconComponent } from '../../components/icon/icon.component';
 import { LineChartComponent } from '../../components/line-chart/line-chart.component';
 import { ChartSyncService } from '../../services/chart-sync.service';
 import { ConfigService } from '../../services/config.service';
+import { LoadingService } from '../../services/loading.service';
 import { LocalStorageService } from '../../services/local-storage.service';
 import { LogService } from '../../services/log.service';
 import { SSEService } from '../../services/metrics.service';
@@ -35,6 +36,7 @@ export class DashboardComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly rpc = inject(RPCService);
   private readonly localStorageService = inject(LocalStorageService);
+  private readonly loadingService = inject(LoadingService);
 
   /** Reactive signal holding the history of aggregated metrics. */
   private readonly metricsHistory = signal<AggregatedMetric[]>([]);
@@ -44,9 +46,6 @@ export class DashboardComponent implements OnInit {
 
   /** Reactive signal holding the selected configuration. */
   readonly selectedConfig = signal<ConfigDocument | null>(null);
-
-  /** Reactive signal for loading state. */
-  readonly isLoading = signal<boolean>(true);
 
   /** Reactive signal holding the current view mode ('global' or endpoint URL). */
   readonly currentViewMode = signal<string>('global');
@@ -135,6 +134,7 @@ export class DashboardComponent implements OnInit {
   readonly hasMetrics = computed(() => this.metricsHistory().length > 0);
 
   ngOnInit(): void {
+    this.loadingService.registerPage('dashboard');
     this.loadConfigurations();
     this.sseService
       .getMetricsStream()
@@ -145,7 +145,7 @@ export class DashboardComponent implements OnInit {
    * Loads all available configurations from the server.
    */
   private async loadConfigurations(): Promise<void> {
-    this.isLoading.set(true);
+    this.loadingService.setPageLoading('dashboard', true);
 
     const configs = await this.configService.getAll();
 
@@ -153,6 +153,7 @@ export class DashboardComponent implements OnInit {
 
     if (configs.length === 0) {
       this.router.navigate(['welcome']);
+      this.loadingService.setPageLoading('dashboard', false);
       return;
     }
 
@@ -177,7 +178,7 @@ export class DashboardComponent implements OnInit {
       this.onConfigSelect(firstConfig.id);
     }
 
-    this.isLoading.set(false);
+    this.loadingService.setPageLoading('dashboard', false);
   }
 
   /**

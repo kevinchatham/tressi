@@ -4,7 +4,6 @@
     <div class="form-control">
       <select
         class="select select-bordered"
-        [disabled]="isLoading()"
         (change)="onConfigSelectEvent($event)"
         [value]="selectedConfigId()"
       >
@@ -35,7 +34,6 @@
     <div class="form-control mb-4 w-fit max-w-full">
       <select
         class="select select-bordered w-auto min-w-0"
-        [disabled]="isLoading()"
         (change)="onViewModeChange($event)"
         [value]="currentViewMode()"
       >

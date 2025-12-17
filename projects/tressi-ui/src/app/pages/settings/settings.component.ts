@@ -15,6 +15,7 @@ import { HeaderComponent } from '../../components/header/header.component';
 import { IconComponent } from '../../components/icon/icon.component';
 import { SearchBarComponent } from '../../components/search-bar/search-bar.component';
 import { ConfigService } from '../../services/config.service';
+import { LoadingService } from '../../services/loading.service';
 import {
   ConfigDocument,
   ModifyConfigRequest,
@@ -39,6 +40,7 @@ export class SettingsComponent implements OnInit {
   private readonly configService = inject(ConfigService);
   private readonly router = inject(Router);
   readonly timeService = inject(TimeService);
+  private readonly loadingService = inject(LoadingService);
 
   /** Reactive signals for state management */
   readonly configs = signal<ConfigDocument[]>([]);
@@ -77,6 +79,7 @@ export class SettingsComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    this.loadingService.registerPage('settings');
     this.loadConfigurations();
   }
 
@@ -84,8 +87,13 @@ export class SettingsComponent implements OnInit {
    * Loads all available configurations from the server.
    */
   private async loadConfigurations(): Promise<void> {
-    const configs = await this.configService.getAll();
-    this.configs.set(configs);
+    this.loadingService.setPageLoading('settings', true);
+    try {
+      const configs = await this.configService.getAll();
+      this.configs.set(configs);
+    } finally {
+      this.loadingService.setPageLoading('settings', false);
+    }
   }
 
   /**
@@ -126,35 +134,48 @@ export class SettingsComponent implements OnInit {
   async deleteConfig(): Promise<void> {
     const config = this.configToDelete();
     if (!config) return;
-    await this.configService.deleteConfig(config.id);
-    this.showDeleteModal.set(false);
-    this.configToDelete.set(null);
 
-    // Update configs directly instead of reloading
-    this.configs.update((configs) => configs.filter((c) => c.id !== config.id));
+    this.loadingService.setPageLoading('settings', true);
+    try {
+      await this.configService.deleteConfig(config.id);
+      this.showDeleteModal.set(false);
+      this.configToDelete.set(null);
+
+      // Update configs directly instead of reloading
+      this.configs.update((configs) =>
+        configs.filter((c) => c.id !== config.id),
+      );
+    } finally {
+      this.loadingService.setPageLoading('settings', false);
+    }
   }
 
   /**
    * Handles configuration saved event from config-form component.
    */
   async onConfigSaved(event: ModifyConfigRequest): Promise<void> {
-    const savedConfig = await this.configService.saveConfig(event);
+    this.loadingService.setPageLoading('settings', true);
+    try {
+      const savedConfig = await this.configService.saveConfig(event);
 
-    // Update configs directly instead of reloading
-    this.configs.update((configs) => {
-      const existingIndex = configs.findIndex((c) => c.id === savedConfig.id);
-      if (existingIndex >= 0) {
-        // Update existing config
-        const updatedConfigs = [...configs];
-        updatedConfigs[existingIndex] = savedConfig;
-        return updatedConfigs;
-      } else {
-        // Add new config
-        return [...configs, savedConfig];
-      }
-    });
+      // Update configs directly instead of reloading
+      this.configs.update((configs) => {
+        const existingIndex = configs.findIndex((c) => c.id === savedConfig.id);
+        if (existingIndex >= 0) {
+          // Update existing config
+          const updatedConfigs = [...configs];
+          updatedConfigs[existingIndex] = savedConfig;
+          return updatedConfigs;
+        } else {
+          // Add new config
+          return [...configs, savedConfig];
+        }
+      });
 
-    this.cancelEdit();
+      this.cancelEdit();
+    } finally {
+      this.loadingService.setPageLoading('settings', false);
+    }
   }
 
   /**
