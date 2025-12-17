@@ -45,9 +45,17 @@ export class TressiServer {
   async stop(): Promise<void> {
     return new Promise((resolve) => {
       if (this.server) {
+        // Force close all SSE connections first
+        this.sseManager.forceClose();
+
+        // Set a timeout to force exit if graceful shutdown takes too long
+        const timeout = setTimeout(() => {
+          process.exit(0);
+        }, 500);
+
         this.server.close(() => {
+          clearTimeout(timeout);
           this.sseManager.cleanup();
-          terminal.print('\n🛑 Tressi server stopped');
           resolve();
         });
       } else {

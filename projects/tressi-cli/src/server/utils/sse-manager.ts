@@ -95,11 +95,30 @@ export class SSEManager implements ISSEClientManager {
    * resource leaks and ensure clean termination.
    */
   cleanup(): void {
+    // Send a close message to all clients before closing
+    for (const client of this.clients) {
+      try {
+        client.enqueue('event: close\ndata: Server shutting down\n\n');
+        client.close();
+      } catch {
+        // Ignore errors during cleanup
+      }
+    }
+    this.clients.clear();
+  }
+
+  /**
+   * Forcefully terminates all SSE client connections.
+   *
+   * @remarks
+   * Used for immediate shutdown when graceful cleanup fails.
+   */
+  forceClose(): void {
     for (const client of this.clients) {
       try {
         client.close();
       } catch {
-        // Ignore errors during cleanup
+        // Ignore errors during force close
       }
     }
     this.clients.clear();

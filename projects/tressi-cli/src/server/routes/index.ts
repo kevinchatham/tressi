@@ -6,7 +6,7 @@ import { globalEventEmitter } from '../../events/global-event-emitter';
 import { ISSEClientManager } from '../../types/workers/interfaces';
 import createBrowserApp from './browser';
 import configs from './configs';
-import health from './health';
+import createHealthApp from './health';
 import loadTest from './load-test';
 import createMetricsApp from './metrics';
 
@@ -34,7 +34,7 @@ export function createApp(sseManager: ISSEClientManager, port: number) {
       return middleware(c, next);
     })
     .route('/api/config', configs)
-    .route('/api/health', health)
+    .route('/api/health', createHealthApp(sseManager))
     .route('/api/test', loadTest)
     .route('/api/metrics', createMetricsApp(sseManager))
     .route('/', createBrowserApp());
