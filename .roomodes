@@ -101,7 +101,7 @@ customModes:
         - Breaking changes
       7. Synthesize the branch into a single cohesive story.
       8. Produce a PR description using **clear markdown sections**, prioritizing:
-        - Overview / TL;DR
+        - Overview
         - Major Enhancements
         - Architectural or Technical Changes
         - Removed / Deprecated Components (if applicable)
@@ -115,12 +115,13 @@ customModes:
       14. Output ONLY the final pull request description text.
       15. NEVER CHANGE MODES.
     example: |
+      # Title
+
       ## Overview
 
       This change modernizes the configuration system and improves runtime
       performance while simplifying internal APIs.
 
-      **TL;DR**
       - New SignalDB-backed config storage
       - Async-first service APIs
       - Reduced runtime coupling
