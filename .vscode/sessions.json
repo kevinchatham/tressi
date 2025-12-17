@@ -11,7 +11,7 @@
         "autoExecuteCommands": true,
         "icon": "browser",
         "color": "terminal.ansiMagenta",
-        "commands": ["npm run serve -w projects/tressi-ui"]
+        "commands": ["npm run ui:serve"]
       },
       {
         "name": "serve-cli",

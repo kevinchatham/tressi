@@ -1,0 +1,53 @@
+<div class="space-y-6">
+  <!-- Global Headers Section -->
+  <div class="bg-base-100 ring-neutral rounded p-6 ring-1">
+    <h2 class="mb-4 flex items-center gap-2 text-lg font-semibold">
+      <app-icon name="notes" class="h-5 w-5" />
+      Global Headers
+    </h2>
+
+    <div class="space-y-2">
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">Global Headers (JSON)</legend>
+        <app-json-textarea
+          [(value)]="model().config.options.headers"
+          [rows]="3"
+          (valueChange)="onJsonTextareaValueChange()"
+          placeholder='{"User-Agent": "Tressi/1.0.0", "Accept": "application/json"}'
+        />
+        <p class="label text-wrap">
+          Request-level headers will override these if the same header name is
+          used.
+        </p>
+        @if (
+          form().config.options.headers().touched() &&
+          form().config.options.headers().invalid()
+        ) {
+          <p class="label text-error">
+            @for (
+              error of form().config.options.headers().errors();
+              track error
+            ) {
+              {{ error.message }}
+            }
+          </p>
+        }
+      </fieldset>
+    </div>
+  </div>
+
+  <!-- Worker Early Exit Section -->
+  <div class="bg-base-100 ring-neutral rounded p-6 ring-1">
+    <h2 class="mb-4 flex items-center gap-2 text-lg font-semibold">
+      <app-icon name="warning" class="h-5 w-5" />
+      Worker Early Exit Configuration
+    </h2>
+
+    <app-early-exit-config
+      [form]="form().config.options.workerEarlyExit"
+      [model]="model().config.options.workerEarlyExit"
+      (addExitStatusCode)="addExitStatusCode.emit()"
+      (removeExitStatusCode)="removeExitStatusCode.emit($event)"
+    />
+  </div>
+</div>

@@ -12,7 +12,17 @@ export type IconName =
   | 'settings'
   | 'delete'
   | 'edit'
-  | 'add';
+  | 'add'
+  | 'notes'
+  | 'send'
+  | 'info'
+  | 'warning'
+  | 'rocket'
+  | 'keyboard_arrow_up'
+  | 'keyboard_arrow_down'
+  | 'bolt'
+  | 'home'
+  | 'search';
 
 @Component({
   selector: 'app-icon',

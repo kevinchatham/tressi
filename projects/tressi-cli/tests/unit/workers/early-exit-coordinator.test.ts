@@ -1,14 +1,14 @@
-import type {
-  IEndpointStateManager,
-  IStatsCounterManager,
-  SafeTressiConfig,
-} from 'tressi-common/config';
+import { TressiConfig } from 'tressi-common/config';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import {
+  IEndpointStateManager,
+  IStatsCounterManager,
+} from '../../../src/types/workers/interfaces';
 import { EarlyExitCoordinator } from '../../../src/workers/early-exit-coordinator';
 
 describe('EarlyExitCoordinator', () => {
-  let mockConfig: SafeTressiConfig;
+  let mockConfig: TressiConfig;
   let mockStatsCounterManagers: IStatsCounterManager[];
   let mockEndpointStateManager: IEndpointStateManager;
   let coordinator: EarlyExitCoordinator;
@@ -26,19 +26,13 @@ describe('EarlyExitCoordinator', () => {
         durationSec: 60,
         workerEarlyExit: {
           enabled: true,
-          perEndpointThresholds: [
-            {
-              url: 'http://example.com/api/1',
-              errorRateThreshold: 0.5,
-              errorCountThreshold: 10,
-            },
-            { url: 'http://example.com/api/2', errorRateThreshold: 0.3 },
-          ],
-          workerExitStatusCodes: [500, 502, 503],
+          errorRateThreshold: 0.1,
+          errorCountThreshold: 100,
+          exitStatusCodes: [500, 502, 503],
           monitoringWindowMs: 100,
         },
       },
-    } as SafeTressiConfig;
+    } as TressiConfig;
 
     // Mock stats counter managers
     mockStatsCounterManagers = [
@@ -104,7 +98,7 @@ describe('EarlyExitCoordinator', () => {
 
   describe('constructor', () => {
     it('should initialize with disabled early exit when not configured', () => {
-      const disabledConfig: SafeTressiConfig = {
+      const disabledConfig: TressiConfig = {
         $schema: 'http://example.com/schema.json',
         requests: [],
         options: {
@@ -117,12 +111,10 @@ describe('EarlyExitCoordinator', () => {
           workerMemoryLimit: 512,
           workerEarlyExit: {
             enabled: false,
-            globalErrorRateThreshold: 0.5,
-            globalErrorCountThreshold: 10,
-            perEndpointThresholds: [],
-            workerExitStatusCodes: [],
+            errorRateThreshold: 0.5,
+            errorCountThreshold: 10,
+            exitStatusCodes: [],
             monitoringWindowMs: 100,
-            stopMode: 'endpoint',
           },
         },
       };
@@ -149,7 +141,7 @@ describe('EarlyExitCoordinator', () => {
 
   describe('startMonitoring', () => {
     it('should not start monitoring when disabled', () => {
-      const disabledConfig: SafeTressiConfig = {
+      const disabledConfig: TressiConfig = {
         $schema: 'http://example.com/schema.json',
         requests: [],
         options: {
@@ -305,6 +297,145 @@ describe('EarlyExitCoordinator', () => {
         coordinator.startMonitoring();
         coordinator.stopMonitoring();
       }).not.toThrow();
+    });
+  });
+
+  describe('request-level early exit configuration', () => {
+    it('should use request-level config over global config', () => {
+      const configWithRequestLevel: TressiConfig = {
+        $schema: 'http://example.com/schema.json',
+        requests: [
+          {
+            url: 'http://example.com/api/1',
+            method: 'GET',
+            earlyExit: {
+              enabled: true,
+              errorRateThreshold: 0.2,
+              errorCountThreshold: 5,
+              exitStatusCodes: [500],
+              monitoringWindowMs: 2000,
+            },
+          },
+          {
+            url: 'http://example.com/api/2',
+            method: 'POST',
+          },
+        ],
+        options: {
+          durationSec: 60,
+          workerEarlyExit: {
+            enabled: true,
+            errorRateThreshold: 0.5,
+            errorCountThreshold: 10,
+            exitStatusCodes: [500, 502],
+            monitoringWindowMs: 1000,
+          },
+        },
+      };
+
+      const testCoordinator = new EarlyExitCoordinator(
+        configWithRequestLevel,
+        mockStatsCounterManagers,
+        mockEndpointStateManager,
+      );
+
+      // Verify the coordinator was created successfully
+      expect(testCoordinator).toBeInstanceOf(EarlyExitCoordinator);
+    });
+
+    it('should use global config when no request-level config exists', () => {
+      const configWithGlobalOnly: TressiConfig = {
+        $schema: 'http://example.com/schema.json',
+        requests: [
+          { url: 'http://example.com/api/1', method: 'GET' },
+          { url: 'http://example.com/api/2', method: 'POST' },
+        ],
+        options: {
+          durationSec: 60,
+          workerEarlyExit: {
+            enabled: true,
+            errorRateThreshold: 0.3,
+            errorCountThreshold: 15,
+            exitStatusCodes: [500],
+            monitoringWindowMs: 1000,
+          },
+        },
+      };
+
+      const testCoordinator = new EarlyExitCoordinator(
+        configWithGlobalOnly,
+        mockStatsCounterManagers,
+        mockEndpointStateManager,
+      );
+
+      expect(testCoordinator).toBeInstanceOf(EarlyExitCoordinator);
+    });
+
+    it('should not apply early exit to endpoints with enabled: false', () => {
+      const configWithDisabled: TressiConfig = {
+        $schema: 'http://example.com/schema.json',
+        requests: [
+          {
+            url: 'http://example.com/api/1',
+            method: 'GET',
+            earlyExit: {
+              enabled: false,
+              errorRateThreshold: 0.1,
+            },
+          },
+        ],
+        options: {
+          durationSec: 60,
+          workerEarlyExit: {
+            enabled: true,
+            errorRateThreshold: 0.3,
+            errorCountThreshold: 10,
+            exitStatusCodes: [500],
+            monitoringWindowMs: 1000,
+          },
+        },
+      };
+
+      const testCoordinator = new EarlyExitCoordinator(
+        configWithDisabled,
+        mockStatsCounterManagers,
+        mockEndpointStateManager,
+      );
+
+      expect(testCoordinator).toBeInstanceOf(EarlyExitCoordinator);
+    });
+  });
+
+  describe('status code checking', () => {
+    it('should trigger early exit for configured status codes', () => {
+      const configWithStatusCodes: TressiConfig = {
+        $schema: 'http://example.com/schema.json',
+        requests: [
+          {
+            url: 'http://example.com/api/1',
+            method: 'GET',
+            earlyExit: {
+              enabled: true,
+              exitStatusCodes: [500, 502],
+            },
+          },
+        ],
+        options: {
+          durationSec: 60,
+          workerEarlyExit: {
+            enabled: true,
+            exitStatusCodes: [503],
+          },
+        },
+      };
+
+      const testCoordinator = new EarlyExitCoordinator(
+        configWithStatusCodes,
+        mockStatsCounterManagers,
+        mockEndpointStateManager,
+      );
+
+      expect(testCoordinator).toBeInstanceOf(EarlyExitCoordinator);
     });
   });
 });

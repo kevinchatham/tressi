@@ -1,42 +1,59 @@
-import type { Handler } from 'hono';
+import { Hono } from 'hono';
+import os from 'os';
 
 import { ISSEClientManager } from '../../types/workers/interfaces';
 
 /**
- * Create metrics streaming endpoint handler
+ * Creates a metrics streaming application using Server-Sent Events.
+ * Provides real-time metrics data to connected clients.
  *
- * Note: This handler returns a raw Response object for Server-Sent Events (SSE) streaming,
- * not a JSON response. Since SSE uses text/event-stream content type and streams data
- * continuously, it doesn't use TypedResponse like our JSON endpoints. The Response object
- * is created manually with the appropriate headers for SSE streaming.
+ * @param {ISSEClientManager} sseManager - Manager for handling SSE client connections
+ * @returns {Hono} Hono app with metrics streaming endpoint
  */
-export function createMetricsHandler(sseManager: ISSEClientManager): Handler {
-  return (c) => {
-    const stream = new ReadableStream({
-      start: (controller: ReadableStreamDefaultController): void => {
-        sseManager.addClient(controller);
-
-        // Send connection confirmation
-        const connectionMessage = {
-          type: 'connected',
-          timestamp: Date.now(),
-        };
-        controller.enqueue(`data: ${JSON.stringify(connectionMessage)}\n\n`);
-
-        // Clean up on disconnect
-        c.req.raw.signal.addEventListener('abort', () => {
-          sseManager.removeClient(controller);
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+function createMetricsApp(sseManager: ISSEClientManager) {
+  return (
+    new Hono()
+      /**
+       * GET /stream - Establishes SSE connection for real-time metrics streaming
+       * @returns {Response} Server-Sent Events stream response
+       */
+      .get('/stream', (c) => {
+        const stream = new ReadableStream({
+          start: (controller: ReadableStreamDefaultController): void => {
+            sseManager.addClient(controller);
+            const connectionMessage = {
+              type: 'connected',
+              timestamp: Date.now(),
+            };
+            controller.enqueue(
+              `data: ${JSON.stringify(connectionMessage)}\n\n`,
+            );
+            c.req.raw.signal.addEventListener('abort', () => {
+              sseManager.removeClient(controller);
+            });
+          },
         });
-      },
-    });
-
-    return new Response(stream, {
-      headers: {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        Connection: 'keep-alive',
-        'Access-Control-Allow-Origin': '*',
-      },
-    });
-  };
+        return new Response(stream, {
+          headers: {
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            Connection: 'keep-alive',
+            'Access-Control-Allow-Origin': '*',
+          },
+        });
+      })
+      .get('/system', (c) => {
+        return c.json({
+          arch: os.arch(),
+          cpuCount: os.cpus().length,
+          freeMemory: os.freemem(),
+          nodeVersion: process.version,
+          platform: os.platform(),
+          totalMemory: os.totalmem(),
+        });
+      })
+  );
 }
+
+export default createMetricsApp;

@@ -1,8 +1,8 @@
 import EventEmitter from 'eventemitter3';
-import { cpus } from 'os';
+import os from 'os';
 import { performance } from 'perf_hooks';
-import type { SafeTressiConfig } from 'tressi-common/config';
-import type { AggregatedMetrics } from 'tressi-common/metrics';
+import type { TressiConfig } from 'tressi-common/config';
+import type { AggregatedMetric } from 'tressi-common/metrics';
 
 import { IRunnerEvents } from '../types/workers/interfaces';
 import { WorkerPoolManager } from '../workers/worker-pool-manager';
@@ -12,7 +12,7 @@ import { WorkerPoolManager } from '../workers/worker-pool-manager';
  * This class coordinates between all specialized components and manages the test lifecycle.
  */
 export class Runner extends EventEmitter<IRunnerEvents> {
-  private config: SafeTressiConfig;
+  private config: TressiConfig;
   private workerPool: WorkerPoolManager | null = null;
   private startTime: number = 0;
 
@@ -20,12 +20,12 @@ export class Runner extends EventEmitter<IRunnerEvents> {
    * Creates a new CoreRunner instance.
    * @param config The Tressi configuration
    */
-  constructor(config: SafeTressiConfig) {
+  constructor(config: TressiConfig) {
     super();
     this.config = config;
   }
 
-  getAggregatedMetrics(): AggregatedMetrics | undefined {
+  getAggregatedMetrics(): AggregatedMetric | undefined {
     return this.workerPool?.getAggregatedResults();
   }
 
@@ -52,12 +52,12 @@ export class Runner extends EventEmitter<IRunnerEvents> {
   }
 
   private async runWithWorkers(): Promise<void> {
-    const cpuCount = cpus().length;
+    const cpuCount = os.cpus().length;
 
     const requestedThreads = this.config.options.threads ?? cpuCount;
 
     const maxWorkers =
-      cpuCount > requestedThreads ? cpuCount : requestedThreads;
+      requestedThreads > cpuCount ? cpuCount : requestedThreads;
 
     this.workerPool = new WorkerPoolManager(this.config, maxWorkers);
 

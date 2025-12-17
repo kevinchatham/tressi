@@ -1,3 +1,4 @@
+import { SlicePipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -7,71 +8,101 @@ import {
   signal,
 } from '@angular/core';
 import { Router } from '@angular/router';
-import {
-  ConfigMetadataApiResponse,
-  ConfigRecordApiResponse,
-} from 'tressi-common/api';
-import { defaultTressiConfig } from 'tressi-common/config';
-import { AggregatedMetrics } from 'tressi-common/metrics';
+import { AggregatedMetric } from 'tressi-common/metrics';
 
+import { HeaderComponent } from '../../components/header/header.component';
 import { IconComponent } from '../../components/icon/icon.component';
 import { LineChartComponent } from '../../components/line-chart/line-chart.component';
+import { ChartSyncService } from '../../services/chart-sync.service';
 import { ConfigService } from '../../services/config.service';
-import { HttpService } from '../../services/http.service';
+import { LocalStorageService } from '../../services/local-storage.service';
 import { LogService } from '../../services/log.service';
+import { SSEService } from '../../services/metrics.service';
+import { ConfigDocument, RPCService } from '../../services/rpc.service';
 
 @Component({
   selector: 'app-dashboard',
-  standalone: true,
-  imports: [LineChartComponent, IconComponent],
+  imports: [LineChartComponent, HeaderComponent, IconComponent, SlicePipe],
   templateUrl: './dashboard.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [ChartSyncService],
 })
 export class DashboardComponent implements OnInit {
   /** Service injection */
-  private readonly http = inject(HttpService);
+  private readonly sseService = inject(SSEService);
   private readonly configService = inject(ConfigService);
   private readonly logService = inject(LogService);
   private readonly router = inject(Router);
+  private readonly rpc = inject(RPCService);
+  private readonly localStorageService = inject(LocalStorageService);
 
   /** Reactive signal holding the history of aggregated metrics. */
-  private readonly metricsHistory = signal<AggregatedMetrics[]>([]);
+  private readonly metricsHistory = signal<AggregatedMetric[]>([]);
 
   /** Reactive signal holding available configurations. */
-  readonly configs = signal<ConfigMetadataApiResponse[]>([]);
+  readonly configs = signal<ConfigDocument[]>([]);
 
   /** Reactive signal holding the selected configuration. */
-  readonly selectedConfig = signal<ConfigRecordApiResponse | null>(null);
+  readonly selectedConfig = signal<ConfigDocument | null>(null);
 
   /** Reactive signal for loading state. */
   readonly isLoading = signal<boolean>(true);
+
+  /** Reactive signal holding the current view mode ('global' or endpoint URL). */
+  readonly currentViewMode = signal<string>('global');
+
+  /** Computed signal that returns available endpoints from latest metrics. */
+  readonly availableEndpoints = computed<string[]>(() => {
+    const latestMetrics =
+      this.metricsHistory()[this.metricsHistory().length - 1];
+    if (!latestMetrics) return [];
+    return Object.keys(latestMetrics.endpoints || {});
+  });
 
   /**
    * Computed array of requests per second values extracted from the metric history.
    *
    * The returned array is used by LineChartComponent to render the throughput chart.
    */
-  public readonly throughputData = computed<number[]>(() =>
-    this.metricsHistory().map((m) => m.global.requestsPerSecond),
-  );
+  public readonly throughputData = computed<number[]>(() => {
+    const viewMode = this.currentViewMode();
+    return this.metricsHistory().map((m) => {
+      if (viewMode === 'global') {
+        return m.global.requestsPerSecond;
+      }
+      return m.endpoints[viewMode]?.requestsPerSecond ?? 0;
+    });
+  });
 
   /**
    * Computed array of error rate percentages extracted from the metric history.
    *
    * The returned array is used by LineChartComponent to render the error‑rate chart.
    */
-  public readonly errorRateData = computed<number[]>(() =>
-    this.metricsHistory().map((m) => m.global.errorRate),
-  );
+  public readonly errorRateData = computed<number[]>(() => {
+    const viewMode = this.currentViewMode();
+    return this.metricsHistory().map((m) => {
+      if (viewMode === 'global') {
+        return m.global.errorRate;
+      }
+      return m.endpoints[viewMode]?.errorRate ?? 0;
+    });
+  });
 
   /**
    * Computed array of average latency values extracted from the metric history.
    *
    * The returned array is used by LineChartComponent to render the latency chart.
    */
-  public readonly latencyData = computed<number[]>(() =>
-    this.metricsHistory().map((m) => m.global.averageLatency),
-  );
+  public readonly latencyData = computed<number[]>(() => {
+    const viewMode = this.currentViewMode();
+    return this.metricsHistory().map((m) => {
+      if (viewMode === 'global') {
+        return m.global.averageLatency;
+      }
+      return m.endpoints[viewMode]?.averageLatency ?? 0;
+    });
+  });
 
   /**
    * Computed timestamps (in milliseconds) for each metric entry, relative to now.
@@ -86,26 +117,67 @@ export class DashboardComponent implements OnInit {
     );
   });
 
+  /** Computed signal that returns only the array of configs (or empty array) */
+  readonly safeConfigs = computed(() => {
+    const cfg = this.configs();
+    if (!cfg || 'error' in cfg) return [];
+    return cfg;
+  });
+
+  /** Computed signal that returns the ID of the selected config, or empty string if none */
+  readonly selectedConfigId = computed(() => {
+    const config = this.selectedConfig();
+    if (!config || 'error' in config) return '';
+    return config.id;
+  });
+
+  /** Computed signal that returns true when there are metrics to display */
+  readonly hasMetrics = computed(() => this.metricsHistory().length > 0);
+
   ngOnInit(): void {
     this.loadConfigurations();
-    this.http.getMetrics().subscribe((metrics) => this.updateCharts(metrics));
+    this.sseService
+      .getMetricsStream()
+      .subscribe((metrics) => this.updateCharts(metrics));
   }
 
   /**
    * Loads all available configurations from the server.
    */
-  private loadConfigurations(): void {
+  private async loadConfigurations(): Promise<void> {
     this.isLoading.set(true);
-    this.configService.getAllConfigMetadata().subscribe({
-      next: (configs) => {
-        this.configs.set(configs);
-        this.isLoading.set(false);
-      },
-      error: (error) => {
-        this.logService.error('Failed to load configurations:', error);
-        this.isLoading.set(false);
-      },
-    });
+
+    const configs = await this.configService.getAll();
+
+    this.configs.set(configs);
+
+    if (configs.length === 0) {
+      this.router.navigate(['welcome']);
+      return;
+    }
+
+    const lastSelectedConfig =
+      this.localStorageService.getPreferences().lastSelectedConfig;
+
+    if (lastSelectedConfig) {
+      // Check if the last selected config still exists
+      const existingConfig = configs.find(
+        (c) => c.id === lastSelectedConfig.id,
+      );
+      if (existingConfig) {
+        this.onConfigSelect(existingConfig.id);
+      } else {
+        // Config no longer exists, select first available
+        const firstConfig = configs[0];
+        this.onConfigSelect(firstConfig.id);
+      }
+    } else {
+      // No last selected config, select first available
+      const firstConfig = configs[0];
+      this.onConfigSelect(firstConfig.id);
+    }
+
+    this.isLoading.set(false);
   }
 
   /**
@@ -113,16 +185,13 @@ export class DashboardComponent implements OnInit {
    */
   onConfigSelect(configId: string): void {
     const config = this.configs().find((c) => c.id === configId);
-    if (config) {
-      this.configService.getConfig(configId).subscribe({
-        next: (configRecord) => {
-          this.selectedConfig.set(configRecord);
-        },
-        error: (error) => {
-          this.logService.error('Failed to load configuration:', error);
-        },
-      });
-    }
+    if (!config) return;
+    this.selectedConfig.set(config);
+    // Save the selected config to localStorage
+    this.localStorageService.savePreferences({
+      ...this.localStorageService.getPreferences(),
+      lastSelectedConfig: config,
+    });
   }
 
   /**
@@ -136,6 +205,14 @@ export class DashboardComponent implements OnInit {
     } else {
       this.selectedConfig.set(null);
     }
+  }
+
+  /**
+   * Handles view mode selection change.
+   */
+  onViewModeChange(event: Event): void {
+    const target = event.target as HTMLSelectElement;
+    this.currentViewMode.set(target.value);
   }
 
   /**
@@ -156,14 +233,41 @@ export class DashboardComponent implements OnInit {
    */
   start(): void {
     this.metricsHistory.set([]);
-    const config = this.selectedConfig()?.config || defaultTressiConfig;
-    this.http.startLoadTest(config).subscribe();
+
+    const selected = this.selectedConfig();
+
+    if (!selected || 'error' in selected) {
+      this.logService.error('No valid configuration selected');
+      return;
+    }
+
+    if (!selected.config) {
+      this.logService.error('Configuration data is missing');
+      return;
+    }
+
+    this.rpc.client.test
+      .$post({ json: selected.config })
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then((data) => {
+        this.logService.info('Load test started successfully:', data);
+        // You could also update UI state here
+      })
+      .catch((error) => {
+        this.logService.error('Failed to start load test:', error);
+        // Show user-friendly error message
+      });
   }
 
   /**
    * Processes a new set of aggregated metrics and updates the chart data streams.
    *
-   * @param metrics - The latest {@link AggregatedMetrics} received from the load test.
+   * @param metrics - The latest {@link AggregatedMetric} received from the load test.
    *
    * @remarks
    * 1. Validates that `metrics` is defined (runtime guard).
@@ -172,7 +276,7 @@ export class DashboardComponent implements OnInit {
    *
    * The method does not return a value; its side effects are reflected through reactive signals.
    */
-  private updateCharts(metrics: AggregatedMetrics): void {
+  private updateCharts(metrics: AggregatedMetric): void {
     this.metricsHistory.update((history) => [...history, metrics]);
   }
 }

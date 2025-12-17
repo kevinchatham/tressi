@@ -10,7 +10,6 @@ import { AllThemes, Theme, ThemeService } from '../../services/theme.service';
 
 @Component({
   selector: 'app-theme-switcher',
-  standalone: true,
   imports: [CommonModule],
   templateUrl: './theme-switcher.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -3,7 +3,7 @@
  * Provides static method to create all required managers for the new architecture
  */
 
-import type { SafeTressiRequestConfig } from 'tressi-common/config';
+import { TressiRequestConfig } from 'tressi-common/config';
 
 import { SharedMemoryOptions } from '../../types/workers/types';
 import { BodySampleManager } from './body-sample-manager';
@@ -22,7 +22,7 @@ export class SharedMemoryFactory {
    */
   static createManagers(
     workersCount: number,
-    endpoints: SafeTressiRequestConfig[],
+    endpoints: TressiRequestConfig[],
     options?: SharedMemoryOptions,
   ): {
     hdrHistogram: HdrHistogramManager[]; // Array per worker
@@ -99,9 +99,9 @@ export class SharedMemoryFactory {
    */
   private static distributeEndpoints(
     workersCount: number,
-    endpoints: SafeTressiRequestConfig[],
-  ): SafeTressiRequestConfig[][] {
-    const distribution: SafeTressiRequestConfig[][] = Array.from(
+    endpoints: TressiRequestConfig[],
+  ): TressiRequestConfig[][] {
+    const distribution: TressiRequestConfig[][] = Array.from(
       { length: workersCount },
       () => [],
     );
@@ -282,7 +282,7 @@ export class SharedMemoryFactory {
    */
   static createManagersSafe(
     workersCount: number,
-    endpoints: SafeTressiRequestConfig[],
+    endpoints: TressiRequestConfig[],
     options?: SharedMemoryOptions,
   ): ReturnType<typeof SharedMemoryFactory.createManagers> | { error: string } {
     const validation = this.validateMemoryRequirements(
@@ -324,7 +324,7 @@ export class SharedMemoryFactory {
    */
   static getEndpointWorkerMapping(
     workersCount: number,
-    endpoints: SafeTressiRequestConfig[],
+    endpoints: TressiRequestConfig[],
   ): number[] {
     const mapping: number[] = [];
     endpoints.forEach((_, index) => {

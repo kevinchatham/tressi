@@ -3,6 +3,7 @@
   (change)="changeTheme($event)"
   [value]="currentTheme"
 >
+  <option disabled>Select Theme</option>
   @for (theme of themes; track theme) {
     <option [selected]="currentTheme === theme" [value]="theme">
       {{ theme | titlecase }}

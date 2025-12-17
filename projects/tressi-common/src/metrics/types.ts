@@ -1,4 +1,4 @@
-export type EndpointMetrics = {
+export type EndpointMetric = {
   averageLatency: number;
   errorRate: number;
   failedRequests: number;
@@ -17,25 +17,14 @@ export type EndpointMetrics = {
 };
 
 /**
- * Global metrics across all endpoints
- */
-export type GlobalMetrics = {
-  totalSuccess: number;
-  totalFailure: number;
-  totalRequests: number;
-  errorRate: number;
-};
-
-/**
  * Aggregated metrics from all workers and endpoints
  */
-export type AggregatedMetrics = {
-  threads: number;
+export type AggregatedMetric = {
+  epoch: number;
   cpuUsagePercent: number;
   memoryUsageMB: number;
-  duration: number;
-  global: EndpointMetrics;
+  global: EndpointMetric;
   endpoints: {
-    [url: string]: EndpointMetrics;
+    [url: string]: EndpointMetric;
   };
 };

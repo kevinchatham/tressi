@@ -1,10 +1,10 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import {
   IBodySampleManager,
   IHdrHistogramManager,
   IStatsCounterManager,
-} from 'tressi-common/metrics';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
+} from '../../../src/types/workers/interfaces';
 import { MetricsAggregator } from '../../../src/workers/metrics-aggregator';
 
 describe('MetricsAggregator', () => {
@@ -208,12 +208,12 @@ describe('MetricsAggregator', () => {
         'http://example.com/api/3',
       ]);
 
-      expect(results.totalRequests).toBe(0);
-      expect(results.successfulRequests).toBe(0);
-      expect(results.failedRequests).toBe(0);
-      expect(results.errorRate).toBe(0);
-      expect(results.averageLatency).toBe(0);
-      expect(results.endpointMetrics).toBeDefined();
+      expect(results.global.totalRequests).toBe(0);
+      expect(results.global.successfulRequests).toBe(0);
+      expect(results.global.failedRequests).toBe(0);
+      expect(results.global.errorRate).toBe(0);
+      expect(results.global.averageLatency).toBe(0);
+      expect(results.endpoints).toBeDefined();
     });
 
     it('should aggregate metrics from all workers', () => {
@@ -292,20 +292,14 @@ describe('MetricsAggregator', () => {
         'http://example.com/api/3',
       ]);
 
-      expect(results.totalRequests).toBe(36);
-      expect(results.successfulRequests).toBe(30);
-      expect(results.failedRequests).toBe(6);
-      expect(results.errorRate).toBe(6 / 36);
+      expect(results.global.totalRequests).toBe(36);
+      expect(results.global.successfulRequests).toBe(30);
+      expect(results.global.failedRequests).toBe(6);
+      expect(results.global.errorRate).toBe(0.1667); // 6/36 rounded to 4 decimal places
       expect(results.threads).toBe(2);
-      expect(results.endpointMetrics).toHaveProperty(
-        'http://example.com/api/1',
-      );
-      expect(results.endpointMetrics).toHaveProperty(
-        'http://example.com/api/2',
-      );
-      expect(results.endpointMetrics).toHaveProperty(
-        'http://example.com/api/3',
-      );
+      expect(results.endpoints).toHaveProperty('http://example.com/api/1');
+      expect(results.endpoints).toHaveProperty('http://example.com/api/2');
+      expect(results.endpoints).toHaveProperty('http://example.com/api/3');
     });
 
     it('should calculate endpoint-specific metrics', () => {
@@ -344,8 +338,7 @@ describe('MetricsAggregator', () => {
 
       const results = aggregator.getResults(2, ['http://example.com/api/1']);
 
-      const endpointMetrics =
-        results.endpointMetrics['http://example.com/api/1'];
+      const endpointMetrics = results.endpoints['http://example.com/api/1'];
       expect(endpointMetrics.totalRequests).toBe(12);
       expect(endpointMetrics.successfulRequests).toBe(12);
       expect(endpointMetrics.failedRequests).toBe(0);
@@ -431,7 +424,7 @@ describe('MetricsAggregator', () => {
       ]);
 
       // Reset should affect the results returned by getResults
-      expect(resetResults.totalRequests).toBe(0);
+      expect(resetResults.global.totalRequests).toBe(0);
     });
   });
 });

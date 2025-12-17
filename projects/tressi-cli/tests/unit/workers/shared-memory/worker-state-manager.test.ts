@@ -1,6 +1,6 @@
-import { WorkerState } from 'tressi-common/metrics';
 import { describe, expect, it } from 'vitest';
 
+import { WorkerState } from '../../../../src/types/workers/types';
 import { WorkerStateManager } from '../../../../src/workers/shared-memory/worker-state-manager';
 
 describe('WorkerStateManager', () => {

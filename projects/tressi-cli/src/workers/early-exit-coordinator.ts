@@ -1,4 +1,4 @@
-import type { SafeTressiConfig } from 'tressi-common/config';
+import type { TressiConfig } from 'tressi-common/config';
 
 import {
   IEarlyExitCoordinator,
@@ -31,7 +31,7 @@ export class EarlyExitCoordinator implements IEarlyExitCoordinator {
   private thresholds: EarlyExitThresholds;
   private monitoringInterval?: NodeJS.Timeout;
   constructor(
-    private config: SafeTressiConfig,
+    private config: TressiConfig,
     private statsCounterManagers: IStatsCounterManager[],
     private endpointStateManager: IEndpointStateManager,
   ) {
@@ -44,34 +44,60 @@ export class EarlyExitCoordinator implements IEarlyExitCoordinator {
    * @returns Parsed threshold configuration including per-endpoint limits and monitoring window
    *
    * @remarks
-   * Extracts threshold values from the config's workerEarlyExit section.
+   * Extracts threshold values from the config's workerEarlyExit section and request-level configs.
+   * Implements precedence: request-level > global fallback.
    * If early exit is disabled, returns a configuration with empty thresholds.
-   * Handles default values for monitoring window and status codes.
    *
    * @throws {Error} If configuration parsing fails due to invalid data types
    */
   private parseThresholds(): EarlyExitThresholds {
-    const exitConfig = this.config.options.workerEarlyExit;
-    if (!exitConfig?.enabled) {
+    const globalExitConfig = this.config.options.workerEarlyExit;
+
+    if (!globalExitConfig?.enabled) {
       return {
         perEndpoint: new Map(),
-        statusCodes: new Set(),
-        monitoringWindowMs: 1000,
+        monitoringWindowMs: 5000,
       };
     }
 
+    const perEndpointMap = new Map();
+    const globalMonitoringWindow = globalExitConfig.monitoringWindowMs || 5000;
+
+    // Process each endpoint to determine its effective early exit config
+    this.config.requests.forEach((request) => {
+      // Precedence: request-level > global defaults
+      const requestConfig = request.earlyExit;
+
+      if (requestConfig?.enabled) {
+        // Use request-level configuration
+        perEndpointMap.set(request.url, {
+          errorRate: requestConfig.errorRateThreshold,
+          exitStatusCodes: new Set(
+            requestConfig.exitStatusCodes || [500, 502, 503, 504],
+          ),
+          monitoringWindowMs:
+            requestConfig.monitoringWindowMs || globalMonitoringWindow,
+        });
+      } else if (globalExitConfig.enabled) {
+        // Use global configuration as fallback
+        // Only apply if endpoint has no request-level config or it's disabled
+        const hasRequestConfig = requestConfig !== undefined;
+
+        if (!hasRequestConfig) {
+          // Endpoint has no early exit config, use global defaults
+          perEndpointMap.set(request.url, {
+            errorRate: globalExitConfig.errorRateThreshold,
+            exitStatusCodes: new Set(globalExitConfig.exitStatusCodes),
+            monitoringWindowMs: globalMonitoringWindow,
+          });
+        }
+        // If requestConfig.enabled is false, don't add to map (endpoint won't have early exit)
+      }
+    });
+
     return {
-      perEndpoint: new Map(
-        (exitConfig.perEndpointThresholds || []).map((t) => [
-          t.url,
-          {
-            errorRate: t.errorRateThreshold,
-            errorCount: t.errorCountThreshold,
-          },
-        ]),
-      ),
-      statusCodes: new Set(exitConfig.workerExitStatusCodes || []),
-      monitoringWindowMs: exitConfig.monitoringWindowMs || 1000,
+      perEndpoint: perEndpointMap,
+      monitoringWindowMs: globalMonitoringWindow,
     };
   }
 
@@ -119,10 +145,10 @@ export class EarlyExitCoordinator implements IEarlyExitCoordinator {
    * Evaluates each endpoint individually against its configured thresholds:
    * - Error rate threshold: percentage of failed requests
    * - Error count threshold: absolute number of failed requests
+   * - Status code thresholds: specific HTTP status codes that trigger immediate stop
    *
    * Only endpoints with configured thresholds are evaluated. The method aggregates
-   * error counts across all workers that handle the endpoint using round-robin
-   * distribution logic to locate the correct worker and local index.
+   * error counts and status codes across all workers that handle the endpoint.
    *
    * @example
    * ```typescript
@@ -146,6 +172,7 @@ export class EarlyExitCoordinator implements IEarlyExitCoordinator {
 
       let endpointTotalRequests = 0;
       let endpointTotalErrors = 0;
+      let statusCodeCounts: Record<number, number> = {};
 
       // Find which worker owns this endpoint
       const workerId = globalEndpointIndex % this.statsCounterManagers.length;
@@ -159,6 +186,7 @@ export class EarlyExitCoordinator implements IEarlyExitCoordinator {
           const counters = manager.getEndpointCounters(localEndpointIndex);
           endpointTotalRequests = counters.successCount + counters.failureCount;
           endpointTotalErrors = counters.failureCount;
+          statusCodeCounts = counters.statusCodeCounts || {};
         }
       }
 
@@ -166,12 +194,25 @@ export class EarlyExitCoordinator implements IEarlyExitCoordinator {
 
       const errorRate = endpointTotalErrors / endpointTotalRequests;
 
+      // Check error rate threshold
       if (threshold.errorRate && errorRate >= threshold.errorRate) {
         endpoints.push(request.url);
+        return;
       }
+
+      // Check error count threshold
       if (threshold.errorCount && endpointTotalErrors >= threshold.errorCount) {
         endpoints.push(request.url);
+        return;
       }
+
+      // Check status code thresholds
+      threshold.exitStatusCodes.forEach((statusCode) => {
+        if (statusCodeCounts[statusCode] > 0) {
+          endpoints.push(request.url);
+          return;
+        }
+      });
     });
 
     return endpoints;

@@ -1,0 +1,121 @@
+<div class="bg-base-100 ring-neutral rounded p-6 ring-1">
+  <h2 class="mb-4 flex items-center gap-2 text-lg font-semibold">
+    <app-icon name="settings" class="h-5 w-5" />
+    Advanced Configuration
+  </h2>
+
+  <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+    <!-- Ramp Up Time -->
+    <fieldset class="fieldset">
+      <legend class="fieldset-legend">Ramp Up Time (seconds)</legend>
+      <input
+        type="number"
+        class="input"
+        [field]="form().config.options.rampUpTimeSec"
+        placeholder="Time to reach target RPS"
+      />
+      <p class="label">Time to reach target RPS</p>
+      @if (
+        form().config.options.rampUpTimeSec().touched() &&
+        form().config.options.rampUpTimeSec().invalid()
+      ) {
+        <p class="label text-error">
+          @for (
+            error of form().config.options.rampUpTimeSec().errors();
+            track error
+          ) {
+            {{ error.message }}
+          }
+        </p>
+      }
+    </fieldset>
+
+    <!-- Threads -->
+    <fieldset class="fieldset">
+      <legend class="fieldset-legend">Worker Threads</legend>
+      <input
+        type="number"
+        class="input"
+        [field]="form().config.options.threads"
+        placeholder="Auto-detect"
+      />
+      <p class="label">Leave empty for auto-detect</p>
+      @if (
+        form().config.options.threads().touched() &&
+        form().config.options.threads().invalid()
+      ) {
+        <p class="label text-error">
+          @for (
+            error of form().config.options.threads().errors();
+            track error
+          ) {
+            {{ error.message }}
+          }
+        </p>
+      }
+    </fieldset>
+
+    <!-- Worker Memory Limit -->
+    <fieldset class="fieldset">
+      <legend class="fieldset-legend">Worker Memory Limit (MB)</legend>
+      <input
+        type="number"
+        class="input"
+        [field]="form().config.options.workerMemoryLimit"
+        placeholder="Memory per worker thread"
+      />
+      <p class="label">Memory per worker thread</p>
+      @if (
+        form().config.options.workerMemoryLimit().touched() &&
+        form().config.options.workerMemoryLimit().invalid()
+      ) {
+        <p class="label text-error">
+          @for (
+            error of form().config.options.workerMemoryLimit().errors();
+            track error
+          ) {
+            {{ error.message }}
+          }
+        </p>
+      }
+    </fieldset>
+
+    <!-- Export Path -->
+    <fieldset class="fieldset md:col-span-2">
+      <legend class="fieldset-legend">Export Path</legend>
+      <input
+        type="text"
+        class="input"
+        [field]="form().config.options.exportPath"
+        placeholder="./tressi-report"
+      />
+      <p class="label">Directory for test reports</p>
+      @if (
+        form().config.options.exportPath().touched() &&
+        form().config.options.exportPath().invalid()
+      ) {
+        <p class="label text-error">
+          @for (
+            error of form().config.options.exportPath().errors();
+            track error
+          ) {
+            {{ error.message }}
+          }
+        </p>
+      }
+    </fieldset>
+
+    <!-- Silent Mode -->
+    <fieldset class="fieldset">
+      <legend class="fieldset-legend">Silent Mode</legend>
+      <label class="label cursor-pointer">
+        <span class="label-text">Suppress console output</span>
+        <input
+          type="checkbox"
+          class="checkbox checkbox-primary"
+          [field]="form().config.options.silent"
+        />
+      </label>
+    </fieldset>
+  </div>
+</div>

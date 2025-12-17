@@ -1,57 +1,34 @@
 import { inject, Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
-import {
-  ConfigMetadataApiResponse,
-  ConfigRecordApiResponse,
-} from 'tressi-common/api';
-import { serverRoutes } from 'tressi-common/api';
-import { SafeTressiConfig } from 'tressi-common/config';
 
-import { HttpService } from './http.service';
+import { ConfigDocument, ModifyConfigRequest, RPCService } from './rpc.service';
 
 @Injectable({
   providedIn: 'root',
 })
 export class ConfigService {
-  private readonly http = inject(HttpService);
+  private readonly rpc = inject(RPCService);
 
-  /**
-   * Get all configuration metadata (without full config data)
-   */
-  getAllConfigMetadata(): Observable<ConfigMetadataApiResponse[]> {
-    return this.http.request<ConfigMetadataApiResponse[]>(serverRoutes.configs);
+  async getAll(): Promise<ConfigDocument[]> {
+    const response = await this.rpc.client.config.$get();
+    return (await response.json()) as ConfigDocument[];
   }
 
-  /**
-   * Get a specific configuration by ID
-   */
-  getConfig(id: string): Observable<ConfigRecordApiResponse> {
-    return this.http.request<ConfigRecordApiResponse>({
-      route: serverRoutes.configById.route.replace(':id', id),
-      method: serverRoutes.configById.method,
+  async getOne(id: string): Promise<ConfigDocument | undefined> {
+    const response = await this.rpc.client.config[':id'].$get({
+      param: { id },
     });
+    return (await response.json()) as ConfigDocument | undefined;
   }
 
-  /**
-   * Save a configuration (creates new or updates existing by name)
-   */
-  saveConfig(
-    name: string,
-    config: SafeTressiConfig,
-  ): Observable<ConfigRecordApiResponse> {
-    return this.http.request<
-      { name: string; config: SafeTressiConfig },
-      ConfigRecordApiResponse
-    >(serverRoutes.saveConfig, { name, config });
+  async saveConfig(config: ModifyConfigRequest): Promise<ConfigDocument> {
+    const response = await this.rpc.client.config.$post({ json: config });
+    const savedConfig = (await response.json()) as ConfigDocument;
+    return savedConfig;
   }
 
-  /**
-   * Delete a configuration by ID
-   */
-  deleteConfig(id: string): Observable<void> {
-    return this.http.request<void>({
-      route: serverRoutes.deleteConfig.route.replace(':id', id),
-      method: serverRoutes.deleteConfig.method,
+  async deleteConfig(id: string): Promise<void> {
+    await this.rpc.client.config[':id'].$delete({
+      param: { id },
     });
   }
 }

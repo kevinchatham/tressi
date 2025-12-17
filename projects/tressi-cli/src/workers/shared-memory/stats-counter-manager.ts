@@ -22,8 +22,6 @@
  *         └───────────────────────────────────────────────┘
  */
 
-import { GlobalMetrics } from 'tressi-common/metrics';
-
 import { IStatsCounterManager } from '../../types/workers/interfaces';
 import { EndpointCounters } from '../../types/workers/types';
 
@@ -206,7 +204,7 @@ export class StatsCounterManager implements IStatsCounterManager {
 
     // Check if we've already recorded this status code using bitmap
     const bitmapOffset = this.getBitmapOffset(endpointIndex, statusIndex);
-    const bitMask = 1 << statusIndex % 32;
+    const bitMask = 1 << (statusIndex % 32);
 
     // Use compareExchange to enforce "one body per status code"
     const current = Atomics.load(this.statusCodeBitmap, bitmapOffset);
@@ -347,31 +345,6 @@ export class StatsCounterManager implements IStatsCounterManager {
       counters.push(this.getEndpointCounters(i));
     }
     return counters;
-  }
-
-  /**
-   * Derive global metrics by aggregating all endpoints (NO atomic operations)
-   */
-  deriveGlobalMetrics(): GlobalMetrics {
-    const allCounters = this.getAllEndpointCounters();
-
-    let totalSuccess = 0;
-    let totalFailure = 0;
-
-    for (const counters of allCounters) {
-      totalSuccess += counters.successCount;
-      totalFailure += counters.failureCount;
-    }
-
-    const totalRequests = totalSuccess + totalFailure;
-    const errorRate = totalRequests > 0 ? totalFailure / totalRequests : 0;
-
-    return {
-      totalSuccess,
-      totalFailure,
-      totalRequests,
-      errorRate,
-    };
   }
 
   /**

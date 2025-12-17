@@ -1,41 +1,43 @@
-import { Injectable, signal } from '@angular/core';
+import { inject, Injectable, signal } from '@angular/core';
+
+import { LocalStorageService } from './local-storage.service';
 
 export const AllThemes = [
-  'light',
-  'dark',
-  'cupcake',
-  'bumblebee',
-  'emerald',
-  'corporate',
-  'synthwave',
-  'retro',
-  'cyberpunk',
-  'valentine',
-  'halloween',
-  'garden',
-  'forest',
-  'aqua',
-  'lofi',
-  'pastel',
-  'fantasy',
-  'wireframe',
-  'black',
-  'luxury',
-  'dracula',
-  'cmyk',
-  'autumn',
-  'business',
-  'acid',
-  'lemonade',
-  'night',
-  'coffee',
-  'winter',
-  'dim',
-  'nord',
-  'sunset',
-  'caramellatte',
   'abyss',
+  'acid',
+  'aqua',
+  'autumn',
+  'black',
+  'bumblebee',
+  'business',
+  'caramellatte',
+  'cmyk',
+  'coffee',
+  'corporate',
+  'cupcake',
+  'cyberpunk',
+  'dark',
+  'dim',
+  'dracula',
+  'emerald',
+  'fantasy',
+  'forest',
+  'garden',
+  'halloween',
+  'lemonade',
+  'light',
+  'lofi',
+  'luxury',
+  'night',
+  'nord',
+  'pastel',
+  'retro',
   'silk',
+  'sunset',
+  'synthwave',
+  'valentine',
+  'winter',
+  'wireframe',
 ] as const;
 
 export type Theme = (typeof AllThemes)[number];
@@ -56,6 +58,8 @@ export class ThemeService {
   public readonly success = signal<string>('');
   public readonly warning = signal<string>('');
   public readonly error = signal<string>('');
+
+  private readonly localStorageService = inject(LocalStorageService);
 
   constructor() {
     this.loadInitialTheme();
@@ -128,16 +132,24 @@ export class ThemeService {
 
   public setTheme(theme: Theme): void {
     document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('theme', theme);
+    const preferences = this.localStorageService.getPreferences();
+    this.localStorageService.savePreferences({
+      ...preferences,
+      selectedTheme: theme,
+    });
     this.extractThemeColors();
   }
 
   public loadInitialTheme(): void {
-    document.documentElement.setAttribute('data-theme', this.getTheme());
+    const preferences = this.localStorageService.getPreferences();
+    document.documentElement.setAttribute(
+      'data-theme',
+      preferences.selectedTheme,
+    );
     this.extractThemeColors();
   }
 
   public getTheme(): Theme {
-    return (localStorage.getItem('theme') as Theme) ?? 'light';
+    return this.localStorageService.getPreferences().selectedTheme;
   }
 }

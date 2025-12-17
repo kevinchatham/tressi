@@ -1,5 +1,5 @@
-import { SafeTressiConfig } from 'tressi-common/config';
-import { AggregatedMetrics, GlobalMetrics } from 'tressi-common/metrics';
+import { TressiConfig } from 'tressi-common/config';
+import { AggregatedMetric } from 'tressi-common/metrics';
 
 import { EndpointCounters, LatencyHistogram, WorkerState } from './types';
 
@@ -14,12 +14,12 @@ export interface ISSEClientManager {
 }
 
 export interface IGlobalServerEvents {
-  metrics: (metrics: AggregatedMetrics) => void;
+  metrics: (metrics: AggregatedMetric) => void;
 }
 
 export interface IRunnerEvents {
-  start: (data: { config: SafeTressiConfig; startTime: number }) => void;
-  complete: (results: AggregatedMetrics | undefined) => void;
+  start: (data: { config: TressiConfig; startTime: number }) => void;
+  complete: (results: AggregatedMetric | undefined) => void;
   error: (err: unknown) => void;
 }
 
@@ -34,7 +34,6 @@ export interface IStatsCounterManager {
   recordStatusCode(endpointIndex: number, statusCode: number): void;
   recordBytesSent(endpointIndex: number, bytes: number): void;
   recordBytesReceived(endpointIndex: number, bytes: number): void;
-  deriveGlobalMetrics?(): GlobalMetrics;
 }
 
 /**
@@ -100,7 +99,7 @@ export interface IEarlyExitCoordinator {
 export interface IMetricsAggregator {
   startPolling(intervalMs?: number): void;
   stopPolling(): void;
-  getResults(workersCount: number, endpoints: string[]): AggregatedMetrics;
+  getResults(workersCount: number, endpoints: string[]): AggregatedMetric;
   getBodySamplesForEndpoint(
     endpointIndex: number,
   ): Array<{ sampleIndex: number; statusCode: number }>;

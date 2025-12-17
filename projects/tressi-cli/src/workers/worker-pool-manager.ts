@@ -1,9 +1,6 @@
 import { cpus } from 'os';
-import {
-  type SafeTressiConfig,
-  type SafeTressiRequestConfig,
-} from 'tressi-common/config';
-import type { AggregatedMetrics } from 'tressi-common/metrics';
+import { TressiConfig, TressiRequestConfig } from 'tressi-common/config';
+import type { AggregatedMetric } from 'tressi-common/metrics';
 import { Worker } from 'worker_threads';
 
 import { WorkerState } from '../types/workers/types';
@@ -48,14 +45,14 @@ export class WorkerPoolManager {
   private maxWorkers: number;
   private workerStateManager: WorkerStateManager;
   private endpointStateManager: EndpointStateManager;
-  private endpoints: SafeTressiRequestConfig[];
-  private workerAssignments: SafeTressiRequestConfig[][] = [];
+  private endpoints: TressiRequestConfig[];
+  private workerAssignments: TressiRequestConfig[][] = [];
   private hdrHistogramManagers: HdrHistogramManager[] = [];
   private statsCounterManagers: StatsCounterManager[] = [];
   private bodySampleManagers: BodySampleManager[] = [];
 
   constructor(
-    private config: SafeTressiConfig,
+    private config: TressiConfig,
     maxWorkers?: number,
   ) {
     this.maxWorkers = maxWorkers || cpus().length;
@@ -188,10 +185,10 @@ export class WorkerPoolManager {
    * // Worker 1 gets endpoint [1]
    * ```
    */
-  private distributeEndpoints(): SafeTressiRequestConfig[][] {
+  private distributeEndpoints(): TressiRequestConfig[][] {
     const endpoints = this.config.requests;
     const workers = Math.min(this.maxWorkers, endpoints.length);
-    const distribution: SafeTressiRequestConfig[][] = Array.from(
+    const distribution: TressiRequestConfig[][] = Array.from(
       { length: workers },
       () => [],
     );
@@ -283,7 +280,7 @@ export class WorkerPoolManager {
    * It combines histogram data, counters, and network metrics from all workers
    * into a single comprehensive metrics object.
    */
-  getAggregatedResults(): AggregatedMetrics {
+  getAggregatedResults(): AggregatedMetric {
     const endpoints = this.config.requests.map((req) => req.url);
     return this.metricsAggregator.getResults(this.workers.length, endpoints);
   }

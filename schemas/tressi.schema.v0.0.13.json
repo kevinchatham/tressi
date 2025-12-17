@@ -1,181 +1,266 @@
 {
-  "$ref": "#/definitions/TressiConfigSchema",
-  "definitions": {
-    "TressiConfigSchema": {
-      "type": "object",
-      "properties": {
-        "$schema": {
-          "type": "string"
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "default": {
+    "$schema": "https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json",
+    "requests": [],
+    "options": {
+      "durationSec": 10,
+      "rampUpTimeSec": 0,
+      "exportPath": "",
+      "silent": false,
+      "headers": {
+        "User-Agent": "Tressi"
+      },
+      "threads": 1,
+      "workerMemoryLimit": 128,
+      "workerEarlyExit": {
+        "enabled": false,
+        "errorRateThreshold": 0,
+        "exitStatusCodes": [400, 401, 403, 500, 502, 503, 504],
+        "monitoringWindowMs": 5000
+      }
+    }
+  },
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "description": "A URL to the JSON schema for this configuration file.",
+      "type": "string"
+    },
+    "requests": {
+      "description": "An array of request configurations.",
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "default": {
+          "url": "",
+          "payload": {},
+          "method": "GET",
+          "headers": {
+            "User-Agent": "Tressi"
+          },
+          "rps": 1,
+          "earlyExit": {
+            "enabled": false,
+            "errorRateThreshold": 0,
+            "exitStatusCodes": [400, 401, 403, 500, 502, 503, 504],
+            "monitoringWindowMs": 5000
+          }
         },
-        "requests": {
-          "type": "array",
-          "items": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "description": "The URL to send the request to.",
+            "type": "string",
+            "format": "uri"
+          },
+          "payload": {
+            "description": "The request payload. Can be a JSON object or an array.",
+            "anyOf": [
+              {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {}
+              },
+              {
+                "type": "array",
+                "items": {}
+              }
+            ]
+          },
+          "method": {
+            "description": "The HTTP method to use for the request. Defaults to GET.",
+            "type": "string",
+            "enum": ["GET", "POST", "PUT", "PATCH", "DELETE"]
+          },
+          "headers": {
+            "description": "Headers to be sent with this specific request. Merged with global headers.",
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "rps": {
+            "description": "Per-endpoint requests per second limit. Defaults to 1.",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "earlyExit": {
+            "description": "Optional early exit configuration for this specific endpoint",
+            "default": {
+              "enabled": false,
+              "errorRateThreshold": 0,
+              "exitStatusCodes": [400, 401, 403, 500, 502, 503, 504],
+              "monitoringWindowMs": 5000
+            },
             "type": "object",
             "properties": {
-              "url": {
-                "type": "string",
-                "format": "uri"
+              "enabled": {
+                "description": "Enable early exit for this endpoint",
+                "type": "boolean"
               },
-              "payload": {
-                "anyOf": [
-                  {
-                    "anyOf": [
-                      {
-                        "type": "object",
-                        "additionalProperties": {}
-                      },
-                      {
-                        "type": "array",
-                        "items": {}
-                      }
-                    ]
-                  },
-                  {
-                    "type": "null"
-                  }
-                ]
+              "errorRateThreshold": {
+                "description": "Error rate threshold (0.0-1.0)",
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
               },
-              "method": {
-                "type": "string",
-                "enum": [
-                  "GET",
-                  "POST",
-                  "PUT",
-                  "PATCH",
-                  "DELETE",
-                  "HEAD",
-                  "OPTIONS"
-                ],
-                "default": "GET"
+              "exitStatusCodes": {
+                "description": "HTTP status codes that trigger immediate endpoint stop",
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                }
               },
-              "headers": {
-                "anyOf": [
-                  {
-                    "type": "object",
-                    "additionalProperties": {
-                      "type": "string"
-                    }
-                  },
-                  {
-                    "type": "null"
-                  }
-                ]
-              },
-              "rps": {
+              "monitoringWindowMs": {
+                "description": "Time window in milliseconds for threshold calculation",
                 "type": "integer",
-                "minimum": 1,
-                "default": 1
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
               }
             },
-            "required": ["url"],
+            "required": [
+              "enabled",
+              "errorRateThreshold",
+              "exitStatusCodes",
+              "monitoringWindowMs"
+            ],
             "additionalProperties": false
           }
         },
-        "options": {
+        "required": ["url", "payload", "method", "headers", "rps", "earlyExit"],
+        "additionalProperties": false
+      }
+    },
+    "options": {
+      "description": "Configuration options for the test runner.",
+      "default": {
+        "durationSec": 10,
+        "rampUpTimeSec": 0,
+        "exportPath": "",
+        "silent": false,
+        "headers": {
+          "User-Agent": "Tressi"
+        },
+        "threads": 1,
+        "workerMemoryLimit": 128,
+        "workerEarlyExit": {
+          "enabled": false,
+          "errorRateThreshold": 0,
+          "exitStatusCodes": [400, 401, 403, 500, 502, 503, 504],
+          "monitoringWindowMs": 5000
+        }
+      },
+      "type": "object",
+      "properties": {
+        "durationSec": {
+          "description": "The total duration of the test in seconds. Defaults to 10.",
+          "type": "integer",
+          "exclusiveMinimum": 0,
+          "maximum": 9007199254740991
+        },
+        "rampUpTimeSec": {
+          "description": "The time in seconds to ramp up to the target RPS. Defaults to 0.",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "exportPath": {
+          "description": "The base path for the exported report. If not provided, no report will be generated.",
+          "type": "string"
+        },
+        "silent": {
+          "description": "Suppress all console output. Defaults to false.",
+          "type": "boolean"
+        },
+        "headers": {
+          "description": "Global headers to be sent with every request.",
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "threads": {
+          "description": "Number of worker threads to use (defaults to CPU count)",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "workerMemoryLimit": {
+          "description": "Memory limit per worker in MB",
+          "type": "integer",
+          "minimum": 16,
+          "maximum": 512
+        },
+        "workerEarlyExit": {
+          "description": "Global early exit configuration (acts as default for endpoints without specific config)",
+          "default": {
+            "enabled": false,
+            "errorRateThreshold": 0,
+            "exitStatusCodes": [400, 401, 403, 500, 502, 503, 504],
+            "monitoringWindowMs": 5000
+          },
           "type": "object",
           "properties": {
-            "durationSec": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "default": 10
-            },
-            "rampUpTimeSec": {
-              "type": "integer",
-              "minimum": 0
-            },
-            "exportPath": {
-              "type": ["string", "null"]
-            },
-            "silent": {
+            "enabled": {
+              "description": "Enable early exit for this endpoint",
               "type": "boolean"
             },
-            "headers": {
-              "anyOf": [
-                {
-                  "type": "object",
-                  "additionalProperties": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "null"
-                }
-              ]
+            "errorRateThreshold": {
+              "description": "Error rate threshold (0.0-1.0)",
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
             },
-            "threads": {
+            "exitStatusCodes": {
+              "description": "HTTP status codes that trigger immediate endpoint stop",
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              }
+            },
+            "monitoringWindowMs": {
+              "description": "Time window in milliseconds for threshold calculation",
               "type": "integer",
-              "minimum": 1,
-              "maximum": 32,
-              "description": "Number of worker threads to use (defaults to CPU count)"
-            },
-            "workerMemoryLimit": {
-              "type": "integer",
-              "minimum": 16,
-              "maximum": 512,
-              "description": "Memory limit per worker in MB"
-            },
-            "workerEarlyExit": {
-              "type": "object",
-              "properties": {
-                "enabled": {
-                  "type": "boolean"
-                },
-                "globalErrorRateThreshold": {
-                  "type": "number",
-                  "minimum": 0,
-                  "maximum": 1
-                },
-                "globalErrorCountThreshold": {
-                  "type": "integer",
-                  "exclusiveMinimum": 0
-                },
-                "perEndpointThresholds": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "properties": {
-                      "url": {
-                        "type": "string"
-                      },
-                      "errorRateThreshold": {
-                        "type": "number",
-                        "minimum": 0,
-                        "maximum": 1
-                      },
-                      "errorCountThreshold": {
-                        "type": "integer",
-                        "exclusiveMinimum": 0
-                      }
-                    },
-                    "required": ["url", "errorRateThreshold"],
-                    "additionalProperties": false
-                  }
-                },
-                "workerExitStatusCodes": {
-                  "type": "array",
-                  "items": {
-                    "type": "integer",
-                    "exclusiveMinimum": 0
-                  }
-                },
-                "monitoringWindowMs": {
-                  "type": "integer",
-                  "exclusiveMinimum": 0
-                },
-                "stopMode": {
-                  "type": "string",
-                  "enum": ["endpoint", "global"]
-                }
-              },
-              "additionalProperties": false
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
             }
           },
+          "required": [
+            "enabled",
+            "errorRateThreshold",
+            "exitStatusCodes",
+            "monitoringWindowMs"
+          ],
           "additionalProperties": false
         }
       },
-      "required": ["$schema", "requests", "options"],
+      "required": [
+        "durationSec",
+        "rampUpTimeSec",
+        "exportPath",
+        "silent",
+        "headers",
+        "threads",
+        "workerMemoryLimit",
+        "workerEarlyExit"
+      ],
       "additionalProperties": false
     }
   },
-  "$schema": "http://json-schema.org/draft-07/schema#"
+  "required": ["$schema", "requests", "options"],
+  "additionalProperties": false
 }

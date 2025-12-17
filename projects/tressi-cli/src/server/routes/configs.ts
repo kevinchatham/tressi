@@ -1,36 +1,23 @@
 import { sValidator } from '@hono/standard-validator';
-import type { TypedResponse } from 'hono';
-import { createFactory } from 'hono/factory';
-import {
-  ConfigMetadataApiResponse,
-  ConfigRecordApiResponse,
-  ErrorApiResponse,
-  SaveConfigRequestSchema,
-  ValidationErrorApiResponse,
-} from 'tressi-common/api';
+import { Hono } from 'hono';
+import { TressiConfig, validateConfig } from 'tressi-common/config';
+import z from 'zod';
 
-import { validateAndMergeConfig } from '../../core/config';
 import { configStorage } from '../../core/config-storage';
-import { ConfigValidationError } from '../../types';
-import {
-  createApiErrorResponse,
-  createConfigMergeErrorResponse,
-  createZodValidationErrorResponse,
-} from '../utils/error-response-generator';
-
-const factory = createFactory();
+import { createApiErrorResponse } from '../utils/error-response-generator';
 
 /**
- * GET /api/configs - Get all configuration metadata
+ * Configuration management routes for handling CRUD operations on load test configurations.
+ * Provides endpoints for listing, retrieving, creating, and deleting configurations.
  */
-export const getAllConfigMetadataHandler = factory.createHandlers(
-  async (
-    c,
-  ): Promise<
-    TypedResponse<ConfigMetadataApiResponse[]> | TypedResponse<ErrorApiResponse>
-  > => {
+const app = new Hono()
+  /**
+   * GET / - Retrieves all configurations
+   * @returns {Promise<Response>} JSON array of configurations
+   */
+  .get('/', async (c) => {
     try {
-      const configs = await configStorage.getAllMetadata();
+      const configs = await configStorage.getAll();
       return c.json(configs);
     } catch (error) {
       return c.json(
@@ -42,37 +29,28 @@ export const getAllConfigMetadataHandler = factory.createHandlers(
         500,
       );
     }
-  },
-);
-
-/**
- * GET /api/configs/:id - Get a specific configuration
- */
-export const getConfigHandler = factory.createHandlers(
-  async (
-    c,
-  ): Promise<
-    TypedResponse<ConfigRecordApiResponse> | TypedResponse<ErrorApiResponse>
-  > => {
+  })
+  /**
+   * GET /:id - Retrieves a specific configuration by ID
+   * @param {string} id - The configuration ID from URL parameter
+   * @returns {Promise<Response>} JSON configuration data or error response
+   */
+  .get('/:id', async (c) => {
     try {
       const id = c.req.param('id');
-
       if (!id) {
         return c.json(
           createApiErrorResponse('Configuration ID is required', 'MISSING_ID'),
           400,
         );
       }
-
       const config = await configStorage.getById(id);
-
       if (!config) {
         return c.json(
           createApiErrorResponse('Configuration not found', 'NOT_FOUND'),
           404,
         );
       }
-
       return c.json(config);
     } catch (error) {
       return c.json(
@@ -84,37 +62,66 @@ export const getConfigHandler = factory.createHandlers(
         500,
       );
     }
-  },
-);
+  })
+  /**
+   * POST / - Creates a new configuration
+   * Validates the configuration before saving
+   * @param {SaveConfigRequest} body - Configuration data from request body
+   * @returns {Promise<Response>} Created configuration with 201 status or error response
+   */
+  .post(
+    '/',
+    sValidator(
+      'json',
+      z.object({
+        id: z.string().optional(),
+        name: z.string(),
+        config: z.custom<TressiConfig>(),
+      }),
+    ),
+    async (c) => {
+      try {
+        const model = c.req.valid('json');
+        const validationResult = validateConfig(model.config);
+        if (validationResult.success === false) {
+          return c.json(validationResult.error, 400);
+        }
 
-/**
- * DELETE /api/configs/:id - Delete a configuration
- */
-export const deleteConfigHandler = factory.createHandlers(
-  async (
-    c,
-  ): Promise<
-    TypedResponse<{ success: boolean }> | TypedResponse<ErrorApiResponse>
-  > => {
+        const saved = await configStorage.save(model);
+        return c.json(saved, 201);
+      } catch (error) {
+        return c.json(
+          createApiErrorResponse(
+            'Failed to save configuration',
+            'INTERNAL_ERROR',
+            error instanceof Error ? [error.message] : undefined,
+          ),
+          500,
+        );
+      }
+    },
+  )
+  /**
+   * DELETE /:id - Deletes a configuration by ID
+   * @param {string} id - The configuration ID from URL parameter
+   * @returns {Promise<Response>} Success response or error if not found
+   */
+  .delete('/:id', async (c) => {
     try {
       const id = c.req.param('id');
-
       if (!id) {
         return c.json(
           createApiErrorResponse('Configuration ID is required', 'MISSING_ID'),
           400,
         );
       }
-
       const success = await configStorage.delete(id);
-
       if (!success) {
         return c.json(
           createApiErrorResponse('Configuration not found', 'NOT_FOUND'),
           404,
         );
       }
-
       return c.json({ success: true });
     } catch (error) {
       return c.json(
@@ -126,53 +133,6 @@ export const deleteConfigHandler = factory.createHandlers(
         500,
       );
     }
-  },
-);
+  });
 
-export const saveConfigHandler = factory.createHandlers(
-  sValidator('json', SaveConfigRequestSchema),
-  async (
-    c,
-  ): Promise<
-    | TypedResponse<ConfigRecordApiResponse>
-    | TypedResponse<ValidationErrorApiResponse>
-    | TypedResponse<ErrorApiResponse>
-  > => {
-    try {
-      const { name, config } = c.req.valid('json');
-
-      const validationResult = validateAndMergeConfig(config);
-
-      if (validationResult.success === false) {
-        if (validationResult.error instanceof ConfigValidationError) {
-          return c.json(
-            createZodValidationErrorResponse(
-              validationResult.error,
-              c.req.path,
-            ),
-            400,
-          );
-        }
-
-        // ConfigMergeError
-        return c.json(
-          createConfigMergeErrorResponse(validationResult.error, c.req.path),
-          400,
-        );
-      }
-
-      // Success path - TypeScript knows validationResult.data is SafeTressiConfig
-      const saved = await configStorage.save(name, validationResult.data);
-      return c.json(saved, 201);
-    } catch (error) {
-      return c.json(
-        createApiErrorResponse(
-          'Failed to save configuration',
-          'INTERNAL_ERROR',
-          error instanceof Error ? [error.message] : undefined,
-        ),
-        500,
-      );
-    }
-  },
-);
+export default app;

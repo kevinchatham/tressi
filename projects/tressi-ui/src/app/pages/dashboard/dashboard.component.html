@@ -1,72 +1,112 @@
-<div class="container mx-auto p-4">
-  <div class="mb-6">
-    <div class="flex items-center justify-between">
-      <h1 class="text-3xl font-bold">Tressi Load Test Dashboard</h1>
-      <div class="flex items-center gap-4">
-        <!-- Configuration Selector -->
-        <div class="form-control">
-          <label class="label">
-            <span class="label-text">Configuration</span>
-          </label>
-          <select
-            class="select select-bordered"
-            [disabled]="isLoading()"
-            (change)="onConfigSelectEvent($event)"
-          >
-            <option value="">Default Config</option>
-            @for (config of configs(); track config.id) {
-              <option [value]="config.id">{{ config.name }}</option>
-            }
-          </select>
-        </div>
+<div class="p-16">
+  <app-header>
+    <!-- Configuration Selector -->
+    <div class="form-control">
+      <select
+        class="select select-bordered"
+        [disabled]="isLoading()"
+        (change)="onConfigSelectEvent($event)"
+        [value]="selectedConfigId()"
+      >
+        <option disabled>Select Configuration</option>
+        @for (config of safeConfigs(); track config.id) {
+          <option [value]="config.id">{{ config.name }}</option>
+        }
+      </select>
+    </div>
 
-        <!-- Settings Button -->
-        <button
-          (click)="navigateToSettings()"
-          class="btn btn-ghost"
-          title="Settings"
-        >
-          <app-icon name="settings" />
-          <span class="ml-2 hidden sm:inline">Settings</span>
-        </button>
+    <button
+      (click)="start()"
+      class="btn btn-sm btn-primary btn-circle btn-outline"
+      title="Start"
+    >
+      <app-icon name="bolt" />
+    </button>
+    <button
+      (click)="navigateToSettings()"
+      class="btn btn-ghost btn-circle"
+      title="Settings"
+    >
+      <app-icon name="settings" />
+    </button>
+  </app-header>
+  @if (hasMetrics()) {
+    <!-- View Mode Selector -->
+    <div class="form-control mb-4 w-fit max-w-full">
+      <select
+        class="select select-bordered w-auto min-w-0"
+        [disabled]="isLoading()"
+        (change)="onViewModeChange($event)"
+        [value]="currentViewMode()"
+      >
+        <option value="global">Global View</option>
+        @for (endpoint of availableEndpoints(); track endpoint) {
+          <option [value]="endpoint">{{ endpoint | slice: 0 : 50 }}</option>
+        }
+      </select>
+    </div>
+    <div class="ring-neutral mx-auto mb-8 rounded p-4 ring-1">
+      <app-line-chart
+        [title]="
+          currentViewMode() === 'global'
+            ? 'Global Throughput'
+            : 'Throughput - ' + (currentViewMode() | slice: 0 : 50)
+        "
+        [yAxisLabel]="'Rate'"
+        [seriesName]="'Requests/Second'"
+        [data]="throughputData()"
+        [labels]="timeLabels()"
+        [height]="350"
+        [smoothCurve]="true"
+        [chartId]="'throughput-chart'"
+        [syncGroup]="'dashboard-main'"
+      />
+    </div>
+    <div class="ring-neutral mx-auto mb-8 rounded p-4 ring-1">
+      <app-line-chart
+        [title]="
+          currentViewMode() === 'global'
+            ? 'Latency (ms)'
+            : 'Latency - ' + (currentViewMode() | slice: 0 : 50)
+        "
+        [yAxisLabel]="'Milliseconds'"
+        [seriesName]="'Avg Latency'"
+        [data]="latencyData()"
+        [labels]="timeLabels()"
+        [height]="350"
+        [smoothCurve]="false"
+        [chartId]="'latency-chart'"
+        [syncGroup]="'dashboard-main'"
+      />
+    </div>
+    <!--
+    <div class="ring-neutral mx-auto rounded p-4 ring-1">
+      <app-line-chart
+        [title]="
+          currentViewMode() === 'global'
+            ? 'Error Rate'
+            : 'Error Rate - ' + (currentViewMode() | slice: 0 : 50)
+        "
+        [yAxisLabel]="'%'"
+        [seriesName]="'Errors/Second'"
+        [data]="errorRateData()"
+        [labels]="timeLabels()"
+        [height]="350"
+        [smoothCurve]="true"
+        [chartId]="'error-rate-chart'"
+        [syncGroup]="'dashboard-main'"
+      />
+    </div> 
+    -->
+  } @else {
+    <!-- Empty State -->
+    <div class="hero bg-base-200 min-h-125 rounded-lg">
+      <div class="hero-content text-center">
+        <div class="max-w-md">
+          <h1 class="text-2xl font-bold">No Metrics Available</h1>
+          <p class="py-6 text-neutral-600">You haven't run a load test yet.</p>
+        </div>
       </div>
     </div>
-
-    <div class="mt-4">
-      <button (click)="start()" class="btn btn-primary">Start Load Test</button>
-    </div>
-  </div>
-  <div class="ring-neutral mx-auto max-w-4xl rounded p-4 ring-1">
-    <app-line-chart
-      [title]="'Global Throughput'"
-      [yAxisLabel]="'Rate'"
-      [seriesName]="'Requests/Second'"
-      [data]="throughputData()"
-      [labels]="timeLabels()"
-      [height]="350"
-      [smoothCurve]="true"
-    />
-  </div>
-  <div class="ring-neutral mx-auto max-w-4xl rounded p-4 ring-1">
-    <app-line-chart
-      [title]="'Latency (ms)'"
-      [yAxisLabel]="'Milliseconds'"
-      [seriesName]="'Avg Latency'"
-      [data]="latencyData()"
-      [labels]="timeLabels()"
-      [height]="350"
-      [smoothCurve]="false"
-    />
-  </div>
-  <div class="ring-neutral mx-auto max-w-4xl rounded p-4 ring-1">
-    <app-line-chart
-      [title]="'Error Rate'"
-      [yAxisLabel]="'%'"
-      [seriesName]="'Errors/Second'"
-      [data]="errorRateData()"
-      [labels]="timeLabels()"
-      [height]="350"
-      [smoothCurve]="true"
-    />
-  </div>
+  }
 </div>

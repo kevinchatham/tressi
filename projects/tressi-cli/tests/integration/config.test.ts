@@ -1,7 +1,7 @@
 import { MockAgent, setGlobalDispatcher } from 'undici';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
-import { loadConfig, validateAndMergeConfig } from '../../src/core/config';
+import { loadConfig, validateConfig } from '../../src/core/config';
 import { ConfigMergeError, ConfigValidationError } from '../../src/types';
 
 const minimalConfig = {
@@ -92,7 +92,7 @@ describe('config', () => {
 
     it('should return validation errors for invalid config', async () => {
       const invalidConfig = { ...minimalConfig, requests: 'not-an-array' };
-      const result = validateAndMergeConfig(invalidConfig);
+      const result = validateConfig(invalidConfig);
 
       expect(result.success).toBe(false);
       if (!result.success) {
@@ -119,7 +119,7 @@ describe('config', () => {
         ...minimalConfig,
         requests: [{}], // Missing required fields
       };
-      const result = validateAndMergeConfig(invalidConfig);
+      const result = validateConfig(invalidConfig);
 
       expect(result.success).toBe(false);
       if (!result.success) {

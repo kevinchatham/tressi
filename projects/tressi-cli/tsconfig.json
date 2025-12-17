@@ -17,11 +17,7 @@
     "noUnusedParameters": true,
     "types": ["node"],
     "paths": {
-      "tressi-common": [
-        "../tressi-common/src/api/index.ts",
-        "../tressi-common/src/config/index.ts",
-        "../tressi-common/src/metrics/index.ts"
-      ]
+      "tressi-common/*": ["../tressi-common/src/*/index.ts"]
     }
   },
   "include": ["src/**/*.ts", "generate-schema.ts"],

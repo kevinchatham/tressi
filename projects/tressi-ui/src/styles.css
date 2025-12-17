@@ -2,3 +2,10 @@
 @plugin 'daisyui' {
   themes: all;
 }
+
+/* Add custom font configuration */
+@layer base {
+  html {
+    font-family: 'Open Sans', system-ui, sans-serif;
+  }
+}

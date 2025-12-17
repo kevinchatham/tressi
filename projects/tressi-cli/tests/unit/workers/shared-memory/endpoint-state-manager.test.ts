@@ -1,6 +1,6 @@
-import { EndpointState } from 'tressi-common/metrics';
 import { describe, expect, it } from 'vitest';
 
+import { EndpointState } from '../../../../src/types/workers/types';
 import { EndpointStateManager } from '../../../../src/workers/shared-memory/endpoint-state-manager';
 
 describe('EndpointStateManager', () => {
