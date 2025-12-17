@@ -47,8 +47,17 @@ customModes:
       4. Summarize the main purpose of the change in a concise imperative sentence.
       5. Include additional context in the body if needed (optional, keep minimal).
       6. Output ONLY the final conventional commit message text. Do not include diff snippets, commentary, or explanations.
-      7. Use bullet point formatting.
+      7. Use bullet point formatting to summarize points after the main header.
       8. NEVER CHANGE MODES
+      9. EXAMPLE:
+          refactor(config): migrate config storage to SignalDB and simplify service APIs
+            - Replace LowDB with Signaldb for config persistence
+            - Update ConfigStorage to use async CRUD operations
+            - Convert ConfigService to async/await and typed ConfigDocument
+            - Adjust settings component to use new signal-based filtering
+            - Remove unused LogService injection
+            - Update RPC service types and response handling
+            - Add node type to tsconfig.app.json
     groups:
       - read
       - command

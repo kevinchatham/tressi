@@ -29,54 +29,50 @@ const healthCheckGuard = (): boolean => {
 };
 
 // Configuration guard for welcome and settings routes
-const configGuard = (
+const configGuard = async (
   route?: ActivatedRouteSnapshot,
   state?: RouterStateSnapshot,
 ): Promise<boolean> => {
   const configService = inject(ConfigService);
   const router = inject(Router);
 
-  return new Promise((resolve) => {
-    configService.getAllConfigMetadata().subscribe({
-      next: (configs) => {
-        const hasConfigs = Array.isArray(configs) && configs.length > 0;
+  try {
+    const configs = await configService.getAll();
+    const hasConfigs = Array.isArray(configs) && configs.length > 0;
 
-        // Get the target path from the route or state
-        const targetPath = route?.routeConfig?.path || '';
-        const fullUrl = state?.url || '';
-        const urlPath = fullUrl.replace(/^\/+|\/+$/g, '');
+    // Get the target path from the route or state
+    const targetPath = route?.routeConfig?.path || '';
+    const fullUrl = state?.url || '';
+    const urlPath = fullUrl.replace(/^\/+|\/+$/g, '');
 
-        // Determine which path to use for logic
-        const pathToCheck = targetPath || urlPath;
+    // Determine which path to use for logic
+    const pathToCheck = targetPath || urlPath;
 
-        if (hasConfigs) {
-          // When configs exist, redirect away from welcome to dashboard
-          if (pathToCheck === 'welcome' || pathToCheck === '') {
-            router.navigate(['/dashboard']);
-            resolve(false);
-          } else {
-            resolve(true);
-          }
-        } else {
-          // No configs exist, only allow welcome or settings
-          if (
-            pathToCheck === 'welcome' ||
-            pathToCheck === 'settings' ||
-            pathToCheck === ''
-          ) {
-            resolve(true);
-          } else {
-            router.navigate(['/welcome']);
-            resolve(false);
-          }
-        }
-      },
-      error: () => {
-        // On error, allow navigation to handle the issue
-        resolve(true);
-      },
-    });
-  });
+    if (hasConfigs) {
+      // When configs exist, redirect away from welcome to dashboard
+      if (pathToCheck === 'welcome' || pathToCheck === '') {
+        await router.navigate(['/dashboard']);
+        return false;
+      } else {
+        return true;
+      }
+    } else {
+      // No configs exist, only allow welcome or settings
+      if (
+        pathToCheck === 'welcome' ||
+        pathToCheck === 'settings' ||
+        pathToCheck === ''
+      ) {
+        return true;
+      } else {
+        await router.navigate(['/welcome']);
+        return false;
+      }
+    }
+  } catch {
+    // On error, allow navigation to handle the issue
+    return true;
+  }
 };
 
 export const routes: Routes = [

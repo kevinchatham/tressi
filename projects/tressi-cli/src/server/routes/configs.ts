@@ -7,20 +7,6 @@ import { configStorage } from '../../core/config-storage';
 import { createApiErrorResponse } from '../utils/error-response-generator';
 
 /**
- * Request schema for saving a configuration
- */
-export const ConfigRequestSchema = z.object({
-  id: z.string().optional().default(crypto.randomUUID()),
-  name: z.string(),
-  config: z.custom<TressiConfig>(),
-  updatedAt: z.number().optional().default(Date.now),
-});
-
-export type ConfigRequestInferType = z.infer<typeof ConfigRequestSchema>;
-
-export type ConfigRequestOutputType = z.output<typeof ConfigRequestSchema>;
-
-/**
  * Configuration management routes for handling CRUD operations on load test configurations.
  * Provides endpoints for listing, retrieving, creating, and deleting configurations.
  */
@@ -31,7 +17,7 @@ const app = new Hono()
    */
   .get('/', async (c) => {
     try {
-      const configs = await configStorage.getAllMetadata();
+      const configs = await configStorage.getAll();
       return c.json(configs);
     } catch (error) {
       return c.json(
@@ -83,26 +69,38 @@ const app = new Hono()
    * @param {SaveConfigRequest} body - Configuration data from request body
    * @returns {Promise<Response>} Created configuration with 201 status or error response
    */
-  .post('/', sValidator('json', ConfigRequestSchema), async (c) => {
-    try {
-      const model = c.req.valid('json');
-      const validationResult = validateConfig(model.config);
-      if (validationResult.success === false) {
-        return c.json(validationResult.error, 400);
+  .post(
+    '/',
+    sValidator(
+      'json',
+      z.object({
+        id: z.string().optional(),
+        name: z.string(),
+        config: z.custom<TressiConfig>(),
+      }),
+    ),
+    async (c) => {
+      try {
+        const model = c.req.valid('json');
+        const validationResult = validateConfig(model.config);
+        if (validationResult.success === false) {
+          return c.json(validationResult.error, 400);
+        }
+
+        const saved = await configStorage.save(model);
+        return c.json(saved, 201);
+      } catch (error) {
+        return c.json(
+          createApiErrorResponse(
+            'Failed to save configuration',
+            'INTERNAL_ERROR',
+            error instanceof Error ? [error.message] : undefined,
+          ),
+          500,
+        );
       }
-      const saved = await configStorage.save(model);
-      return c.json(saved, 201);
-    } catch (error) {
-      return c.json(
-        createApiErrorResponse(
-          'Failed to save configuration',
-          'INTERNAL_ERROR',
-          error instanceof Error ? [error.message] : undefined,
-        ),
-        500,
-      );
-    }
-  })
+    },
+  )
   /**
    * DELETE /:id - Deletes a configuration by ID
    * @param {string} id - The configuration ID from URL parameter

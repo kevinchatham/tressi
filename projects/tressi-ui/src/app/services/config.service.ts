@@ -1,12 +1,6 @@
 import { inject, Injectable } from '@angular/core';
-import { from, Observable } from 'rxjs';
 
-import {
-  GetAllConfigsResponse,
-  GetConfigByIdResponse,
-  ModifyConfigRequest,
-  RPCService,
-} from './rpc.service';
+import { ConfigDocument, ModifyConfigRequest, RPCService } from './rpc.service';
 
 @Injectable({
   providedIn: 'root',
@@ -14,37 +8,27 @@ import {
 export class ConfigService {
   private readonly rpc = inject(RPCService);
 
-  getAllConfigMetadata(): Observable<GetAllConfigsResponse> {
-    return from(this.rpc.client.config.$get().then((r: Response) => r.json()));
+  async getAll(): Promise<ConfigDocument[]> {
+    const response = await this.rpc.client.config.$get();
+    return (await response.json()) as ConfigDocument[];
   }
 
-  getConfig(id: string): Observable<GetConfigByIdResponse> {
-    return from(
-      this.rpc.client.config[':id']
-        .$get({
-          param: { id },
-        })
-        .then((r: Response) => r.json()),
-    );
+  async getOne(id: string): Promise<ConfigDocument | undefined> {
+    const response = await this.rpc.client.config[':id'].$get({
+      param: { id },
+    });
+    return (await response.json()) as ConfigDocument | undefined;
   }
 
-  saveConfig(config: ModifyConfigRequest): Observable<ModifyConfigRequest> {
-    return from(
-      this.rpc.client.config
-        .$post({
-          json: config,
-        })
-        .then((r: Response) => r.json()),
-    );
+  async saveConfig(config: ModifyConfigRequest): Promise<ConfigDocument> {
+    const response = await this.rpc.client.config.$post({ json: config });
+    const savedConfig = (await response.json()) as ConfigDocument;
+    return savedConfig;
   }
 
-  deleteConfig(id: string): Observable<void> {
-    return from(
-      this.rpc.client.config[':id']
-        .$delete({
-          param: { id },
-        })
-        .then(() => undefined),
-    );
+  async deleteConfig(id: string): Promise<void> {
+    await this.rpc.client.config[':id'].$delete({
+      param: { id },
+    });
   }
 }

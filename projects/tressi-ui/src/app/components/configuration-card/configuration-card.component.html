@@ -1,6 +1,6 @@
 <div class="ring-neutral bg-base-100 rounded-lg p-4 ring-1">
   <div class="flex justify-between">
-    <span class="text-lg font-semibold">{{ config().name }}</span>
+    <span class="text-lg font-semibold">{{ input().name }}</span>
     <div class="-mt-1.5 ml-2 flex gap-1">
       <button
         (click)="toggleCollapsed()"
@@ -12,14 +12,14 @@
         />
       </button>
       <button
-        (click)="edit.emit(config())"
+        (click)="edit.emit(input())"
         class="btn btn-ghost text-success btn-circle"
         title="Edit"
       >
         <app-icon name="settings" />
       </button>
       <button
-        (click)="delete.emit(config())"
+        (click)="delete.emit(input())"
         class="btn btn-ghost text-error btn-circle"
         title="Delete"
       >
@@ -30,7 +30,7 @@
   <div class="mt-2 space-y-1 text-sm">
     <p class="text-base-content/70">
       Updated:
-      {{ timeService.getRelativeTimeString(config().updatedAt ?? 0) }}
+      {{ timeService.getRelativeTimeString(input().epochUpdatedAt ?? 0) }}
     </p>
   </div>
 
@@ -44,7 +44,7 @@
         </h4>
         <div class="space-y-2">
           @for (
-            request of config().config.requests.slice(0, 3);
+            request of input().config.requests.slice(0, 3);
             track request.url
           ) {
             <div
@@ -72,9 +72,9 @@
               </span>
             </div>
           }
-          @if (config().config.requests.length > 3) {
+          @if (input().config.requests.length > 3) {
             <div class="text-base-content/60 text-center text-sm">
-              +{{ config().config.requests.length - 3 }} more
+              +{{ input().config.requests.length - 3 }} more
             </div>
           }
         </div>
@@ -87,7 +87,7 @@
             Duration
           </h4>
           <p class="text-sm">
-            {{ config().config.options.durationSec }} seconds
+            {{ input().config.options.durationSec }} seconds
           </p>
         </div>
         <div>
@@ -95,31 +95,31 @@
             Threads
           </h4>
           <p class="text-sm">
-            {{ config().config.options.threads }} thread{{
-              config().config.options.threads !== 1 ? 's' : ''
+            {{ input().config.options.threads }} thread{{
+              input().config.options.threads !== 1 ? 's' : ''
             }}
           </p>
         </div>
-        @if (config().config.options.rampUpTimeSec > 0) {
+        @if (input().config.options.rampUpTimeSec > 0) {
           <div>
             <h4 class="text-base-content/70 mb-1 text-sm font-semibold">
               Ramp-up
             </h4>
             <p class="text-sm">
-              {{ config().config.options.rampUpTimeSec }} seconds
+              {{ input().config.options.rampUpTimeSec }} seconds
             </p>
           </div>
         }
-        @if (config().config.options.exportPath) {
+        @if (input().config.options.exportPath) {
           <div>
             <h4 class="text-base-content/70 mb-1 text-sm font-semibold">
               Export
             </h4>
             <p
               class="truncate text-sm"
-              [title]="config().config.options.exportPath"
+              [title]="input().config.options.exportPath"
             >
-              {{ config().config.options.exportPath }}
+              {{ input().config.options.exportPath }}
             </p>
           </div>
         }

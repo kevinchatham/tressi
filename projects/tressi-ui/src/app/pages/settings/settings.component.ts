@@ -15,9 +15,8 @@ import { HeaderComponent } from '../../components/header/header.component';
 import { IconComponent } from '../../components/icon/icon.component';
 import { SearchBarComponent } from '../../components/search-bar/search-bar.component';
 import { ConfigService } from '../../services/config.service';
-import { LogService } from '../../services/log.service';
 import {
-  GetAllConfigsResponse,
+  ConfigDocument,
   ModifyConfigRequest,
 } from '../../services/rpc.service';
 import { TimeService } from '../../services/time.service';
@@ -38,17 +37,16 @@ import { TimeService } from '../../services/time.service';
 export class SettingsComponent implements OnInit {
   /** Service injection */
   private readonly configService = inject(ConfigService);
-  private readonly logService = inject(LogService);
   private readonly router = inject(Router);
   readonly timeService = inject(TimeService);
 
   /** Reactive signals for state management */
-  readonly configs = signal<GetAllConfigsResponse>([]);
+  readonly configs = signal<ConfigDocument[]>([]);
   readonly showDeleteModal = signal<boolean>(false);
-  readonly configToDelete = signal<ModifyConfigRequest | null>(null);
+  readonly configToDelete = signal<ConfigDocument | null>(null);
 
   /** Current configuration being edited */
-  readonly currentConfig = signal<ModifyConfigRequest | null>(null);
+  readonly currentConfig = signal<ConfigDocument | null>(null);
 
   /** Signal to track if we're showing the form (for create or edit) */
   readonly showForm = signal<boolean>(false);
@@ -56,46 +54,26 @@ export class SettingsComponent implements OnInit {
   /** Signal for the current search query */
   readonly searchQuery = signal<string>('');
 
-  /** Computed signal that returns only the array of configs (or empty array) */
-  readonly safeConfigs = computed(() => {
-    const cfg = this.configs();
-    if (!cfg || 'error' in cfg) return [];
-    return cfg;
-  });
-
   /** Computed signal that filters configs based on search query */
   readonly filteredConfigs = computed(() => {
     const query = this.searchQuery().toLowerCase().trim();
-    if (!query) return this.safeConfigs();
+    if (!query) return this.configs();
 
-    return this.safeConfigs().filter((config) => {
-      if ('error' in config) return false;
-
+    return this.configs().filter((config) => {
       // Search in config name
       if (config.name.toLowerCase().includes(query)) {
         return true;
       }
 
-      // Search in request URLs
-      if (config.config?.requests) {
-        return config.config.requests.some((request) =>
-          request.url?.toLowerCase().includes(query),
-        );
-      }
-
-      return false;
+      return config.config.requests.some((req) =>
+        req.url.toLowerCase().includes(query),
+      );
     });
   });
 
   /** Computed signal to check if there are no configs to display */
   readonly hasNoConfigs = computed(() => {
-    return this.safeConfigs().length === 0;
-  });
-
-  /** Computed signal to check if there's an error */
-  readonly hasError = computed(() => {
-    const cfg = this.configs();
-    return cfg && 'error' in cfg;
+    return this.configs().length === 0;
   });
 
   ngOnInit(): void {
@@ -105,15 +83,9 @@ export class SettingsComponent implements OnInit {
   /**
    * Loads all available configurations from the server.
    */
-  private loadConfigurations(): void {
-    this.configService.getAllConfigMetadata().subscribe({
-      next: (configs) => {
-        this.configs.set(configs);
-      },
-      error: (error) => {
-        this.logService.error('Failed to load configurations:', error);
-      },
-    });
+  private async loadConfigurations(): Promise<void> {
+    const configs = await this.configService.getAll();
+    this.configs.set(configs);
   }
 
   /**
@@ -127,8 +99,7 @@ export class SettingsComponent implements OnInit {
   /**
    * Starts editing an existing configuration.
    */
-  startEdit(config: ModifyConfigRequest): void {
-    if ('error' in config) return;
+  startEdit(config: ConfigDocument): void {
     this.currentConfig.set(config);
     this.showForm.set(true);
   }
@@ -136,7 +107,7 @@ export class SettingsComponent implements OnInit {
   /**
    * Shows delete confirmation modal.
    */
-  showDeleteConfirm(config: ModifyConfigRequest): void {
+  showDeleteConfirm(config: ConfigDocument): void {
     this.configToDelete.set(config);
     this.showDeleteModal.set(true);
   }
@@ -152,36 +123,19 @@ export class SettingsComponent implements OnInit {
   /**
    * Deletes a configuration.
    */
-  deleteConfig(): void {
+  async deleteConfig(): Promise<void> {
     const config = this.configToDelete();
-    if (!config || 'error' in config || !config.id) return;
-
-    this.configService.deleteConfig(config.id).subscribe({
-      next: () => {
-        this.loadConfigurations();
-        this.showDeleteModal.set(false);
-        this.configToDelete.set(null);
-      },
-      error: (error) => {
-        this.logService.error('Failed to delete configuration:', error);
-      },
-    });
+    if (!config) return;
+    await this.configService.deleteConfig(config.id);
   }
 
   /**
    * Handles configuration saved event from config-form component.
    */
-  onConfigSaved(event: ModifyConfigRequest): void {
-    if (!event.config) return;
-    this.configService.saveConfig(event).subscribe({
-      next: () => {
-        this.loadConfigurations();
-        this.cancelEdit();
-      },
-      error: (error) => {
-        this.logService.error('Failed to save configuration:', error);
-      },
-    });
+  async onConfigSaved(event: ModifyConfigRequest): Promise<void> {
+    await this.configService.saveConfig(event);
+    await this.loadConfigurations();
+    this.cancelEdit();
   }
 
   /**

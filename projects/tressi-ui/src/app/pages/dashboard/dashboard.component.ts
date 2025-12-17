@@ -18,11 +18,7 @@ import { ConfigService } from '../../services/config.service';
 import { LocalStorageService } from '../../services/local-storage.service';
 import { LogService } from '../../services/log.service';
 import { SSEService } from '../../services/metrics.service';
-import {
-  GetAllConfigsResponse,
-  GetConfigByIdResponse,
-  RPCService,
-} from '../../services/rpc.service';
+import { ConfigDocument, RPCService } from '../../services/rpc.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -44,10 +40,10 @@ export class DashboardComponent implements OnInit {
   private readonly metricsHistory = signal<AggregatedMetric[]>([]);
 
   /** Reactive signal holding available configurations. */
-  readonly configs = signal<GetAllConfigsResponse>([]);
+  readonly configs = signal<ConfigDocument[]>([]);
 
   /** Reactive signal holding the selected configuration. */
-  readonly selectedConfig = signal<GetConfigByIdResponse | null>(null);
+  readonly selectedConfig = signal<ConfigDocument | null>(null);
 
   /** Reactive signal for loading state. */
   readonly isLoading = signal<boolean>(true);
@@ -148,71 +144,54 @@ export class DashboardComponent implements OnInit {
   /**
    * Loads all available configurations from the server.
    */
-  private loadConfigurations(): void {
+  private async loadConfigurations(): Promise<void> {
     this.isLoading.set(true);
-    this.configService.getAllConfigMetadata().subscribe({
-      next: (configs) => {
-        this.configs.set(configs);
 
-        // Restore last selected config or select first available
-        if (configs && !('error' in configs) && configs.length > 0) {
-          const lastSelectedConfig =
-            this.localStorageService.getPreferences().lastSelectedConfig;
+    const configs = await this.configService.getAll();
 
-          if (lastSelectedConfig && !('error' in lastSelectedConfig)) {
-            // Check if the last selected config still exists
-            const existingConfig = configs.find(
-              (c) => c.id === lastSelectedConfig.id,
-            );
-            if (existingConfig) {
-              this.onConfigSelect(existingConfig.id);
-            } else {
-              // Config no longer exists, select first available
-              const firstConfig = configs[0];
-              this.onConfigSelect(firstConfig.id);
-            }
-          } else {
-            // No last selected config, select first available
-            const firstConfig = configs[0];
-            this.onConfigSelect(firstConfig.id);
-          }
-        } else {
-          this.router.navigate(['welcome']);
-        }
+    this.configs.set(configs);
 
-        this.isLoading.set(false);
-      },
-      error: (error) => {
-        this.logService.error('Failed to load configurations:', error);
-        this.isLoading.set(false);
-      },
-    });
+    if (configs.length === 0) {
+      this.router.navigate(['welcome']);
+      return;
+    }
+
+    const lastSelectedConfig =
+      this.localStorageService.getPreferences().lastSelectedConfig;
+
+    if (lastSelectedConfig) {
+      // Check if the last selected config still exists
+      const existingConfig = configs.find(
+        (c) => c.id === lastSelectedConfig.id,
+      );
+      if (existingConfig) {
+        this.onConfigSelect(existingConfig.id);
+      } else {
+        // Config no longer exists, select first available
+        const firstConfig = configs[0];
+        this.onConfigSelect(firstConfig.id);
+      }
+    } else {
+      // No last selected config, select first available
+      const firstConfig = configs[0];
+      this.onConfigSelect(firstConfig.id);
+    }
+
+    this.isLoading.set(false);
   }
 
   /**
    * Handles configuration selection change.
    */
   onConfigSelect(configId: string): void {
-    const allConfigs = this.configs();
-
-    if ('error' in allConfigs) return;
-
-    const config = allConfigs.find((c) => c.id === configId);
-    if (config) {
-      this.configService.getConfig(configId).subscribe({
-        next: (configRecord) => {
-          this.selectedConfig.set(configRecord);
-          // Save the selected config to localStorage
-          this.localStorageService.savePreferences({
-            ...this.localStorageService.getPreferences(),
-            lastSelectedConfig: configRecord,
-          });
-        },
-        error: (error) => {
-          this.logService.error('Failed to load configuration:', error);
-        },
-      });
-    }
+    const config = this.configs().find((c) => c.id === configId);
+    if (!config) return;
+    this.selectedConfig.set(config);
+    // Save the selected config to localStorage
+    this.localStorageService.savePreferences({
+      ...this.localStorageService.getPreferences(),
+      lastSelectedConfig: config,
+    });
   }
 
   /**

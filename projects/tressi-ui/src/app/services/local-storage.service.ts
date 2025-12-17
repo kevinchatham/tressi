@@ -2,12 +2,12 @@ import { inject, Injectable, signal } from '@angular/core';
 import { z } from 'zod';
 
 import { LogService } from './log.service';
-import { GetConfigByIdResponse } from './rpc.service';
+import { ConfigDocument } from './rpc.service';
 import { Theme } from './theme.service';
 
 export const UserPreferencesSchema = z.object({
   selectedTheme: z.custom<Theme>(),
-  lastSelectedConfig: z.custom<GetConfigByIdResponse | null>(),
+  lastSelectedConfig: z.custom<ConfigDocument | null>(),
 });
 
 export type UserPreferences = z.infer<typeof UserPreferencesSchema>;
@@ -20,18 +20,23 @@ export class LocalStorageService {
   private readonly logService = inject(LogService);
 
   private readonly preferences = signal<UserPreferences>(
-    this.loadPreferences(),
+    this.getDefaultPreferences(),
   );
+
+  constructor() {
+    this.loadPreferences();
+  }
 
   /**
    * Loads and validates user preferences from localStorage
    */
-  private loadPreferences(): UserPreferences {
+  private loadPreferences(): void {
     try {
       const stored = localStorage.getItem(this.STORAGE_KEY);
 
       if (!stored) {
-        return this.resetPreferences();
+        this.resetPreferences();
+        return;
       }
 
       const parsed = JSON.parse(stored);
@@ -42,24 +47,24 @@ export class LocalStorageService {
           'Invalid user preferences in localStorage: resetting...',
           result.error,
         );
-        return this.resetPreferences();
+        this.resetPreferences();
+        return;
       }
 
-      return result.data;
+      this.preferences.set(result.data);
     } catch (error) {
       this.logService.error(
         'Failed to load user preferences: resetting...',
         error,
       );
-      return this.resetPreferences();
+      this.resetPreferences();
     }
   }
 
-  private resetPreferences(): UserPreferences {
+  private resetPreferences(): void {
     const stored = localStorage.getItem(this.STORAGE_KEY);
     if (stored) localStorage.removeItem(this.STORAGE_KEY);
     this.savePreferences(this.getDefaultPreferences());
-    return this.getDefaultPreferences();
   }
 
   /**
@@ -76,13 +81,9 @@ export class LocalStorageService {
    * Saves validated preferences to localStorage
    */
   savePreferences(preferences: UserPreferences): void {
-    try {
-      const validated = UserPreferencesSchema.parse(preferences);
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(validated));
-      this.preferences.set(validated);
-    } catch (error) {
-      this.logService.error('Failed to save user preferences:', error);
-    }
+    const validated = UserPreferencesSchema.parse(preferences);
+    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(validated));
+    this.preferences.set(validated);
   }
 
   /**

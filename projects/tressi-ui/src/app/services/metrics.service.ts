@@ -20,7 +20,7 @@ export class SSEService {
 
       eventSource.onmessage = (event): void => {
         const metrics = JSON.parse(event.data) satisfies AggregatedMetric;
-        if ('duration' in metrics) observer.next(metrics);
+        if ('epoch' in metrics) observer.next(metrics);
       };
 
       eventSource.onerror = (error): void => {

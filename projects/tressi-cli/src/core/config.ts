@@ -3,6 +3,8 @@ import * as path from 'path';
 import { type TressiConfig, validateConfig } from 'tressi-common/config';
 import { request } from 'undici';
 
+// CLI USE
+
 class TressiConfigLoader {
   /**
    * Loads and validates configuration from file, URL, or object

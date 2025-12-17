@@ -33,7 +33,7 @@
     <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       @for (config of filteredConfigs(); track config.id) {
         <app-configuration-card
-          [config]="config"
+          [input]="config"
           (edit)="startEdit($event)"
           (delete)="showDeleteConfirm($event)"
         />
@@ -41,7 +41,7 @@
     </div>
 
     @if (hasNoConfigs()) {
-      <div class="ring-neutral mx-auto max-w-md rounded-lg p-8 ring-1">
+      <div class="ring-neutral mx-auto rounded-lg p-8 ring-1">
         <div class="text-center">
           <p class="text-base-content/70 mb-4 text-lg">
             No configurations found
@@ -65,8 +65,8 @@
           }}
         </h2>
         <app-config-form
-          [configInput]="currentConfig()"
-          (configOutput)="onConfigSaved($event)"
+          [input]="currentConfig()"
+          (output)="onConfigSaved($event)"
           (closed)="cancelEdit()"
         />
       </div>

@@ -7,7 +7,7 @@ import {
   signal,
 } from '@angular/core';
 
-import { ModifyConfigRequest } from '../../services/rpc.service';
+import { ConfigDocument } from '../../services/rpc.service';
 import { TimeService } from '../../services/time.service';
 import { IconComponent } from '../icon/icon.component';
 
@@ -19,12 +19,11 @@ import { IconComponent } from '../icon/icon.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ConfigurationCardComponent {
-  /** Required configuration input */
-  readonly config = input.required<ModifyConfigRequest>();
+  readonly input = input.required<ConfigDocument>();
 
   /** Output events */
-  readonly edit = output<ModifyConfigRequest>();
-  readonly delete = output<ModifyConfigRequest>();
+  readonly edit = output<ConfigDocument>();
+  readonly delete = output<ConfigDocument>();
 
   /** Services */
   readonly timeService = inject(TimeService);
@@ -49,11 +48,11 @@ export class ConfigurationCardComponent {
 
   /** Get headers entries as array */
   getHeadersEntries(): Array<[string, string]> {
-    return Object.entries(this.config().config.options.headers);
+    return Object.entries(this.input().config.options.headers);
   }
 
   /** Get headers count */
   getHeadersCount(): number {
-    return Object.keys(this.config().config.options.headers).length;
+    return Object.keys(this.input().config.options.headers).length;
   }
 }

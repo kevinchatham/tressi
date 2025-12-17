@@ -20,13 +20,16 @@ export type ModifyConfigRequest = InferRequestType<
   typeof client.config.$post
 >['json'];
 
-export type GetAllConfigsResponse = InferResponseType<
-  typeof client.config.$get
+type GetConfigResponse = InferResponseType<typeof client.config.$get>;
+
+export type GetConfigResponseSuccess = Extract<GetConfigResponse, unknown[]>;
+
+export type GetConfigResponseError = Extract<
+  GetConfigResponse,
+  { error: object }
 >;
 
-export type GetConfigByIdResponse = InferResponseType<
-  (typeof client.config)[':id']['$get']
->;
+export type ConfigDocument = GetConfigResponseSuccess[number];
 
 export type GetHealthResponse = InferResponseType<typeof client.health.$get>;
 

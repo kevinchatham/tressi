@@ -23,7 +23,10 @@ import {
 } from 'tressi-common/config';
 
 import { NameService } from '../../services/name.service';
-import { ModifyConfigRequest } from '../../services/rpc.service';
+import {
+  ConfigDocument,
+  ModifyConfigRequest,
+} from '../../services/rpc.service';
 import { IconComponent } from '../icon/icon.component';
 import { AdvancedConfigComponent } from './advanced-config/advanced-config.component';
 import { BasicConfigComponent } from './basic-config/basic-config.component';
@@ -53,10 +56,10 @@ export class ConfigFormComponent {
   private readonly nameService = inject(NameService);
 
   /** Input configuration to edit */
-  readonly configInput = input<ModifyConfigRequest | null>(null);
+  readonly input = input<ConfigDocument | null>(null);
 
   /** Output event when configuration is saved */
-  readonly configOutput = output<ModifyConfigRequest>();
+  readonly output = output<ModifyConfigRequest>();
 
   /** Output event when closed */
   readonly closed = output<void>();
@@ -66,7 +69,7 @@ export class ConfigFormComponent {
 
   constructor() {
     effect(() => {
-      const input = this.configInput();
+      const input = this.input();
       if (input !== null) {
         this.model.set(input);
       } else {
@@ -120,7 +123,7 @@ export class ConfigFormComponent {
   /** Handle form submission */
   onSubmit(event: Event): void {
     event.preventDefault();
-    this.configOutput.emit(this.model());
+    this.output.emit(this.model());
   }
 
   onCancel(event: Event): void {

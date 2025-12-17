@@ -1,104 +1,126 @@
-import { existsSync, mkdirSync } from 'fs';
-import { Low } from 'lowdb';
-import { JSONFile } from 'lowdb/node';
-import { homedir } from 'os';
-import { join } from 'path';
+import { TressiConfig } from 'tressi-common/config';
 
-import {
-  ConfigRequestInferType,
-  ConfigRequestOutputType,
-  ConfigRequestSchema,
-} from '../server/routes/configs';
-import { ConfigDatabase } from '../types/db/types';
+import { ConfigDocument } from '../types/db/types';
+import { configCollection } from './signaldb-adapter';
 
-const configDir = join(homedir(), '.tressi');
-const configPath = join(configDir, 'configs.json');
+export type ConfigUpsert = Pick<ConfigDocument, 'name' | 'config'> &
+  Partial<Pick<ConfigDocument, 'id'>>;
 
-// Ensure config directory exists
-if (!existsSync(configDir)) {
-  mkdirSync(configDir, { recursive: true });
-}
-
-// Initialize LowDB
-const adapter = new JSONFile<ConfigDatabase>(configPath);
-const db = new Low(adapter, { configs: [] });
-
+/**
+ * Storage class for managing Tressi configurations using SignalDB
+ * Provides CRUD operations for configuration documents
+ */
 export class ConfigStorage {
   /**
-   * Get all saved configurations (without the full config data)
+   * Get all saved configurations
+   * @returns Array of configuration documents
    */
-  async getAllMetadata(): Promise<ConfigRequestOutputType[]> {
-    await db.read();
-    return db.data.configs;
+  async getAll(): Promise<ConfigDocument[]> {
+    try {
+      return configCollection.find({ type: 'config' }).fetch();
+    } catch (error) {
+      throw new Error(
+        `Failed to retrieve configurations: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
   }
 
   /**
    * Get a single configuration by ID
+   * @param id Configuration ID
+   * @returns Configuration document or undefined if not found
    */
-  async getById(id: string): Promise<ConfigRequestOutputType | undefined> {
-    await db.read();
-    return db.data.configs.find((c) => c.id === id);
-  }
-
-  /**
-   * Get a configuration by name
-   */
-  async getByName(name: string): Promise<ConfigRequestOutputType | undefined> {
-    await db.read();
-    return db.data.configs.find((c) => c.name === name);
-  }
-
-  /**
-   * Save a new configuration or update existing one by name
-   */
-  async save(input: ConfigRequestInferType): Promise<ConfigRequestOutputType> {
-    await db.read();
-
-    const existingIndex = db.data.configs.findIndex((c) => c.id === input.id);
-
-    const model = ConfigRequestSchema.parse(input);
-
-    if (existingIndex !== -1) {
-      db.data.configs[existingIndex] = model;
-    } else {
-      db.data.configs.push(model);
+  async getById(id: string): Promise<ConfigDocument | undefined> {
+    try {
+      const docs = configCollection.find({ id, type: 'config' }).fetch();
+      return docs[0] || undefined;
+    } catch (error) {
+      throw new Error(
+        `Failed to retrieve configuration: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
     }
+  }
 
-    await db.write();
-    return db.data.configs.find((c) => c.name === input.name)!;
+  /**
+   * Save a new configuration or update existing one
+   * @param input Configuration data
+   * @returns Saved configuration document
+   */
+  async save(input: ConfigUpsert): Promise<ConfigDocument> {
+    try {
+      const configDoc = this.transformToConfigDocument(input);
+
+      // Check if this is an update by ID
+      if (input.id) {
+        const existing = await this.getById(input.id);
+        if (existing) {
+          // Update existing document
+          const updatedDoc = {
+            ...existing,
+            ...configDoc,
+            createdAt: existing.epochCreatedAt, // Preserve original creation time
+            updatedAt: Date.now(),
+          };
+          configCollection.removeOne({ id: input.id });
+          configCollection.insert(updatedDoc);
+          return updatedDoc;
+        }
+      }
+
+      // Insert new configuration
+      configCollection.insert(configDoc);
+      return configDoc;
+    } catch (error) {
+      throw new Error(
+        `Failed to save configuration: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
   }
 
   /**
    * Delete a configuration by ID
+   * @param id Configuration ID
+   * @returns True if deleted, false if not found
    */
   async delete(id: string): Promise<boolean> {
-    await db.read();
-    const initialLength = db.data.configs.length;
-    db.data.configs = db.data.configs.filter((c) => c.id !== id);
+    try {
+      const existing = await this.getById(id);
+      if (!existing) {
+        return false;
+      }
 
-    if (db.data.configs.length < initialLength) {
-      await db.write();
-      return true;
+      const result = configCollection.removeOne({ id });
+      return result > 0;
+    } catch (error) {
+      throw new Error(
+        `Failed to delete configuration: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
     }
-
-    return false;
   }
 
   /**
-   * Delete a configuration by name
+   * Transforms configuration data to ConfigDocument format
+   * @param input Configuration data
+   * @returns ConfigDocument with proper structure
    */
-  async deleteByName(name: string): Promise<boolean> {
-    await db.read();
-    const initialLength = db.data.configs.length;
-    db.data.configs = db.data.configs.filter((c) => c.name !== name);
-
-    if (db.data.configs.length < initialLength) {
-      await db.write();
-      return true;
-    }
-
-    return false;
+  private transformToConfigDocument(input: {
+    id?: string;
+    name: string;
+    config: TressiConfig;
+  }): ConfigDocument {
+    const now = Date.now();
+    return {
+      id: input.id || crypto.randomUUID(),
+      type: 'config',
+      name: input.name,
+      config: input.config,
+      epochCreatedAt: now,
+      epochUpdatedAt: now,
+    };
   }
 }
 
+/**
+ * Global configuration storage instance
+ */
 export const configStorage = new ConfigStorage();
