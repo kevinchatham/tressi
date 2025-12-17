@@ -127,14 +127,33 @@ export class SettingsComponent implements OnInit {
     const config = this.configToDelete();
     if (!config) return;
     await this.configService.deleteConfig(config.id);
+    this.showDeleteModal.set(false);
+    this.configToDelete.set(null);
+
+    // Update configs directly instead of reloading
+    this.configs.update((configs) => configs.filter((c) => c.id !== config.id));
   }
 
   /**
    * Handles configuration saved event from config-form component.
    */
   async onConfigSaved(event: ModifyConfigRequest): Promise<void> {
-    await this.configService.saveConfig(event);
-    await this.loadConfigurations();
+    const savedConfig = await this.configService.saveConfig(event);
+
+    // Update configs directly instead of reloading
+    this.configs.update((configs) => {
+      const existingIndex = configs.findIndex((c) => c.id === savedConfig.id);
+      if (existingIndex >= 0) {
+        // Update existing config
+        const updatedConfigs = [...configs];
+        updatedConfigs[existingIndex] = savedConfig;
+        return updatedConfigs;
+      } else {
+        // Add new config
+        return [...configs, savedConfig];
+      }
+    });
+
     this.cancelEdit();
   }
 
