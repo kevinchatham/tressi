@@ -4,12 +4,12 @@ import { parentPort, workerData } from 'worker_threads';
 import { RequestExecutor } from '../http/request-executor';
 import { ResponseSampler } from '../http/response-sampler';
 import { terminal } from '../tui/terminal';
-import { WorkerData, WorkerState } from '../types/workers/types';
 import { BodySampleManager } from './shared-memory/body-sample-manager';
 import { EndpointStateManager } from './shared-memory/endpoint-state-manager';
 import { HdrHistogramManager } from './shared-memory/hdr-histogram-manager';
 import { StatsCounterManager } from './shared-memory/stats-counter-manager';
 import { WorkerStateManager } from './shared-memory/worker-state-manager';
+import { WorkerData, WorkerState } from './types';
 import { WorkerRateLimiter } from './worker-rate-limiter';
 
 /**

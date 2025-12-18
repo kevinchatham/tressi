@@ -2,7 +2,7 @@ import chalk from 'chalk';
 import { writeFile } from 'fs/promises';
 import ora from 'ora';
 
-import { RequestResult, TestSummary } from '../../types/reporting/types';
+import { RequestResult, TestSummary } from '../types';
 import { CsvExporter } from './csv-exporter';
 import { XlsxExporter } from './xlsx-exporter';
 

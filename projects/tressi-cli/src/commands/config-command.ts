@@ -7,8 +7,8 @@ import {
 } from 'tressi-common/config';
 
 import { loadConfig } from '../core/config';
+import { DisplayOptions } from '../reporting/types';
 import { terminal } from '../tui/terminal';
-import { DisplayOptions } from '../types/reporting/types';
 
 /**
  * Handles the 'config' command for displaying Tressi configuration.

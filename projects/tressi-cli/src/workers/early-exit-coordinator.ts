@@ -4,8 +4,8 @@ import {
   IEarlyExitCoordinator,
   IEndpointStateManager,
   IStatsCounterManager,
-} from '../types/workers/interfaces';
-import { EarlyExitThresholds } from '../types/workers/types';
+} from './interfaces';
+import { EarlyExitThresholds } from './types';
 
 /**
  * EarlyExitCoordinator - Monitors test execution and triggers early termination based on configurable thresholds.

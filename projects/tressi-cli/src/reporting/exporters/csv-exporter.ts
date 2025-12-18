@@ -1,6 +1,6 @@
 import { writeFile } from 'fs/promises';
 
-import { RequestResult } from '../../types/reporting/types';
+import { RequestResult } from '../types';
 
 /**
  * Exports request results to CSV format

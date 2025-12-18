@@ -1,16 +1,11 @@
 import { EndpointMetric } from 'tressi-common/metrics';
 
-import { GlobalMetricDocument } from '../types/db/types';
 import { createCollectionForType } from './adapter';
+import { GlobalMetricDocument } from './types';
 
 export type GlobalMetricCreate = Pick<
   GlobalMetricDocument,
   'testId' | 'configId' | 'metric' | 'epoch'
->;
-
-export type GlobalMetricEdit = Pick<
-  GlobalMetricDocument,
-  'id' | 'testId' | 'configId' | 'metric' | 'epoch'
 >;
 
 /**
@@ -80,36 +75,6 @@ class GlobalMetricCollection {
     } catch (error) {
       throw new Error(
         `Failed to create global metric: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      );
-    }
-  }
-
-  /**
-   * Edit an existing global metric
-   * @param input Global metric data with ID
-   * @returns Updated global metric document
-   * @throws Error if global metric with given ID is not found
-   */
-  async edit(input: GlobalMetricEdit): Promise<GlobalMetricDocument> {
-    try {
-      const existing = await this.getById(input.id);
-      if (!existing) {
-        throw new Error(`Global metric with ID ${input.id} not found`);
-      }
-
-      const metricDoc = this.transformToGlobalMetricDocument(input);
-      const updatedDoc = {
-        ...existing,
-        ...metricDoc,
-        id: existing.id, // Preserve original ID
-      };
-
-      this.collection.removeOne({ id: input.id });
-      this.collection.insert(updatedDoc);
-      return updatedDoc;
-    } catch (error) {
-      throw new Error(
-        `Failed to edit global metric: ${error instanceof Error ? error.message : 'Unknown error'}`,
       );
     }
   }

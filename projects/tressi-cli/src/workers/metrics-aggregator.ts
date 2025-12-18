@@ -8,8 +8,8 @@ import {
   IHdrHistogramManager,
   IMetricsAggregator,
   IStatsCounterManager,
-} from '../types/workers/interfaces';
-import { LatencyHistogram } from '../types/workers/types';
+} from './interfaces';
+import { LatencyHistogram } from './types';
 
 export class MetricsAggregator implements IMetricsAggregator {
   private pollingInterval: NodeJS.Timeout | null = null;

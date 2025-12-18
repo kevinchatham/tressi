@@ -1,6 +1,6 @@
 import { Agent, Dispatcher } from 'undici';
 
-import { AgentConfig } from '../types/reporting/types';
+import { AgentConfig } from '../reporting/types';
 
 /**
  * Manages HTTP agents for different endpoints during load testing.

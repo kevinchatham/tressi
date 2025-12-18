@@ -1,7 +1,7 @@
 import { TressiConfig } from 'tressi-common/config';
 
-import { ConfigDocument } from '../types/db/types';
 import { createCollectionForType } from './adapter';
+import { ConfigDocument } from './types';
 
 export type ConfigCreate = Pick<ConfigDocument, 'name' | 'config'>;
 

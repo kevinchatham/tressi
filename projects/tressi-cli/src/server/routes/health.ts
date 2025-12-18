@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 
-import { ISSEClientManager } from '../../types/workers/interfaces';
+import { ISSEClientManager } from '../../workers/interfaces';
 
 /**
  * Creates a health monitoring application with Server-Sent Events heartbeat.

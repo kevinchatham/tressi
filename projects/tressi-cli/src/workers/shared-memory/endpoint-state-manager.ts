@@ -1,5 +1,5 @@
-import { IEndpointStateManager } from '../../types/workers/interfaces';
-import { EndpointState } from '../../types/workers/types';
+import { IEndpointStateManager } from '../interfaces';
+import { EndpointState } from '../types';
 
 /**
  * EndpointStateManager - Track per-endpoint states for selective stopping

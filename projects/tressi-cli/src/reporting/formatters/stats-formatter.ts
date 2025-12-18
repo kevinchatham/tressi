@@ -3,7 +3,7 @@ import {
   FormattedStats,
   GlobalSummary,
   TestSummary,
-} from '../../types/reporting/types';
+} from '../types';
 
 /**
  * Formats statistics for display and export purposes

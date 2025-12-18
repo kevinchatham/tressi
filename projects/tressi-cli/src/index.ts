@@ -10,9 +10,9 @@ import pkg from '../../../package.json';
 import { Runner } from './core/runner';
 import { DataExporter } from './reporting/exporters/data-exporter';
 import { MarkdownGenerator } from './reporting/generators/markdown-generator';
+import { TestSummary } from './reporting/types';
 import { MinimalTUI } from './tui/minimal-tui';
 import { terminal } from './tui/terminal';
-import { TestSummary } from './types/reporting/types';
 import { FileUtils } from './utils/file-utils';
 
 export type { TestSummary };

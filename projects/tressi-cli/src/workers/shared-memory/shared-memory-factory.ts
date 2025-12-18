@@ -5,7 +5,7 @@
 
 import { TressiRequestConfig } from 'tressi-common/config';
 
-import { SharedMemoryOptions } from '../../types/workers/types';
+import { SharedMemoryOptions } from '../types';
 import { BodySampleManager } from './body-sample-manager';
 import { EndpointStateManager } from './endpoint-state-manager';
 import { HdrHistogramManager } from './hdr-histogram-manager';

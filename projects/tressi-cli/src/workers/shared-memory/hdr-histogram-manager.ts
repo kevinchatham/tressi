@@ -2,8 +2,8 @@
 // Fully self-contained TypeScript implementation intended to match
 // the canonical Java HdrHistogram math closely (indexing & reconstruction).
 
-import { IHdrHistogramManager } from '../../types/workers/interfaces';
-import { LatencyHistogram } from '../../types/workers/types';
+import { IHdrHistogramManager } from '../interfaces';
+import { LatencyHistogram } from '../types';
 
 export class HdrHistogramManager implements IHdrHistogramManager {
   private readonly sab: SharedArrayBuffer;

@@ -1,12 +1,12 @@
 import type { TressiConfig } from 'tressi-common/config';
 
+import { ReportingUtils } from '../../utils/reporting-utils';
 import {
   EndpointSummary,
   ReportMetadata,
   RequestResult,
   TestSummary,
-} from '../../types/reporting/types';
-import { ReportingUtils } from '../../utils/reporting-utils';
+} from '../types';
 
 interface LatencyDistribution {
   getTotalCount(): number;

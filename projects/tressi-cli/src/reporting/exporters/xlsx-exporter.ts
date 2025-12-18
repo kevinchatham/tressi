@@ -1,10 +1,6 @@
 import * as xlsx from 'xlsx';
 
-import {
-  EndpointSummary,
-  RequestResult,
-  TestSummary,
-} from '../../types/reporting/types';
+import { EndpointSummary, RequestResult, TestSummary } from '../types';
 
 interface LatencyDistribution {
   getTotalCount(): number;

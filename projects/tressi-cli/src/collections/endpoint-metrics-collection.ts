@@ -1,16 +1,11 @@
 import { EndpointMetric } from 'tressi-common/metrics';
 
-import { EndpointMetricDocument } from '../types/db/types';
 import { createCollectionForType } from './adapter';
+import { EndpointMetricDocument } from './types';
 
 export type EndpointMetricCreate = Pick<
   EndpointMetricDocument,
   'testId' | 'configId' | 'url' | 'metric' | 'epoch'
->;
-
-export type EndpointMetricEdit = Pick<
-  EndpointMetricDocument,
-  'id' | 'testId' | 'configId' | 'url' | 'metric' | 'epoch'
 >;
 
 /**
@@ -97,36 +92,6 @@ class EndpointMetricCollection {
     } catch (error) {
       throw new Error(
         `Failed to create endpoint metric: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      );
-    }
-  }
-
-  /**
-   * Edit an existing endpoint metric
-   * @param input Endpoint metric data with ID
-   * @returns Updated endpoint metric document
-   * @throws Error if endpoint metric with given ID is not found
-   */
-  async edit(input: EndpointMetricEdit): Promise<EndpointMetricDocument> {
-    try {
-      const existing = await this.getById(input.id);
-      if (!existing) {
-        throw new Error(`Endpoint metric with ID ${input.id} not found`);
-      }
-
-      const metricDoc = this.transformToEndpointMetricDocument(input);
-      const updatedDoc = {
-        ...existing,
-        ...metricDoc,
-        id: existing.id, // Preserve original ID
-      };
-
-      this.collection.removeOne({ id: input.id });
-      this.collection.insert(updatedDoc);
-      return updatedDoc;
-    } catch (error) {
-      throw new Error(
-        `Failed to edit endpoint metric: ${error instanceof Error ? error.message : 'Unknown error'}`,
       );
     }
   }

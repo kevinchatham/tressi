@@ -10,8 +10,8 @@
  * 12+      indices    Int32Array Stores [sampleIndex, statusCode] pairs
  */
 
-import { IBodySampleManager } from '../../types/workers/interfaces';
-import { BodySample } from '../../types/workers/types';
+import { IBodySampleManager } from '../interfaces';
+import { BodySample } from '../types';
 
 export class BodySampleManager implements IBodySampleManager {
   private readonly sab: SharedArrayBuffer;

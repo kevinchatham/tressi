@@ -3,7 +3,7 @@ import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 
 import { globalEventEmitter } from '../../events/global-event-emitter';
-import { ISSEClientManager } from '../../types/workers/interfaces';
+import { ISSEClientManager } from '../../workers/interfaces';
 import createBrowserApp from './browser';
 import configs from './configs';
 import createHealthApp from './health';

@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import os from 'os';
 
-import { ISSEClientManager } from '../../types/workers/interfaces';
+import { ISSEClientManager } from '../../workers/interfaces';
 
 /**
  * Creates a metrics streaming application using Server-Sent Events.

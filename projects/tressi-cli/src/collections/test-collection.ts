@@ -1,10 +1,7 @@
-import { TestDocument } from '../types/db/types';
 import { createCollectionForType } from './adapter';
+import { TestDocument } from './types';
 
-export type TestCreate = Pick<
-  TestDocument,
-  'configId' | 'status' | 'epochStartedAt'
->;
+export type TestCreate = Pick<TestDocument, 'configId'>;
 
 export type TestEdit = Pick<
   TestDocument,
@@ -127,8 +124,8 @@ class TestCollection {
   private transformToTestDocument(input: {
     id?: string;
     configId: string;
-    status: 'running' | 'completed' | 'failed';
-    epochStartedAt: number;
+    status?: 'running' | 'completed' | 'failed' | 'added';
+    epochStartedAt?: number;
     epochEndedAt?: number;
     error?: string;
   }): TestDocument {
@@ -137,7 +134,7 @@ class TestCollection {
       id: input.id || crypto.randomUUID(),
       type: 'test',
       configId: input.configId,
-      status: input.status,
+      status: input.status || 'added',
       epochStartedAt: input.epochStartedAt,
       epochEndedAt: input.epochEndedAt,
       error: input.error,

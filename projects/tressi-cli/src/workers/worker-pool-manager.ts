@@ -3,7 +3,6 @@ import { TressiConfig, TressiRequestConfig } from 'tressi-common/config';
 import type { AggregatedMetric } from 'tressi-common/metrics';
 import { Worker } from 'worker_threads';
 
-import { WorkerState } from '../types/workers/types';
 import { FileUtils } from '../utils/file-utils';
 import { EarlyExitCoordinator } from './early-exit-coordinator';
 import { MetricsAggregator } from './metrics-aggregator';
@@ -13,6 +12,7 @@ import { HdrHistogramManager } from './shared-memory/hdr-histogram-manager';
 import { SharedMemoryFactory } from './shared-memory/shared-memory-factory';
 import { StatsCounterManager } from './shared-memory/stats-counter-manager';
 import { WorkerStateManager } from './shared-memory/worker-state-manager';
+import { WorkerState } from './types';
 
 /**
  * WorkerPoolManager - Core orchestration component for managing worker threads in Tressi load testing.

@@ -1,4 +1,4 @@
-import { ISSEClientManager } from '../../types/workers/interfaces';
+import { ISSEClientManager } from '../../workers/interfaces';
 
 /**
  * Server-Sent Events client manager

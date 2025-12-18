@@ -4,7 +4,7 @@ import { performance } from 'perf_hooks';
 import type { TressiConfig } from 'tressi-common/config';
 import type { AggregatedMetric } from 'tressi-common/metrics';
 
-import { IRunnerEvents } from '../types/workers/interfaces';
+import { IRunnerEvents } from '../workers/interfaces';
 import { WorkerPoolManager } from '../workers/worker-pool-manager';
 
 /**

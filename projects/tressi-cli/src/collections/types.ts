@@ -34,13 +34,13 @@ export type TestDocument = {
   /** Timestamp when the test ended (milliseconds since epoch), undefined if still running */
   epochEndedAt?: number;
   /** Timestamp when the test started (milliseconds since epoch) */
-  epochStartedAt: number;
+  epochStartedAt?: number;
   /** Timestamp when the document was last updated (milliseconds since epoch) */
   epochUpdatedAt?: number;
   /** Error of a failed test run */
   error?: string;
   /** Current status of the test run */
-  status: 'running' | 'completed' | 'failed';
+  status: 'running' | 'completed' | 'failed' | 'added';
   /** Document type discriminator */
   type: 'test';
 };
