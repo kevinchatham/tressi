@@ -3,7 +3,7 @@ import { Hono } from 'hono';
 import { TressiConfig, validateConfig } from 'tressi-common/config';
 import z from 'zod';
 
-import { configStorage } from '../../core/config-storage';
+import { configStorage } from '../../collections/config-collection';
 import { createApiErrorResponse } from '../utils/error-response-generator';
 
 /**
@@ -87,7 +87,16 @@ const app = new Hono()
           return c.json(validationResult.error, 400);
         }
 
-        const saved = await configStorage.save(model);
+        const saved = model.id
+          ? await configStorage.edit({
+              id: model.id,
+              name: model.name,
+              config: model.config,
+            })
+          : await configStorage.create({
+              name: model.name,
+              config: model.config,
+            });
         return c.json(saved, 201);
       } catch (error) {
         return c.json(

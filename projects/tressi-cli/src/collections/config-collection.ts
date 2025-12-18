@@ -1,23 +1,27 @@
 import { TressiConfig } from 'tressi-common/config';
 
 import { ConfigDocument } from '../types/db/types';
-import { configCollection } from './signaldb-adapter';
+import { createCollectionForType } from './adapter';
 
-export type ConfigUpsert = Pick<ConfigDocument, 'name' | 'config'> &
-  Partial<Pick<ConfigDocument, 'id'>>;
+export type ConfigCreate = Pick<ConfigDocument, 'name' | 'config'>;
+
+export type ConfigEdit = Pick<ConfigDocument, 'id' | 'name' | 'config'>;
 
 /**
  * Storage class for managing Tressi configurations using SignalDB
  * Provides CRUD operations for configuration documents
  */
-export class ConfigStorage {
+class ConfigCollection {
+  private readonly collection =
+    createCollectionForType<ConfigDocument>('config.db.json');
+
   /**
    * Get all saved configurations
    * @returns Array of configuration documents
    */
   async getAll(): Promise<ConfigDocument[]> {
     try {
-      return configCollection.find({ type: 'config' }).fetch();
+      return this.collection.find({ type: 'config' }).fetch();
     } catch (error) {
       throw new Error(
         `Failed to retrieve configurations: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -32,7 +36,7 @@ export class ConfigStorage {
    */
   async getById(id: string): Promise<ConfigDocument | undefined> {
     try {
-      const docs = configCollection.find({ id, type: 'config' }).fetch();
+      const docs = this.collection.find({ id, type: 'config' }).fetch();
       return docs[0] || undefined;
     } catch (error) {
       throw new Error(
@@ -42,37 +46,49 @@ export class ConfigStorage {
   }
 
   /**
-   * Save a new configuration or update existing one
+   * Create a new configuration
    * @param input Configuration data
-   * @returns Saved configuration document
+   * @returns Created configuration document
    */
-  async save(input: ConfigUpsert): Promise<ConfigDocument> {
+  async create(input: ConfigCreate): Promise<ConfigDocument> {
     try {
       const configDoc = this.transformToConfigDocument(input);
-
-      // Check if this is an update by ID
-      if (input.id) {
-        const existing = await this.getById(input.id);
-        if (existing) {
-          // Update existing document
-          const updatedDoc = {
-            ...existing,
-            ...configDoc,
-            createdAt: existing.epochCreatedAt, // Preserve original creation time
-            updatedAt: Date.now(),
-          };
-          configCollection.removeOne({ id: input.id });
-          configCollection.insert(updatedDoc);
-          return updatedDoc;
-        }
-      }
-
-      // Insert new configuration
-      configCollection.insert(configDoc);
+      this.collection.insert(configDoc);
       return configDoc;
     } catch (error) {
       throw new Error(
-        `Failed to save configuration: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `Failed to create configuration: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
+  }
+
+  /**
+   * Edit an existing configuration
+   * @param input Configuration data with ID
+   * @returns Updated configuration document
+   * @throws Error if configuration with given ID is not found
+   */
+  async edit(input: ConfigEdit): Promise<ConfigDocument> {
+    try {
+      const existing = await this.getById(input.id);
+      if (!existing) {
+        throw new Error(`Configuration with ID ${input.id} not found`);
+      }
+
+      const configDoc = this.transformToConfigDocument(input);
+      const updatedDoc = {
+        ...existing,
+        ...configDoc,
+        epochCreatedAt: existing.epochCreatedAt, // Preserve original creation time
+        epochUpdatedAt: Date.now(),
+      };
+
+      this.collection.removeOne({ id: input.id });
+      this.collection.insert(updatedDoc);
+      return updatedDoc;
+    } catch (error) {
+      throw new Error(
+        `Failed to edit configuration: ${error instanceof Error ? error.message : 'Unknown error'}`,
       );
     }
   }
@@ -89,7 +105,7 @@ export class ConfigStorage {
         return false;
       }
 
-      const result = configCollection.removeOne({ id });
+      const result = this.collection.removeOne({ id });
       return result > 0;
     } catch (error) {
       throw new Error(
@@ -123,4 +139,4 @@ export class ConfigStorage {
 /**
  * Global configuration storage instance
  */
-export const configStorage = new ConfigStorage();
+export const configStorage = new ConfigCollection();
