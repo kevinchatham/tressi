@@ -248,7 +248,7 @@ export class DashboardComponent implements OnInit {
     }
 
     this.rpc.client.test
-      .$post({ json: selected.config })
+      .$post({ json: { configId: selected.id } })
       .then(async (response) => {
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);

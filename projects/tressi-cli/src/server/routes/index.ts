@@ -4,11 +4,11 @@ import { logger } from 'hono/logger';
 
 import { globalEventEmitter } from '../../events/global-event-emitter';
 import { ISSEClientManager } from '../../workers/interfaces';
-import createBrowserApp from './browser';
-import configs from './configs';
-import createHealthApp from './health';
-import loadTest from './load-test';
-import createMetricsApp from './metrics';
+import createBrowserApp from './browser-routes';
+import configs from './config-routes';
+import createHealthApp from './health-routes';
+import createMetricsApp from './metrics-routes';
+import tests from './test-routes';
 
 /**
  * Creates the main Hono application with all routes and middleware configured.
@@ -35,7 +35,8 @@ export function createApp(sseManager: ISSEClientManager, port: number) {
     })
     .route('/api/config', configs)
     .route('/api/health', createHealthApp(sseManager))
-    .route('/api/test', loadTest)
+    .route('/api/test', tests)
+    .route('/api/tests', tests)
     .route('/api/metrics', createMetricsApp(sseManager))
     .route('/', createBrowserApp());
 

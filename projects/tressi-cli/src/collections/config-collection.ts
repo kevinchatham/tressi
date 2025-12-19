@@ -1,5 +1,3 @@
-import { TressiConfig } from 'tressi-common/config';
-
 import { createCollectionForType } from './adapter';
 import { ConfigDocument } from './types';
 
@@ -21,7 +19,7 @@ class ConfigCollection {
    */
   async getAll(): Promise<ConfigDocument[]> {
     try {
-      return this.collection.find({ type: 'config' }).fetch();
+      return this.collection.find({}).fetch();
     } catch (error) {
       throw new Error(
         `Failed to retrieve configurations: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -36,7 +34,7 @@ class ConfigCollection {
    */
   async getById(id: string): Promise<ConfigDocument | undefined> {
     try {
-      const docs = this.collection.find({ id, type: 'config' }).fetch();
+      const docs = this.collection.find({ id }).fetch();
       return docs[0] || undefined;
     } catch (error) {
       throw new Error(
@@ -52,7 +50,14 @@ class ConfigCollection {
    */
   async create(input: ConfigCreate): Promise<ConfigDocument> {
     try {
-      const configDoc = this.transformToConfigDocument(input);
+      const now = Date.now();
+      const configDoc: ConfigDocument = {
+        id: crypto.randomUUID(),
+        name: input.name,
+        config: input.config,
+        epochCreatedAt: now,
+        epochUpdatedAt: now,
+      };
       this.collection.insert(configDoc);
       return configDoc;
     } catch (error) {
@@ -75,16 +80,16 @@ class ConfigCollection {
         throw new Error(`Configuration with ID ${input.id} not found`);
       }
 
-      const configDoc = this.transformToConfigDocument(input);
+      // Only update provided fields, preserve existing values for missing fields
       const updatedDoc = {
         ...existing,
-        ...configDoc,
-        epochCreatedAt: existing.epochCreatedAt, // Preserve original creation time
+        name: input.name ?? existing.name,
+        config: input.config ?? existing.config,
         epochUpdatedAt: Date.now(),
       };
 
-      this.collection.removeOne({ id: input.id });
-      this.collection.insert(updatedDoc);
+      this.collection.updateOne({ id: input.id }, { $set: updatedDoc });
+
       return updatedDoc;
     } catch (error) {
       throw new Error(
@@ -112,27 +117,6 @@ class ConfigCollection {
         `Failed to delete configuration: ${error instanceof Error ? error.message : 'Unknown error'}`,
       );
     }
-  }
-
-  /**
-   * Transforms configuration data to ConfigDocument format
-   * @param input Configuration data
-   * @returns ConfigDocument with proper structure
-   */
-  private transformToConfigDocument(input: {
-    id?: string;
-    name: string;
-    config: TressiConfig;
-  }): ConfigDocument {
-    const now = Date.now();
-    return {
-      id: input.id || crypto.randomUUID(),
-      type: 'config',
-      name: input.name,
-      config: input.config,
-      epochCreatedAt: now,
-      epochUpdatedAt: now,
-    };
   }
 }
 

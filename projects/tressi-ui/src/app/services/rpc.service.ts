@@ -36,3 +36,7 @@ export type GetHealthResponse = InferResponseType<typeof client.health.$get>;
 export type GetSystemMetricsResponse = InferResponseType<
   typeof client.metrics.system.$get
 >;
+
+export type StartTestRequest = InferRequestType<
+  typeof client.test.$post
+>['json'];

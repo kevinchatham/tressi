@@ -13,11 +13,9 @@ export type ConfigDocument = {
   /** Timestamp when the document was created (milliseconds since epoch) */
   epochCreatedAt: number;
   /** Timestamp when the document was last updated (milliseconds since epoch) */
-  epochUpdatedAt?: number;
+  epochUpdatedAt: number | null;
   /** Human-readable name for the configuration */
   name: string;
-  /** Document type discriminator */
-  type: 'config';
 };
 
 /**
@@ -32,17 +30,15 @@ export type TestDocument = {
   /** Timestamp when the document was created (milliseconds since epoch) */
   epochCreatedAt: number;
   /** Timestamp when the test ended (milliseconds since epoch), undefined if still running */
-  epochEndedAt?: number;
+  epochEndedAt: number | null;
   /** Timestamp when the test started (milliseconds since epoch) */
-  epochStartedAt?: number;
+  epochStartedAt: number | null;
   /** Timestamp when the document was last updated (milliseconds since epoch) */
-  epochUpdatedAt?: number;
+  epochUpdatedAt: number | null;
   /** Error of a failed test run */
-  error?: string;
+  error: string | null;
   /** Current status of the test run */
-  status: 'running' | 'completed' | 'failed' | 'added';
-  /** Document type discriminator */
-  type: 'test';
+  status: 'running' | 'completed' | 'failed' | null;
 };
 
 /**
@@ -60,8 +56,6 @@ export type GlobalMetricDocument = {
   epoch: number;
   /** The actual metric data from the load test */
   metric: EndpointMetric;
-  /** Document type discriminator */
-  type: 'global-metric';
 };
 
 /**
@@ -81,6 +75,4 @@ export type EndpointMetricDocument = {
   url: string;
   /** The actual metric data from the load test */
   metric: EndpointMetric;
-  /** Document type discriminator */
-  type: 'endpoint-metric';
 };

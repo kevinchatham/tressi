@@ -23,7 +23,7 @@ class GlobalMetricCollection {
    */
   async getAll(): Promise<GlobalMetricDocument[]> {
     try {
-      return this.collection.find({ type: 'global-metric' }).fetch();
+      return this.collection.find({}).fetch();
     } catch (error) {
       throw new Error(
         `Failed to retrieve global metrics: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -38,7 +38,7 @@ class GlobalMetricCollection {
    */
   async getById(id: string): Promise<GlobalMetricDocument | undefined> {
     try {
-      const docs = this.collection.find({ id, type: 'global-metric' }).fetch();
+      const docs = this.collection.find({ id }).fetch();
       return docs[0] || undefined;
     } catch (error) {
       throw new Error(
@@ -54,7 +54,7 @@ class GlobalMetricCollection {
    */
   async getByTestId(testId: string): Promise<GlobalMetricDocument[]> {
     try {
-      return this.collection.find({ testId, type: 'global-metric' }).fetch();
+      return this.collection.find({ testId }).fetch();
     } catch (error) {
       throw new Error(
         `Failed to retrieve global metrics for test: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -107,10 +107,7 @@ class GlobalMetricCollection {
    */
   async deleteByTestId(testId: string): Promise<number> {
     try {
-      const result = this.collection.removeMany({
-        testId,
-        type: 'global-metric',
-      });
+      const result = this.collection.removeMany({ testId });
       return result;
     } catch (error) {
       throw new Error(
@@ -133,7 +130,6 @@ class GlobalMetricCollection {
   }): GlobalMetricDocument {
     return {
       id: input.id || crypto.randomUUID(),
-      type: 'global-metric',
       testId: input.testId,
       configId: input.configId,
       metric: input.metric,

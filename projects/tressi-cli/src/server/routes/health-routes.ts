@@ -7,7 +7,6 @@ import { ISSEClientManager } from '../../workers/interfaces';
  * Provides real-time health status to connected clients.
  *
  * @param {ISSEClientManager} sseManager - Manager for handling SSE client connections
- * @returns {Hono} Hono app with health endpoints
  */
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 function createHealthApp(sseManager: ISSEClientManager) {

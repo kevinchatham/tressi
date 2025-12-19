@@ -8,7 +8,6 @@ import { ISSEClientManager } from '../../workers/interfaces';
  * Provides real-time metrics data to connected clients.
  *
  * @param {ISSEClientManager} sseManager - Manager for handling SSE client connections
- * @returns {Hono} Hono app with metrics streaming endpoint
  */
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 function createMetricsApp(sseManager: ISSEClientManager) {

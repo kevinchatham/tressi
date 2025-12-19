@@ -3,11 +3,10 @@ import { TestDocument } from './types';
 
 export type TestCreate = Pick<TestDocument, 'configId'>;
 
-export type TestEdit = Pick<
-  TestDocument,
-  'id' | 'configId' | 'status' | 'epochStartedAt'
-> &
-  Partial<Pick<TestDocument, 'epochEndedAt' | 'error'>>;
+export type TestEdit = Pick<TestDocument, 'id' | 'configId'> &
+  Partial<
+    Pick<TestDocument, 'status' | 'epochStartedAt' | 'epochEndedAt' | 'error'>
+  >;
 
 /**
  * Storage class for managing test runs using SignalDB
@@ -23,7 +22,7 @@ class TestCollection {
    */
   async getAll(): Promise<TestDocument[]> {
     try {
-      return this.collection.find({ type: 'test' }).fetch();
+      return this.collection.find({}).fetch();
     } catch (error) {
       throw new Error(
         `Failed to retrieve test runs: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -38,7 +37,7 @@ class TestCollection {
    */
   async getById(id: string): Promise<TestDocument | undefined> {
     try {
-      const docs = this.collection.find({ id, type: 'test' }).fetch();
+      const docs = this.collection.find({ id }).fetch();
       return docs[0] || undefined;
     } catch (error) {
       throw new Error(
@@ -54,7 +53,17 @@ class TestCollection {
    */
   async create(input: TestCreate): Promise<TestDocument> {
     try {
-      const testDoc = this.transformToTestDocument(input);
+      const now = Date.now();
+      const testDoc: TestDocument = {
+        id: crypto.randomUUID(),
+        configId: input.configId,
+        status: null,
+        epochStartedAt: null,
+        epochEndedAt: null,
+        error: null,
+        epochCreatedAt: now,
+        epochUpdatedAt: now,
+      };
       this.collection.insert(testDoc);
       return testDoc;
     } catch (error) {
@@ -73,20 +82,24 @@ class TestCollection {
   async edit(input: TestEdit): Promise<TestDocument> {
     try {
       const existing = await this.getById(input.id);
+
       if (!existing) {
         throw new Error(`Test run with ID ${input.id} not found`);
       }
 
-      const testDoc = this.transformToTestDocument(input);
+      // Only update provided fields, preserve existing values for missing fields
       const updatedDoc = {
         ...existing,
-        ...testDoc,
-        epochCreatedAt: existing.epochCreatedAt, // Preserve original creation time
+        configId: input.configId ?? existing.configId,
+        status: input.status ?? existing.status,
+        epochStartedAt: input.epochStartedAt ?? existing.epochStartedAt,
+        epochEndedAt: input.epochEndedAt ?? existing.epochEndedAt,
+        error: input.error ?? existing.error,
         epochUpdatedAt: Date.now(),
       };
 
-      this.collection.removeOne({ id: input.id });
-      this.collection.insert(updatedDoc);
+      this.collection.updateOne({ id: input.id }, { $set: updatedDoc });
+
       return updatedDoc;
     } catch (error) {
       throw new Error(
@@ -114,33 +127,6 @@ class TestCollection {
         `Failed to delete test run: ${error instanceof Error ? error.message : 'Unknown error'}`,
       );
     }
-  }
-
-  /**
-   * Transforms test data to TestDocument format
-   * @param input Test data
-   * @returns TestDocument with proper structure
-   */
-  private transformToTestDocument(input: {
-    id?: string;
-    configId: string;
-    status?: 'running' | 'completed' | 'failed' | 'added';
-    epochStartedAt?: number;
-    epochEndedAt?: number;
-    error?: string;
-  }): TestDocument {
-    const now = Date.now();
-    return {
-      id: input.id || crypto.randomUUID(),
-      type: 'test',
-      configId: input.configId,
-      status: input.status || 'added',
-      epochStartedAt: input.epochStartedAt,
-      epochEndedAt: input.epochEndedAt,
-      error: input.error,
-      epochCreatedAt: now,
-      epochUpdatedAt: now,
-    };
   }
 }
 

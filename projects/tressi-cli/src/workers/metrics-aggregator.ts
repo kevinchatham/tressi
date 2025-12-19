@@ -2,7 +2,6 @@ import { cpus, loadavg } from 'os';
 import type { AggregatedMetric, EndpointMetric } from 'tressi-common/metrics';
 
 import { globalEventEmitter } from '../events/global-event-emitter';
-import { terminal } from '../tui/terminal';
 import {
   IBodySampleManager,
   IHdrHistogramManager,
@@ -73,7 +72,7 @@ export class MetricsAggregator implements IMetricsAggregator {
       this.endpoints,
     );
 
-    terminal.clearAndPrint(metrics);
+    // ! terminal.clearAndPrint(metrics);
 
     // Emit metrics event for SSE
     globalEventEmitter.emit('metrics', metrics);

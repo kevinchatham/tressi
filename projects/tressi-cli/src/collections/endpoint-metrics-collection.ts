@@ -23,7 +23,7 @@ class EndpointMetricCollection {
    */
   async getAll(): Promise<EndpointMetricDocument[]> {
     try {
-      return this.collection.find({ type: 'endpoint-metric' }).fetch();
+      return this.collection.find({}).fetch();
     } catch (error) {
       throw new Error(
         `Failed to retrieve endpoint metrics: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -38,9 +38,7 @@ class EndpointMetricCollection {
    */
   async getById(id: string): Promise<EndpointMetricDocument | undefined> {
     try {
-      const docs = this.collection
-        .find({ id, type: 'endpoint-metric' })
-        .fetch();
+      const docs = this.collection.find({ id }).fetch();
       return docs[0] || undefined;
     } catch (error) {
       throw new Error(
@@ -56,7 +54,7 @@ class EndpointMetricCollection {
    */
   async getByTestId(testId: string): Promise<EndpointMetricDocument[]> {
     try {
-      return this.collection.find({ testId, type: 'endpoint-metric' }).fetch();
+      return this.collection.find({ testId }).fetch();
     } catch (error) {
       throw new Error(
         `Failed to retrieve endpoint metrics for test: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -71,7 +69,7 @@ class EndpointMetricCollection {
    */
   async getByUrl(url: string): Promise<EndpointMetricDocument[]> {
     try {
-      return this.collection.find({ url, type: 'endpoint-metric' }).fetch();
+      return this.collection.find({ url }).fetch();
     } catch (error) {
       throw new Error(
         `Failed to retrieve endpoint metrics for URL: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -124,10 +122,7 @@ class EndpointMetricCollection {
    */
   async deleteByTestId(testId: string): Promise<number> {
     try {
-      const result = this.collection.removeMany({
-        testId,
-        type: 'endpoint-metric',
-      });
+      const result = this.collection.removeMany({ testId });
       return result;
     } catch (error) {
       throw new Error(
@@ -151,7 +146,6 @@ class EndpointMetricCollection {
   }): EndpointMetricDocument {
     return {
       id: input.id || crypto.randomUUID(),
-      type: 'endpoint-metric',
       testId: input.testId,
       configId: input.configId,
       url: input.url,
