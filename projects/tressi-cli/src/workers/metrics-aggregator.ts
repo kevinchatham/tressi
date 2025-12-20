@@ -1,6 +1,9 @@
 import { cpus, loadavg } from 'os';
 import type { AggregatedMetric, EndpointMetric } from 'tressi-common/metrics';
 
+import { endpointMetricStorage } from '../collections/endpoint-metrics-collection';
+import { globalMetricStorage } from '../collections/global-metrics-collection';
+import { testStorage } from '../collections/test-collection';
 import { globalEventEmitter } from '../events/global-event-emitter';
 import {
   IBodySampleManager,
@@ -40,8 +43,8 @@ export class MetricsAggregator implements IMetricsAggregator {
     }
 
     this.startTime = Date.now();
-    this.pollingInterval = setInterval(() => {
-      this.pollMetrics();
+    this.pollingInterval = setInterval(async () => {
+      await this.pollMetrics();
     }, intervalMs);
   }
 
@@ -66,7 +69,7 @@ export class MetricsAggregator implements IMetricsAggregator {
    * The polling approach ensures that metrics are updated frequently enough for real-time
    * monitoring while being efficient enough to not impact test performance.
    */
-  private pollMetrics(): void {
+  private async pollMetrics(): Promise<void> {
     const metrics = this.getResults(
       this.hdrHistogramManagers.length,
       this.endpoints,
@@ -74,8 +77,51 @@ export class MetricsAggregator implements IMetricsAggregator {
 
     // ! terminal.clearAndPrint(metrics);
 
-    // Emit metrics event for SSE
     globalEventEmitter.emit('metrics', metrics);
+
+    try {
+      // Get the currently running test
+      const allTests = await testStorage.getAll();
+      const runningTests = allTests.filter((test) => test.status === 'running');
+
+      if (runningTests.length === 0) {
+        // eslint-disable-next-line no-console
+        console.warn('No running test found, skipping metrics persistence');
+        return;
+      }
+
+      if (runningTests.length > 1) {
+        // eslint-disable-next-line no-console
+        console.warn(
+          'Multiple running tests detected, using the most recent one',
+        );
+      }
+
+      // Use the most recently started test (should only be one due to system constraints)
+      const test = runningTests.sort(
+        (a, b) => (b.epochStartedAt || 0) - (a.epochStartedAt || 0),
+      )[0];
+
+      // Store global metrics
+      await globalMetricStorage.create({
+        testId: test.id,
+        metric: metrics.global,
+        epoch: metrics.epoch,
+      });
+
+      // Store per-endpoint metrics
+      for (const [url, endpointMetric] of Object.entries(metrics.endpoints)) {
+        await endpointMetricStorage.create({
+          testId: test.id,
+          url,
+          metric: endpointMetric,
+          epoch: metrics.epoch,
+        });
+      }
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error('Failed to persist metrics to database:', error);
+    }
   }
 
   /**

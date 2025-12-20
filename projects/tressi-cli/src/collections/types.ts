@@ -50,8 +50,6 @@ export type GlobalMetricDocument = {
   id: string;
   /** Reference to the test run this metric belongs to */
   testId: string;
-  /** Reference to the configuration used for this test */
-  configId: string;
   /** Timestamp when the document was created (milliseconds since epoch) */
   epoch: number;
   /** The actual metric data from the load test */
@@ -67,8 +65,6 @@ export type EndpointMetricDocument = {
   id: string;
   /** Reference to the test run this metric belongs to */
   testId: string;
-  /** Reference to the configuration used for this test */
-  configId: string;
   /** Timestamp when the document was created (milliseconds since epoch) */
   epoch: number;
   /** The specific endpoint URL this metric represents */

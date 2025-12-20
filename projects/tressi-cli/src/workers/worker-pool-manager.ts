@@ -1,4 +1,4 @@
-import { cpus } from 'os';
+import os from 'os';
 import { TressiConfig, TressiRequestConfig } from 'tressi-common/config';
 import type { AggregatedMetric } from 'tressi-common/metrics';
 import { Worker } from 'worker_threads';
@@ -51,11 +51,13 @@ export class WorkerPoolManager {
   private statsCounterManagers: StatsCounterManager[] = [];
   private bodySampleManagers: BodySampleManager[] = [];
 
-  constructor(
-    private config: TressiConfig,
-    maxWorkers?: number,
-  ) {
-    this.maxWorkers = maxWorkers || cpus().length;
+  constructor(private config: TressiConfig) {
+    const cpuCount = os.cpus().length;
+    const requestedThreads = config.options.threads ?? cpuCount;
+    const maxWorkers =
+      requestedThreads > cpuCount ? cpuCount : requestedThreads;
+
+    this.maxWorkers = maxWorkers;
     this.endpoints = config.requests;
 
     // Create managers using new SharedMemoryFactory

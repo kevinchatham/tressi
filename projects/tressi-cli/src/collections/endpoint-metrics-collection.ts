@@ -1,11 +1,9 @@
-import { EndpointMetric } from 'tressi-common/metrics';
-
 import { createCollectionForType } from './adapter';
 import { EndpointMetricDocument } from './types';
 
 export type EndpointMetricCreate = Pick<
   EndpointMetricDocument,
-  'testId' | 'configId' | 'url' | 'metric' | 'epoch'
+  'testId' | 'url' | 'metric' | 'epoch'
 >;
 
 /**
@@ -84,7 +82,13 @@ class EndpointMetricCollection {
    */
   async create(input: EndpointMetricCreate): Promise<EndpointMetricDocument> {
     try {
-      const metricDoc = this.transformToEndpointMetricDocument(input);
+      const metricDoc: EndpointMetricDocument = {
+        id: crypto.randomUUID(),
+        testId: input.testId,
+        url: input.url,
+        metric: input.metric,
+        epoch: input.epoch,
+      };
       this.collection.insert(metricDoc);
       return metricDoc;
     } catch (error) {
@@ -129,29 +133,6 @@ class EndpointMetricCollection {
         `Failed to delete endpoint metrics for test: ${error instanceof Error ? error.message : 'Unknown error'}`,
       );
     }
-  }
-
-  /**
-   * Transforms endpoint metric data to EndpointMetricDocument format
-   * @param input Endpoint metric data
-   * @returns EndpointMetricDocument with proper structure
-   */
-  private transformToEndpointMetricDocument(input: {
-    id?: string;
-    testId: string;
-    configId: string;
-    url: string;
-    metric: EndpointMetric;
-    epoch: number;
-  }): EndpointMetricDocument {
-    return {
-      id: input.id || crypto.randomUUID(),
-      testId: input.testId,
-      configId: input.configId,
-      url: input.url,
-      metric: input.metric,
-      epoch: input.epoch,
-    };
   }
 }
 

@@ -1,11 +1,9 @@
-import { EndpointMetric } from 'tressi-common/metrics';
-
 import { createCollectionForType } from './adapter';
 import { GlobalMetricDocument } from './types';
 
 export type GlobalMetricCreate = Pick<
   GlobalMetricDocument,
-  'testId' | 'configId' | 'metric' | 'epoch'
+  'testId' | 'metric' | 'epoch'
 >;
 
 /**
@@ -69,7 +67,12 @@ class GlobalMetricCollection {
    */
   async create(input: GlobalMetricCreate): Promise<GlobalMetricDocument> {
     try {
-      const metricDoc = this.transformToGlobalMetricDocument(input);
+      const metricDoc: GlobalMetricDocument = {
+        id: crypto.randomUUID(),
+        testId: input.testId,
+        metric: input.metric,
+        epoch: input.epoch,
+      };
       this.collection.insert(metricDoc);
       return metricDoc;
     } catch (error) {
@@ -114,27 +117,6 @@ class GlobalMetricCollection {
         `Failed to delete global metrics for test: ${error instanceof Error ? error.message : 'Unknown error'}`,
       );
     }
-  }
-
-  /**
-   * Transforms global metric data to GlobalMetricDocument format
-   * @param input Global metric data
-   * @returns GlobalMetricDocument with proper structure
-   */
-  private transformToGlobalMetricDocument(input: {
-    id?: string;
-    testId: string;
-    configId: string;
-    metric: EndpointMetric;
-    epoch: number;
-  }): GlobalMetricDocument {
-    return {
-      id: input.id || crypto.randomUUID(),
-      testId: input.testId,
-      configId: input.configId,
-      metric: input.metric,
-      epoch: input.epoch,
-    };
   }
 }
 
