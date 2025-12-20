@@ -1,23 +1,21 @@
 {
   "$schema": "./tressi.schema.json",
   "options": {
-    "threads": 12,
     "durationSec": 10,
-    "silent": true
-  },
-  "requests": [
-    {
-      "url": "http://localhost:5000/health",
-      "method": "GET",
-      "rps": 1000
+    "rampUpTimeSec": 0,
+    "exportPath": "",
+    "silent": false,
+    "headers": {
+      "User-Agent": "Tressi"
     },
-    {
-      "url": "http://localhost:5000/echo",
-      "method": "POST",
-      "rps": 1000,
-      "payload": {
-        "name": "Tressi Post"
-      }
+    "threads": 1,
+    "workerMemoryLimit": 128,
+    "workerEarlyExit": {
+      "enabled": false,
+      "errorRateThreshold": 0,
+      "exitStatusCodes": [400, 401, 403, 500, 502, 503, 504],
+      "monitoringWindowMs": 5000
     }
-  ]
+  },
+  "requests": []
 }

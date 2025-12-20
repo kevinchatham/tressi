@@ -1,6 +1,6 @@
-import type { TressiRequestConfig } from 'tressi-common/config';
 import { describe, expect, it } from 'vitest';
 
+import type { TressiRequestConfig } from '../../../../../tressi-common/src/config';
 import { SharedMemoryFactory } from '../../../../src/workers/shared-memory/shared-memory-factory';
 
 describe('SharedMemoryFactory', () => {
@@ -11,6 +11,12 @@ describe('SharedMemoryFactory', () => {
       payload: {},
       headers: {},
       rps: 10,
+      earlyExit: {
+        enabled: false,
+        errorRateThreshold: 0,
+        exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
+        monitoringWindowMs: 5000,
+      },
     },
     {
       url: 'http://example.com/api/2',
@@ -18,6 +24,12 @@ describe('SharedMemoryFactory', () => {
       payload: {},
       headers: {},
       rps: 5,
+      earlyExit: {
+        enabled: false,
+        errorRateThreshold: 0,
+        exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
+        monitoringWindowMs: 5000,
+      },
     },
     {
       url: 'http://example.com/api/3',
@@ -25,6 +37,12 @@ describe('SharedMemoryFactory', () => {
       payload: {},
       headers: {},
       rps: 8,
+      earlyExit: {
+        enabled: false,
+        errorRateThreshold: 0,
+        exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
+        monitoringWindowMs: 5000,
+      },
     },
     {
       url: 'http://example.com/api/4',
@@ -32,6 +50,12 @@ describe('SharedMemoryFactory', () => {
       payload: {},
       headers: {},
       rps: 12,
+      earlyExit: {
+        enabled: false,
+        errorRateThreshold: 0,
+        exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
+        monitoringWindowMs: 5000,
+      },
     },
   ];
 
@@ -310,6 +334,12 @@ describe('SharedMemoryFactory', () => {
           payload: {},
           headers: {},
           rps: 10,
+          earlyExit: {
+            enabled: false,
+            errorRateThreshold: 0,
+            exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
+            monitoringWindowMs: 5000,
+          },
         }));
 
       const result = SharedMemoryFactory.createManagers(

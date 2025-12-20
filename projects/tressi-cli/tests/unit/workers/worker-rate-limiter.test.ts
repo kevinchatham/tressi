@@ -1,6 +1,6 @@
-import type { TressiRequestConfig } from 'tressi-common/config';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { TressiRequestConfig } from '../../../../tressi-common/src/config';
 import { WorkerRateLimiter } from '../../../src/workers/worker-rate-limiter';
 
 describe('WorkerRateLimiter', () => {
@@ -9,9 +9,45 @@ describe('WorkerRateLimiter', () => {
 
   beforeEach(() => {
     mockEndpoints = [
-      { url: 'http://example.com/api/1', method: 'GET', rps: 10 },
-      { url: 'http://example.com/api/2', method: 'POST', rps: 5 },
-      { url: 'http://example.com/api/3', method: 'PUT', rps: 2 },
+      {
+        url: 'http://example.com/api/1',
+        method: 'GET',
+        payload: {},
+        headers: {},
+        rps: 10,
+        earlyExit: {
+          enabled: false,
+          errorRateThreshold: 0,
+          exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
+          monitoringWindowMs: 5000,
+        },
+      },
+      {
+        url: 'http://example.com/api/2',
+        method: 'POST',
+        payload: {},
+        headers: {},
+        rps: 5,
+        earlyExit: {
+          enabled: false,
+          errorRateThreshold: 0,
+          exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
+          monitoringWindowMs: 5000,
+        },
+      },
+      {
+        url: 'http://example.com/api/3',
+        method: 'PUT',
+        payload: {},
+        headers: {},
+        rps: 2,
+        earlyExit: {
+          enabled: false,
+          errorRateThreshold: 0,
+          exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
+          monitoringWindowMs: 5000,
+        },
+      },
     ];
 
     limiter = new WorkerRateLimiter(mockEndpoints);
@@ -141,7 +177,19 @@ describe('WorkerRateLimiter', () => {
 
     it('should handle zero RPS as 1 RPS', () => {
       const zeroRpsEndpoints: TressiRequestConfig[] = [
-        { url: 'http://example.com/api/1', method: 'GET', rps: 0 },
+        {
+          url: 'http://example.com/api/1',
+          method: 'GET',
+          payload: {},
+          headers: {},
+          rps: 0,
+          earlyExit: {
+            enabled: false,
+            errorRateThreshold: 0,
+            exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
+            monitoringWindowMs: 5000,
+          },
+        },
       ];
       const zeroRpsLimiter = new WorkerRateLimiter(zeroRpsEndpoints);
 
@@ -153,7 +201,19 @@ describe('WorkerRateLimiter', () => {
 
     it('should handle very high RPS values', () => {
       const highRpsEndpoints: TressiRequestConfig[] = [
-        { url: 'http://example.com/api/1', method: 'GET', rps: 1000 },
+        {
+          url: 'http://example.com/api/1',
+          method: 'GET',
+          payload: {},
+          headers: {},
+          rps: 1000,
+          earlyExit: {
+            enabled: false,
+            errorRateThreshold: 0,
+            exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
+            monitoringWindowMs: 5000,
+          },
+        },
       ];
       const highRpsLimiter = new WorkerRateLimiter(highRpsEndpoints);
 
@@ -165,7 +225,19 @@ describe('WorkerRateLimiter', () => {
 
     it('should handle fractional RPS values', () => {
       const fractionalEndpoints: TressiRequestConfig[] = [
-        { url: 'http://example.com/api/1', method: 'GET', rps: 0.5 },
+        {
+          url: 'http://example.com/api/1',
+          method: 'GET',
+          payload: {},
+          headers: {},
+          rps: 0.5,
+          earlyExit: {
+            enabled: false,
+            errorRateThreshold: 0,
+            exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
+            monitoringWindowMs: 5000,
+          },
+        },
       ];
       const fractionalLimiter = new WorkerRateLimiter(fractionalEndpoints);
 

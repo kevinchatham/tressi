@@ -5,7 +5,7 @@ import {
   AgentManager,
   globalAgentManager,
 } from '../../../src/http/agent-manager';
-import { AgentConfig } from '../../../src/types/reporting/types';
+import { AgentConfig } from '../../../src/reporting/types';
 
 describe('AgentManager', () => {
   let manager: AgentManager;

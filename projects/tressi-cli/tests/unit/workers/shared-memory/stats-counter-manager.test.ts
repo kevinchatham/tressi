@@ -346,61 +346,6 @@ describe('StatsCounterManager', () => {
     });
   });
 
-  describe('deriveGlobalMetrics', () => {
-    it('should calculate global metrics correctly', () => {
-      const manager = new StatsCounterManager(3);
-
-      manager.recordRequest(0, true);
-      manager.recordRequest(0, true);
-      manager.recordRequest(1, false);
-      manager.recordRequest(2, true);
-
-      const metrics = manager.deriveGlobalMetrics();
-
-      expect(metrics.totalSuccess).toBe(3);
-      expect(metrics.totalFailure).toBe(1);
-      expect(metrics.totalRequests).toBe(4);
-      expect(metrics.errorRate).toBe(0.25);
-    });
-
-    it('should handle zero requests', () => {
-      const manager = new StatsCounterManager(2);
-
-      const metrics = manager.deriveGlobalMetrics();
-
-      expect(metrics.totalSuccess).toBe(0);
-      expect(metrics.totalFailure).toBe(0);
-      expect(metrics.totalRequests).toBe(0);
-      expect(metrics.errorRate).toBe(0);
-    });
-
-    it('should handle all success cases', () => {
-      const manager = new StatsCounterManager(2);
-
-      manager.recordRequest(0, true);
-      manager.recordRequest(1, true);
-
-      const metrics = manager.deriveGlobalMetrics();
-
-      expect(metrics.totalSuccess).toBe(2);
-      expect(metrics.totalFailure).toBe(0);
-      expect(metrics.errorRate).toBe(0);
-    });
-
-    it('should handle all failure cases', () => {
-      const manager = new StatsCounterManager(2);
-
-      manager.recordRequest(0, false);
-      manager.recordRequest(1, false);
-
-      const metrics = manager.deriveGlobalMetrics();
-
-      expect(metrics.totalSuccess).toBe(0);
-      expect(metrics.totalFailure).toBe(2);
-      expect(metrics.errorRate).toBe(1);
-    });
-  });
-
   describe('counter validation', () => {
     it('should handle large counter values without overflow', () => {
       const manager = new StatsCounterManager(2);

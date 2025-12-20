@@ -1,5 +1,6 @@
 import * as net from 'net';
-import { TressiConfig } from 'tressi-common/config';
+
+import { TressiConfig } from '../../../tressi-common/src/config';
 
 /**
  * Standard test configuration that includes all required fields
@@ -14,23 +15,29 @@ export const createTestConfig = (
       url: 'http://localhost:8080/test',
       method: 'GET',
       rps: 10,
+      payload: {},
+      headers: {},
+      earlyExit: {
+        enabled: false,
+        errorRateThreshold: 0,
+        exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
+        monitoringWindowMs: 5000,
+      },
     },
   ],
   options: {
     durationSec: 5,
     rampUpTimeSec: 0,
     silent: true,
-    headers: null,
-    exportPath: null,
+    headers: {},
+    exportPath: '',
+    threads: 4,
     workerMemoryLimit: 128,
     workerEarlyExit: {
       enabled: false,
-      globalErrorRateThreshold: 0.1,
-      globalErrorCountThreshold: 100,
-      perEndpointThresholds: [],
-      workerExitStatusCodes: [500, 502, 503, 504],
-      monitoringWindowMs: 1000,
-      stopMode: 'endpoint',
+      errorRateThreshold: 0,
+      exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
+      monitoringWindowMs: 5000,
     },
     ...overrides.options,
   },
@@ -65,17 +72,29 @@ export const createMinimalTestConfig = (
       url: 'http://localhost:8080/test',
       method: 'GET',
       rps: 1,
+      payload: {},
+      headers: {},
+      earlyExit: {
+        enabled: false,
+        errorRateThreshold: 0,
+        exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
+        monitoringWindowMs: 5000,
+      },
     },
   ],
   options: {
     durationSec: 1,
     rampUpTimeSec: 0,
     silent: true,
+    headers: {},
+    exportPath: '',
+    threads: 4,
     workerMemoryLimit: 64,
     workerEarlyExit: {
       enabled: false,
-      monitoringWindowMs: 1000,
-      stopMode: 'endpoint',
+      errorRateThreshold: 0,
+      exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
+      monitoringWindowMs: 5000,
     },
     ...overrides.options,
   },

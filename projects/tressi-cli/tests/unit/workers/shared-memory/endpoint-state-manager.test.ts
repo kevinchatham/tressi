@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { EndpointState } from '../../../../src/types/workers/types';
 import { EndpointStateManager } from '../../../../src/workers/shared-memory/endpoint-state-manager';
+import { EndpointState } from '../../../../src/workers/types';
 
 describe('EndpointStateManager', () => {
   describe('constructor', () => {

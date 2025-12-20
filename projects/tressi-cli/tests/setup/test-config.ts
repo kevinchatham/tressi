@@ -1,4 +1,4 @@
-import { TressiConfig } from 'tressi-common/config';
+import { TressiConfig } from '../../../tressi-common/src/config';
 
 /**
  * Creates a properly typed test configuration with all required fields
@@ -14,20 +14,29 @@ export function createTestConfig(
         url: 'http://localhost:8080/test',
         method: 'GET',
         rps: 10,
+        payload: {},
+        headers: {},
+        earlyExit: {
+          enabled: false,
+          errorRateThreshold: 0,
+          exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
+          monitoringWindowMs: 5000,
+        },
       },
     ],
     options: {
       durationSec: 5,
       rampUpTimeSec: 0,
       silent: true,
-      headers: null,
-      exportPath: null,
+      headers: {},
+      exportPath: '',
       threads: 4,
       workerMemoryLimit: 128,
       workerEarlyExit: {
         enabled: false,
-        exitStatusCodes: [],
-        monitoringWindowMs: 1000,
+        errorRateThreshold: 0,
+        exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
+        monitoringWindowMs: 5000,
       },
     },
   };
@@ -75,20 +84,29 @@ export function createMinimalTestConfig(
         url: 'http://localhost:8080/test',
         method: 'GET',
         rps: 1,
+        payload: {},
+        headers: {},
+        earlyExit: {
+          enabled: false,
+          errorRateThreshold: 0,
+          exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
+          monitoringWindowMs: 5000,
+        },
       },
     ],
     options: {
       durationSec: 1,
       rampUpTimeSec: 0,
       silent: true,
-      headers: null,
-      exportPath: null,
+      headers: {},
+      exportPath: '',
       threads: 4,
       workerMemoryLimit: 64,
       workerEarlyExit: {
         enabled: false,
-        exitStatusCodes: [],
-        monitoringWindowMs: 1000,
+        errorRateThreshold: 0,
+        exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
+        monitoringWindowMs: 5000,
       },
     },
   };
