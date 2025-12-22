@@ -11,8 +11,8 @@ import {
   SimpleChanges,
 } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
+import { AggregatedMetric } from '@tressi-cli/common/metrics';
 import { Subscription } from 'rxjs';
-import { AggregatedMetric } from 'tressi-common/metrics';
 
 import { IconComponent, IconName } from '../../components/icon/icon.component';
 import { ConfigService } from '../../services/config.service';

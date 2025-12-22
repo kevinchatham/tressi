@@ -1,9 +1,9 @@
 import { cpus, loadavg } from 'os';
-import type { AggregatedMetric, EndpointMetric } from 'tressi-common/metrics';
 
 import { endpointMetricStorage } from '../collections/endpoint-metrics-collection';
 import { globalMetricStorage } from '../collections/global-metrics-collection';
 import { testStorage } from '../collections/test-collection';
+import type { AggregatedMetric, EndpointMetric } from '../common/metrics';
 import { ServerEvents } from '../events/event-types';
 import { globalEventEmitter } from '../events/global-event-emitter';
 import {

@@ -1,4 +1,4 @@
-import { AggregatedMetric } from '../../../tressi-common/src/metrics';
+import { AggregatedMetric } from '../common/metrics';
 
 /**
  * Server-Sent Events event names

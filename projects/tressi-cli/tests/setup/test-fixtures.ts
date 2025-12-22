@@ -1,6 +1,6 @@
 import * as net from 'net';
 
-import { TressiConfig } from '../../../tressi-common/src/config';
+import { TressiConfig } from '../../src/common/config/types';
 
 /**
  * Standard test configuration that includes all required fields

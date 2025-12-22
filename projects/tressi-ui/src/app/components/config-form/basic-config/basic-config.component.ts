@@ -10,7 +10,7 @@ import {
   viewChildren,
 } from '@angular/core';
 import { Field } from '@angular/forms/signals';
-import { httpMethodDefaults } from 'tressi-common/config';
+import { httpMethodDefaults } from '@tressi-cli/common/config/schemas';
 
 import { ModifyConfigRequest } from '../../../services/rpc.service';
 import { IconComponent } from '../../icon/icon.component';

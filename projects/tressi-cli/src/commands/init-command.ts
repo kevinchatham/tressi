@@ -1,6 +1,8 @@
 import { promises as fs } from 'fs';
 import path from 'path';
-import { defaultTressiConfig, TressiConfig } from 'tressi-common/config';
+
+import { defaultTressiConfig } from '../common/config/defaults';
+import { TressiConfig } from '../common/config/types';
 
 /**
  * Handles the 'init' command for creating Tressi configuration files.

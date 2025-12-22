@@ -1,7 +1,7 @@
 import ora from 'ora';
 import { performance } from 'perf_hooks';
-import type { TressiConfig } from 'tressi-common/config';
 
+import { TressiConfig } from '../common/config/types';
 import type { Runner } from '../core/runner';
 
 /**

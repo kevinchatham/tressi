@@ -1,7 +1,7 @@
 import { performance } from 'perf_hooks';
-import { type TressiRequestConfig } from 'tressi-common/config';
 import { request } from 'undici';
 
+import { TressiRequestConfig } from '../common/config/types';
 import { RequestResult } from '../reporting/types';
 import { globalAgentManager } from './agent-manager';
 import { ResponseSampler } from './response-sampler';

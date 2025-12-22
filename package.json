@@ -27,16 +27,14 @@
   },
   "workspaces": [
     "projects/tressi-cli",
-    "projects/tressi-common",
     "projects/tressi-ui"
   ],
   "scripts": {
-    "build": "npx rimraf dist && npm run common:build && npm run cli:build && npm run ui:build && cp -r projects/tressi-cli/dist dist",
+    "build": "npx rimraf dist && npm run cli:build && npm run ui:build && cp -r projects/tressi-cli/dist dist",
     "clean": "npx rimraf --glob \"**/package-lock.json\" \"**/dist\" \"**/node_modules\" \"**/.angular\"",
     "cli:build": "npm run build -w projects/tressi-cli",
     "cli:run": "npm run run -w projects/tressi-cli",
     "cli:serve": "nodemon --watch projects/tressi-cli/src --ext ts --exec \"npm run build && cd dist && node cli.js serve\"",
-    "common:build": "npm run build -w projects/tressi-common",
     "format:watch": "chokidar \"**/*.{ts,json,md}\" -c \"npm run format\" --ignore \"**/node_modules/**\" --ignore \"**/dist/**\"",
     "format": "prettier --write . --config .prettierrc --ignore-path .prettierignore",
     "lint:inspect": "eslint --inspect-config",

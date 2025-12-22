@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { TressiRequestConfig } from '../../../../tressi-common/src/config';
+import type { TressiRequestConfig } from '../../../src/common/config/types';
 import { WorkerRateLimiter } from '../../../src/workers/worker-rate-limiter';
 
 describe('WorkerRateLimiter', () => {

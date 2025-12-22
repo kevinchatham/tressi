@@ -1,8 +1,8 @@
 import os from 'os';
-import { TressiConfig, TressiRequestConfig } from 'tressi-common/config';
-import type { AggregatedMetric } from 'tressi-common/metrics';
 import { Worker } from 'worker_threads';
 
+import { TressiConfig, TressiRequestConfig } from '../common/config/types';
+import type { AggregatedMetric } from '../common/metrics';
 import { FileUtils } from '../utils/file-utils';
 import { EarlyExitCoordinator } from './early-exit-coordinator';
 import { MetricsAggregator } from './metrics-aggregator';

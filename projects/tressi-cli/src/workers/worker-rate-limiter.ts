@@ -1,4 +1,4 @@
-import type { TressiRequestConfig } from 'tressi-common/config';
+import { TressiRequestConfig } from '../common/config/types';
 
 /**
  * WorkerRateLimiter - Token bucket rate limiter for controlling request throughput per endpoint.

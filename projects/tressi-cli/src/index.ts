@@ -4,9 +4,9 @@ import { promises as fs } from 'fs';
 import ora from 'ora';
 import path from 'path';
 import { performance } from 'perf_hooks';
-import type { TressiConfig, TressiOptionsConfig } from 'tressi-common/config';
 
 import pkg from '../../../package.json';
+import { TressiConfig, TressiOptionsConfig } from './common/config/types';
 import { Runner } from './core/runner';
 import { DataExporter } from './reporting/exporters/data-exporter';
 import { MarkdownGenerator } from './reporting/generators/markdown-generator';
@@ -16,7 +16,7 @@ import { terminal } from './tui/terminal';
 import { FileUtils } from './utils/file-utils';
 
 export type { TestSummary };
-export type { TressiConfig } from 'tressi-common/config';
+export type { TressiConfig };
 
 /**
  * Prints a detailed summary of the load test results to the console.

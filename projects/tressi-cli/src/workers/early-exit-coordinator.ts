@@ -1,5 +1,4 @@
-import type { TressiConfig } from 'tressi-common/config';
-
+import { TressiConfig } from '../common/config/types';
 import {
   IEarlyExitCoordinator,
   IEndpointStateManager,

@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
+import { AggregatedMetric } from '@tressi-cli/common/metrics';
 import { Observable, Subject } from 'rxjs';
-import { AggregatedMetric } from 'tressi-common/metrics';
 
 @Injectable({
   providedIn: 'root',

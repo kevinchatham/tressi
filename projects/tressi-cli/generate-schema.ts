@@ -1,10 +1,10 @@
 /* eslint-disable no-console */
 import fs from 'fs';
 import path from 'path';
-import { TressiConfigSchema } from 'tressi-common/config';
 import { z } from 'zod';
 
 import pkg from '../../package.json';
+import { TressiConfigSchema } from './src/common/config/schemas';
 
 const schema = z.toJSONSchema(TressiConfigSchema);
 

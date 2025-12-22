@@ -1,4 +1,4 @@
-import type { TressiRequestConfig } from 'tressi-common/config';
+import { TressiRequestConfig } from '../common/config/types';
 
 /**
  * Endpoint counters for tracking request statistics

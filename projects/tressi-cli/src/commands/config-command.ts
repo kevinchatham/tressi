@@ -1,11 +1,11 @@
 import chalk from 'chalk';
+
+import { defaultTressiConfig } from '../common/config/defaults';
 import {
-  defaultTressiConfig,
   TressiConfig,
   TressiOptionsConfig,
   TressiRequestConfig,
-} from 'tressi-common/config';
-
+} from '../common/config/types';
 import { loadConfig } from '../core/config';
 import { DisplayOptions } from '../reporting/types';
 import { terminal } from '../tui/terminal';

@@ -5,7 +5,7 @@ import type {
   TressiConfigSchema,
   TressiOptionsConfigSchema,
   TressiRequestConfigSchema,
-} from './schemas.js';
+} from './schemas';
 
 /**
  * Type representing early exit configuration.

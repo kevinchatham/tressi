@@ -15,12 +15,10 @@ import {
   SchemaPathTree,
   validate,
 } from '@angular/forms/signals';
-import {
-  defaultTressiConfig,
-  requestDefaults,
-  TressiRequestConfig,
-  validateConfig,
-} from 'tressi-common/config';
+import { validateConfig } from '@tressi-cli/common/config';
+import { defaultTressiConfig } from '@tressi-cli/common/config/defaults';
+import { requestDefaults } from '@tressi-cli/common/config/schemas';
+import { TressiRequestConfig } from '@tressi-cli/common/config/types';
 
 import { NameService } from '../../services/name.service';
 import {

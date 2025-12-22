@@ -1,8 +1,8 @@
 import EventEmitter from 'eventemitter3';
 import { performance } from 'perf_hooks';
-import type { TressiConfig } from 'tressi-common/config';
-import type { AggregatedMetric } from 'tressi-common/metrics';
 
+import { TressiConfig } from '../common/config/types';
+import type { AggregatedMetric } from '../common/metrics';
 import { IRunnerEvents } from '../workers/interfaces';
 import { WorkerPoolManager } from '../workers/worker-pool-manager';
 

@@ -1,9 +1,10 @@
 import { sValidator } from '@hono/standard-validator';
 import { Hono } from 'hono';
-import { TressiConfig, validateConfig } from 'tressi-common/config';
 import z from 'zod';
 
 import { configStorage } from '../../collections/config-collection';
+import { validateConfig } from '../../common/config';
+import { TressiConfig } from '../../common/config/types';
 import { createApiErrorResponse } from '../utils/error-response-generator';
 
 /**

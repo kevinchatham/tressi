@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { TressiConfig } from '../../../../tressi-common/src/config';
+import { TressiConfig } from '../../../src/common/config/types';
 import { EarlyExitCoordinator } from '../../../src/workers/early-exit-coordinator';
 import {
   IEndpointStateManager,

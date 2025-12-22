@@ -3,10 +3,6 @@ import { ZodError } from 'zod';
 import { TressiConfigSchema } from './schemas';
 import { TressiConfig } from './types';
 
-export * from './schemas';
-export * from './types';
-export * from './defaults';
-
 /**
  * Discriminated union result type for configuration validation
  * Success path contains fully typed TressiConfig

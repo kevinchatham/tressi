@@ -1,6 +1,5 @@
-import { TressiConfig } from 'tressi-common/config';
-import { AggregatedMetric } from 'tressi-common/metrics';
-
+import { TressiConfig } from '../common/config/types';
+import { AggregatedMetric } from '../common/metrics';
 import { ServerEvents, TestEventData } from '../events/event-types';
 import { EndpointCounters, LatencyHistogram, WorkerState } from './types';
 

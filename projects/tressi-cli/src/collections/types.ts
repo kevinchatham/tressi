@@ -1,5 +1,5 @@
-import { TressiConfig } from 'tressi-common/config';
-import { EndpointMetric } from 'tressi-common/metrics';
+import { TressiConfig } from '../common/config/types';
+import { EndpointMetric } from '../common/metrics';
 
 /**
  * Configuration document stored in the database.

@@ -1,6 +1,6 @@
 import z from 'zod';
 
-import pkg from '../../../../package.json';
+import pkg from '../../../../../package.json';
 
 export const schemaDefault = `https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v${pkg.version}.json`;
 

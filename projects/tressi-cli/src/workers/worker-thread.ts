@@ -1,6 +1,6 @@
-import { type TressiRequestConfig } from 'tressi-common/config';
 import { parentPort, workerData } from 'worker_threads';
 
+import { TressiRequestConfig } from '../common/config/types';
 import { RequestExecutor } from '../http/request-executor';
 import { ResponseSampler } from '../http/response-sampler';
 import { terminal } from '../tui/terminal';

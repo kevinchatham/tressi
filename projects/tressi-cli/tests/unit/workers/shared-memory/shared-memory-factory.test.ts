@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { TressiRequestConfig } from '../../../../../tressi-common/src/config';
+import type { TressiRequestConfig } from '../../../../src/common/config/types';
 import { SharedMemoryFactory } from '../../../../src/workers/shared-memory/shared-memory-factory';
 
 describe('SharedMemoryFactory', () => {

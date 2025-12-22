@@ -3,8 +3,7 @@
  * Provides static method to create all required managers for the new architecture
  */
 
-import { TressiRequestConfig } from 'tressi-common/config';
-
+import { TressiRequestConfig } from '../../common/config/types';
 import { SharedMemoryOptions } from '../types';
 import { BodySampleManager } from './body-sample-manager';
 import { EndpointStateManager } from './endpoint-state-manager';

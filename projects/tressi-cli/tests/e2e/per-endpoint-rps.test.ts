@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { TressiConfig } from '../../../tressi-common/src/config';
+import { TressiConfig } from '../../src/common/config/types';
 import { runLoadTest } from '../../src/index';
 import { ServerManager } from '../setup/server-manager';
 
