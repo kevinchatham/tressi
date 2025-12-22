@@ -4,6 +4,7 @@ import type { AggregatedMetric, EndpointMetric } from 'tressi-common/metrics';
 import { endpointMetricStorage } from '../collections/endpoint-metrics-collection';
 import { globalMetricStorage } from '../collections/global-metrics-collection';
 import { testStorage } from '../collections/test-collection';
+import { ServerEvents } from '../events/event-types';
 import { globalEventEmitter } from '../events/global-event-emitter';
 import {
   IBodySampleManager,
@@ -77,7 +78,7 @@ export class MetricsAggregator implements IMetricsAggregator {
 
     // ! terminal.clearAndPrint(metrics);
 
-    globalEventEmitter.emit('metrics', metrics);
+    globalEventEmitter.emit(ServerEvents.METRICS, metrics);
 
     try {
       // Get the currently running test

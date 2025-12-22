@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -10,7 +9,7 @@ import {
 @Component({
   selector: 'app-loading',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './loading.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

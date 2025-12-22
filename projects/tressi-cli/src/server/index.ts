@@ -1,6 +1,7 @@
 import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
 
+import { ServerEvents } from '../events/event-types';
 import { terminal } from '../tui/terminal';
 import createApp from './routes';
 import { SSEManager } from './utils/sse-manager';
@@ -10,6 +11,7 @@ export class TressiServer {
   private server: ReturnType<typeof serve> | null = null;
   private port: number;
   private sseManager: SSEManager;
+  private heartbeatInterval: NodeJS.Timeout | null = null;
 
   constructor(port: number = 3108) {
     this.port = port;
@@ -31,6 +33,7 @@ export class TressiServer {
           terminal.print(
             `📊 Health check available at http://localhost:${this.port}/api/health`,
           );
+          this.startHeartbeat();
           resolve();
         });
         this.server.on('error', (error) => {
@@ -44,6 +47,11 @@ export class TressiServer {
 
   async stop(): Promise<void> {
     return new Promise((resolve) => {
+      if (this.heartbeatInterval) {
+        clearInterval(this.heartbeatInterval);
+        this.heartbeatInterval = null;
+      }
+
       if (this.server) {
         // Force close all SSE connections first
         this.sseManager.forceClose();
@@ -62,5 +70,21 @@ export class TressiServer {
         resolve();
       }
     });
+  }
+
+  /**
+   * Starts the heartbeat interval for sending regular connected events
+   * @private
+   */
+  private startHeartbeat(): void {
+    this.heartbeatInterval = setInterval(() => {
+      const message = {
+        event: ServerEvents.CONNECTED,
+        data: {
+          timestamp: Date.now(),
+        },
+      };
+      this.sseManager.broadcast(message);
+    }, 1000); // Send heartbeat every 1 second
   }
 }

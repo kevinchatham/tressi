@@ -1,7 +1,12 @@
+import { sValidator } from '@hono/standard-validator';
 import { Hono } from 'hono';
 import os from 'os';
+import z from 'zod';
 
+import { endpointMetricStorage } from '../../collections/endpoint-metrics-collection';
+import { globalMetricStorage } from '../../collections/global-metrics-collection';
 import { ISSEClientManager } from '../../workers/interfaces';
+import { createApiErrorResponse } from '../utils/error-response-generator';
 
 /**
  * Creates a metrics streaming application using Server-Sent Events.
@@ -42,6 +47,9 @@ function createMetricsApp(sseManager: ISSEClientManager) {
           },
         });
       })
+      /**
+       * GET /system - Get cpu count, memory, node version, os, etc
+       */
       .get('/system', (c) => {
         return c.json({
           arch: os.arch(),
@@ -52,6 +60,62 @@ function createMetricsApp(sseManager: ISSEClientManager) {
           totalMemory: os.totalmem(),
         });
       })
+      /**
+       * GET /global/:testId - Retrieves global metrics for a specific test
+       * @param {string} testId - The test ID from URL parameter
+       * @returns {Promise<Response>} JSON array of global metrics for the test
+       */
+      .get(
+        '/global/:testId',
+        sValidator(
+          'param',
+          z.object({
+            testId: z.string(),
+          }),
+        ),
+        async (c) => {
+          try {
+            const { testId } = c.req.valid('param');
+            const globalMetrics = await globalMetricStorage.getByTestId(testId);
+            return c.json(globalMetrics);
+          } catch (error) {
+            return c.json(
+              createApiErrorResponse(
+                'Failed to load global metrics',
+                'INTERNAL_ERROR',
+                error instanceof Error ? [error.message] : undefined,
+              ),
+              500,
+            );
+          }
+        },
+      )
+      /**
+       * GET /endpoints/:testId - Retrieves endpoint-specific metrics for a test
+       * @param {string} testId - The test ID from URL parameter
+       * @returns {Promise<Response>} JSON array of endpoint metrics for the test
+       */
+      .get(
+        '/endpoints/:testId',
+        sValidator('param', z.object({ testId: z.string() })),
+        async (c) => {
+          try {
+            const { testId } = c.req.valid('param');
+            const endpointMetrics =
+              await endpointMetricStorage.getByTestId(testId);
+            return c.json(endpointMetrics);
+          } catch (error) {
+            return c.json(
+              createApiErrorResponse(
+                'Failed to load endpoint metrics',
+                'INTERNAL_ERROR',
+                error instanceof Error ? [error.message] : undefined,
+              ),
+              500,
+            );
+          }
+        },
+      )
   );
 }
 

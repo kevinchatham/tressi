@@ -1,3 +1,4 @@
+import { ServerEventMessage } from '../../events/event-types';
 import { ISSEClientManager } from '../../workers/interfaces';
 
 /**
@@ -36,12 +37,12 @@ export class SSEManager implements ISSEClientManager {
   }
 
   /**
-   * Broadcasts data to all connected SSE clients.
+   * Broadcasts a unified event message to all connected SSE clients.
    *
-   * @param data - The data to broadcast (will be JSON stringified)
+   * @param message - The unified event message to broadcast
    *
    * @remarks
-   * Sends the provided data to all connected clients in SSE format.
+   * Sends the provided message to all connected clients in SSE format.
    * Automatically handles client disconnections by removing failed clients
    * from the active set. Data is formatted according to SSE specification
    * with proper message framing.
@@ -51,16 +52,19 @@ export class SSEManager implements ISSEClientManager {
    *
    * @example
    * ```typescript
-   * sseManager.broadcast({ metrics: { rps: 1000, latency: 50 } });
-   * // Sends: "data: {"metrics":{"rps":1000,"latency":50}}\n\n"
+   * sseManager.broadcast({
+   *   event: ServerEvents.METRICS,
+   *   data: { cpuUsagePercent: 50, memoryUsageMB: 128 }
+   * });
+   * // Sends: "data: {"event":"metrics","data":{"cpuUsagePercent":50,"memoryUsageMB":128}}\n\n"
    * ```
    */
-  broadcast(data: unknown): void {
-    const message = `data: ${JSON.stringify(data)}\n\n`;
+  broadcast(message: ServerEventMessage): void {
+    const sseMessage = `data: ${JSON.stringify(message)}\n\n`;
 
     for (const client of this.clients) {
       try {
-        client.enqueue(message);
+        client.enqueue(sseMessage);
       } catch {
         // Client disconnected or failed, remove from set
         this.clients.delete(client);

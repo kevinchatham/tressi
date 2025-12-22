@@ -395,57 +395,65 @@ export class LineChartComponent {
     const chart = this.chart();
     if (!chart) return;
 
-    // Convert data and labels to proper format for datetime chart
-    const seriesData = data.map((value, index) => ({
-      x: labels[index] || Date.now() - (data.length - 1 - index) * 1000,
-      y: value,
-    }));
-
-    // Determine if we should use incremental update
-    const shouldUseIncremental = this.shouldUseIncrementalUpdate(data);
-
-    if (shouldUseIncremental && this.lastDataLength > 0) {
-      // Use appendData for incremental updates
-      const newDataPoints = this.getIncrementalDataPoints(seriesData);
-      if (newDataPoints.length > 0) {
-        chart.appendData([
-          {
-            name: seriesName,
-            data: newDataPoints,
-          },
-        ]);
-      }
-    } else {
-      // Use full update for initial load or major data changes
-      chart.updateSeries(
-        [
-          {
-            name: seriesName,
-            data: seriesData,
-          },
-        ],
-        data.length <= 10, // Animate only for small datasets
-      );
+    // Early exit if data hasn't changed
+    if (data.length === this.lastDataLength && data.length > 0) {
+      return;
     }
 
-    // Update tracking state
-    this.lastDataLength = data.length;
+    // Use requestAnimationFrame to avoid blocking UI
+    requestAnimationFrame(() => {
+      // Convert data and labels to proper format for datetime chart
+      const seriesData = data.map((value, index) => ({
+        x: labels[index] || Date.now() - (data.length - 1 - index) * 1000,
+        y: value,
+      }));
 
-    // Always update options (lightweight operation)
-    chart.updateOptions(
-      {
-        title: {
-          text: title,
-        },
-        yaxis: {
+      // Determine if we should use incremental update
+      const shouldUseIncremental = this.shouldUseIncrementalUpdate(data);
+
+      if (shouldUseIncremental && this.lastDataLength > 0) {
+        // Use appendData for incremental updates
+        const newDataPoints = this.getIncrementalDataPoints(seriesData);
+        if (newDataPoints.length > 0) {
+          chart.appendData([
+            {
+              name: seriesName,
+              data: newDataPoints,
+            },
+          ]);
+        }
+      } else {
+        // Use full update for initial load or major data changes
+        chart.updateSeries(
+          [
+            {
+              name: seriesName,
+              data: seriesData,
+            },
+          ],
+          data.length <= 10, // Animate only for small datasets
+        );
+      }
+
+      // Update tracking state
+      this.lastDataLength = data.length;
+
+      // Always update options (lightweight operation)
+      chart.updateOptions(
+        {
           title: {
-            text: yAxisLabel,
+            text: title,
+          },
+          yaxis: {
+            title: {
+              text: yAxisLabel,
+            },
           },
         },
-      },
-      false,
-      false,
-    );
+        false,
+        false,
+      );
+    });
   }
 
   private shouldUseIncrementalUpdate(newData: number[]): boolean {

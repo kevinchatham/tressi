@@ -1,0 +1,517 @@
+<div class="p-16">
+  <app-header>
+    <button
+      (click)="deleteTest()"
+      class="btn btn-sm btn-error btn-circle btn-outline"
+      title="Delete Test"
+      [disabled]="testData()?.status === 'running'"
+    >
+      <app-icon name="delete" />
+    </button>
+    <button
+      (click)="goBack()"
+      class="btn btn-ghost btn-circle"
+      title="Back to Test List"
+    >
+      <app-icon name="home" />
+    </button>
+  </app-header>
+
+  <!-- Error State -->
+  @if (hasError()) {
+    <div class="flex min-h-100 items-center justify-center p-8">
+      <div class="max-w-md text-center">
+        <app-icon name="warning" size="48" class="text-warning mb-4" />
+        <h2 class="text-base-content mb-2 text-xl font-semibold">
+          Failed to Load Test Details
+        </h2>
+        <p class="text-base-content/70 mb-4">{{ errorMessage() }}</p>
+        <button class="btn btn-primary gap-2" (click)="loadTestDetails()">
+          <app-icon name="search" size="16" />
+          Try Again
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- Test Details -->
+  @if (!hasError() && testData()) {
+    <div class="space-y-8">
+      <!-- Test Info Card -->
+      <div class="ring-neutral bg-base-100 rounded-lg p-6 ring-1">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xl font-semibold">Test Information</h2>
+          <button
+            (click)="toggleTestInfo()"
+            class="btn btn-ghost btn-circle"
+            [title]="testInfoCollapsed() ? 'Expand' : 'Collapse'"
+          >
+            <app-icon
+              [name]="
+                testInfoCollapsed()
+                  ? 'keyboard_arrow_down'
+                  : 'keyboard_arrow_up'
+              "
+            />
+          </button>
+        </div>
+        @if (!testInfoCollapsed()) {
+          <div class="mt-4">
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <div class="space-y-1">
+                <label class="text-base-content/70 text-sm font-medium"
+                  >Test ID:</label
+                >
+                <span class="text-base-content font-mono text-sm">{{
+                  testData()!.id
+                }}</span>
+              </div>
+              <div class="space-y-1">
+                <label class="text-base-content/70 text-sm font-medium"
+                  >Configuration:</label
+                >
+                <span class="text-base-content">{{ displayConfigName() }}</span>
+              </div>
+              <div class="space-y-1">
+                <label class="text-base-content/70 text-sm font-medium"
+                  >Status:</label
+                >
+                <span
+                  class="badge gap-1"
+                  [ngClass]="getStatusColor(testData()!.status)"
+                >
+                  <app-icon
+                    [name]="getStatusIcon(testData()!.status)"
+                    size="12"
+                  />
+                  {{ testData()!.status || 'unknown' | titlecase }}
+                </span>
+              </div>
+              <div class="space-y-1">
+                <label class="text-base-content/70 text-sm font-medium"
+                  >Started:</label
+                >
+                <span class="text-base-content">{{
+                  formatDate(
+                    testData()!.epochStartedAt || testData()!.epochCreatedAt
+                  )
+                }}</span>
+              </div>
+              <div class="space-y-1">
+                <label class="text-base-content/70 text-sm font-medium"
+                  >Duration:</label
+                >
+                <span class="text-base-content">{{ getTestDuration() }}</span>
+              </div>
+              @if (testData()!.error) {
+                <div class="space-y-1">
+                  <label class="text-base-content/70 text-sm font-medium"
+                    >Error:</label
+                  >
+                  <span class="text-error font-medium">{{
+                    testData()!.error
+                  }}</span>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Global Summary Card -->
+      @if (metricsData()?.global?.length) {
+        <div class="ring-neutral bg-base-100 rounded-lg p-6 ring-1">
+          <div class="flex items-center justify-between">
+            <h3 class="text-lg font-semibold">Global Summary</h3>
+            <button
+              (click)="toggleGlobalSummary()"
+              class="btn btn-ghost btn-circle"
+              [title]="globalSummaryCollapsed() ? 'Expand' : 'Collapse'"
+            >
+              <app-icon
+                [name]="
+                  globalSummaryCollapsed()
+                    ? 'keyboard_arrow_down'
+                    : 'keyboard_arrow_up'
+                "
+              />
+            </button>
+          </div>
+          @if (!globalSummaryCollapsed()) {
+            <div class="mt-4">
+              <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
+                <div class="space-y-1">
+                  <label class="text-base-content/70 text-sm font-medium"
+                    >Average Throughput</label
+                  >
+                  <span class="text-base-content text-lg font-semibold"
+                    >{{ calculateAverage('throughput') }} req/sec</span
+                  >
+                </div>
+                <div class="space-y-1">
+                  <label class="text-base-content/70 text-sm font-medium"
+                    >Average Latency</label
+                  >
+                  <span class="text-base-content text-lg font-semibold"
+                    >{{ calculateAverage('latency') }} ms</span
+                  >
+                </div>
+                <div class="space-y-1">
+                  <label class="text-base-content/70 text-sm font-medium"
+                    >Average Error Rate</label
+                  >
+                  <span class="text-base-content text-lg font-semibold"
+                    >{{ calculateAverage('errorRate') }}%</span
+                  >
+                </div>
+                <div class="space-y-1">
+                  <label class="text-base-content/70 text-sm font-medium"
+                    >Total Data Points</label
+                  >
+                  <span class="text-base-content text-lg font-semibold">{{
+                    metricsData()?.global?.length || 0
+                  }}</span>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Endpoint Summary Card -->
+      @if (endpointMetrics().length) {
+        <div class="ring-neutral bg-base-100 rounded-lg p-6 ring-1">
+          <div class="flex items-center justify-between">
+            <h3 class="text-lg font-semibold">Endpoint Summary</h3>
+            <button
+              (click)="toggleEndpointSummary()"
+              class="btn btn-ghost btn-circle"
+              [title]="endpointSummaryCollapsed() ? 'Expand' : 'Collapse'"
+            >
+              <app-icon
+                [name]="
+                  endpointSummaryCollapsed()
+                    ? 'keyboard_arrow_down'
+                    : 'keyboard_arrow_up'
+                "
+              />
+            </button>
+          </div>
+          @if (!endpointSummaryCollapsed()) {
+            <div class="mt-4">
+              <div class="grid grid-cols-2 gap-4 md:grid-cols-5">
+                <div class="space-y-1">
+                  <label class="text-base-content/70 text-sm font-medium"
+                    >Total Endpoints</label
+                  >
+                  <span class="text-base-content text-lg font-semibold">{{
+                    endpointSummary().totalEndpoints
+                  }}</span>
+                </div>
+                <div class="space-y-1">
+                  <label class="text-base-content/70 text-sm font-medium"
+                    >Avg Throughput</label
+                  >
+                  <span class="text-base-content text-lg font-semibold"
+                    >{{
+                      endpointSummary().avgThroughput.toFixed(2)
+                    }}
+                    req/sec</span
+                  >
+                </div>
+                <div class="space-y-1">
+                  <label class="text-base-content/70 text-sm font-medium"
+                    >Avg Latency</label
+                  >
+                  <span class="text-base-content text-lg font-semibold"
+                    >{{ endpointSummary().avgLatency.toFixed(2) }} ms</span
+                  >
+                </div>
+                <div class="space-y-1">
+                  <label class="text-base-content/70 text-sm font-medium"
+                    >Avg Error Rate</label
+                  >
+                  <span class="text-base-content text-lg font-semibold"
+                    >{{ endpointSummary().avgErrorRate.toFixed(2) }}%</span
+                  >
+                </div>
+                <div class="space-y-1">
+                  <label class="text-base-content/70 text-sm font-medium"
+                    >Total Data Points</label
+                  >
+                  <span class="text-base-content text-lg font-semibold">{{
+                    endpointSummary().totalDataPoints
+                  }}</span>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Tabs -->
+      <div class="tabs tabs-boxed">
+        <button
+          class="tab"
+          [class.tab-active]="activeTabName() === 'global'"
+          (click)="setActiveTab('global')"
+        >
+          Global Metrics
+        </button>
+        <button
+          class="tab"
+          [class.tab-active]="activeTabName() === 'endpoints'"
+          (click)="setActiveTab('endpoints')"
+        >
+          Endpoint Metrics
+        </button>
+      </div>
+
+      <!-- Global Metrics Tab -->
+      @if (activeTabName() === 'global') {
+        <div
+          class="space-y-8 transition-opacity duration-300 ease-out"
+          [class.opacity-0]="globalTabFadingIn()"
+          [class.opacity-100]="!globalTabFadingIn()"
+        >
+          <div class="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">
+            <!-- Throughput Chart -->
+            <div class="ring-neutral bg-base-100 rounded-lg p-6 ring-1">
+              <h3 class="mb-4 text-lg font-semibold">Throughput Over Time</h3>
+              <div class="h-75">
+                @if (throughputChartData().data.length > 0) {
+                  <app-line-chart
+                    [data]="throughputChartData().data"
+                    [labels]="throughputChartData().labels"
+                    [height]="300"
+                    [seriesName]="'Throughput'"
+                    [yAxisLabel]="'Requests/sec'"
+                    [chartId]="'global-throughput'"
+                    [syncGroup]="'global'"
+                  />
+                }
+                @if (throughputChartData().data.length === 0) {
+                  <div
+                    class="text-base-content/50 flex h-full items-center justify-center italic"
+                  >
+                    <p>No throughput data available</p>
+                  </div>
+                }
+              </div>
+            </div>
+
+            <!-- Latency Chart -->
+            <div class="ring-neutral bg-base-100 rounded-lg p-6 ring-1">
+              <h3 class="mb-4 text-lg font-semibold">
+                Response Time Over Time
+              </h3>
+              <div class="h-75">
+                @if (latencyChartData().data.length > 0) {
+                  <app-line-chart
+                    [data]="latencyChartData().data"
+                    [labels]="latencyChartData().labels"
+                    [height]="300"
+                    [seriesName]="'Latency'"
+                    [yAxisLabel]="'Response Time (ms)'"
+                    [chartId]="'global-latency'"
+                    [syncGroup]="'global'"
+                  />
+                }
+                @if (latencyChartData().data.length === 0) {
+                  <div
+                    class="text-base-content/50 flex h-full items-center justify-center italic"
+                  >
+                    <p>No latency data available</p>
+                  </div>
+                }
+              </div>
+            </div>
+
+            <!-- Error Rate Chart -->
+            <div class="ring-neutral bg-base-100 rounded-lg p-6 ring-1">
+              <h3 class="mb-4 text-lg font-semibold">Error Rate Over Time</h3>
+              <div class="h-75">
+                @if (errorRateChartData().data.length > 0) {
+                  <app-line-chart
+                    [data]="errorRateChartData().data"
+                    [labels]="errorRateChartData().labels"
+                    [height]="300"
+                    [seriesName]="'Error Rate'"
+                    [yAxisLabel]="'Error Rate (%)'"
+                    [chartId]="'global-error-rate'"
+                    [syncGroup]="'global'"
+                  />
+                }
+                @if (errorRateChartData().data.length === 0) {
+                  <div
+                    class="text-base-content/50 flex h-full items-center justify-center italic"
+                  >
+                    <p>No error rate data available</p>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Endpoint Metrics Tab -->
+      @if (activeTabName() === 'endpoints') {
+        <div
+          class="space-y-8 transition-opacity duration-300 ease-out"
+          [class.opacity-0]="endpointsTabFadingIn()"
+          [class.opacity-100]="!endpointsTabFadingIn()"
+        >
+          @if (!endpointMetrics().length) {
+            <div
+              class="text-base-content/50 flex min-h-50 items-center justify-center italic"
+            >
+              <p>No endpoint metrics available</p>
+            </div>
+          }
+
+          @for (endpoint of endpointMetrics(); track endpoint.url) {
+            <div class="ring-neutral bg-base-100 rounded-lg p-6 ring-1">
+              <h3 class="mb-4 text-lg font-semibold break-all">
+                {{ endpoint.url }}
+              </h3>
+
+              <!-- Endpoint Summary -->
+              <div class="mb-6">
+                <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
+                  <div class="space-y-1">
+                    <label class="text-base-content/70 text-sm font-medium"
+                      >Average Throughput</label
+                    >
+                    <span class="text-base-content text-lg font-semibold"
+                      >{{
+                        endpoint.summary.avgThroughput.toFixed(2)
+                      }}
+                      req/sec</span
+                    >
+                  </div>
+                  <div class="space-y-1">
+                    <label class="text-base-content/70 text-sm font-medium"
+                      >Average Latency</label
+                    >
+                    <span class="text-base-content text-lg font-semibold"
+                      >{{ endpoint.summary.avgLatency.toFixed(2) }} ms</span
+                    >
+                  </div>
+                  <div class="space-y-1">
+                    <label class="text-base-content/70 text-sm font-medium"
+                      >Average Error Rate</label
+                    >
+                    <span class="text-base-content text-lg font-semibold"
+                      >{{ endpoint.summary.avgErrorRate.toFixed(2) }}%</span
+                    >
+                  </div>
+                  <div class="space-y-1">
+                    <label class="text-base-content/70 text-sm font-medium"
+                      >Data Points</label
+                    >
+                    <span class="text-base-content text-lg font-semibold">{{
+                      endpoint.metrics.length
+                    }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Endpoint Charts -->
+              <div class="space-y-4">
+                <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                  <div class="ring-neutral rounded-lg p-4 ring-1">
+                    <h4 class="text-base-content mb-2 font-semibold">
+                      Throughput
+                    </h4>
+                    <div class="h-50">
+                      <app-line-chart
+                        [data]="
+                          getCachedEndpointChartData(endpoint.url, 'throughput')
+                            .data
+                        "
+                        [labels]="
+                          getCachedEndpointChartData(endpoint.url, 'throughput')
+                            .labels
+                        "
+                        [height]="200"
+                        [seriesName]="'Throughput'"
+                        [yAxisLabel]="'Requests/sec'"
+                        [chartId]="
+                          'endpoint-' +
+                          sanitizeForChartId(endpoint.url) +
+                          '-throughput'
+                        "
+                        [syncGroup]="
+                          'endpoint-' + sanitizeForChartId(endpoint.url)
+                        "
+                      />
+                    </div>
+                  </div>
+                  <div class="ring-neutral rounded-lg p-4 ring-1">
+                    <h4 class="text-base-content mb-2 font-semibold">
+                      Latency
+                    </h4>
+                    <div class="h-50">
+                      <app-line-chart
+                        [data]="
+                          getCachedEndpointChartData(endpoint.url, 'latency')
+                            .data
+                        "
+                        [labels]="
+                          getCachedEndpointChartData(endpoint.url, 'latency')
+                            .labels
+                        "
+                        [height]="200"
+                        [seriesName]="'Latency'"
+                        [yAxisLabel]="'Response Time (ms)'"
+                        [chartId]="
+                          'endpoint-' +
+                          sanitizeForChartId(endpoint.url) +
+                          '-latency'
+                        "
+                        [syncGroup]="
+                          'endpoint-' + sanitizeForChartId(endpoint.url)
+                        "
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div class="grid grid-cols-1 gap-4 lg:grid-cols-1">
+                  <div class="ring-neutral rounded-lg p-4 ring-1">
+                    <h4 class="text-base-content mb-2 font-semibold">
+                      Error Rate
+                    </h4>
+                    <div class="h-50">
+                      <app-line-chart
+                        [data]="
+                          getCachedEndpointChartData(endpoint.url, 'errorRate')
+                            .data
+                        "
+                        [labels]="
+                          getCachedEndpointChartData(endpoint.url, 'errorRate')
+                            .labels
+                        "
+                        [height]="200"
+                        [seriesName]="'Error Rate'"
+                        [yAxisLabel]="'Error Rate (%)'"
+                        [chartId]="
+                          'endpoint-' +
+                          sanitizeForChartId(endpoint.url) +
+                          '-error-rate'
+                        "
+                        [syncGroup]="
+                          'endpoint-' + sanitizeForChartId(endpoint.url)
+                        "
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+</div>

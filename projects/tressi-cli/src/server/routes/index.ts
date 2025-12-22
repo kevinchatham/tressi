@@ -2,11 +2,11 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 
+import { ServerEventMessage, ServerEvents } from '../../events/event-types';
 import { globalEventEmitter } from '../../events/global-event-emitter';
 import { ISSEClientManager } from '../../workers/interfaces';
 import createBrowserApp from './browser-routes';
 import configs from './config-routes';
-import createHealthApp from './health-routes';
 import createMetricsApp from './metrics-routes';
 import tests from './test-routes';
 
@@ -34,14 +34,41 @@ export function createApp(sseManager: ISSEClientManager, port: number) {
       return middleware(c, next);
     })
     .route('/api/config', configs)
-    .route('/api/health', createHealthApp(sseManager))
     .route('/api/test', tests)
     .route('/api/tests', tests)
     .route('/api/metrics', createMetricsApp(sseManager))
     .route('/', createBrowserApp());
 
-  globalEventEmitter.on('metrics', (metrics) => {
-    sseManager.broadcast(metrics);
+  globalEventEmitter.on(ServerEvents.METRICS, (metrics) => {
+    const message: ServerEventMessage = {
+      event: ServerEvents.METRICS,
+      data: metrics,
+    };
+    sseManager.broadcast(message);
+  });
+
+  globalEventEmitter.on(ServerEvents.TEST.STARTED, (data) => {
+    const message: ServerEventMessage = {
+      event: ServerEvents.TEST.STARTED,
+      data,
+    };
+    sseManager.broadcast(message);
+  });
+
+  globalEventEmitter.on(ServerEvents.TEST.COMPLETED, (data) => {
+    const message: ServerEventMessage = {
+      event: ServerEvents.TEST.COMPLETED,
+      data,
+    };
+    sseManager.broadcast(message);
+  });
+
+  globalEventEmitter.on(ServerEvents.TEST.FAILED, (data) => {
+    const message: ServerEventMessage = {
+      event: ServerEvents.TEST.FAILED,
+      data,
+    };
+    sseManager.broadcast(message);
   });
 
   return app;

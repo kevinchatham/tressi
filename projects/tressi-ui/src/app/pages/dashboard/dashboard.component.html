@@ -8,7 +8,7 @@
         [value]="selectedConfigId()"
       >
         <option disabled>Select Configuration</option>
-        @for (config of safeConfigs(); track config.id) {
+        @for (config of configs(); track config.id) {
           <option [value]="config.id">{{ config.name }}</option>
         }
       </select>
@@ -17,7 +17,8 @@
     <button
       (click)="start()"
       class="btn btn-sm btn-primary btn-circle btn-outline"
-      title="Start"
+      title="Start New Test"
+      [disabled]="!selectedConfigId()"
     >
       <app-icon name="bolt" />
     </button>
@@ -29,80 +30,21 @@
       <app-icon name="settings" />
     </button>
   </app-header>
-  @if (hasMetrics()) {
-    <!-- View Mode Selector -->
-    <div class="form-control mb-4 w-fit max-w-full">
-      <select
-        class="select select-bordered w-fit"
-        (change)="onViewModeChange($event)"
-        [value]="currentViewMode()"
-      >
-        <option value="global">Global View</option>
-        @for (endpoint of availableEndpoints(); track endpoint) {
-          <option [value]="endpoint">{{ endpoint | slice: 0 : 50 }}</option>
-        }
-      </select>
+
+  <!-- Test List Component -->
+  @if (selectedConfigId()) {
+    <div class="mt-8">
+      <app-test-list [configId]="selectedConfigId()" />
     </div>
-    <div class="ring-neutral mx-auto mb-8 rounded p-4 ring-1">
-      <app-line-chart
-        [title]="
-          currentViewMode() === 'global'
-            ? 'Global Throughput'
-            : 'Throughput - ' + (currentViewMode() | slice: 0 : 50)
-        "
-        [yAxisLabel]="'Rate'"
-        [seriesName]="'Requests/Second'"
-        [data]="throughputData()"
-        [labels]="timeLabels()"
-        [height]="350"
-        [smoothCurve]="true"
-        [chartId]="'throughput-chart'"
-        [syncGroup]="'dashboard-main'"
-      />
-    </div>
-    <div class="ring-neutral mx-auto mb-8 rounded p-4 ring-1">
-      <app-line-chart
-        [title]="
-          currentViewMode() === 'global'
-            ? 'Latency (ms)'
-            : 'Latency - ' + (currentViewMode() | slice: 0 : 50)
-        "
-        [yAxisLabel]="'Milliseconds'"
-        [seriesName]="'Avg Latency'"
-        [data]="latencyData()"
-        [labels]="timeLabels()"
-        [height]="350"
-        [smoothCurve]="false"
-        [chartId]="'latency-chart'"
-        [syncGroup]="'dashboard-main'"
-      />
-    </div>
-    <!--
-    <div class="ring-neutral mx-auto rounded p-4 ring-1">
-      <app-line-chart
-        [title]="
-          currentViewMode() === 'global'
-            ? 'Error Rate'
-            : 'Error Rate - ' + (currentViewMode() | slice: 0 : 50)
-        "
-        [yAxisLabel]="'%'"
-        [seriesName]="'Errors/Second'"
-        [data]="errorRateData()"
-        [labels]="timeLabels()"
-        [height]="350"
-        [smoothCurve]="true"
-        [chartId]="'error-rate-chart'"
-        [syncGroup]="'dashboard-main'"
-      />
-    </div> 
-    -->
   } @else {
     <!-- Empty State -->
-    <div class="hero bg-base-200 min-h-125 rounded-lg">
+    <div class="hero bg-base-200 mt-8 min-h-125 rounded-lg">
       <div class="hero-content text-center">
         <div class="max-w-md">
-          <h1 class="text-2xl font-bold">No Metrics Available</h1>
-          <p class="py-6 text-neutral-600">You haven't run a load test yet.</p>
+          <h1 class="text-2xl font-bold">Select a Configuration</h1>
+          <p class="py-6 text-neutral-600">
+            Choose a configuration from the dropdown to view test history
+          </p>
         </div>
       </div>
     </div>

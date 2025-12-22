@@ -9,6 +9,7 @@ import {
 import { DashboardComponent } from './pages/dashboard/dashboard.component';
 import { ServerUnavailableComponent } from './pages/server-unavailable/server-unavailable.component';
 import { SettingsComponent } from './pages/settings/settings.component';
+import { TestDetailComponent } from './pages/test-detail/test-detail.component';
 import { WelcomeComponent } from './pages/welcome/welcome.component';
 import { ConfigService } from './services/config.service';
 import { HealthService } from './services/health.service';
@@ -84,13 +85,13 @@ export const routes: Routes = [
   {
     path: 'welcome',
     component: WelcomeComponent,
-    canActivate: [configGuard],
+    canActivate: [healthCheckGuard, configGuard],
     data: { title: 'Tressi Welcome' },
   },
   {
     path: 'settings',
     component: SettingsComponent,
-    canActivate: [configGuard],
+    canActivate: [healthCheckGuard, configGuard],
     data: { title: 'Tressi Settings' },
   },
   {
@@ -98,6 +99,12 @@ export const routes: Routes = [
     component: DashboardComponent,
     canActivate: [healthCheckGuard, configGuard],
     data: { title: 'Tressi Dashboard' },
+  },
+  {
+    path: 'tests/:testId',
+    component: TestDetailComponent,
+    canActivate: [healthCheckGuard],
+    data: { title: 'Test Details' },
   },
   {
     path: '',

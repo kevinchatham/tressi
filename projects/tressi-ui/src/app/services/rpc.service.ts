@@ -6,7 +6,7 @@ import type { AppType } from 'tressi-cli/src/server/routes/types';
   providedIn: 'root',
 })
 export class RPCService {
-  public client = hc<AppType>('http://localhost:3108', {
+  public readonly client = hc<AppType>('http://localhost:3108', {
     init: {
       credentials: 'include',
     },
@@ -16,6 +16,7 @@ export class RPCService {
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const { client } = new RPCService();
 
+// ! Config
 export type ModifyConfigRequest = InferRequestType<
   typeof client.config.$post
 >['json'];
@@ -31,12 +32,77 @@ export type GetConfigResponseError = Extract<
 
 export type ConfigDocument = GetConfigResponseSuccess[number];
 
-export type GetHealthResponse = InferResponseType<typeof client.health.$get>;
-
+// ! Metrics SSI
 export type GetSystemMetricsResponse = InferResponseType<
   typeof client.metrics.system.$get
 >;
 
+// ! Metrics
+export type GetEndpointsMetricsResponse = InferResponseType<
+  (typeof client.metrics.endpoints)[':testId']['$get']
+>;
+
+export type GetEndpointsMetricsResponseSuccess = Extract<
+  GetEndpointsMetricsResponse,
+  unknown[]
+>;
+
+export type GetEndpointsMetricsResponseError = Extract<
+  GetEndpointsMetricsResponse,
+  { error: object }
+>;
+
+export type EndpointMetric = GetEndpointsMetricsResponseSuccess[number];
+
+export type GetGlobalMetricsResponse = InferResponseType<
+  (typeof client.metrics.global)[':testId']['$get']
+>;
+
+export type GetGlobalMetricsResponseSuccess = Extract<
+  GetGlobalMetricsResponse,
+  unknown[]
+>;
+
+export type GetGlobalMetricsResponseError = Extract<
+  GetGlobalMetricsResponse,
+  { error: object }
+>;
+
+export type GlobalMetric = GetGlobalMetricsResponseSuccess[number];
+
+export type TestMetrics = {
+  global: GlobalMetric[];
+  endpoints: EndpointMetric[];
+};
+
+// ! Test Management
 export type StartTestRequest = InferRequestType<
   typeof client.test.$post
 >['json'];
+
+export type GetTestsResponse = InferResponseType<typeof client.tests.$get>;
+
+export type GetTestsResponseSuccess = Extract<GetTestsResponse, unknown[]>;
+
+export type GetTestsResponseError = Extract<
+  GetTestsResponse,
+  { error: object }
+>;
+
+export type TestDocument = Extract<GetTestsResponseSuccess, unknown[]>[number];
+
+export type TestStatus = TestDocument['status'];
+
+export type DeleteTestResponse = InferResponseType<
+  (typeof client.tests)[':id']['$delete']
+>;
+
+export type DeleteTestResponseSuccess = Extract<
+  DeleteTestResponse,
+  { metricsDeleted: object }
+>;
+
+export type DeleteTestResponseError = Extract<
+  DeleteTestResponse,
+  { error: object }
+>;

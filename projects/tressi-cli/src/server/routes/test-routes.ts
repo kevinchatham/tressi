@@ -4,7 +4,11 @@ import z from 'zod';
 
 import { runLoadTest } from '../..';
 import { configStorage } from '../../collections/config-collection';
+import { endpointMetricStorage } from '../../collections/endpoint-metrics-collection';
+import { globalMetricStorage } from '../../collections/global-metrics-collection';
 import { testStorage } from '../../collections/test-collection';
+import { ServerEvents, TestEventData } from '../../events/event-types';
+import { globalEventEmitter } from '../../events/global-event-emitter';
 import { createApiErrorResponse } from '../utils/error-response-generator';
 
 /**
@@ -71,6 +75,15 @@ const app = new Hono()
           epochStartedAt: Date.now(),
         });
 
+        // Emit test started event
+        const startedEvent: TestEventData = {
+          testId: id,
+          timestamp: Date.now(),
+          status: 'running',
+          configId: configId,
+        };
+        globalEventEmitter.emit(ServerEvents.TEST.STARTED, startedEvent);
+
         // Start the load test asynchronously
         (async (): Promise<void> => {
           try {
@@ -83,6 +96,18 @@ const app = new Hono()
               status: 'completed',
               epochEndedAt: Date.now(),
             });
+
+            // Emit test completed event
+            const completedEvent: TestEventData = {
+              testId: id,
+              timestamp: Date.now(),
+              status: 'completed',
+              configId: configId,
+            };
+            globalEventEmitter.emit(
+              ServerEvents.TEST.COMPLETED,
+              completedEvent,
+            );
           } catch (error) {
             // Update test to failed status with error
             await testStorage.edit({
@@ -92,6 +117,16 @@ const app = new Hono()
               epochEndedAt: Date.now(),
               error: error instanceof Error ? error.message : 'Unknown error',
             });
+
+            // Emit test failed event
+            const failedEvent: TestEventData = {
+              testId: id,
+              timestamp: Date.now(),
+              status: 'failed',
+              error: error instanceof Error ? error.message : 'Unknown error',
+              configId: configId,
+            };
+            globalEventEmitter.emit(ServerEvents.TEST.FAILED, failedEvent);
           }
         })();
 
@@ -153,10 +188,10 @@ const app = new Hono()
   })
 
   /**
-   * GET /tests - Retrieves all tests
+   * GET / - Retrieves all tests
    * @returns {Promise<Response>} JSON array of tests
    */
-  .get('/tests', async (c) => {
+  .get('/', async (c) => {
     try {
       const tests = await testStorage.getAll();
       return c.json(tests);
@@ -177,15 +212,9 @@ const app = new Hono()
    * @param {string} id - The test ID from URL parameter
    * @returns {Promise<Response>} JSON test data or error response
    */
-  .get('/tests/:id', async (c) => {
+  .get('/:id', sValidator('param', z.object({ id: z.string() })), async (c) => {
     try {
-      const id = c.req.param('id');
-      if (!id) {
-        return c.json(
-          createApiErrorResponse('Test ID is required', 'MISSING_ID'),
-          400,
-        );
-      }
+      const { id } = c.req.valid('param');
       const test = await testStorage.getById(id);
       if (!test) {
         return c.json(
@@ -207,37 +236,58 @@ const app = new Hono()
   })
 
   /**
-   * DELETE /tests/:id - Deletes a test by ID
+   * DELETE /tests/:id - Deletes a test by ID and all associated metrics
    * @param {string} id - The test ID from URL parameter
    * @returns {Promise<Response>} Success response or error if not found
    */
-  .delete('/tests/:id', async (c) => {
-    try {
-      const id = c.req.param('id');
-      if (!id) {
+  .delete(
+    '/:id',
+    sValidator('param', z.object({ id: z.string() })),
+    async (c) => {
+      try {
+        const { id } = c.req.valid('param');
+        // Check if test exists first
+        const test = await testStorage.getById(id);
+        if (!test) {
+          return c.json(
+            createApiErrorResponse('Test not found', 'NOT_FOUND'),
+            404,
+          );
+        }
+
+        // Delete all associated metrics first (cascade deletion)
+        const globalMetricsDeleted =
+          await globalMetricStorage.deleteByTestId(id);
+        const endpointMetricsDeleted =
+          await endpointMetricStorage.deleteByTestId(id);
+
+        // Then delete the test itself
+        const success = await testStorage.delete(id);
+        if (!success) {
+          return c.json(
+            createApiErrorResponse('Test not found', 'NOT_FOUND'),
+            404,
+          );
+        }
+
+        return c.json({
+          success: true,
+          metricsDeleted: {
+            global: globalMetricsDeleted,
+            endpoints: endpointMetricsDeleted,
+          },
+        });
+      } catch (error) {
         return c.json(
-          createApiErrorResponse('Test ID is required', 'MISSING_ID'),
-          400,
+          createApiErrorResponse(
+            'Failed to delete test',
+            'INTERNAL_ERROR',
+            error instanceof Error ? [error.message] : undefined,
+          ),
+          500,
         );
       }
-      const success = await testStorage.delete(id);
-      if (!success) {
-        return c.json(
-          createApiErrorResponse('Test not found', 'NOT_FOUND'),
-          404,
-        );
-      }
-      return c.json({ success: true });
-    } catch (error) {
-      return c.json(
-        createApiErrorResponse(
-          'Failed to delete test',
-          'INTERNAL_ERROR',
-          error instanceof Error ? [error.message] : undefined,
-        ),
-        500,
-      );
-    }
-  });
+    },
+  );
 
 export default app;

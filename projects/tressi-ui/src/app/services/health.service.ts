@@ -1,21 +1,17 @@
 import { computed, inject, Injectable, Signal, signal } from '@angular/core';
 import { Router } from '@angular/router';
+import { Subscription } from 'rxjs';
 
+import { EventService } from './event.service';
 import { LogService } from './log.service';
 
-interface HeartbeatMessage {
-  status: string;
-  timestamp: number;
-}
-
 /**
- * Service responsible for monitoring the health of the backend server using Server-Sent Events
+ * Service responsible for monitoring the health of the backend server using the unified event stream
  *
  * @description
- * This service provides real-time health monitoring for the backend server using SSE.
- * It establishes a persistent connection to receive heartbeat messages and detects
- * connection loss within 7 seconds. The service automatically handles reconnection
- * and navigation to error pages when the server becomes unavailable.
+ * This service provides real-time health monitoring for the backend server using the unified event stream.
+ * It receives connected events from the EventService and detects connection loss within 5 seconds.
+ * The service automatically handles reconnection and navigation to error pages when the server becomes unavailable.
  *
  * @example
  * ```typescript
@@ -32,15 +28,10 @@ interface HeartbeatMessage {
 export class HealthService {
   private readonly log = inject(LogService);
   private readonly router = inject(Router);
+  private readonly eventService = inject(EventService);
 
-  /** Timeout for heartbeat in milliseconds (7 seconds) */
-  private readonly heartbeatTimeout = 7000;
-
-  /** Delay before attempting reconnection in milliseconds (3 seconds) */
-  private readonly reconnectDelay = 3000;
-
-  /** URL for the heartbeat SSE endpoint */
-  private readonly heartbeatUrl = 'http://localhost:3108/api/health/heartbeat';
+  /** Timeout for heartbeat in milliseconds (5 seconds) */
+  private readonly heartbeatTimeout = 5000;
 
   /** Internal signal holding the current health state */
   private readonly state = signal<{
@@ -63,59 +54,44 @@ export class HealthService {
     () => this.state().lastCheck,
   );
 
-  private eventSource: EventSource | null = null;
   private heartbeatTimeoutId: ReturnType<typeof setTimeout> | null = null;
-  private reconnectTimeoutId: ReturnType<typeof setTimeout> | null = null;
-  private isReconnecting = false;
+  private subscription: Subscription | null = null;
 
   constructor() {
-    this.connectToHeartbeat();
+    this.subscribeToConnectedEvents();
   }
 
   /**
-   * Establishes connection to the heartbeat SSE endpoint
+   * Subscribes to connected events from the unified event stream
    * @private
    */
-  private connectToHeartbeat(): void {
-    if (this.eventSource) {
-      this.eventSource.close();
-    }
-
-    this.eventSource = new EventSource(this.heartbeatUrl);
-
-    this.eventSource.onopen = (): void => {
-      this.log.info('Health monitoring connection established');
-      this.isReconnecting = false;
-      // If we were on the server-unavailable page and just reconnected
-      if (this.router.url === '/server-unavailable') {
-        this.log.info('Server recovered, redirecting to dashboard');
-        this.router.navigate(['/']);
-      }
-    };
-
-    this.eventSource.onmessage = (event: MessageEvent): void => {
-      try {
-        const heartbeat: HeartbeatMessage = JSON.parse(event.data);
+  private subscribeToConnectedEvents(): void {
+    this.subscription = this.eventService.getConnectedStream().subscribe({
+      next: (connectedEvent) => {
+        this.log.info('Health monitoring connection established');
 
         // Update health state
         this.state.update((current) => ({
           ...current,
           isHealthy: true,
-          lastCheck: new Date(heartbeat.timestamp),
+          lastCheck: new Date(connectedEvent.timestamp),
           error: null,
         }));
 
+        // If we were on the server-unavailable page and just reconnected
+        if (this.router.url === '/server-unavailable') {
+          this.log.info('Server recovered, redirecting to dashboard');
+          this.router.navigate(['/']);
+        }
+
         // Reset heartbeat timeout
         this.resetHeartbeatTimeout();
-      } catch (error) {
-        this.log.error('Failed to parse heartbeat message', error);
-      }
-    };
-
-    this.eventSource.onerror = (error: Event): void => {
-      this.log.error('Health monitoring connection error', error);
-      this.handleConnectionLoss();
-    };
+      },
+      error: (error) => {
+        this.log.error('Health monitoring subscription error', error);
+        this.handleConnectionLoss();
+      },
+    });
   }
 
   /**
@@ -137,8 +113,6 @@ export class HealthService {
    * @private
    */
   private handleConnectionLoss(): void {
-    this.isReconnecting = false; // Reset the flag at the start
-
     // Update health state
     this.state.update((current) => ({
       ...current,
@@ -151,40 +125,6 @@ export class HealthService {
       this.log.error('Server unavailable, redirecting to error page');
       this.router.navigate(['/server-unavailable']);
     }
-
-    // Close existing connection
-    if (this.eventSource) {
-      this.eventSource.close();
-      this.eventSource = null;
-    }
-
-    // Clear heartbeat timeout
-    if (this.heartbeatTimeoutId) {
-      clearTimeout(this.heartbeatTimeoutId);
-      this.heartbeatTimeoutId = null;
-    }
-
-    // Schedule reconnection if not already reconnecting
-    if (!this.isReconnecting) {
-      this.scheduleReconnection();
-    }
-  }
-
-  /**
-   * Schedules automatic reconnection attempt
-   * @private
-   */
-  private scheduleReconnection(): void {
-    this.isReconnecting = true;
-
-    if (this.reconnectTimeoutId) {
-      clearTimeout(this.reconnectTimeoutId);
-    }
-
-    this.reconnectTimeoutId = setTimeout(() => {
-      this.log.info('Attempting to reconnect to server...');
-      this.connectToHeartbeat();
-    }, this.reconnectDelay);
   }
 
   /**
@@ -208,23 +148,18 @@ export class HealthService {
   }
 
   /**
-   * Cleanup method to close EventSource and clear timeouts
+   * Cleanup method to close subscriptions and clear timeouts
    * Called when the service is destroyed
    */
   public ngOnDestroy(): void {
-    if (this.eventSource) {
-      this.eventSource.close();
-      this.eventSource = null;
+    if (this.subscription) {
+      this.subscription.unsubscribe();
+      this.subscription = null;
     }
 
     if (this.heartbeatTimeoutId) {
       clearTimeout(this.heartbeatTimeoutId);
       this.heartbeatTimeoutId = null;
-    }
-
-    if (this.reconnectTimeoutId) {
-      clearTimeout(this.reconnectTimeoutId);
-      this.reconnectTimeoutId = null;
     }
   }
 }
