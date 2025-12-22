@@ -6,6 +6,7 @@ import type {
   TestDocument,
   TestMetrics,
   TestStatus,
+  TestSummary,
 } from './rpc.service';
 import { RPCService } from './rpc.service';
 
@@ -211,6 +212,28 @@ export class TestService {
         return 'x-circle';
       default:
         return 'help-circle';
+    }
+  }
+
+  /**
+   * Get summary metrics for a test (optimized for test list display)
+   * @param id The test ID to retrieve summary for
+   * @returns Promise<TestSummary> Summary metrics object
+   */
+  async getTestSummary(id: string): Promise<TestSummary> {
+    try {
+      const response = await this.testClient[':id'].summary.$get({
+        param: { id },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to load test summary: ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      this.logService.error('Failed to load test summary:', error);
+      throw error;
     }
   }
 }

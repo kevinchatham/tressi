@@ -19,7 +19,7 @@ import { ConfigService } from '../../services/config.service';
 import { EventService } from '../../services/event.service';
 import { LoadingService } from '../../services/loading.service';
 import { LogService } from '../../services/log.service';
-import type { TestDocument } from '../../services/rpc.service';
+import type { TestDocument, TestSummary } from '../../services/rpc.service';
 import { TestService } from '../../services/test.service';
 
 @Component({
@@ -45,6 +45,7 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
   readonly showDeleteModal = signal<boolean>(false);
   readonly testToDelete = signal<TestDocument | null>(null);
   private readonly latestMetrics = signal<AggregatedMetric | null>(null);
+  private readonly testSummaries = signal<Map<string, TestSummary>>(new Map());
 
   // Computed signals for derived state
   readonly displayedTests = computed(() => this.tests());
@@ -54,10 +55,12 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
   readonly pageTitle = computed(() => `Test History - ${this.configName()}`);
 
   private metricsSubscription?: Subscription;
+  private testEventsSubscription?: Subscription;
 
   ngOnInit(): void {
     this.loadingService.registerPage('test-list');
     this.subscribeToMetrics();
+    this.subscribeToTestEvents();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -71,11 +74,6 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
       this.loadingService.setPageLoading('test-list', true);
       this.error.set(null);
 
-      if (!this.configId) {
-        this.error.set('Configuration ID is required');
-        return;
-      }
-
       // Load config name for display
       const config = await this.configService.getOne(this.configId());
       if (config) {
@@ -87,6 +85,14 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
       // Load tests for this config
       const tests = await this.testService.getTestsByConfigId(this.configId());
       this.tests.set(tests);
+
+      // Load summaries for completed tests
+      const completedTests = tests.filter(
+        (t) => t.status === 'completed' || t.status === 'failed',
+      );
+      await Promise.allSettled(
+        completedTests.map((test) => this.loadTestSummary(test.id)),
+      );
     } catch (err) {
       this.error.set(
         err instanceof Error ? err.message : 'Failed to load tests',
@@ -94,6 +100,25 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
       this.tests.set([]);
     } finally {
       this.loadingService.setPageLoading('test-list', false);
+    }
+  }
+
+  /**
+   * Load summary for a test and cache it
+   */
+  private async loadTestSummary(testId: string): Promise<void> {
+    try {
+      const summary = await this.testService.getTestSummary(testId);
+      this.testSummaries.update((map) => {
+        const newMap = new Map(map);
+        newMap.set(testId, summary);
+        return newMap;
+      });
+    } catch (error) {
+      this.logService.error(
+        `Failed to load summary for test ${testId}:`,
+        error,
+      );
     }
   }
 
@@ -166,6 +191,14 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
    * Get test duration as formatted string
    */
   getTestDuration(test: TestDocument): string {
+    if (
+      test.status === 'completed' &&
+      test.epochStartedAt &&
+      test.epochEndedAt
+    ) {
+      const duration = test.epochEndedAt - test.epochStartedAt;
+      return this.testService.formatDuration(duration);
+    }
     return this.testService.formatDuration(
       this.testService.getTestDuration(test),
     );
@@ -218,6 +251,78 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
   }
 
   /**
+   * Subscribe to test events (started, completed, failed)
+   */
+  private subscribeToTestEvents(): void {
+    this.testEventsSubscription = this.eventService
+      .getTestEventsStream()
+      .subscribe({
+        next: (event) => {
+          if (event.configId === this.configId()) {
+            this.handleTestEvent(event);
+          }
+        },
+        error: (error: Error) => {
+          this.logService.error('Test events stream error:', error);
+        },
+      });
+  }
+
+  /**
+   * Handle test events (completed, failed)
+   */
+  private async handleTestEvent(event: {
+    testId: string;
+    status: string;
+    configId?: string;
+  }): Promise<void> {
+    if (event.status === 'completed' || event.status === 'failed') {
+      await this.refreshTest(event.testId);
+    }
+  }
+
+  /**
+   * Refresh a single test with updated data and metrics
+   */
+  private async refreshTest(testId: string): Promise<void> {
+    try {
+      const updatedTest = await this.testService.getTestById(testId);
+
+      // Fetch summary for completed tests
+      if (
+        updatedTest.status === 'completed' ||
+        updatedTest.status === 'failed'
+      ) {
+        try {
+          const summary = await this.testService.getTestSummary(testId);
+          this.testSummaries.update((map) => {
+            const newMap = new Map(map);
+            newMap.set(testId, summary);
+            return newMap;
+          });
+        } catch (summaryError) {
+          this.logService.error(
+            `Failed to load summary for test ${testId}:`,
+            summaryError,
+          );
+        }
+      }
+
+      this.tests.update((tests) => {
+        const index = tests.findIndex((t) => t.id === testId);
+        if (index !== -1) {
+          const newTests = [...tests];
+          newTests[index] = updatedTest;
+          return newTests;
+        }
+        return tests;
+      });
+    } catch (error) {
+      this.logService.error(`Failed to refresh test ${testId}:`, error);
+    }
+  }
+
+  /**
    * Update running test with real-time metrics
    */
   private updateRunningTest(metric: AggregatedMetric): void {
@@ -248,17 +353,29 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
     if (test.status === 'failed') {
       return '100%';
     }
+    if (test.status === 'completed') {
+      const summary = this.testSummaries().get(test.id);
+      if (summary) {
+        return `${summary.global.errorRate}%`;
+      }
+    }
     return test.error ? 'Error' : '0%';
   }
 
   /**
-   * Get request count from real-time metrics
+   * Get request count from real-time metrics or cached metrics
    */
   getRequestCount(test: TestDocument): string {
     if (test.status === 'running') {
       const metrics = this.latestMetrics();
       if (metrics) {
         return metrics.global.totalRequests.toLocaleString();
+      }
+    }
+    if (test.status === 'completed') {
+      const summary = this.testSummaries().get(test.id);
+      if (summary) {
+        return summary.global.totalRequests.toLocaleString();
       }
     }
     return '0';
@@ -294,5 +411,6 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
    */
   ngOnDestroy(): void {
     this.metricsSubscription?.unsubscribe();
+    this.testEventsSubscription?.unsubscribe();
   }
 }

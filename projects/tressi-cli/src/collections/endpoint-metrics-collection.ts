@@ -134,6 +134,44 @@ class EndpointMetricCollection {
       );
     }
   }
+
+  /**
+   * Get the last endpoint metrics for a specific test
+   * @param testId Test run ID
+   * @returns Object mapping URLs to their last endpoint metric, or empty object if not found
+   */
+  async getLastByTestId(
+    testId: string,
+  ): Promise<Record<string, EndpointMetricDocument>> {
+    try {
+      const metrics = await this.getByTestId(testId);
+      if (metrics.length === 0) {
+        return {};
+      }
+
+      // Group by URL and find the last metric for each
+      const lastByUrl = new Map<string, EndpointMetricDocument>();
+
+      for (const metric of metrics) {
+        const existing = lastByUrl.get(metric.url);
+        if (!existing || metric.epoch > existing.epoch) {
+          lastByUrl.set(metric.url, metric);
+        }
+      }
+
+      // Convert Map to plain object
+      const result: Record<string, EndpointMetricDocument> = {};
+      for (const [url, metric] of lastByUrl) {
+        result[url] = metric;
+      }
+
+      return result;
+    } catch (error) {
+      throw new Error(
+        `Failed to retrieve last endpoint metrics: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
+  }
 }
 
 /**

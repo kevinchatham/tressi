@@ -118,6 +118,28 @@ class GlobalMetricCollection {
       );
     }
   }
+
+  /**
+   * Get the last global metric for a specific test
+   * @param testId Test run ID
+   * @returns Last global metric document or undefined if not found
+   */
+  async getLastByTestId(
+    testId: string,
+  ): Promise<GlobalMetricDocument | undefined> {
+    try {
+      const metrics = await this.getByTestId(testId);
+      if (metrics.length === 0) {
+        return undefined;
+      }
+      // Sort by epoch and return the last one
+      return metrics.sort((a, b) => a.epoch - b.epoch)[metrics.length - 1];
+    } catch (error) {
+      throw new Error(
+        `Failed to retrieve last global metric: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
+  }
 }
 
 /**
