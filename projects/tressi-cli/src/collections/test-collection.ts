@@ -5,7 +5,10 @@ export type TestCreate = Pick<TestDocument, 'configId'>;
 
 export type TestEdit = Pick<TestDocument, 'id' | 'configId'> &
   Partial<
-    Pick<TestDocument, 'status' | 'epochStartedAt' | 'epochEndedAt' | 'error'>
+    Pick<
+      TestDocument,
+      'status' | 'epochStartedAt' | 'epochEndedAt' | 'error' | 'summary'
+    >
   >;
 
 /**
@@ -61,6 +64,7 @@ class TestCollection {
         epochStartedAt: null,
         epochEndedAt: null,
         error: null,
+        summary: null,
         epochCreatedAt: now,
         epochUpdatedAt: now,
       };
@@ -88,7 +92,7 @@ class TestCollection {
       }
 
       // Only update provided fields, preserve existing values for missing fields
-      const updatedDoc = {
+      const updatedDoc: TestDocument = {
         ...existing,
         configId: input.configId ?? existing.configId,
         status: input.status ?? existing.status,
@@ -96,6 +100,7 @@ class TestCollection {
         epochEndedAt: input.epochEndedAt ?? existing.epochEndedAt,
         error: input.error ?? existing.error,
         epochUpdatedAt: Date.now(),
+        summary: input.summary ?? existing.summary,
       };
 
       this.collection.updateOne({ id: input.id }, { $set: updatedDoc });

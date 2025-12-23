@@ -1,93 +1,51 @@
 <div class="w-full">
   <!-- Test List -->
   @if (!hasError() && hasTests()) {
-    <div
-      class="rounded-box border-base-content/5 bg-base-100 overflow-x-auto border"
-    >
-      <table class="table">
-        <thead>
-          <tr class="text-base-content">
-            <th class="bg-base-200">Status</th>
-            <th class="bg-base-200">Start Time</th>
-            <th class="bg-base-200">Duration</th>
-            <th class="bg-base-200">Requests</th>
-            <th class="bg-base-200">Error Rate</th>
-            <th class="bg-base-200">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (test of displayedTests(); track test.id) {
-            <tr class="hover cursor-pointer" (click)="viewTestDetails(test.id)">
-              <!-- Status -->
-              <td>
-                <span
-                  class="badge gap-1"
-                  [ngClass]="getStatusColor(test.status)"
-                >
-                  <app-icon [name]="getStatusIcon(test.status)" size="12" />
-                  {{ test.status || 'unknown' | titlecase }}
-                </span>
-              </td>
+    <div class="mb-4 flex items-center justify-between">
+      <div class="flex items-center gap-4">
+        <h2 class="text-base-content text-xl font-semibold">
+          {{ pageTitle() }}
+        </h2>
 
-              <!-- Start Time -->
-              <td>
-                <div class="space-y-1">
-                  <div class="text-base-content font-medium">
-                    {{ formatDate(test.epochStartedAt || test.epochCreatedAt) }}
-                  </div>
-                  <div class="text-base-content/70 font-mono text-xs">
-                    ID: {{ test.id }}
-                  </div>
-                </div>
-              </td>
+        <!-- Bulk Actions -->
+        @if (selectedTestsCount() > 0) {
+          <div class="flex items-center gap-4">
+            <span class="badge badge-primary">
+              {{ selectedTestsCount() }} tests selected
+            </span>
+            <button
+              class="btn btn-sm btn-error gap-1"
+              (click)="deleteTest(null, $event)"
+              [disabled]="hasRunningTestsSelected()"
+            >
+              <app-icon name="delete" size="14" />
+              Delete Selected
+            </button>
+          </div>
+        }
+      </div>
 
-              <!-- Duration -->
-              <td class="text-base-content">
-                {{ getTestDuration(test) }}
-              </td>
-
-              <!-- Requests -->
-              <td class="text-base-content">
-                {{ getRequestCount(test) }}
-              </td>
-
-              <!-- Error Rate -->
-              <td>
-                <span
-                  [class.text-error]="test.status === 'failed' || test.error"
-                  class="font-medium"
-                >
-                  {{ calculateErrorRate(test) }}
-                </span>
-              </td>
-
-              <!-- Actions -->
-              <td (click)="$event.stopPropagation()">
-                <div class="flex gap-2">
-                  <button
-                    class="btn btn-sm btn-ghost gap-1"
-                    (click)="viewTestDetails(test.id)"
-                    aria-label="View test details"
-                  >
-                    <app-icon name="info" size="14" />
-                    View
-                  </button>
-                  <button
-                    class="btn btn-sm btn-error gap-1"
-                    (click)="deleteTest(test, $event)"
-                    [disabled]="test.status === 'running'"
-                    aria-label="Delete test"
-                  >
-                    <app-icon name="delete" size="14" />
-                    Delete
-                  </button>
-                </div>
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
+      <!-- Column Selector -->
+      <app-column-selector
+        [columnGroups]="columnGroups()"
+        [showColumnSelector]="showColumnSelector()"
+        (toggleColumn)="toggleColumn($event)"
+        (resetColumns)="resetColumns()"
+        (toggleSelector)="toggleColumnSelector()"
+        (closeSelector)="closeColumnSelector()"
+      />
     </div>
+
+    <app-test-table
+      [tests]="displayedTests()"
+      [columns]="visibleColumns()"
+      [selectedTests]="selectedTests()"
+      [isAllSelected]="isAllSelected()"
+      [isSomeSelected]="isSomeSelected()"
+      (viewTest)="viewTestDetails($event)"
+      (toggleSelection)="toggleTestSelection($event.testId, $event.event)"
+      (toggleAllSelection)="toggleAllTests($event)"
+    />
   }
 
   <!-- Error State -->
@@ -127,26 +85,11 @@
 </div>
 
 <!-- Delete Confirmation Modal -->
-<div class="modal" [class.modal-open]="showDeleteModal()">
-  <div
-    class="ring-neutral bg-base-100 rounded-lg p-6 ring-1 sm:m-4 sm:max-w-[calc(100%-2rem)]"
-  >
-    <h3 class="text-lg font-semibold">Delete Test</h3>
-    <p class="py-4">Are you sure you want to delete this test?</p>
-    <div class="text-base-content/70 space-y-2 text-sm">
-      <div><strong>Test ID:</strong> {{ getTestToDeleteId() }}</div>
-      <div><strong>Status:</strong> {{ getTestToDeleteStatus() }}</div>
-      <div><strong>Started:</strong> {{ getTestToDeleteStartTime() }}</div>
-    </div>
-    <p class="text-warning py-2 text-sm">
-      This will also delete all associated metrics data. This action cannot be
-      undone.
-    </p>
-    <div class="mt-6 flex justify-end gap-3">
-      <button (click)="cancelDelete()" class="btn btn-ghost">Cancel</button>
-      <button (click)="deleteTestConfirmed()" class="btn btn-error">
-        Delete
-      </button>
-    </div>
-  </div>
-</div>
+<app-delete-confirmation-modal
+  [showDeleteModal]="showDeleteModal()"
+  [isBulkDelete]="isBulkDelete()"
+  [testToDelete]="testToDelete()"
+  [selectedTestsCount]="selectedTestsCount()"
+  (confirmDelete)="deleteTestConfirmed()"
+  (cancelDelete)="cancelDelete()"
+/>

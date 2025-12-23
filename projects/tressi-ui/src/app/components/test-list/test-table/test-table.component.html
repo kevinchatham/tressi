@@ -1,0 +1,103 @@
+<div
+  class="rounded-box border-base-content/5 bg-base-100 overflow-x-auto border"
+>
+  <table class="table">
+    <thead>
+      <tr class="text-base-content">
+        @for (column of columns(); track column.key) {
+          <th class="bg-base-200" [class.w-12]="column.key === 'select'">
+            @if (column.key === 'select') {
+              <input
+                type="checkbox"
+                class="checkbox checkbox-sm"
+                [checked]="isAllSelected()"
+                [indeterminate]="isSomeSelected() && !isAllSelected()"
+                (change)="onToggleAllSelection($event)"
+              />
+            } @else {
+              {{ column.label }}
+            }
+          </th>
+        }
+      </tr>
+    </thead>
+    <tbody>
+      @for (test of tests(); track test.id) {
+        <tr
+          class="hover:bg-base-200 cursor-pointer"
+          (click)="onViewTest(test.id)"
+          [class.bg-base-200]="selectedTests().has(test.id)"
+        >
+          @for (column of columns(); track column.key) {
+            @if (column.key === 'select') {
+              <td (click)="$event.stopPropagation()">
+                <input
+                  type="checkbox"
+                  class="checkbox checkbox-sm"
+                  [checked]="selectedTests().has(test.id)"
+                  (change)="onToggleSelection(test.id, $event)"
+                />
+              </td>
+            }
+            @if (column.key === 'status') {
+              <td>
+                <span
+                  class="badge gap-1"
+                  [ngClass]="getStatusColor(test.status)"
+                >
+                  <app-icon [name]="getStatusIcon(test.status)" size="12" />
+                  {{ test.status || 'unknown' | titlecase }}
+                </span>
+              </td>
+            }
+            @if (column.key === 'startTime') {
+              <td>
+                <div class="space-y-1">
+                  <div class="text-base-content font-medium">
+                    {{ formatDate(test.epochStartedAt || test.epochCreatedAt) }}
+                  </div>
+                  <div class="text-base-content/70 font-mono text-xs">
+                    ID: {{ test.id }}
+                  </div>
+                </div>
+              </td>
+            }
+            @if (column.key === 'duration') {
+              <td class="text-base-content">
+                {{ getTestDuration(test) }}
+              </td>
+            }
+            @if (column.key === 'requests') {
+              <td class="text-base-content">
+                {{ getRequestCount(test) }}
+              </td>
+            }
+            @if (column.key === 'errorRate') {
+              <td>
+                <span
+                  [class.text-error]="test.status === 'failed' || test.error"
+                  class="font-medium"
+                >
+                  {{ calculateErrorRate(test) }}
+                </span>
+              </td>
+            }
+            @if (
+              column.key !== 'select' &&
+              column.key !== 'status' &&
+              column.key !== 'startTime' &&
+              column.key !== 'duration' &&
+              column.key !== 'requests' &&
+              column.key !== 'errorRate' &&
+              column.key !== 'actions'
+            ) {
+              <td class="text-base-content">
+                {{ getColumnValue(test, column) }}
+              </td>
+            }
+          }
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

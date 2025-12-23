@@ -1,5 +1,6 @@
 import { TressiConfig } from '../common/config/types';
 import { EndpointMetric } from '../common/metrics';
+import { TestSummary } from '../reporting/types';
 
 /**
  * Configuration document stored in the database.
@@ -39,6 +40,8 @@ export type TestDocument = {
   error: string | null;
   /** Current status of the test run */
   status: 'running' | 'completed' | 'failed' | null;
+  /** Test summary statistics - null for running tests or failed tests without summary */
+  summary: TestSummary | null;
 };
 
 /**

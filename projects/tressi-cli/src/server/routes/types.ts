@@ -1,4 +1,3 @@
-import { AggregatedMetric } from '../../common/metrics/types';
 import type createApp from './index';
 
 /**
@@ -8,8 +7,3 @@ import type createApp from './index';
  * This file should only contain type imports and exports - no runtime code.
  */
 export type AppType = ReturnType<typeof createApp>;
-
-export type UITestSummary = Pick<AggregatedMetric, 'global' | 'endpoints'> & {
-  duration: number; // From test.config.duration
-  currentDuration: number; // Calculated: lastMetric.epoch - test.epochStartedAt
-};

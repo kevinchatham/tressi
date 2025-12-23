@@ -10,7 +10,6 @@ import { testStorage } from '../../collections/test-collection';
 import { ServerEvents, TestEventData } from '../../events/event-types';
 import { globalEventEmitter } from '../../events/global-event-emitter';
 import { createApiErrorResponse } from '../utils/error-response-generator';
-import { UITestSummary } from './types';
 
 /**
  * Unified test management routes for handling both real-time test execution and persistent storage.
@@ -88,14 +87,16 @@ const app = new Hono()
         // Start the load test asynchronously
         (async (): Promise<void> => {
           try {
-            await runLoadTest(config);
+            // runLoadTest now returns the summary
+            const summary = await runLoadTest(config);
 
-            // Update test to completed status
+            // Update test to completed status WITH embedded summary
             await testStorage.edit({
               id,
               configId,
               status: 'completed',
               epochEndedAt: Date.now(),
+              summary: summary, // ← EMBED SUMMARY DIRECTLY
             });
 
             // Emit test completed event
@@ -110,13 +111,14 @@ const app = new Hono()
               completedEvent,
             );
           } catch (error) {
-            // Update test to failed status with error
+            // Update test to failed status - summary is null for failures
             await testStorage.edit({
               id,
               configId,
               status: 'failed',
               epochEndedAt: Date.now(),
               error: error instanceof Error ? error.message : 'Unknown error',
+              summary: null, // ← NULL FOR FAILED TESTS
             });
 
             // Emit test failed event
@@ -282,104 +284,6 @@ const app = new Hono()
         return c.json(
           createApiErrorResponse(
             'Failed to delete test',
-            'INTERNAL_ERROR',
-            error instanceof Error ? [error.message] : undefined,
-          ),
-          500,
-        );
-      }
-    },
-  )
-
-  /**
-   * GET /tests/:id/summary - Retrieves summary metrics for a test
-   * @param {string} id - The test ID from URL parameter
-   * @returns {Promise<Response>} JSON summary data or error response
-   */
-  .get(
-    '/:id/summary',
-    sValidator('param', z.object({ id: z.string() })),
-    async (c) => {
-      try {
-        const { id } = c.req.valid('param');
-
-        // Retrieve test document
-        const test = await testStorage.getById(id);
-        if (!test) {
-          return c.json(
-            createApiErrorResponse('Test not found', 'NOT_FOUND'),
-            404,
-          );
-        }
-
-        // Retrieve configuration to get duration
-        const configDocument = await configStorage.getById(test.configId);
-        const duration = configDocument?.config.options.durationSec || 0;
-
-        // Get the last global metric
-        const lastGlobalMetric = await globalMetricStorage.getLastByTestId(id);
-
-        if (!lastGlobalMetric) {
-          // No metrics found - return zero values
-          return c.json({
-            global: {
-              totalRequests: 0,
-              errorRate: test.status === 'failed' ? 100 : 0,
-              requestsPerSecond: 0,
-              averageLatency: 0,
-              p50Latency: 0,
-              p95Latency: 0,
-              p99Latency: 0,
-              failedRequests: 0,
-              maxLatency: 0,
-              minLatency: 0,
-              networkBytesReceived: 0,
-              networkBytesSent: 0,
-              networkThroughputMBps: 0,
-              statusCodeDistribution: {},
-              successfulRequests: 0,
-            },
-            endpoints: {},
-            duration,
-            currentDuration:
-              test.epochEndedAt && test.epochStartedAt
-                ? test.epochEndedAt - test.epochStartedAt
-                : 0,
-          });
-        }
-
-        // Calculate current duration from last metric
-        const currentDuration = test.epochStartedAt
-          ? lastGlobalMetric.epoch - test.epochStartedAt
-          : 0;
-
-        // Get the last endpoint metrics for each URL
-        const lastEndpointMetrics =
-          await endpointMetricStorage.getLastByTestId(id);
-
-        // Convert endpoint metrics to the required format
-        const endpoints: Record<
-          string,
-          (typeof lastEndpointMetrics)[string]['metric']
-        > = {};
-
-        for (const [url, metricDoc] of Object.entries(lastEndpointMetrics)) {
-          endpoints[url] = metricDoc.metric;
-        }
-
-        const summary: UITestSummary = {
-          global: lastGlobalMetric.metric,
-          endpoints,
-          duration,
-          currentDuration,
-        };
-
-        // Return summary with both global and endpoint metrics
-        return c.json(summary);
-      } catch (error) {
-        return c.json(
-          createApiErrorResponse(
-            'Failed to load test summary',
             'INTERNAL_ERROR',
             error instanceof Error ? [error.message] : undefined,
           ),

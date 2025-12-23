@@ -106,10 +106,3 @@ export type DeleteTestResponseError = Extract<
   DeleteTestResponse,
   { error: object }
 >;
-
-// ! Test Summary
-export type GetTestSummaryResponse = InferResponseType<
-  (typeof client.tests)[':id']['summary']['$get']
->;
-
-export type TestSummary = Exclude<GetTestSummaryResponse, { error: object }>;

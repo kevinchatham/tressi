@@ -1,0 +1,84 @@
+<div class="dropdown dropdown-end" [class.dropdown-open]="showColumnSelector()">
+  <button
+    class="btn btn-sm btn-ghost gap-1"
+    (click)="onToggleSelector()"
+    (blur)="onCloseSelector()"
+    tabindex="0"
+  >
+    <app-icon name="settings" size="16" />
+    Columns
+  </button>
+  <div
+    class="dropdown-content bg-base-100 rounded-box ring-base-content/10 z-50 w-72 p-4 shadow-lg ring-1"
+  >
+    <div class="mb-3 flex items-center justify-between">
+      <h3 class="text-base-content font-semibold">Customize Columns</h3>
+      <button
+        class="btn btn-xs btn-ghost"
+        (click)="onResetColumns()"
+        title="Reset to defaults"
+      >
+        Reset
+      </button>
+    </div>
+
+    <!-- Basic Columns -->
+    <div class="mb-4">
+      <h4 class="text-base-content/70 mb-2 text-sm font-medium">Basic</h4>
+      <div class="space-y-2">
+        @for (col of columnGroups()['basic']; track col.key) {
+          <label class="label cursor-pointer justify-start gap-2">
+            <input
+              type="checkbox"
+              class="checkbox checkbox-sm"
+              [checked]="col.visible"
+              [disabled]="
+                col.key === 'select' ||
+                col.key === 'status' ||
+                col.key === 'actions'
+              "
+              (change)="onToggleColumn(col.key)"
+            />
+            <span class="label-text text-sm">{{ col.label }}</span>
+          </label>
+        }
+      </div>
+    </div>
+
+    <!-- Performance Columns -->
+    <div class="mb-4">
+      <h4 class="text-base-content/70 mb-2 text-sm font-medium">Performance</h4>
+      <div class="space-y-2">
+        @for (col of columnGroups()['performance']; track col.key) {
+          <label class="label cursor-pointer justify-start gap-2">
+            <input
+              type="checkbox"
+              class="checkbox checkbox-sm"
+              [checked]="col.visible"
+              (change)="onToggleColumn(col.key)"
+            />
+            <span class="label-text text-sm">{{ col.label }}</span>
+          </label>
+        }
+      </div>
+    </div>
+
+    <!-- Advanced Columns -->
+    <div>
+      <h4 class="text-base-content/70 mb-2 text-sm font-medium">Advanced</h4>
+      <div class="space-y-2">
+        @for (col of columnGroups()['advanced']; track col.key) {
+          <label class="label cursor-pointer justify-start gap-2">
+            <input
+              type="checkbox"
+              class="checkbox checkbox-sm"
+              [checked]="col.visible"
+              (change)="onToggleColumn(col.key)"
+            />
+            <span class="label-text text-sm">{{ col.label }}</span>
+          </label>
+        }
+      </div>
+    </div>
+  </div>
+</div>
