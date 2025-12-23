@@ -9,3 +9,21 @@
     font-family: 'Open Sans', system-ui, sans-serif;
   }
 }
+
+@layer components {
+  .cdk-drag-preview {
+    @apply bg-base-100 text-base-content rounded-lg px-4 py-2 font-medium shadow-lg;
+  }
+
+  .cdk-drag-placeholder {
+    @apply bg-primary/20 border-primary rounded-lg border-2 border-dashed;
+  }
+
+  .cdk-drag-animating {
+    @apply transition-transform duration-300 ease-out;
+  }
+
+  .cdk-drop-list-dragging th:not(.cdk-drag-placeholder) {
+    @apply transition-transform duration-300 ease-out;
+  }
+}

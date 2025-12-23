@@ -47,6 +47,7 @@
   },
   "dependencies": {
     "@acrodata/code-editor": "^0.6.0",
+    "@angular/cdk": "^21.0.5",
     "@angular/common": "^21.0.3",
     "@angular/compiler": "^21.0.3",
     "@angular/core": "^21.0.3",

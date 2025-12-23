@@ -22,7 +22,9 @@ export type IconName =
   | 'keyboard_arrow_down'
   | 'bolt'
   | 'home'
-  | 'search';
+  | 'search'
+  | 'drag_indicator'
+  | 'view_column';
 
 @Component({
   selector: 'app-icon',

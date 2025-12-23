@@ -145,6 +145,10 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
     this.columnsService.resetColumns();
   }
 
+  onColumnReorder(event: { draggedKey: string; targetKey: string }): void {
+    this.columnsService.reorderColumn(event.draggedKey, event.targetKey);
+  }
+
   toggleColumnSelector(): void {
     this.showColumnSelector.update((value) => !value);
   }

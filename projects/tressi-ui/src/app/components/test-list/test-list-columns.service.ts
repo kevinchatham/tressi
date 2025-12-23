@@ -1,6 +1,8 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 
+import { LocalStorageService } from '../../services/local-storage.service';
 import { LogService } from '../../services/log.service';
+import { DEFAULT_COLUMN_CONFIGS } from './column-config.constants';
 
 export interface ColumnConfig {
   key: string;
@@ -10,153 +12,16 @@ export interface ColumnConfig {
   visible: boolean;
   group: 'basic' | 'performance' | 'advanced';
   sortable?: boolean;
+  order: number; // 0-based position in table
+  draggable?: boolean; // whether column can be reordered
 }
 
 @Injectable({ providedIn: 'root' })
 export class TestListColumnsService {
   private readonly logService = inject(LogService);
+  private readonly localStorageService = inject(LocalStorageService);
 
-  private readonly DEFAULT_COLUMNS: ColumnConfig[] = [
-    // Selection column (always visible)
-    {
-      key: 'select',
-      label: 'Select',
-      field: 'select',
-      visible: true,
-      group: 'basic',
-    },
-    // Basic columns (always visible by default)
-    {
-      key: 'status',
-      label: 'Status',
-      field: 'test.status',
-      visible: true,
-      group: 'basic',
-    },
-    {
-      key: 'startTime',
-      label: 'Start Time',
-      field: 'test.epochStartedAt',
-      format: 'datetime',
-      visible: true,
-      group: 'basic',
-    },
-    {
-      key: 'duration',
-      label: 'Duration',
-      field: 'test.duration',
-      format: 'duration',
-      visible: true,
-      group: 'basic',
-    },
-    {
-      key: 'requests',
-      label: 'Requests',
-      field: 'summary.global.totalRequests',
-      format: 'number',
-      visible: true,
-      group: 'basic',
-    },
-    {
-      key: 'errorRate',
-      label: 'Error Rate',
-      field: 'summary.global.errorRate',
-      format: 'percentage',
-      visible: true,
-      group: 'basic',
-    },
-
-    // Performance columns (optional)
-    {
-      key: 'successfulRequests',
-      label: 'Successful',
-      field: 'summary.global.successfulRequests',
-      format: 'number',
-      visible: false,
-      group: 'performance',
-    },
-    {
-      key: 'failedRequests',
-      label: 'Failed',
-      field: 'summary.global.failedRequests',
-      format: 'number',
-      visible: false,
-      group: 'performance',
-    },
-    {
-      key: 'avgLatency',
-      label: 'Avg Latency',
-      field: 'summary.global.averageLatency',
-      format: 'milliseconds',
-      visible: false,
-      group: 'performance',
-    },
-    {
-      key: 'p95Latency',
-      label: 'P95 Latency',
-      field: 'summary.global.p95Latency',
-      format: 'milliseconds',
-      visible: false,
-      group: 'performance',
-    },
-    {
-      key: 'p99Latency',
-      label: 'P99 Latency',
-      field: 'summary.global.p99Latency',
-      format: 'milliseconds',
-      visible: false,
-      group: 'performance',
-    },
-    {
-      key: 'actualRps',
-      label: 'Actual RPS',
-      field: 'summary.global.requestsPerSecond',
-      format: 'number',
-      visible: false,
-      group: 'performance',
-    },
-    {
-      key: 'achievedPercentage',
-      label: 'Achieved %',
-      field: 'summary.global.achievedPercentage',
-      format: 'percentage',
-      visible: false,
-      group: 'performance',
-    },
-
-    // Advanced columns
-    {
-      key: 'tressiVersion',
-      label: 'Version',
-      field: 'summary.tressiVersion',
-      visible: false,
-      group: 'advanced',
-    },
-    {
-      key: 'minLatency',
-      label: 'Min Latency',
-      field: 'summary.global.minLatency',
-      format: 'milliseconds',
-      visible: false,
-      group: 'advanced',
-    },
-    {
-      key: 'maxLatency',
-      label: 'Max Latency',
-      field: 'summary.global.maxLatency',
-      format: 'milliseconds',
-      visible: false,
-      group: 'advanced',
-    },
-    {
-      key: 'theoreticalMaxRps',
-      label: 'Max RPS',
-      field: 'summary.global.theoreticalMaxRps',
-      format: 'number',
-      visible: false,
-      group: 'advanced',
-    },
-  ];
+  private readonly DEFAULT_COLUMNS: ColumnConfig[] = DEFAULT_COLUMN_CONFIGS;
 
   private readonly columns = signal<ColumnConfig[]>(
     this.loadColumnPreferences(),
@@ -167,13 +32,16 @@ export class TestListColumnsService {
     const fixedColumns = allColumns.filter(
       (col) => col.key === 'select' || col.key === 'status',
     );
-    const configurableColumns = allColumns.filter(
-      (col) =>
-        col.key !== 'select' &&
-        col.key !== 'status' &&
-        col.key !== 'actions' &&
-        col.visible,
-    );
+    const configurableColumns = allColumns
+      .filter(
+        (col) =>
+          col.key !== 'select' &&
+          col.key !== 'status' &&
+          col.key !== 'actions' &&
+          col.visible,
+      )
+      .sort((a, b) => a.order - b.order); // Sort by order
+
     return [...fixedColumns, ...configurableColumns];
   });
 
@@ -197,13 +65,14 @@ export class TestListColumnsService {
 
   private loadColumnPreferences(): ColumnConfig[] {
     try {
-      const saved = localStorage.getItem('test-list-columns');
-      if (saved) {
-        const savedColumns = JSON.parse(saved) as ColumnConfig[];
+      const preferences = this.localStorageService.getPreferences();
+      const savedColumns = preferences.columnPreferences;
+
+      if (savedColumns && savedColumns.length > 0) {
         // Merge with defaults to handle new columns
         return this.DEFAULT_COLUMNS.map((defaultCol) => {
           const saved = savedColumns.find((col) => col.key === defaultCol.key);
-          return saved ? { ...defaultCol, visible: saved.visible } : defaultCol;
+          return saved ? { ...defaultCol, ...saved } : defaultCol;
         });
       }
     } catch (error) {
@@ -214,7 +83,12 @@ export class TestListColumnsService {
 
   private saveColumnPreferences(): void {
     try {
-      localStorage.setItem('test-list-columns', JSON.stringify(this.columns()));
+      const preferences = this.localStorageService.getPreferences();
+      const updatedPreferences = {
+        ...preferences,
+        columnPreferences: this.columns(),
+      };
+      this.localStorageService.savePreferences(updatedPreferences);
     } catch (error) {
       this.logService.error('Failed to save column preferences:', error);
     }
@@ -229,12 +103,34 @@ export class TestListColumnsService {
     this.saveColumnPreferences();
   }
 
-  resetColumns(): void {
-    this.columns.set(this.DEFAULT_COLUMNS);
+  reorderColumn(draggedKey: string, targetKey: string): void {
+    this.columns.update((cols) => {
+      const draggedIndex = cols.findIndex((col) => col.key === draggedKey);
+      const targetIndex = cols.findIndex((col) => col.key === targetKey);
+
+      if (draggedIndex === -1 || targetIndex === -1) return cols;
+
+      // Prevent reordering fixed columns
+      if (!cols[draggedIndex].draggable || !cols[targetIndex].draggable) {
+        return cols;
+      }
+
+      const newColumns = [...cols];
+      const [draggedColumn] = newColumns.splice(draggedIndex, 1);
+      newColumns.splice(targetIndex, 0, draggedColumn);
+
+      // Recalculate order values
+      return newColumns.map((col, index) => ({
+        ...col,
+        order: index,
+      }));
+    });
+
     this.saveColumnPreferences();
   }
 
-  getColumns(): ColumnConfig[] {
-    return this.columns();
+  resetColumns(): void {
+    this.columns.set(this.DEFAULT_COLUMNS);
+    this.saveColumnPreferences();
   }
 }

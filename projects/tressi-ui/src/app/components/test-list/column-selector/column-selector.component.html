@@ -1,12 +1,11 @@
 <div class="dropdown dropdown-end" [class.dropdown-open]="showColumnSelector()">
   <button
-    class="btn btn-sm btn-ghost gap-1"
+    class="btn btn-ghost btn-circle gap-1"
     (click)="onToggleSelector()"
     (blur)="onCloseSelector()"
     tabindex="0"
   >
-    <app-icon name="settings" size="16" />
-    Columns
+    <app-icon name="view_column" />
   </button>
   <div
     class="dropdown-content bg-base-100 rounded-box ring-base-content/10 z-50 w-72 p-4 shadow-lg ring-1"

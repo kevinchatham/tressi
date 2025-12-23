@@ -3,20 +3,57 @@
 >
   <table class="table">
     <thead>
-      <tr class="text-base-content">
+      <tr
+        cdkDropList
+        cdkDropListOrientation="horizontal"
+        (cdkDropListDropped)="onHeaderDragDrop($event)"
+        class="text-base-content"
+      >
         @for (column of columns(); track column.key) {
-          <th class="bg-base-200" [class.w-12]="column.key === 'select'">
+          <th
+            class="bg-base-200 group relative text-center"
+            [class.w-12]="column.key === 'select'"
+            cdkDrag
+            [cdkDragDisabled]="!column.draggable"
+            [class.cursor-move]="column.draggable"
+          >
+            <!-- Drag Handle (visible on hover) - Using Unicode dots instead of SVG -->
+            @if (column.draggable) {
+              <div
+                class="absolute top-1/2 left-1 -translate-y-1/2 cursor-grab opacity-0 transition-opacity select-none group-hover:opacity-50 hover:opacity-100 active:cursor-grabbing"
+              >
+                <app-icon name="drag_indicator" />
+              </div>
+            }
+
+            <!-- Column Content -->
             @if (column.key === 'select') {
               <input
                 type="checkbox"
-                class="checkbox checkbox-sm"
+                class="checkbox checkbox-sm mx-auto"
                 [checked]="isAllSelected()"
                 [indeterminate]="isSomeSelected() && !isAllSelected()"
                 (change)="onToggleAllSelection($event)"
               />
             } @else {
-              {{ column.label }}
+              <span [class.pl-6]="column.draggable" class="text-center">{{
+                column.label
+              }}</span>
             }
+
+            <!-- Drag Preview -->
+            <div
+              *cdkDragPreview
+              class="bg-base-100 text-base-content rounded-lg px-4 py-2 font-medium shadow-lg"
+            >
+              {{ column.label }}
+            </div>
+
+            <!-- Drag Placeholder -->
+            <div
+              *cdkDragPlaceholder
+              class="bg-primary/20 border-primary rounded-lg border-2 border-dashed"
+            ></div>
           </th>
         }
       </tr>
@@ -30,19 +67,19 @@
         >
           @for (column of columns(); track column.key) {
             @if (column.key === 'select') {
-              <td (click)="$event.stopPropagation()">
+              <td (click)="$event.stopPropagation()" class="text-center">
                 <input
                   type="checkbox"
-                  class="checkbox checkbox-sm"
+                  class="checkbox checkbox-sm mx-auto"
                   [checked]="selectedTests().has(test.id)"
                   (change)="onToggleSelection(test.id, $event)"
                 />
               </td>
             }
             @if (column.key === 'status') {
-              <td>
+              <td class="text-center">
                 <span
-                  class="badge gap-1"
+                  class="badge mx-auto gap-1"
                   [ngClass]="getStatusColor(test.status)"
                 >
                   <app-icon [name]="getStatusIcon(test.status)" size="12" />
@@ -51,29 +88,31 @@
               </td>
             }
             @if (column.key === 'startTime') {
-              <td>
-                <div class="space-y-1">
-                  <div class="text-base-content font-medium">
-                    {{ formatDate(test.epochStartedAt || test.epochCreatedAt) }}
-                  </div>
-                  <div class="text-base-content/70 font-mono text-xs">
-                    ID: {{ test.id }}
-                  </div>
+              <td class="text-center">
+                <div class="text-base-content font-medium">
+                  {{ formatDate(test.epochStartedAt || test.epochCreatedAt) }}
+                </div>
+              </td>
+            }
+            @if (column.key === 'id') {
+              <td class="text-center">
+                <div class="text-base-content/70 font-mono text-xs">
+                  {{ test.id }}
                 </div>
               </td>
             }
             @if (column.key === 'duration') {
-              <td class="text-base-content">
+              <td class="text-base-content text-center">
                 {{ getTestDuration(test) }}
               </td>
             }
             @if (column.key === 'requests') {
-              <td class="text-base-content">
+              <td class="text-base-content text-center">
                 {{ getRequestCount(test) }}
               </td>
             }
             @if (column.key === 'errorRate') {
-              <td>
+              <td class="text-center">
                 <span
                   [class.text-error]="test.status === 'failed' || test.error"
                   class="font-medium"
@@ -86,12 +125,13 @@
               column.key !== 'select' &&
               column.key !== 'status' &&
               column.key !== 'startTime' &&
+              column.key !== 'id' &&
               column.key !== 'duration' &&
               column.key !== 'requests' &&
               column.key !== 'errorRate' &&
               column.key !== 'actions'
             ) {
-              <td class="text-base-content">
+              <td class="text-base-content text-center">
                 {{ getColumnValue(test, column) }}
               </td>
             }

@@ -1,3 +1,4 @@
+import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
 import { CommonModule } from '@angular/common';
 import { Component, inject, input, output } from '@angular/core';
 
@@ -9,7 +10,7 @@ import type { ColumnConfig } from '../test-list-columns.service';
 @Component({
   selector: 'app-test-table',
   standalone: true,
-  imports: [CommonModule, IconComponent],
+  imports: [CommonModule, IconComponent, DragDropModule],
   templateUrl: './test-table.component.html',
 })
 export class TestTableComponent {
@@ -22,6 +23,7 @@ export class TestTableComponent {
   viewTest = output<string>();
   toggleSelection = output<{ testId: string; event: Event }>();
   toggleAllSelection = output<Event>();
+  columnReorder = output<{ draggedKey: string; targetKey: string }>();
 
   private readonly testService = inject(TestService);
 
@@ -154,5 +156,21 @@ export class TestTableComponent {
 
   onToggleAllSelection(event: Event): void {
     this.toggleAllSelection.emit(event);
+  }
+
+  onHeaderDragDrop(event: CdkDragDrop<ColumnConfig[]>): void {
+    if (event.previousIndex === event.currentIndex) return;
+
+    const columns = this.columns();
+    const draggedColumn = columns[event.previousIndex];
+    const targetColumn = columns[event.currentIndex];
+
+    // Prevent reordering fixed columns
+    if (!draggedColumn.draggable || !targetColumn.draggable) return;
+
+    this.columnReorder.emit({
+      draggedKey: draggedColumn.key,
+      targetKey: targetColumn.key,
+    });
   }
 }
