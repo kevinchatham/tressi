@@ -8,9 +8,9 @@
     <app-icon name="view_column" />
   </button>
   <div
-    class="dropdown-content bg-base-100 rounded-box ring-base-content/10 z-50 w-72 p-4 shadow-lg ring-1"
+    class="dropdown-content bg-base-100 rounded-box ring-base-content/10 z-50 w-[32rem] p-6 shadow-lg ring-1"
   >
-    <div class="mb-3 flex items-center justify-between">
+    <div class="mb-4 flex items-center justify-between">
       <h3 class="text-base-content font-semibold">Customize Columns</h3>
       <button
         class="btn btn-xs btn-ghost"
@@ -21,15 +21,18 @@
       </button>
     </div>
 
-    <!-- Basic Columns -->
-    <div class="mb-4">
-      <h4 class="text-base-content/70 mb-2 text-sm font-medium">Basic</h4>
-      <div class="space-y-2">
+    <!-- Three Column Groups -->
+    <div class="grid grid-cols-3 gap-8">
+      <!-- Basic Columns -->
+      <div>
+        <h4 class="text-base-content/70 text-sm font-medium">Basic</h4>
         @for (col of columnGroups()['basic']; track col.key) {
-          <label class="label cursor-pointer justify-start gap-2">
+          <label
+            class="hover:bg-base-200/50 my-4 flex cursor-pointer items-center rounded transition-colors duration-150"
+          >
             <input
               type="checkbox"
-              class="checkbox checkbox-sm"
+              class="checkbox checkbox-sm mr-3"
               [checked]="col.visible"
               [disabled]="
                 col.key === 'select' ||
@@ -38,43 +41,43 @@
               "
               (change)="onToggleColumn(col.key)"
             />
-            <span class="label-text text-sm">{{ col.label }}</span>
+            <span class="text-sm select-none">{{ col.label }}</span>
           </label>
         }
       </div>
-    </div>
 
-    <!-- Performance Columns -->
-    <div class="mb-4">
-      <h4 class="text-base-content/70 mb-2 text-sm font-medium">Performance</h4>
-      <div class="space-y-2">
+      <!-- Performance Columns -->
+      <div>
+        <h4 class="text-base-content/70 text-sm font-medium">Performance</h4>
         @for (col of columnGroups()['performance']; track col.key) {
-          <label class="label cursor-pointer justify-start gap-2">
+          <label
+            class="hover:bg-base-200/50 my-4 flex cursor-pointer items-center rounded transition-colors duration-150"
+          >
             <input
               type="checkbox"
-              class="checkbox checkbox-sm"
+              class="checkbox checkbox-sm mr-3"
               [checked]="col.visible"
               (change)="onToggleColumn(col.key)"
             />
-            <span class="label-text text-sm">{{ col.label }}</span>
+            <span class="text-sm select-none">{{ col.label }}</span>
           </label>
         }
       </div>
-    </div>
 
-    <!-- Advanced Columns -->
-    <div>
-      <h4 class="text-base-content/70 mb-2 text-sm font-medium">Advanced</h4>
-      <div class="space-y-2">
+      <!-- Advanced Columns -->
+      <div>
+        <h4 class="text-base-content/70 text-sm font-medium">Advanced</h4>
         @for (col of columnGroups()['advanced']; track col.key) {
-          <label class="label cursor-pointer justify-start gap-2">
+          <label
+            class="hover:bg-base-200/50 my-4 flex cursor-pointer items-center rounded transition-colors duration-150"
+          >
             <input
               type="checkbox"
-              class="checkbox checkbox-sm"
+              class="checkbox checkbox-sm mr-3"
               [checked]="col.visible"
               (change)="onToggleColumn(col.key)"
             />
-            <span class="label-text text-sm">{{ col.label }}</span>
+            <span class="text-sm select-none">{{ col.label }}</span>
           </label>
         }
       </div>

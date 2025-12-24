@@ -24,7 +24,8 @@ export type IconName =
   | 'home'
   | 'search'
   | 'drag_indicator'
-  | 'view_column';
+  | 'view_column'
+  | 'expand_all';
 
 @Component({
   selector: 'app-icon',

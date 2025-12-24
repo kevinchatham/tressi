@@ -36,9 +36,20 @@
                 (change)="onToggleAllSelection($event)"
               />
             } @else {
-              <span [class.pl-6]="column.draggable" class="text-center">{{
-                column.label
-              }}</span>
+              <div
+                class="flex items-center justify-center gap-1"
+                [class.cursor-pointer]="column.sortable"
+                [class.pl-6]="column.draggable"
+                (click)="onColumnHeaderClick(column)"
+              >
+                <span>{{ column.label }}</span>
+                @if (column.sortable) {
+                  <app-icon
+                    class="hover:text-base-content text-base-content/50 transition-colors"
+                    [name]="getSortIcon(column.key)"
+                  />
+                }
+              </div>
             }
 
             <!-- Drag Preview -->

@@ -42,10 +42,12 @@
       [selectedTests]="selectedTests()"
       [isAllSelected]="isAllSelected()"
       [isSomeSelected]="isSomeSelected()"
+      [currentSort]="currentSort()"
       (viewTest)="viewTestDetails($event)"
       (toggleSelection)="toggleTestSelection($event.testId, $event.event)"
       (toggleAllSelection)="toggleAllTests($event)"
       (columnReorder)="onColumnReorder($event)"
+      (columnSort)="onColumnSort($event)"
     />
   }
 

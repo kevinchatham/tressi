@@ -24,6 +24,7 @@ import { IconComponent } from '../icon/icon.component';
 import { ColumnSelectorComponent } from './column-selector/column-selector.component';
 import { DeleteConfirmationModalComponent } from './delete-confirmation-modal/delete-confirmation-modal.component';
 import { TestListColumnsService } from './test-list-columns.service';
+import { TestListDeleteService } from './test-list-delete.service';
 import { TestListSelectionService } from './test-list-selection.service';
 import { TestTableComponent } from './test-table/test-table.component';
 
@@ -51,6 +52,7 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
   private readonly eventService = inject(EventService);
   private readonly columnsService = inject(TestListColumnsService);
   private readonly selectionService = inject(TestListSelectionService);
+  private readonly deleteService = inject(TestListDeleteService);
 
   // Signals for reactive state management
   private readonly tests = signal<TestDocument[]>([]);
@@ -63,7 +65,16 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
   readonly showColumnSelector = signal<boolean>(false);
 
   // Computed signals for derived state
-  readonly displayedTests = computed(() => this.tests());
+  readonly displayedTests = computed(() => {
+    const tests = this.tests();
+    const sortConfig = this.currentSort();
+
+    if (!sortConfig) {
+      return tests;
+    }
+
+    return this.sortTests(tests, sortConfig);
+  });
   readonly hasError = computed(() => this.error() !== null);
   readonly errorMessage = computed(() => this.error());
   readonly hasTests = computed(() => this.tests().length > 0);
@@ -72,6 +83,7 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
   // Expose service signals and computed values
   readonly visibleColumns = this.columnsService.visibleColumns;
   readonly columnGroups = this.columnsService.columnGroups;
+  readonly currentSort = this.columnsService.currentSort;
   readonly selectedTests = this.selectionService.selectedTestsSet;
   readonly selectedTestsCount = computed(() =>
     this.selectionService.getSelectedCount(),
@@ -133,6 +145,7 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
   }
 
   async refreshTests(): Promise<void> {
+    this.error.set(null);
     await this.loadTests();
   }
 
@@ -147,6 +160,10 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
 
   onColumnReorder(event: { draggedKey: string; targetKey: string }): void {
     this.columnsService.reorderColumn(event.draggedKey, event.targetKey);
+  }
+
+  onColumnSort(columnKey: string): void {
+    this.columnsService.toggleSort(columnKey);
   }
 
   toggleColumnSelector(): void {
@@ -192,83 +209,44 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
   }
 
   async deleteTestConfirmed(): Promise<void> {
+    this.showDeleteModal.set(false);
+    this.error.set(null);
+
     if (this.isBulkDelete()) {
       await this.deleteSelectedTests();
     } else {
       const test = this.testToDelete();
       if (!test) return;
 
-      try {
-        this.loadingService.setPageLoading('test-list', true);
-        this.showDeleteModal.set(false);
-        const result = await this.testService.deleteTest(test.id);
-
-        if (result.success) {
-          this.tests.update((tests) => tests.filter((t) => t.id !== test.id));
-          this.logService.info(`Test ${test.id} deleted successfully`);
-        }
-      } catch (err) {
-        this.error.set(
-          err instanceof Error ? err.message : 'Failed to delete test',
-        );
-      } finally {
-        this.loadingService.setPageLoading('test-list', false);
-        this.testToDelete.set(null);
-        this.selectionService.clearSelection();
-      }
+      const result = await this.deleteService.deleteTestWithLoading(test.id);
+      this.handleDeleteResult(result, [test.id]);
     }
   }
 
   async deleteSelectedTests(): Promise<void> {
-    const selectedIds = this.selectionService.getSelectedIds();
-    const selectedTests = this.tests().filter((test) =>
-      selectedIds.has(test.id),
-    );
-    if (selectedTests.length === 0) return;
+    const selectedIds = Array.from(this.selectionService.getSelectedIds());
+    if (selectedIds.length === 0) return;
 
-    try {
-      this.loadingService.setPageLoading('test-list', true);
-      this.showDeleteModal.set(false);
+    const result = await this.deleteService.deleteTestsWithLoading(selectedIds);
+    this.handleDeleteResult(result, selectedIds);
+  }
 
-      // Delete tests one by one
-      const results = await Promise.allSettled(
-        selectedTests.map((test) => this.testService.deleteTest(test.id)),
+  private handleDeleteResult(result: any, deletedIds: string[]): void {
+    if (result.deletedCount > 0) {
+      this.tests.update((tests) =>
+        tests.filter((test) => !deletedIds.includes(test.id)),
       );
-
-      const successfulDeletions = results.filter(
-        (r) => r.status === 'fulfilled' && r.value.success,
-      );
-      const failedDeletions = results.filter(
-        (r) =>
-          r.status === 'rejected' ||
-          (r.status === 'fulfilled' && !r.value.success),
-      );
-
-      if (successfulDeletions.length > 0) {
-        // Remove deleted tests from the list
-        const deletedIds = selectedTests.map((t) => t.id);
-        this.tests.update((tests) =>
-          tests.filter((test) => !deletedIds.includes(test.id)),
-        );
-        this.logService.info(
-          `${successfulDeletions.length} tests deleted successfully`,
-        );
-      }
-
-      if (failedDeletions.length > 0) {
-        this.error.set(`Failed to delete ${failedDeletions.length} test(s)`);
-      }
-
-      // Clear selection after deletion
-      this.selectionService.clearSelection();
-    } catch (err) {
-      this.error.set(
-        err instanceof Error ? err.message : 'Failed to delete tests',
-      );
-    } finally {
-      this.loadingService.setPageLoading('test-list', false);
-      this.testToDelete.set(null);
     }
+
+    if (result.failedCount > 0) {
+      this.error.set(
+        result.errors?.join(', ') ||
+          `Failed to delete ${result.failedCount} test(s)`,
+      );
+    }
+
+    this.selectionService.clearSelection();
+    this.testToDelete.set(null);
   }
 
   // Subscription methods
@@ -344,5 +322,120 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.metricsSubscription?.unsubscribe();
     this.testEventsSubscription?.unsubscribe();
+  }
+
+  private sortTests(
+    tests: TestDocument[],
+    sortConfig: { columnKey: string; direction: 'asc' | 'desc' },
+  ): TestDocument[] {
+    const sorted = [...tests];
+    const { columnKey, direction } = sortConfig;
+
+    sorted.sort((a, b) => {
+      let valueA: any;
+      let valueB: any;
+
+      // Handle different column keys and extract values
+      switch (columnKey) {
+        case 'startTime':
+          valueA = a.epochStartedAt || a.epochCreatedAt || 0;
+          valueB = b.epochStartedAt || b.epochCreatedAt || 0;
+          break;
+        case 'duration':
+          // Use summary duration if available, otherwise calculate from timestamps
+          valueA =
+            a.summary?.global.duration ||
+            (a.epochEndedAt && a.epochStartedAt
+              ? (a.epochEndedAt - a.epochStartedAt) / 1000
+              : 0);
+          valueB =
+            b.summary?.global.duration ||
+            (b.epochEndedAt && b.epochStartedAt
+              ? (b.epochEndedAt - b.epochStartedAt) / 1000
+              : 0);
+          break;
+        case 'requests':
+          valueA = a.summary?.global.totalRequests || 0;
+          valueB = b.summary?.global.totalRequests || 0;
+          break;
+        case 'errorRate':
+          valueA = a.summary
+            ? a.summary.global.failedRequests / a.summary.global.totalRequests
+            : a.status === 'failed'
+              ? 1
+              : 0;
+          valueB = b.summary
+            ? b.summary.global.failedRequests / b.summary.global.totalRequests
+            : b.status === 'failed'
+              ? 1
+              : 0;
+          break;
+        case 'successfulRequests':
+          valueA = a.summary?.global.successfulRequests || 0;
+          valueB = b.summary?.global.successfulRequests || 0;
+          break;
+        case 'failedRequests':
+          valueA = a.summary?.global.failedRequests || 0;
+          valueB = b.summary?.global.failedRequests || 0;
+          break;
+        case 'avgLatency':
+          valueA = a.summary?.global.avgLatencyMs || 0;
+          valueB = b.summary?.global.avgLatencyMs || 0;
+          break;
+        case 'p95Latency':
+          valueA = a.summary?.global.p95LatencyMs || 0;
+          valueB = b.summary?.global.p95LatencyMs || 0;
+          break;
+        case 'p99Latency':
+          valueA = a.summary?.global.p99LatencyMs || 0;
+          valueB = b.summary?.global.p99LatencyMs || 0;
+          break;
+        case 'actualRps':
+          valueA = a.summary?.global.actualRps || 0;
+          valueB = b.summary?.global.actualRps || 0;
+          break;
+        case 'achievedPercentage':
+          valueA = a.summary?.global.achievedPercentage || 0;
+          valueB = b.summary?.global.achievedPercentage || 0;
+          break;
+        case 'minLatency':
+          valueA = a.summary?.global.minLatencyMs || 0;
+          valueB = b.summary?.global.minLatencyMs || 0;
+          break;
+        case 'maxLatency':
+          valueA = a.summary?.global.maxLatencyMs || 0;
+          valueB = b.summary?.global.maxLatencyMs || 0;
+          break;
+        case 'theoreticalMaxRps':
+          valueA = a.summary?.global.theoreticalMaxRps || 0;
+          valueB = b.summary?.global.theoreticalMaxRps || 0;
+          break;
+        case 'id':
+          valueA = a.id;
+          valueB = b.id;
+          break;
+        case 'tressiVersion':
+          valueA = a.summary?.tressiVersion || '';
+          valueB = b.summary?.tressiVersion || '';
+          break;
+        default:
+          // For any other columns, use string comparison
+          valueA = String(valueA || '');
+          valueB = String(valueB || '');
+          break;
+      }
+
+      // Handle string vs number comparison
+      let comparison = 0;
+      if (typeof valueA === 'number' && typeof valueB === 'number') {
+        comparison = valueA - valueB;
+      } else {
+        comparison = String(valueA).localeCompare(String(valueB));
+      }
+
+      return direction === 'asc' ? comparison : -comparison;
+    });
+
+    return sorted;
   }
 }

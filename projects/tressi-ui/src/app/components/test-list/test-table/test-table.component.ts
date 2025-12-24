@@ -5,7 +5,8 @@ import { Component, inject, input, output } from '@angular/core';
 import type { TestDocument } from '../../../services/rpc.service';
 import { TestService } from '../../../services/test.service';
 import { IconComponent, IconName } from '../../icon/icon.component';
-import type { ColumnConfig } from '../test-list-columns.service';
+import { ColumnKey } from '../column-keys.enum';
+import type { ColumnConfig, SortConfig } from '../test-list-columns.service';
 
 @Component({
   selector: 'app-test-table',
@@ -19,11 +20,13 @@ export class TestTableComponent {
   selectedTests = input.required<Set<string>>();
   isAllSelected = input.required<boolean>();
   isSomeSelected = input.required<boolean>();
+  currentSort = input<SortConfig | null>(null);
 
   viewTest = output<string>();
   toggleSelection = output<{ testId: string; event: Event }>();
   toggleAllSelection = output<Event>();
   columnReorder = output<{ draggedKey: string; targetKey: string }>();
+  columnSort = output<string>();
 
   private readonly testService = inject(TestService);
 
@@ -172,5 +175,25 @@ export class TestTableComponent {
       draggedKey: draggedColumn.key,
       targetKey: targetColumn.key,
     });
+  }
+
+  onColumnHeaderClick(column: ColumnConfig): void {
+    if (column.sortable !== false && column.key !== ColumnKey.SELECT) {
+      this.columnSort.emit(column.key);
+    }
+  }
+
+  getSortIcon(columnKey: string): IconName {
+    const sort = this.currentSort();
+    if (!sort || sort.columnKey !== columnKey) {
+      return 'expand_all';
+    }
+    return sort.direction === 'asc'
+      ? 'keyboard_arrow_up'
+      : 'keyboard_arrow_down';
+  }
+
+  isColumnSorted(columnKey: string): boolean {
+    return this.currentSort()?.columnKey === columnKey;
   }
 }
