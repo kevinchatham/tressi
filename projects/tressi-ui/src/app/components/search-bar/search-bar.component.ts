@@ -1,10 +1,8 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  EventEmitter,
-  Input,
-  Output,
-  signal,
+  input,
+  output,
 } from '@angular/core';
 
 import { IconComponent } from '../icon/icon.component';
@@ -18,19 +16,10 @@ import { IconComponent } from '../icon/icon.component';
 })
 export class SearchBarComponent {
   /** Input for the current search query */
-  @Input()
-  set query(value: string) {
-    this.searchQuery.set(value);
-  }
-  get query(): string {
-    return this.searchQuery();
-  }
+  readonly query = input<string>('');
 
   /** Output event when the search query changes */
-  @Output() queryChange = new EventEmitter<string>();
-
-  /** Internal signal for search query state */
-  readonly searchQuery = signal<string>('');
+  readonly queryChange = output<string>();
 
   /**
    * Handles input changes and emits the new query
@@ -38,7 +27,6 @@ export class SearchBarComponent {
   onInputChange(event: Event): void {
     const target = event.target as HTMLInputElement;
     const newQuery = target.value;
-    this.searchQuery.set(newQuery);
     this.queryChange.emit(newQuery);
   }
 }

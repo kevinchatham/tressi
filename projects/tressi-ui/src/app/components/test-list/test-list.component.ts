@@ -24,7 +24,10 @@ import { IconComponent } from '../icon/icon.component';
 import { ColumnSelectorComponent } from './column-selector/column-selector.component';
 import { DeleteConfirmationModalComponent } from './delete-confirmation-modal/delete-confirmation-modal.component';
 import { TestListColumnsService } from './test-list-columns.service';
-import { TestListDeleteService } from './test-list-delete.service';
+import {
+  DeleteResult,
+  TestListDeleteService,
+} from './test-list-delete.service';
 import { TestListSelectionService } from './test-list-selection.service';
 import { TestTableComponent } from './test-table/test-table.component';
 
@@ -231,7 +234,7 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
     this.handleDeleteResult(result, selectedIds);
   }
 
-  private handleDeleteResult(result: any, deletedIds: string[]): void {
+  private handleDeleteResult(result: DeleteResult, deletedIds: string[]): void {
     if (result.deletedCount > 0) {
       this.tests.update((tests) =>
         tests.filter((test) => !deletedIds.includes(test.id)),
@@ -240,7 +243,7 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
 
     if (result.failedCount > 0) {
       this.error.set(
-        result.errors?.join(', ') ||
+        result.errors.join(', ') ||
           `Failed to delete ${result.failedCount} test(s)`,
       );
     }
@@ -332,8 +335,8 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
     const { columnKey, direction } = sortConfig;
 
     sorted.sort((a, b) => {
-      let valueA: any;
-      let valueB: any;
+      let valueA: string | number;
+      let valueB: string | number;
 
       // Handle different column keys and extract values
       switch (columnKey) {
@@ -420,8 +423,8 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
           break;
         default:
           // For any other columns, use string comparison
-          valueA = String(valueA || '');
-          valueB = String(valueB || '');
+          valueA = '';
+          valueB = '';
           break;
       }
 

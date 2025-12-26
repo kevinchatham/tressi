@@ -93,7 +93,7 @@
                   class="badge mx-auto gap-1"
                   [ngClass]="getStatusColor(test.status)"
                 >
-                  <app-icon [name]="getStatusIcon(test.status)" size="12" />
+                  <app-icon [name]="getStatusIcon(test.status)" />
                   {{ test.status || 'unknown' | titlecase }}
                 </span>
               </td>

@@ -6,24 +6,21 @@
         <h2 class="text-base-content text-xl font-semibold">
           {{ pageTitle() }}
         </h2>
-
-        <!-- Bulk Actions -->
-        @if (selectedTestsCount() > 0) {
-          <div class="flex items-center gap-4">
-            <span class="badge badge-primary">
-              {{ selectedTestsCount() }} tests selected
-            </span>
-            <button
-              class="btn btn-sm btn-error gap-1"
-              (click)="deleteTest(null, $event)"
-              [disabled]="hasRunningTestsSelected()"
-            >
-              <app-icon name="delete" size="14" />
-              Delete Selected
-            </button>
-          </div>
-        }
       </div>
+
+      <!-- Bulk Actions -->
+      @if (selectedTestsCount() > 0) {
+        <div class="ml-auto flex items-center">
+          <button
+            class="btn btn-ghost btn-circle btn-error"
+            (click)="deleteTest(null, $event)"
+            [disabled]="hasRunningTestsSelected()"
+          >
+            {{ selectedTestsCount() }}
+            <app-icon name="delete" />
+          </button>
+        </div>
+      }
 
       <!-- Column Selector -->
       <app-column-selector
@@ -55,13 +52,13 @@
   @if (hasError()) {
     <div class="flex min-h-100 items-center justify-center p-8">
       <div class="max-w-md text-center">
-        <app-icon name="warning" size="48" class="text-warning mb-4" />
+        <app-icon name="warning" class="text-warning mb-4" />
         <h2 class="text-base-content mb-2 text-xl font-semibold">
           Failed to Load Tests
         </h2>
         <p class="text-base-content/70 mb-4">{{ errorMessage() }}</p>
         <button class="btn btn-primary gap-2" (click)="refreshTests()">
-          <app-icon name="search" size="16" />
+          <app-icon name="search" />
           Try Again
         </button>
       </div>
@@ -72,7 +69,6 @@
   @if (!hasError() && !hasTests()) {
     <div class="ring-neutral mx-auto rounded-lg p-8 ring-1">
       <div class="text-center">
-        <app-icon name="notes" size="48" class="text-base-content/50 mb-4" />
         <h2 class="text-base-content mb-2 text-xl font-semibold">
           No Test History
         </h2>
@@ -80,7 +76,7 @@
           There are no tests recorded for this configuration yet.
         </p>
         <p class="text-base-content/70 mb-4">
-          Run a new test from the dashboard to see it appear here.
+          Run a new test to see it appear here.
         </p>
       </div>
     </div>

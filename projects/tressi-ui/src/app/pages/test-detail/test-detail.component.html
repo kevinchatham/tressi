@@ -21,13 +21,13 @@
   @if (hasError()) {
     <div class="flex min-h-100 items-center justify-center p-8">
       <div class="max-w-md text-center">
-        <app-icon name="warning" size="48" class="text-warning mb-4" />
+        <app-icon name="warning" class="text-warning mb-4" />
         <h2 class="text-base-content mb-2 text-xl font-semibold">
           Failed to Load Test Details
         </h2>
         <p class="text-base-content/70 mb-4">{{ errorMessage() }}</p>
         <button class="btn btn-primary gap-2" (click)="loadTestDetails()">
-          <app-icon name="search" size="16" />
+          <app-icon name="search" />
           Try Again
         </button>
       </div>
@@ -80,10 +80,7 @@
                   class="badge gap-1"
                   [ngClass]="getStatusColor(testData()!.status)"
                 >
-                  <app-icon
-                    [name]="getStatusIcon(testData()!.status)"
-                    size="12"
-                  />
+                  <app-icon [name]="getStatusIcon(testData()!.status)" />
                   {{ testData()!.status || 'unknown' | titlecase }}
                 </span>
               </div>
