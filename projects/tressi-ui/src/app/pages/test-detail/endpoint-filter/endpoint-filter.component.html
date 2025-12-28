@@ -1,0 +1,60 @@
+<div class="ring-neutral bg-base-100 rounded-lg p-4 ring-1">
+  <h3 class="mb-4 text-lg font-semibold">Filter Endpoints</h3>
+
+  <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+    <!-- Search Input -->
+    <div class="form-control">
+      <label class="label">
+        <span class="label-text">Search URLs</span>
+      </label>
+      <input
+        type="text"
+        class="input input-bordered"
+        placeholder="Enter URL pattern..."
+        [(ngModel)]="searchQuery"
+        (ngModelChange)="onSearchChange()"
+      />
+    </div>
+
+    <!-- Performance Filters -->
+    <div class="form-control">
+      <label class="label">
+        <span class="label-text">Min Throughput</span>
+      </label>
+      <input
+        type="number"
+        class="input input-bordered"
+        placeholder="req/sec"
+        [(ngModel)]="minThroughput"
+        (ngModelChange)="onFilterChange()"
+      />
+    </div>
+
+    <div class="form-control">
+      <label class="label">
+        <span class="label-text">Max Latency</span>
+      </label>
+      <input
+        type="number"
+        class="input input-bordered"
+        placeholder="ms"
+        [(ngModel)]="maxLatency"
+        (ngModelChange)="onFilterChange()"
+      />
+    </div>
+  </div>
+
+  <!-- Filter Summary -->
+  <div class="mt-4 flex items-center justify-between">
+    <span class="text-base-content/70 text-sm">
+      Showing {{ filteredCount }} of {{ totalCount }} endpoints
+    </span>
+    <button
+      class="btn btn-ghost btn-sm"
+      (click)="clearFilters()"
+      [disabled]="!hasActiveFilters()"
+    >
+      Clear Filters
+    </button>
+  </div>
+</div>

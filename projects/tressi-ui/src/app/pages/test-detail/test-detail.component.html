@@ -26,7 +26,10 @@
           Failed to Load Test Details
         </h2>
         <p class="text-base-content/70 mb-4">{{ errorMessage() }}</p>
-        <button class="btn btn-primary gap-2" (click)="loadTestDetails()">
+        <button
+          class="btn btn-primary gap-2"
+          (click)="loadTestDetails(testId()!)"
+        >
           <app-icon name="search" />
           Try Again
         </button>
@@ -38,213 +41,47 @@
   @if (!hasError() && testData()) {
     <div class="space-y-8">
       <!-- Test Info Card -->
-      <div class="ring-neutral bg-base-100 rounded-lg p-6 ring-1">
-        <div class="flex items-center justify-between">
-          <h2 class="text-xl font-semibold">Test Information</h2>
-          <button
-            (click)="toggleTestInfo()"
-            class="btn btn-ghost btn-circle"
-            [title]="testInfoCollapsed() ? 'Expand' : 'Collapse'"
-          >
-            <app-icon
-              [name]="
-                testInfoCollapsed()
-                  ? 'keyboard_arrow_down'
-                  : 'keyboard_arrow_up'
-              "
-            />
-          </button>
-        </div>
-        @if (!testInfoCollapsed()) {
-          <div class="mt-4">
-            <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-              <div class="space-y-1">
-                <label class="text-base-content/70 text-sm font-medium"
-                  >Test ID:</label
-                >
-                <span class="text-base-content font-mono text-sm">{{
-                  testData()!.id
-                }}</span>
-              </div>
-              <div class="space-y-1">
-                <label class="text-base-content/70 text-sm font-medium"
-                  >Configuration:</label
-                >
-                <span class="text-base-content">{{ displayConfigName() }}</span>
-              </div>
-              <div class="space-y-1">
-                <label class="text-base-content/70 text-sm font-medium"
-                  >Status:</label
-                >
-                <span
-                  class="badge gap-1"
-                  [ngClass]="getStatusColor(testData()!.status)"
-                >
-                  <app-icon [name]="getStatusIcon(testData()!.status)" />
-                  {{ testData()!.status || 'unknown' | titlecase }}
-                </span>
-              </div>
-              <div class="space-y-1">
-                <label class="text-base-content/70 text-sm font-medium"
-                  >Started:</label
-                >
-                <span class="text-base-content">{{
-                  formatDate(
-                    testData()!.epochStartedAt || testData()!.epochCreatedAt
-                  )
-                }}</span>
-              </div>
-              <div class="space-y-1">
-                <label class="text-base-content/70 text-sm font-medium"
-                  >Duration:</label
-                >
-                <span class="text-base-content">{{ getTestDuration() }}</span>
-              </div>
-              @if (testData()!.error) {
-                <div class="space-y-1">
-                  <label class="text-base-content/70 text-sm font-medium"
-                    >Error:</label
-                  >
-                  <span class="text-error font-medium">{{
-                    testData()!.error
-                  }}</span>
-                </div>
-              }
-            </div>
-          </div>
-        }
-      </div>
+      <app-test-info-card
+        [test]="testData()!"
+        [configName]="displayConfigName()"
+        [isRealTime]="isRealTime()"
+        [collapsed]="testInfoCollapsed()"
+        (collapsedChange)="testInfoCollapsed.set($event)"
+      />
 
       <!-- Global Summary Card -->
       @if (metricsData()?.global?.length) {
-        <div class="ring-neutral bg-base-100 rounded-lg p-6 ring-1">
-          <div class="flex items-center justify-between">
-            <h3 class="text-lg font-semibold">Global Summary</h3>
-            <button
-              (click)="toggleGlobalSummary()"
-              class="btn btn-ghost btn-circle"
-              [title]="globalSummaryCollapsed() ? 'Expand' : 'Collapse'"
-            >
-              <app-icon
-                [name]="
-                  globalSummaryCollapsed()
-                    ? 'keyboard_arrow_down'
-                    : 'keyboard_arrow_up'
-                "
-              />
-            </button>
-          </div>
-          @if (!globalSummaryCollapsed()) {
-            <div class="mt-4">
-              <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
-                <div class="space-y-1">
-                  <label class="text-base-content/70 text-sm font-medium"
-                    >Average Throughput</label
-                  >
-                  <span class="text-base-content text-lg font-semibold"
-                    >{{ calculateAverage('throughput') }} req/sec</span
-                  >
-                </div>
-                <div class="space-y-1">
-                  <label class="text-base-content/70 text-sm font-medium"
-                    >Average Latency</label
-                  >
-                  <span class="text-base-content text-lg font-semibold"
-                    >{{ calculateAverage('latency') }} ms</span
-                  >
-                </div>
-                <div class="space-y-1">
-                  <label class="text-base-content/70 text-sm font-medium"
-                    >Average Error Rate</label
-                  >
-                  <span class="text-base-content text-lg font-semibold"
-                    >{{ calculateAverage('errorRate') }}%</span
-                  >
-                </div>
-                <div class="space-y-1">
-                  <label class="text-base-content/70 text-sm font-medium"
-                    >Total Data Points</label
-                  >
-                  <span class="text-base-content text-lg font-semibold">{{
-                    metricsData()?.global?.length || 0
-                  }}</span>
-                </div>
-              </div>
-            </div>
-          }
-        </div>
+        <app-metrics-summary-card
+          [metrics]="metricsData()!"
+          [type]="'global'"
+          [collapsed]="globalSummaryCollapsed()"
+          (collapsedChange)="globalSummaryCollapsed.set($event)"
+        />
       }
 
       <!-- Endpoint Summary Card -->
       @if (endpointMetrics().length) {
-        <div class="ring-neutral bg-base-100 rounded-lg p-6 ring-1">
-          <div class="flex items-center justify-between">
-            <h3 class="text-lg font-semibold">Endpoint Summary</h3>
-            <button
-              (click)="toggleEndpointSummary()"
-              class="btn btn-ghost btn-circle"
-              [title]="endpointSummaryCollapsed() ? 'Expand' : 'Collapse'"
-            >
-              <app-icon
-                [name]="
-                  endpointSummaryCollapsed()
-                    ? 'keyboard_arrow_down'
-                    : 'keyboard_arrow_up'
-                "
-              />
-            </button>
-          </div>
-          @if (!endpointSummaryCollapsed()) {
-            <div class="mt-4">
-              <div class="grid grid-cols-2 gap-4 md:grid-cols-5">
-                <div class="space-y-1">
-                  <label class="text-base-content/70 text-sm font-medium"
-                    >Total Endpoints</label
-                  >
-                  <span class="text-base-content text-lg font-semibold">{{
-                    endpointSummary().totalEndpoints
-                  }}</span>
-                </div>
-                <div class="space-y-1">
-                  <label class="text-base-content/70 text-sm font-medium"
-                    >Avg Throughput</label
-                  >
-                  <span class="text-base-content text-lg font-semibold"
-                    >{{
-                      endpointSummary().avgThroughput.toFixed(2)
-                    }}
-                    req/sec</span
-                  >
-                </div>
-                <div class="space-y-1">
-                  <label class="text-base-content/70 text-sm font-medium"
-                    >Avg Latency</label
-                  >
-                  <span class="text-base-content text-lg font-semibold"
-                    >{{ endpointSummary().avgLatency.toFixed(2) }} ms</span
-                  >
-                </div>
-                <div class="space-y-1">
-                  <label class="text-base-content/70 text-sm font-medium"
-                    >Avg Error Rate</label
-                  >
-                  <span class="text-base-content text-lg font-semibold"
-                    >{{ endpointSummary().avgErrorRate.toFixed(2) }}%</span
-                  >
-                </div>
-                <div class="space-y-1">
-                  <label class="text-base-content/70 text-sm font-medium"
-                    >Total Data Points</label
-                  >
-                  <span class="text-base-content text-lg font-semibold">{{
-                    endpointSummary().totalDataPoints
-                  }}</span>
-                </div>
-              </div>
-            </div>
-          }
-        </div>
+        <app-metrics-summary-card
+          [metrics]="metricsData()!"
+          [type]="'endpoint'"
+          [summary]="endpointSummary()"
+          [collapsed]="endpointSummaryCollapsed()"
+          (collapsedChange)="endpointSummaryCollapsed.set($event)"
+        />
       }
+
+      <!-- Export Buttons -->
+      <div class="flex gap-2">
+        <button class="btn btn-sm" (click)="exportResults('json')">
+          Export JSON
+        </button>
+        <button class="btn btn-sm" (click)="exportResults('csv')">
+          Export CSV
+        </button>
+        <button class="btn btn-sm" (click)="exportResults('xlsx')">
+          Export XLSX
+        </button>
+      </div>
 
       <!-- Tabs -->
       <div class="tabs tabs-boxed">
@@ -359,6 +196,12 @@
           [class.opacity-0]="endpointsTabFadingIn()"
           [class.opacity-100]="!endpointsTabFadingIn()"
         >
+          <!-- Endpoint Filter -->
+          <app-endpoint-filter
+            [endpoints]="endpointUrls()"
+            [metrics]="metricsData()!"
+          />
+
           @if (!endpointMetrics().length) {
             <div
               class="text-base-content/50 flex min-h-50 items-center justify-center italic"
@@ -509,6 +352,14 @@
           }
         </div>
       }
+
+      <!-- Delete Confirmation Modal -->
+      <app-delete-confirmation-modal
+        [isOpen]="showDeleteModal()"
+        [test]="testData()!"
+        (confirmed)="handleDeleteConfirm()"
+        (closed)="handleDeleteCancel()"
+      />
     </div>
   }
 </div>

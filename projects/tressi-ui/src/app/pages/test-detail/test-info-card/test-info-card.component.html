@@ -1,0 +1,86 @@
+<div class="ring-neutral bg-base-100 rounded-lg p-6 ring-1">
+  <div class="flex items-center justify-between">
+    <h2 class="text-xl font-semibold">Test Information</h2>
+    <button class="btn btn-ghost btn-sm btn-circle" (click)="toggleCollapsed()">
+      <app-icon
+        [name]="collapsed() ? 'keyboard_arrow_down' : 'keyboard_arrow_up'"
+      />
+    </button>
+  </div>
+
+  @if (!collapsed()) {
+    <div class="mt-4 space-y-4">
+      <!-- Test ID and Status -->
+      <div class="flex items-center justify-between">
+        <div>
+          <span class="text-base-content/70 text-sm">Test ID</span>
+          <p class="font-mono text-sm">{{ test().id }}</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-base-content/70 text-sm">Status</span>
+          <div class="badge" [ngClass]="getStatusBadgeClass()">
+            {{ test().status }}
+            @if (isRealTime()) {
+              <span
+                class="ml-1 inline-block h-2 w-2 animate-pulse rounded-full bg-current"
+              ></span>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Configuration -->
+      <div>
+        <span class="text-base-content/70 text-sm">Configuration</span>
+        <p class="font-medium">{{ configName() }}</p>
+      </div>
+
+      <!-- Timing -->
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <span class="text-base-content/70 text-sm">Created</span>
+          <p class="font-medium">{{ formatDate(test().epochCreatedAt) }}</p>
+        </div>
+        <div>
+          <span class="text-base-content/70 text-sm">Started</span>
+          <p class="font-medium">{{ formatDate(test().epochStartedAt) }}</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <span class="text-base-content/70 text-sm">Ended</span>
+          <p class="font-medium">{{ formatDate(test().epochEndedAt) }}</p>
+        </div>
+        <div>
+          <span class="text-base-content/70 text-sm">Duration</span>
+          <p class="font-medium">{{ formatDuration() }}</p>
+        </div>
+      </div>
+
+      <!-- Test Parameters -->
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <span class="text-base-content/70 text-sm">Duration</span>
+          <p class="font-medium">
+            {{ test().summary?.global?.duration || 'N/A' }}s
+          </p>
+        </div>
+        <div>
+          <span class="text-base-content/70 text-sm">Total Requests</span>
+          <p class="font-medium">
+            {{ test().summary?.global?.totalRequests || 'N/A' }}
+          </p>
+        </div>
+      </div>
+
+      <!-- Real-time Indicator -->
+      @if (isRealTime()) {
+        <div class="text-info flex items-center gap-2 text-sm">
+          <app-icon name="bolt" class="animate-pulse" />
+          <span>Real-time updates active</span>
+        </div>
+      }
+    </div>
+  }
+</div>
