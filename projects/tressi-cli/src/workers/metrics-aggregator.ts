@@ -6,6 +6,8 @@ import { testStorage } from '../collections/test-collection';
 import type { AggregatedMetric, EndpointMetric } from '../common/metrics';
 import { ServerEvents } from '../events/event-types';
 import { globalEventEmitter } from '../events/global-event-emitter';
+import type { TestSummary } from '../reporting/types';
+import { transformAggregatedMetricToTestSummary } from '../reporting/utils/transformations';
 import {
   IBodySampleManager,
   IHdrHistogramManager,
@@ -76,9 +78,14 @@ export class MetricsAggregator implements IMetricsAggregator {
       this.endpoints,
     );
 
+    const testSummary = this.getTestSummary(
+      this.hdrHistogramManagers.length,
+      this.endpoints,
+    );
+
     // ! terminal.clearAndPrint(metrics);
 
-    globalEventEmitter.emit(ServerEvents.METRICS, metrics);
+    globalEventEmitter.emit(ServerEvents.METRICS, testSummary);
 
     try {
       // Get the currently running test
@@ -347,6 +354,22 @@ export class MetricsAggregator implements IMetricsAggregator {
       global: globalMetrics,
       endpoints: endpointMetrics,
     };
+  }
+
+  /**
+   * Get TestSummary for real-time UI updates
+   * @param workersCount Number of workers
+   * @param endpoints Array of endpoint URLs
+   * @returns TestSummary object for UI consumption
+   */
+  public getTestSummary(
+    workersCount: number,
+    endpoints: string[],
+  ): TestSummary {
+    const metrics = this.getResults(workersCount, endpoints);
+    const duration =
+      this.startTime > 0 ? (Date.now() - this.startTime) / 1000 : 0;
+    return transformAggregatedMetricToTestSummary(metrics, duration);
   }
 
   /**

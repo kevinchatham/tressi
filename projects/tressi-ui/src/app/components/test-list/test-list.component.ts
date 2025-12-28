@@ -11,7 +11,7 @@ import {
   SimpleChanges,
 } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
-import { AggregatedMetric } from '@tressi-cli/common/metrics';
+import type { TestSummary } from '@tressi-cli/reporting/types';
 import { Subscription } from 'rxjs';
 
 import { ConfigService } from '../../services/config.service';
@@ -64,7 +64,7 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
   readonly showDeleteModal = signal<boolean>(false);
   readonly testToDelete = signal<TestDocument | null>(null);
   readonly isBulkDelete = signal<boolean>(false);
-  private readonly latestMetrics = signal<AggregatedMetric | null>(null);
+  private readonly latestMetrics = signal<TestSummary | null>(null);
   readonly showColumnSelector = signal<boolean>(false);
 
   // Computed signals for derived state
@@ -255,9 +255,9 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
   // Subscription methods
   private subscribeToMetrics(): void {
     this.metricsSubscription = this.eventService.getMetricsStream().subscribe({
-      next: (metric: AggregatedMetric) => {
-        this.latestMetrics.set(metric);
-        this.updateRunningTest(metric);
+      next: (summary: TestSummary) => {
+        this.latestMetrics.set(summary);
+        this.updateRunningTest(summary);
       },
       error: (error: Error) => {
         this.logService.error('Metrics stream error:', error);
@@ -308,13 +308,14 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
     }
   }
 
-  private updateRunningTest(metric: AggregatedMetric): void {
+  private updateRunningTest(summary: TestSummary): void {
     this.tests.update((tests) => {
       const runningTestIndex = tests.findIndex((t) => t.status === 'running');
       if (runningTestIndex === -1) return tests;
 
       const updatedTest = { ...tests[runningTestIndex] };
-      updatedTest.epochUpdatedAt = metric.epoch;
+      updatedTest.summary = summary;
+      updatedTest.epochUpdatedAt = Date.now();
 
       const newTests = [...tests];
       newTests[runningTestIndex] = updatedTest;

@@ -39,10 +39,10 @@ export function createApp(sseManager: ISSEClientManager, port: number) {
     .route('/api/metrics', createMetricsApp(sseManager))
     .route('/', createBrowserApp());
 
-  globalEventEmitter.on(ServerEvents.METRICS, (metrics) => {
+  globalEventEmitter.on(ServerEvents.METRICS, (testSummary) => {
     const message: ServerEventMessage = {
       event: ServerEvents.METRICS,
-      data: metrics,
+      data: testSummary,
     };
     sseManager.broadcast(message);
   });

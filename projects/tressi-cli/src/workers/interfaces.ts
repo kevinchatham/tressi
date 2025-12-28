@@ -1,6 +1,7 @@
 import { TressiConfig } from '../common/config/types';
 import { AggregatedMetric } from '../common/metrics';
 import { ServerEvents, TestEventData } from '../events/event-types';
+import type { TestSummary } from '../reporting/types';
 import { EndpointCounters, LatencyHistogram, WorkerState } from './types';
 
 /**
@@ -14,7 +15,7 @@ export interface ISSEClientManager {
 }
 
 export interface IGlobalServerEvents {
-  [ServerEvents.METRICS]: (metrics: AggregatedMetric) => void;
+  [ServerEvents.METRICS]: (testSummary: TestSummary) => void;
   [ServerEvents.TEST.STARTED]: (data: TestEventData) => void;
   [ServerEvents.TEST.COMPLETED]: (data: TestEventData) => void;
   [ServerEvents.TEST.FAILED]: (data: TestEventData) => void;

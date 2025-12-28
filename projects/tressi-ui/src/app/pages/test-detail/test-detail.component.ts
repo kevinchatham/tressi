@@ -8,7 +8,7 @@ import {
   signal,
 } from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { AggregatedMetric } from '@tressi-cli/common/metrics';
+import type { TestSummary } from '@tressi-cli/reporting/types';
 import { Subscription } from 'rxjs';
 
 import { HeaderComponent } from '../../components/header/header.component';
@@ -68,7 +68,7 @@ export class TestDetailComponent implements OnDestroy, OnInit {
   private readonly error = signal<string | null>(null);
   private readonly activeTab = signal<'global' | 'endpoints'>('global');
   private readonly isRealTime = signal<boolean>(false);
-  private readonly realTimeMetrics = signal<AggregatedMetric[]>([]);
+  private readonly realTimeMetrics = signal<TestSummary[]>([]);
   private eventSubscription: Subscription | null = null;
 
   // Collapsible state signals
@@ -187,10 +187,10 @@ export class TestDetailComponent implements OnDestroy, OnInit {
 
   private setupRealTimeUpdates(): void {
     this.eventSubscription = this.eventService.getMetricsStream().subscribe({
-      next: (metrics) => {
-        this.realTimeMetrics.update((history) => [...history, metrics]);
+      next: (testSummary) => {
+        this.realTimeMetrics.update((history) => [...history, testSummary]);
         // Update chart data with new metrics
-        this.updateChartsWithRealTimeData(metrics);
+        this.updateChartsWithRealTimeData(testSummary);
       },
       error: (error) => {
         // eslint-disable-next-line no-console
@@ -200,10 +200,10 @@ export class TestDetailComponent implements OnDestroy, OnInit {
     });
   }
 
-  private updateChartsWithRealTimeData(metrics: AggregatedMetric): void {
+  private updateChartsWithRealTimeData(testSummary: TestSummary): void {
     // For now, we'll just log the real-time data
     // In a future enhancement, we could merge this with historical data
-    this.logService.info('Real-time metrics received:', metrics);
+    this.logService.info('Real-time test summary received:', testSummary);
   }
 
   ngOnDestroy(): void {

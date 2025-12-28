@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { AggregatedMetric } from '@tressi-cli/common/metrics';
+import type { TestSummary } from '@tressi-cli/reporting/types';
 import { Observable, Subject } from 'rxjs';
 
 @Injectable({
@@ -9,14 +9,14 @@ export class EventService {
   private readonly url = 'http://localhost:3108/api/metrics/stream';
   private eventSource: EventSource | null = null;
 
-  private readonly metricsSubject = new Subject<AggregatedMetric>();
+  private readonly metricsSubject = new Subject<TestSummary>();
   private readonly testEventsSubject = new Subject<TestEventData>();
   private readonly connectedSubject = new Subject<ConnectedEventData>();
 
   /**
    * Get metrics stream with unified event format
    */
-  getMetricsStream(): Observable<AggregatedMetric> {
+  getMetricsStream(): Observable<TestSummary> {
     this.ensureConnected();
     return this.metricsSubject.asObservable();
   }
@@ -63,7 +63,7 @@ export class EventService {
 
         switch (message.event) {
           case 'metrics':
-            this.metricsSubject.next(message.data as AggregatedMetric);
+            this.metricsSubject.next(message.data as TestSummary);
             break;
           case 'test:started':
           case 'test:completed':

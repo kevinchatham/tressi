@@ -1,4 +1,4 @@
-import { AggregatedMetric } from '../common/metrics';
+import type { TestSummary } from '../reporting/types';
 
 /**
  * Server-Sent Events event names
@@ -42,7 +42,7 @@ export type TestEventData = {
 export type ServerEventMessage =
   | {
       event: typeof ServerEvents.METRICS;
-      data: AggregatedMetric;
+      data: TestSummary;
     }
   | {
       event:
