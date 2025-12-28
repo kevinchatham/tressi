@@ -199,17 +199,18 @@ export class TestListColumnsService {
   }
 
   /**
-   * Toggles sort direction for a column (asc -> desc -> null).
+   * Toggles sort direction for a column (asc -> desc -> asc).
    * @param columnKey - The key of the column to toggle sort for
    */
   toggleSort(columnKey: string): void {
     const current = this.sortConfig();
     if (!current || current.columnKey !== columnKey) {
       this.sortConfig.set({ columnKey, direction: 'asc' });
-    } else if (current.direction === 'asc') {
-      this.sortConfig.set({ columnKey, direction: 'desc' });
     } else {
-      this.sortConfig.set(null);
+      this.sortConfig.set({
+        columnKey,
+        direction: current.direction === 'asc' ? 'desc' : 'asc',
+      });
     }
   }
 

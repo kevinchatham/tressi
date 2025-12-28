@@ -183,10 +183,10 @@ export class TestTableComponent {
     }
   }
 
-  getSortIcon(columnKey: string): IconName {
+  getSortIcon(columnKey: string): IconName | null {
     const sort = this.currentSort();
     if (!sort || sort.columnKey !== columnKey) {
-      return 'expand_all';
+      return null; // No icon for unsorted columns (matches original behavior)
     }
     return sort.direction === 'asc'
       ? 'keyboard_arrow_up'

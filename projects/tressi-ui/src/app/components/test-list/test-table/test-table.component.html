@@ -43,10 +43,10 @@
                 (click)="onColumnHeaderClick(column)"
               >
                 <span>{{ column.label }}</span>
-                @if (column.sortable) {
+                @if (column.sortable && isColumnSorted(column.key)) {
                   <app-icon
                     class="hover:text-base-content text-base-content/50 transition-colors"
-                    [name]="getSortIcon(column.key)"
+                    [name]="getSortIcon(column.key)!"
                   />
                 }
               </div>
