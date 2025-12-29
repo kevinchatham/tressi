@@ -60,7 +60,7 @@
       }
 
       <!-- Endpoint Summary Card -->
-      @if (endpointMetrics().length) {
+      @if (endpointSummaries().length) {
         <app-metrics-summary-card
           [metrics]="metricsData()!"
           [type]="'endpoint'"
@@ -202,7 +202,7 @@
             [metrics]="metricsData()!"
           />
 
-          @if (!endpointMetrics().length) {
+          @if (!endpointSummaries().length) {
             <div
               class="text-base-content/50 flex min-h-50 items-center justify-center italic"
             >
@@ -210,7 +210,7 @@
             </div>
           }
 
-          @for (endpoint of endpointMetrics(); track endpoint.url) {
+          @for (endpoint of endpointSummaries(); track endpoint.url) {
             <div class="ring-neutral bg-base-100 rounded-lg p-6 ring-1">
               <h3 class="mb-4 text-lg font-semibold break-all">
                 {{ endpoint.url }}
@@ -224,10 +224,7 @@
                       >Average Throughput</label
                     >
                     <span class="text-base-content text-lg font-semibold"
-                      >{{
-                        endpoint.summary.avgThroughput.toFixed(2)
-                      }}
-                      req/sec</span
+                      >{{ endpoint.avgThroughput.toFixed(2) }} req/sec</span
                     >
                   </div>
                   <div class="space-y-1">
@@ -235,7 +232,7 @@
                       >Average Latency</label
                     >
                     <span class="text-base-content text-lg font-semibold"
-                      >{{ endpoint.summary.avgLatency.toFixed(2) }} ms</span
+                      >{{ endpoint.avgLatency.toFixed(2) }} ms</span
                     >
                   </div>
                   <div class="space-y-1">
@@ -243,15 +240,15 @@
                       >Average Error Rate</label
                     >
                     <span class="text-base-content text-lg font-semibold"
-                      >{{ endpoint.summary.avgErrorRate.toFixed(2) }}%</span
+                      >{{ endpoint.avgErrorRate.toFixed(2) }}%</span
                     >
                   </div>
                   <div class="space-y-1">
                     <label class="text-base-content/70 text-sm font-medium"
-                      >Data Points</label
+                      >Total Requests</label
                     >
                     <span class="text-base-content text-lg font-semibold">{{
-                      endpoint.metrics.length
+                      endpoint.totalRequests
                     }}</span>
                   </div>
                 </div>

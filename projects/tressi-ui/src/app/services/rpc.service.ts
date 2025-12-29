@@ -52,7 +52,9 @@ export type GetEndpointsMetricsResponseError = Extract<
   { error: object }
 >;
 
-export type EndpointMetric = GetEndpointsMetricsResponseSuccess[number];
+export type EndpointMetricDocument = GetEndpointsMetricsResponseSuccess[number];
+
+export type EndpointMetric = EndpointMetricDocument['metric'];
 
 export type GetGlobalMetricsResponse = InferResponseType<
   (typeof client.metrics.global)[':testId']['$get']
@@ -68,11 +70,11 @@ export type GetGlobalMetricsResponseError = Extract<
   { error: object }
 >;
 
-export type GlobalMetric = GetGlobalMetricsResponseSuccess[number];
+export type GlobalMetricDocument = GetGlobalMetricsResponseSuccess[number];
 
 export type TestMetrics = {
-  global: GlobalMetric[];
-  endpoints: EndpointMetric[];
+  global: GlobalMetricDocument[];
+  endpoints: EndpointMetricDocument[];
 };
 
 // ! Test Management

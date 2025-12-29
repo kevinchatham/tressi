@@ -25,6 +25,7 @@ export class MetricsAggregator implements IMetricsAggregator {
     private hdrHistogramManagers: IHdrHistogramManager[],
     private statsCounterManagers: IStatsCounterManager[],
     private bodySampleManagers: IBodySampleManager[],
+    private endpointMethodMap: Record<string, string> = {},
   ) {}
 
   /**
@@ -73,22 +74,8 @@ export class MetricsAggregator implements IMetricsAggregator {
    * monitoring while being efficient enough to not impact test performance.
    */
   private async pollMetrics(): Promise<void> {
-    const metrics = this.getResults(
-      this.hdrHistogramManagers.length,
-      this.endpoints,
-    );
-
-    const testSummary = this.getTestSummary(
-      this.hdrHistogramManagers.length,
-      this.endpoints,
-    );
-
-    // ! terminal.clearAndPrint(metrics);
-
-    globalEventEmitter.emit(ServerEvents.METRICS, testSummary);
-
     try {
-      // Get the currently running test
+      // Get the currently running test first
       const allTests = await testStorage.getAll();
       const runningTests = allTests.filter((test) => test.status === 'running');
 
@@ -109,6 +96,21 @@ export class MetricsAggregator implements IMetricsAggregator {
       const test = runningTests.sort(
         (a, b) => (b.epochStartedAt || 0) - (a.epochStartedAt || 0),
       )[0];
+
+      const metrics = this.getResults(
+        this.hdrHistogramManagers.length,
+        this.endpoints,
+      );
+
+      const testSummary = this.getTestSummary(
+        this.hdrHistogramManagers.length,
+        this.endpoints,
+        test.id,
+      );
+
+      // ! terminal.clearAndPrint(metrics);
+
+      globalEventEmitter.emit(ServerEvents.METRICS, testSummary);
 
       // Store global metrics
       await globalMetricStorage.create({
@@ -365,11 +367,17 @@ export class MetricsAggregator implements IMetricsAggregator {
   public getTestSummary(
     workersCount: number,
     endpoints: string[],
+    testId: string,
   ): TestSummary {
     const metrics = this.getResults(workersCount, endpoints);
     const duration =
       this.startTime > 0 ? (Date.now() - this.startTime) / 1000 : 0;
-    return transformAggregatedMetricToTestSummary(metrics, duration);
+    return transformAggregatedMetricToTestSummary(
+      metrics,
+      duration,
+      this.endpointMethodMap,
+      testId,
+    );
   }
 
   /**

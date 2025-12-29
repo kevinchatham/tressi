@@ -90,12 +90,18 @@ export type EndpointSummary = {
   p95LatencyMs: number;
   /** 99th percentile latency in milliseconds (99% of requests were faster). */
   p99LatencyMs: number;
+  /** Actual requests per second achieved for this endpoint. */
+  actualRps: number;
+  /** Theoretical maximum requests per second based on average latency. */
+  theoreticalMaxRps: number;
 };
 
 /**
  * Global summary statistics across all endpoints in the load test.
  */
 export type GlobalSummary = {
+  /** Total number of unique endpoints tested. */
+  totalEndpoints: number;
   /** Total number of requests made across all endpoints. */
   totalRequests: number;
   /** Total number of successful requests across all endpoints. */
@@ -120,12 +126,16 @@ export type GlobalSummary = {
   achievedPercentage: number;
   /** Total duration of the test in seconds. */
   duration: number;
+  /** Average error rate across all endpoints as a percentage. */
+  avgErrorRate: number;
 };
 
 /**
  * Complete test summary containing both global and per-endpoint statistics.
  */
 export type TestSummary = {
+  /** The unique identifier for this test run (set when running in server mode). */
+  testId?: string;
   /** The version of Tressi used to run the test. */
   tressiVersion: string;
   /** Global summary statistics across all endpoints. */

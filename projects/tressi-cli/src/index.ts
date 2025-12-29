@@ -316,10 +316,18 @@ async function generateTestSummaryFromWorkers(
   // Get the actual aggregated metrics from the runner
   const aggregatedMetrics = runner.getAggregatedMetrics();
 
+  // Build endpoint method map from config
+  const config = runner.getConfig();
+  const endpointMethodMap: Record<string, string> = {};
+  for (const request of config.requests) {
+    endpointMethodMap[request.url] = request.method;
+  }
+
   // Transform AggregatedMetric to TestSummary format
   return transformAggregatedMetricToTestSummary(
     aggregatedMetrics,
     actualDurationSec,
+    endpointMethodMap,
   );
 }
 

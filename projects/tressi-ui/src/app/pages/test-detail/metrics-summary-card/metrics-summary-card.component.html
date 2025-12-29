@@ -56,7 +56,7 @@
               >Total Endpoints</label
             >
             <span class="text-base-content text-lg font-semibold">{{
-              summary()!.totalEndpoints
+              summary()!.global.totalEndpoints
             }}</span>
           </div>
           <div class="space-y-1">
@@ -64,7 +64,7 @@
               >Total Requests</label
             >
             <span class="text-base-content text-lg font-semibold">{{
-              summary()!.totalRequests
+              summary()!.global.totalRequests
             }}</span>
           </div>
           <div class="space-y-1">
@@ -72,7 +72,7 @@
               >Avg Throughput</label
             >
             <span class="text-base-content text-lg font-semibold"
-              >{{ summary()!.avgThroughput.toFixed(2) }} req/sec</span
+              >{{ summary()!.global.actualRps.toFixed(2) }} req/sec</span
             >
           </div>
           <div class="space-y-1">
@@ -80,7 +80,7 @@
               >Avg Latency</label
             >
             <span class="text-base-content text-lg font-semibold"
-              >{{ summary()!.avgLatency.toFixed(2) }} ms</span
+              >{{ summary()!.global.avgLatencyMs.toFixed(2) }} ms</span
             >
           </div>
           <div class="space-y-1">
@@ -88,7 +88,7 @@
               >Avg Error Rate</label
             >
             <span class="text-base-content text-lg font-semibold"
-              >{{ summary()!.avgErrorRate.toFixed(2) }}%</span
+              >{{ summary()!.global.avgErrorRate.toFixed(2) }}%</span
             >
           </div>
         </div>

@@ -2,37 +2,10 @@ import { CommonModule } from '@angular/common';
 import { Component, input, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
-interface EndpointMetrics {
-  url: string;
-  metrics: Array<{
-    epoch: number;
-    url: string;
-    metric: {
-      requestsPerSecond: number;
-      averageLatency: number;
-      errorRate: number;
-      totalRequests: number;
-    };
-  }>;
-  summary: {
-    avgThroughput: number;
-    avgLatency: number;
-    avgErrorRate: number;
-  };
-}
-
-interface MetricsData {
-  endpoints?: Array<{
-    epoch: number;
-    url: string;
-    metric: {
-      requestsPerSecond: number;
-      averageLatency: number;
-      errorRate: number;
-      totalRequests: number;
-    };
-  }>;
-}
+import {
+  EndpointMetricDocument,
+  TestMetrics,
+} from '../../../services/rpc.service';
 
 @Component({
   selector: 'app-endpoint-filter',
@@ -42,10 +15,10 @@ interface MetricsData {
 })
 export class EndpointFilterComponent {
   readonly endpoints = input<string[]>([]);
-  readonly metrics = input<MetricsData | null>(null);
+  readonly metrics = input<TestMetrics | null>(null);
 
   // Outputs
-  readonly filteredEndpoints = output<EndpointMetrics[]>();
+  readonly filteredEndpoints = output<EndpointMetricDocument[]>();
 
   // State
   searchQuery = '';
@@ -91,13 +64,11 @@ export class EndpointFilterComponent {
     );
   }
 
-  private applyFilters(): EndpointMetrics[] {
+  private applyFilters(): EndpointMetricDocument[] {
     const metrics = this.metrics();
     if (!metrics) return [];
 
-    const endpoints = this.groupEndpointMetrics(metrics);
-
-    let filtered = endpoints;
+    let filtered = metrics.endpoints || [];
 
     // Apply search filter
     if (this.searchQuery.trim()) {
@@ -110,66 +81,23 @@ export class EndpointFilterComponent {
     // Apply performance filters
     if (this.minThroughput > 0) {
       filtered = filtered.filter(
-        (endpoint) => endpoint.summary.avgThroughput >= this.minThroughput,
+        (endpoint) => endpoint.metric.requestsPerSecond >= this.minThroughput,
       );
     }
 
     if (this.maxLatency > 0) {
       filtered = filtered.filter(
-        (endpoint) => endpoint.summary.avgLatency <= this.maxLatency,
+        (endpoint) => endpoint.metric.averageLatency <= this.maxLatency,
       );
     }
 
     if (this.maxErrorRate < 100) {
       filtered = filtered.filter(
-        (endpoint) => endpoint.summary.avgErrorRate <= this.maxErrorRate,
+        (endpoint) => endpoint.metric.errorRate <= this.maxErrorRate,
       );
     }
 
     this.filteredEndpoints.emit(filtered);
     return filtered;
-  }
-
-  private groupEndpointMetrics(metrics: MetricsData): EndpointMetrics[] {
-    const endpointMap = new Map<string, EndpointMetrics>();
-
-    for (const endpointMetric of metrics.endpoints || []) {
-      const url = endpointMetric.url;
-      if (!endpointMap.has(url)) {
-        endpointMap.set(url, {
-          url,
-          metrics: [],
-          summary: {
-            avgThroughput: 0,
-            avgLatency: 0,
-            avgErrorRate: 0,
-          },
-        });
-      }
-      endpointMap.get(url)!.metrics.push(endpointMetric);
-    }
-
-    // Calculate summaries
-    for (const endpoint of endpointMap.values()) {
-      const values = endpoint.metrics.map((m) => m.metric);
-      const avgThroughput =
-        values.reduce((sum, m) => sum + m.requestsPerSecond, 0) /
-          values.length || 0;
-      const avgLatency =
-        values.reduce((sum, m) => sum + m.averageLatency, 0) / values.length ||
-        0;
-      const avgErrorRate =
-        values.reduce((sum, m) => sum + m.errorRate, 0) / values.length || 0;
-
-      endpoint.summary = {
-        avgThroughput,
-        avgLatency,
-        avgErrorRate,
-      };
-    }
-
-    return Array.from(endpointMap.values()).sort((a, b) =>
-      a.url.localeCompare(b.url),
-    );
   }
 }

@@ -67,4 +67,12 @@ export class Runner extends EventEmitter<IRunnerEvents> {
   public getStartTime(): number {
     return this.startTime;
   }
+
+  /**
+   * Gets the Tressi configuration.
+   * @returns The TressiConfig used for this test run
+   */
+  public getConfig(): TressiConfig {
+    return this.config;
+  }
 }

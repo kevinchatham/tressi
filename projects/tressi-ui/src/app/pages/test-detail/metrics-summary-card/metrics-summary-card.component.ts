@@ -2,15 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, input, output } from '@angular/core';
 
 import { IconComponent } from '../../../components/icon/icon.component';
-import { TestMetrics } from '../../../services/rpc.service';
-
-interface EndpointSummary {
-  totalEndpoints: number;
-  totalRequests: number;
-  avgThroughput: number;
-  avgLatency: number;
-  avgErrorRate: number;
-}
+import { TestDocument, TestMetrics } from '../../../services/rpc.service';
 
 @Component({
   selector: 'app-metrics-summary-card',
@@ -21,7 +13,7 @@ interface EndpointSummary {
 export class MetricsSummaryCardComponent {
   readonly metrics = input<TestMetrics | null>(null);
   readonly type = input.required<'global' | 'endpoint'>();
-  readonly summary = input<EndpointSummary | null>(null);
+  readonly summary = input<TestDocument['summary'] | null>(null);
   readonly collapsed = input.required<boolean>();
 
   readonly collapsedChange = output<boolean>();

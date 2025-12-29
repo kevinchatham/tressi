@@ -76,11 +76,18 @@ export class WorkerPoolManager {
     this.statsCounterManagers = managers.statsCounter;
     this.bodySampleManagers = managers.bodySample;
 
-    // Create new metrics aggregator with new managers
+    // Build endpoint method map from config
+    const endpointMethodMap: Record<string, string> = {};
+    for (const request of config.requests) {
+      endpointMethodMap[request.url] = request.method;
+    }
+
+    // Create new metrics aggregator with new managers and method map
     this.metricsAggregator = new MetricsAggregator(
       this.hdrHistogramManagers,
       this.statsCounterManagers,
       this.bodySampleManagers,
+      endpointMethodMap,
     );
 
     this.earlyExitCoordinator = new EarlyExitCoordinator(

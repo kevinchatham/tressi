@@ -7,6 +7,7 @@ import { IconComponent } from '../../components/icon/icon.component';
 import { LineChartComponent } from '../../components/line-chart/line-chart.component';
 import { LoadingService } from '../../services/loading.service';
 import { LogService } from '../../services/log.service';
+import { type TestDocument } from '../../services/rpc.service';
 import { TestService } from '../../services/test.service';
 import { DeleteConfirmationModalComponent } from './delete-confirmation-modal/delete-confirmation-modal.component';
 import { EndpointFilterComponent } from './endpoint-filter/endpoint-filter.component';
@@ -15,14 +16,6 @@ import { TestDetailService } from './test-detail.service';
 import { ChartData, EndpointChartDataCache } from './test-detail.types';
 import { TestDetailExportService } from './test-detail-export.service';
 import { TestInfoCardComponent } from './test-info-card/test-info-card.component';
-
-interface EndpointSummary {
-  totalEndpoints: number;
-  totalRequests: number;
-  avgThroughput: number;
-  avgLatency: number;
-  avgErrorRate: number;
-}
 
 @Component({
   selector: 'app-test-detail',
@@ -70,51 +63,28 @@ export class TestDetailComponent {
   readonly metricsData = computed(() => this.testDetailService.metrics());
   readonly isRealTime = computed(() => this.testData()?.status === 'running');
 
-  readonly endpointMetrics = computed(() => {
-    return this.testDetailService.groupEndpointMetrics(this.metricsData());
+  readonly endpointSummaries = computed(() => {
+    const test = this.testData();
+    return (
+      test?.summary?.endpoints?.map((endpoint) => ({
+        url: endpoint.url,
+        method: endpoint.method,
+        avgThroughput: endpoint.actualRps,
+        avgLatency: endpoint.avgLatencyMs,
+        avgErrorRate: (endpoint.failedRequests / endpoint.totalRequests) * 100,
+        totalRequests: endpoint.totalRequests,
+        successfulRequests: endpoint.successfulRequests,
+        failedRequests: endpoint.failedRequests,
+      })) ?? []
+    );
   });
 
-  readonly endpointSummary = computed<EndpointSummary | null>(() => {
-    const endpoints = this.endpointMetrics();
-    if (!endpoints.length) return null;
-
-    const totalEndpoints = endpoints.length;
-    const totalRequests = endpoints.reduce(
-      (sum, endpoint) =>
-        sum +
-        endpoint.metrics.reduce(
-          (mSum, m) => mSum + (m.metric?.totalRequests || 0),
-          0,
-        ),
-      0,
-    );
-    const avgThroughput =
-      endpoints.reduce(
-        (sum, endpoint) => sum + endpoint.summary.avgThroughput,
-        0,
-      ) / totalEndpoints;
-    const avgLatency =
-      endpoints.reduce(
-        (sum, endpoint) => sum + endpoint.summary.avgLatency,
-        0,
-      ) / totalEndpoints;
-    const avgErrorRate =
-      endpoints.reduce(
-        (sum, endpoint) => sum + endpoint.summary.avgErrorRate,
-        0,
-      ) / totalEndpoints;
-
-    return {
-      totalEndpoints,
-      totalRequests,
-      avgThroughput,
-      avgLatency,
-      avgErrorRate,
-    };
+  readonly endpointSummary = computed<TestDocument['summary']>(() => {
+    return this.testData()?.summary ?? null;
   });
 
   readonly endpointUrls = computed(() => {
-    return this.endpointMetrics().map((endpoint) => endpoint.url);
+    return this.endpointSummaries().map((endpoint) => endpoint.url);
   });
 
   readonly throughputChartData = computed<ChartData>(() => {
