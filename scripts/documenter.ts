@@ -22,7 +22,7 @@
  * npx tsx scripts/documenter-ts-morph.ts ./src --debug
  */
 
-import { copyFile, readdir, readFile, stat, writeFile } from 'fs/promises';
+import { copyFile, readdir, readFile, stat, unlink,writeFile } from 'fs/promises';
 import { join, relative } from 'path';
 import { JSDocableNode, Project, SourceFile } from 'ts-morph';
 
@@ -408,6 +408,10 @@ async function processFile(
     logDebug(`No elements need JSDoc in: ${file}`);
     stats.filesUnchanged++;
     stats.filesProcessed++;
+    // Delete backup file since no changes were made
+    await unlink(backupPath).catch(() => {
+      // Ignore errors if backup doesn't exist
+    });
     return;
   }
 
@@ -452,12 +456,22 @@ async function processFile(
         `❌ Validation failed - non-JSDoc code changed, restoring backup: ${file}`,
       );
       await writeFile(file, originalContent, 'utf8');
+      // Delete backup file and continue with next file
+      await unlink(backupPath).catch(() => {
+        // Ignore errors if backup doesn't exist
+      });
       stats.filesUnchanged++;
     } else {
       // Save the modified file
-      await sourceFile.save();
+      await writeFile(file, newContent, 'utf8');
       stats.filesUpdated++;
       stats.elementsUpdated += elementsUpdated;
+
+      // Delete backup file after successful modification
+      await unlink(backupPath).catch(() => {
+        // Ignore errors if backup doesn't exist
+      });
+
       // eslint-disable-next-line no-console
       console.log(
         `[${current}/${total}] ${file} (${elementsUpdated} JSDoc added, ${elementsSkipped} skipped)`,
