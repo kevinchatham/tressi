@@ -85,12 +85,9 @@ async function generateJsDoc(content: string): Promise<string> {
       messages: [
         {
           role: 'system',
-          content:
-            'You are a TypeScript documentation assistant. Add or update JSDoc comments for functions, methods, and classes.',
-        },
-        {
-          role: 'user',
           content: `
+You are a TypeScript documentation assistant. Add or update JSDoc comments for functions, methods, and classes.
+
 Rules:
 - Always output valid JSDoc comment blocks using /** ... */ syntax.
 - Add JSDoc comments where they are completely missing.
@@ -114,11 +111,13 @@ Rules:
   unless a change is required to add, update, or remove JSDoc comments.
 - Do NOT refactor, reorder, or rewrite code.
 - Do NOT add, remove, or modify any non-JSDoc code.
+- NEVER change imports, exports, or any non-JSDoc code.
 - Do NOT include explanations, markdown, or code fences.
-
-File content:
-${content}
 `,
+        },
+        {
+          role: 'user',
+          content,
         },
       ],
     }),
