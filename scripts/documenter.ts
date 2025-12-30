@@ -109,6 +109,11 @@ Rules:
 - Constructors are methods named "constructor" inside classes.
 - If no changes are needed, return the file unchanged.
 - Output ONLY the TypeScript source code.
+- The output MUST be valid, syntactically correct TypeScript.
+- Preserve all existing imports, exports, statements, and punctuation exactly
+  unless a change is required to add, update, or remove JSDoc comments.
+- Do NOT refactor, reorder, or rewrite code.
+- Do NOT add, remove, or modify any non-JSDoc code.
 - Do NOT include explanations, markdown, or code fences.
 
 File content:
