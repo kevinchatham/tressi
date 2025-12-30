@@ -385,21 +385,31 @@ Rules:
 /**
  * Validates that only JSDoc comments were added by comparing AST structure.
  * Returns true if only JSDoc nodes were added/modified.
+ *
+ * This function is permissive about formatting changes (indentation, blank lines, etc.)
+ * and only checks that the actual code logic remains unchanged.
  */
 function validateOnlyJsDocChanged(
   originalContent: string,
   newContent: string,
 ): boolean {
-  // Basic validation: check that non-JSDoc code hasn't changed
-  // Remove all JSDoc comments from both and compare
-  const removeJsDocs = (content: string): string => {
-    return content.replace(/\/\*\*[\s\S]*?\*\//g, '').trim();
+  // Very permissive validation that only cares about code structure, not formatting
+  // Remove all JSDoc comments and normalize the content to just check code logic
+  const normalizeContent = (content: string): string => {
+    // Remove all JSDoc comments
+    let normalized = content.replace(/\/\*\*[\s\S]*?\*\//g, '');
+    
+    // Remove all whitespace (spaces, tabs, newlines) to get just the code structure
+    // This makes the comparison immune to any formatting changes
+    normalized = normalized.replace(/\s+/g, ' ').trim();
+    
+    return normalized;
   };
 
-  const originalNoJsDoc = removeJsDocs(originalContent);
-  const newNoJsDoc = removeJsDocs(newContent);
+  const originalNormalized = normalizeContent(originalContent);
+  const newNormalized = normalizeContent(newContent);
 
-  return originalNoJsDoc === newNoJsDoc;
+  return originalNormalized === newNormalized;
 }
 
 /* -------------------------------------------------- */
