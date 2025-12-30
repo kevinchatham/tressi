@@ -345,16 +345,16 @@ Rules:
       let content = jsDocMatch[1];
       // Remove leading * from each line and clean up
       content = content
-        .replace(/^\s*\*\s?/gm, '')  // Remove leading * from each line
-        .replace(/^\s*/, '')          // Remove leading whitespace
-        .replace(/\s*$/, '');         // Remove trailing whitespace
-      
+        .replace(/^\s*\*\s?/gm, '') // Remove leading * from each line
+        .replace(/^\s*/, '') // Remove leading whitespace
+        .replace(/\s*$/, ''); // Remove trailing whitespace
+
       logDebug('Extracted content from JSDoc:', JSON.stringify(content));
-      
+
       if (!content || content === 'SKIP') {
         return 'SKIP';
       }
-      
+
       // Return properly formatted JSDoc
       return `/** ${content} */`;
     }
@@ -398,11 +398,11 @@ function validateOnlyJsDocChanged(
   const normalizeContent = (content: string): string => {
     // Remove all JSDoc comments
     let normalized = content.replace(/\/\*\*[\s\S]*?\*\//g, '');
-    
+
     // Remove all whitespace (spaces, tabs, newlines) to get just the code structure
     // This makes the comparison immune to any formatting changes
     normalized = normalized.replace(/\s+/g, ' ').trim();
-    
+
     return normalized;
   };
 
@@ -463,12 +463,14 @@ async function processFile(
 
       // Add JSDoc using ts-morph
       logDebug('About to add JSDoc text:', JSON.stringify(jsDocText));
-      
+
       // ts-morph's addJsDoc expects just the content, not the full JSDoc comment
       // So we need to strip the /** and */ markers
-      const jsDocContent = jsDocText.replace(/^\/\*\*\s*/, '').replace(/\s*\*\/$/, '');
+      const jsDocContent = jsDocText
+        .replace(/^\/\*\*\s*/, '')
+        .replace(/\s*\*\/$/, '');
       logDebug('Stripped content for ts-morph:', JSON.stringify(jsDocContent));
-      
+
       element.node.addJsDoc(jsDocContent);
       sourceFile.saveSync(); // Ensure changes are committed to in-memory filesystem
       elementsUpdated++;
@@ -483,7 +485,7 @@ async function processFile(
   const newContent = sourceFile.getFullText();
 
   if (newContent === originalContent) {
-    logDebug(`No changes made to: ${file}`);
+    console.log(`[${current}/${total}] ${file} (unchanged)`);
     stats.filesUnchanged++;
   } else {
     // Validate that only JSDoc was added
