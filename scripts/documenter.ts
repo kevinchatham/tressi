@@ -449,7 +449,6 @@ async function processFile(
   );
 
   let elementsUpdated = 0;
-  let elementsSkipped = 0;
 
   // Process each element
   for (const element of elementsNeedingJsDoc) {
@@ -457,7 +456,6 @@ async function processFile(
       const jsDocText = await generateJsDoc(element, relative(root, file));
 
       if (jsDocText === 'SKIP') {
-        elementsSkipped++;
         continue;
       }
 
@@ -477,7 +475,6 @@ async function processFile(
       logDebug(`Added JSDoc to ${element.kind} "${element.name}"`);
     } catch (error) {
       logDebug(`Error processing ${element.kind} "${element.name}":`, error);
-      elementsSkipped++;
     }
   }
 
@@ -501,9 +498,7 @@ async function processFile(
       stats.filesUpdated++;
       stats.elementsUpdated += elementsUpdated;
 
-      console.log(
-        `[${current}/${total}] ${file} (${elementsUpdated} JSDoc added, ${elementsSkipped} skipped)`,
-      );
+      console.log(`[${current}/${total}] ${file}`);
     }
   }
 
