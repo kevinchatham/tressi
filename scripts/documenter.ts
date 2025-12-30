@@ -30,7 +30,13 @@ import { JSDocableNode, Project, SourceFile } from 'ts-morph';
 const root = process.argv[2] ?? '.';
 const llama = 'http://desktop:8080/v1/chat/completions';
 const key = '1234';
-const model = 'ggml-gpt-oss-20b-mxfp4';
+const model = 'Devstral-Small-2-24B-Instruct-2512-UD-Q4_K_XL';
+
+// Quick reference from local llama cpp server
+// Devstral-Small-2-24B-Instruct-2512-UD-Q4_K_XL
+// Nemotron-3-Nano-30B-A3B-UD-Q4_K_XL
+// ggml-gpt-oss-20b-mxfp4
+// unsloth-qwen3-coder-30b-a3b-instruct-ud-q4-k-xl
 
 // Request timeout (5 minutes for large files)
 const REQUEST_TIMEOUT = 300000;
