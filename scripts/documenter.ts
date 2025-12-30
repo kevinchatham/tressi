@@ -97,12 +97,12 @@ Rules:
 - Correct existing JSDoc if it is incorrect or misleading.
 - JSDoc comments must contain description text only.
 - Do NOT add any JSDoc tags by default.
-- The ONLY allowed JSDoc tag is @example.
-- Add an @example tag ONLY when the behavior of the code is not obvious from
+- The ONLY allowed JSDoc tags are @example and @remarks.
+- Add an @example or @remarks tag ONLY when the behavior of the code is not obvious from
   the name, signature, or types.
-- Do NOT add @example for simple data structures, enums, or straightforward
+- Do NOT add @example or @remarks for simple data structures, enums, or straightforward
   getters/setters.
-- If existing JSDoc contains tags other than @example, remove them.
+- If existing JSDoc contains tags other than @example or @remarks, remove them.
 - Wrap description lines if they exceed approximately 80 characters.
 - NEVER add JSDoc comments to constructor methods.
 - If constructor methods have JSDoc comments, remove them.
