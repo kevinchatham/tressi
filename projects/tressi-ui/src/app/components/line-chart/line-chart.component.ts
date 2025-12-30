@@ -187,37 +187,6 @@ export class LineChartComponent {
             this.chartMouseMove.emit({ event, chartContext, config });
           },
           zoomed: (_chartContext, { xaxis }): void => {
-            // FIX: Directly validate and clamp zoom range regardless of sync status
-            const data = this.data();
-            const labels = this.labels();
-
-            if (data.length > 0 && labels.length > 0) {
-              const actualMin = Math.min(...labels);
-              const actualMax = Math.max(...labels);
-
-              // Clamp the zoom range to actual data bounds
-              const clampedMin = Math.max(xaxis.min, actualMin);
-              const clampedMax = Math.min(xaxis.max, actualMax);
-
-              // Only proceed if clamped range is valid
-              if (clampedMax > clampedMin) {
-                // Apply the clamped zoom directly to prevent ApexCharts error
-                const chart = this.chart();
-                if (chart) {
-                  chart.updateOptions(
-                    {
-                      xaxis: {
-                        min: clampedMin,
-                        max: clampedMax,
-                      },
-                    },
-                    false,
-                    false,
-                  );
-                }
-              }
-            }
-
             this.handleZoomOrPan(xaxis);
           },
           selection: (_chartContext, { xaxis }): void => {
@@ -360,38 +329,13 @@ export class LineChartComponent {
     const syncGroup = this.syncGroup();
 
     if (chartId && syncGroup) {
-      // FIX: Clamp zoom range to actual data bounds to prevent SVG path errors
-      const data = this.data();
-      const labels = this.labels();
-
-      if (data.length > 0 && labels.length > 0) {
-        const actualMin = Math.min(...labels);
-        const actualMax = Math.max(...labels);
-
-        // Clamp the zoom range to actual data bounds
-        const clampedMin = Math.max(xaxis.min, actualMin);
-        const clampedMax = Math.min(xaxis.max, actualMax);
-
-        // Only proceed if clamped range is valid
-        if (clampedMax > clampedMin) {
-          this.syncService.setAsMaster(chartId, syncGroup);
-          this.syncService.broadcastState({
-            xAxisMin: clampedMin,
-            xAxisMax: clampedMax,
-            selectionStart: null,
-            selectionEnd: null,
-          });
-        }
-      } else {
-        // Fallback to original behavior if no data
-        this.syncService.setAsMaster(chartId, syncGroup);
-        this.syncService.broadcastState({
-          xAxisMin: xaxis.min,
-          xAxisMax: xaxis.max,
-          selectionStart: null,
-          selectionEnd: null,
-        });
-      }
+      this.syncService.setAsMaster(chartId, syncGroup);
+      this.syncService.broadcastState({
+        xAxisMin: xaxis.min,
+        xAxisMax: xaxis.max,
+        selectionStart: null,
+        selectionEnd: null,
+      });
     }
   }
 
@@ -415,74 +359,29 @@ export class LineChartComponent {
     if (!chart) return;
 
     const state = this.syncService.getState();
-    const data = this.data();
-    const labels = this.labels();
 
-    // FIX: Validate and clamp sync state to actual data bounds
-    if (data.length > 0 && labels.length > 0) {
-      const actualMin = Math.min(...labels);
-      const actualMax = Math.max(...labels);
-
-      if (state.xAxisMin !== null && state.xAxisMax !== null) {
-        // Clamp to actual data bounds
-        const clampedMin = Math.max(state.xAxisMin, actualMin);
-        const clampedMax = Math.min(state.xAxisMax, actualMax);
-
-        if (clampedMax > clampedMin) {
-          chart.updateOptions(
-            {
-              xaxis: {
-                min: clampedMin,
-                max: clampedMax,
-              },
-            },
-            false,
-            false,
-          );
-        }
-      } else if (state.selectionStart !== null && state.selectionEnd !== null) {
-        // Clamp selection to actual data bounds
-        const clampedStart = Math.max(state.selectionStart, actualMin);
-        const clampedEnd = Math.min(state.selectionEnd, actualMax);
-
-        if (clampedEnd > clampedStart) {
-          chart.updateOptions(
-            {
-              xaxis: {
-                min: clampedStart,
-                max: clampedEnd,
-              },
-            },
-            false,
-            false,
-          );
-        }
-      }
-    } else {
-      // Fallback to original behavior if no data
-      if (state.xAxisMin !== null && state.xAxisMax !== null) {
-        chart.updateOptions(
-          {
-            xaxis: {
-              min: state.xAxisMin,
-              max: state.xAxisMax,
-            },
+    if (state.xAxisMin !== null && state.xAxisMax !== null) {
+      chart.updateOptions(
+        {
+          xaxis: {
+            min: state.xAxisMin,
+            max: state.xAxisMax,
           },
-          false,
-          false,
-        );
-      } else if (state.selectionStart !== null && state.selectionEnd !== null) {
-        chart.updateOptions(
-          {
-            xaxis: {
-              min: state.selectionStart,
-              max: state.selectionEnd,
-            },
+        },
+        false,
+        false,
+      );
+    } else if (state.selectionStart !== null && state.selectionEnd !== null) {
+      chart.updateOptions(
+        {
+          xaxis: {
+            min: state.selectionStart,
+            max: state.selectionEnd,
           },
-          false,
-          false,
-        );
-      }
+        },
+        false,
+        false,
+      );
     }
   }
 
