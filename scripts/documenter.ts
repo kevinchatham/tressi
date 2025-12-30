@@ -456,6 +456,7 @@ async function processFile(
       const jsDocText = await generateJsDoc(element, relative(root, file));
 
       if (jsDocText === 'SKIP') {
+        console.log(`[${current}/${total}] ${file} (unchanged)`);
         continue;
       }
 
@@ -482,7 +483,6 @@ async function processFile(
   const newContent = sourceFile.getFullText();
 
   if (newContent === originalContent) {
-    console.log(`[${current}/${total}] ${file} (unchanged)`);
     stats.filesUnchanged++;
   } else {
     // Validate that only JSDoc was added
