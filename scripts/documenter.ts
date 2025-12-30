@@ -27,6 +27,9 @@ const llama = 'http://desktop:8080/v1/chat/completions';
 const key = '1234';
 const model = 'ggml-gpt-oss-20b-mxfp4';
 
+// Request timeout (5 minutes for large files)
+const REQUEST_TIMEOUT = 300000;
+
 // Enable verbose logging for debugging
 const DEBUG = process.argv.includes('--debug') || process.argv.includes('-d');
 
@@ -74,19 +77,23 @@ async function findTsFiles(dir: string): Promise<string[]> {
 /* -------------------------------------------------- */
 
 async function generateJsDoc(content: string): Promise<string> {
-  const res = await fetch(llama, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${key}`,
-    },
-    body: JSON.stringify({
-      model,
-      temperature: 0.2,
-      messages: [
-        {
-          role: 'system',
-          content: `
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
+
+  try {
+    const res = await fetch(llama, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${key}`,
+      },
+      body: JSON.stringify({
+        model,
+        temperature: 0.2,
+        messages: [
+          {
+            role: 'system',
+            content: `
 You are a TypeScript documentation assistant. Add or update JSDoc comments for functions, methods, and classes.
 
 Rules:
@@ -112,25 +119,35 @@ Rules:
 - Output ONLY the TypeScript source code.
 - Do NOT include explanations, markdown, or code fences.
 `,
-        },
-        {
-          role: 'user',
-          content,
-        },
-      ],
-    }),
-  });
+          },
+          {
+            role: 'user',
+            content,
+          },
+        ],
+      }),
+      signal: controller.signal,
+    });
 
-  if (!res.ok) {
-    throw new Error(`API request failed: ${res.status} ${res.statusText}`);
+    clearTimeout(timeoutId);
+
+    if (!res.ok) {
+      throw new Error(`API request failed: ${res.status} ${res.statusText}`);
+    }
+
+    const json = await res.json();
+    const result = json.choices[0].message.content.trim();
+
+    // Remove markdown code block wrapper if present
+    const codeMatch = result.match(/```(?:typescript|ts)?\n([\s\S]*?)\n```$/);
+    return codeMatch ? codeMatch[1] : result;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error(`Request timed out after ${REQUEST_TIMEOUT}ms`);
+    }
+    throw error;
   }
-
-  const json = await res.json();
-  const result = json.choices[0].message.content.trim();
-
-  // Remove markdown code block wrapper if present
-  const codeMatch = result.match(/```(?:typescript|ts)?\n([\s\S]*?)\n```$/);
-  return codeMatch ? codeMatch[1] : result;
 }
 
 function isValidTs(source: string): boolean {
