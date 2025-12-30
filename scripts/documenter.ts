@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /**
  * Scans TypeScript files and adds/fixes JSDoc comments using a locally running
  * llama.cpp server via its OpenAI-compatible HTTP API.
@@ -22,7 +23,7 @@
  * npx tsx scripts/documenter-ts-morph.ts ./src --debug
  */
 
-import { copyFile, readdir, readFile, stat, unlink,writeFile } from 'fs/promises';
+import { readdir, readFile, stat, writeFile } from 'fs/promises';
 import { join, relative } from 'path';
 import { JSDocableNode, Project, SourceFile } from 'ts-morph';
 
@@ -50,7 +51,6 @@ const stats = {
 
 function logDebug(...args: unknown[]): void {
   if (DEBUG) {
-    // eslint-disable-next-line no-console
     console.log('[DEBUG]', ...args);
   }
 }
@@ -386,10 +386,6 @@ async function processFile(
 ): Promise<void> {
   logDebug(`Processing file: ${file}`);
 
-  // Create backup
-  const backupPath = `${file}.backup`;
-  await copyFile(file, backupPath);
-
   // Read original content
   const originalContent = await readFile(file, 'utf8');
 
@@ -408,10 +404,6 @@ async function processFile(
     logDebug(`No elements need JSDoc in: ${file}`);
     stats.filesUnchanged++;
     stats.filesProcessed++;
-    // Delete backup file since no changes were made
-    await unlink(backupPath).catch(() => {
-      // Ignore errors if backup doesn't exist
-    });
     return;
   }
 
@@ -451,15 +443,10 @@ async function processFile(
   } else {
     // Validate that only JSDoc was added
     if (!validateOnlyJsDocChanged(originalContent, newContent)) {
-      // eslint-disable-next-line no-console
       console.error(
         `❌ Validation failed - non-JSDoc code changed, restoring backup: ${file}`,
       );
       await writeFile(file, originalContent, 'utf8');
-      // Delete backup file and continue with next file
-      await unlink(backupPath).catch(() => {
-        // Ignore errors if backup doesn't exist
-      });
       stats.filesUnchanged++;
     } else {
       // Save the modified file
@@ -467,12 +454,6 @@ async function processFile(
       stats.filesUpdated++;
       stats.elementsUpdated += elementsUpdated;
 
-      // Delete backup file after successful modification
-      await unlink(backupPath).catch(() => {
-        // Ignore errors if backup doesn't exist
-      });
-
-      // eslint-disable-next-line no-console
       console.log(
         `[${current}/${total}] ${file} (${elementsUpdated} JSDoc added, ${elementsSkipped} skipped)`,
       );
@@ -486,9 +467,7 @@ async function main(): Promise<void> {
   let files: string[];
 
   if (DEBUG) {
-    // eslint-disable-next-line no-console
     console.log('[DEBUG] Starting documenter with debug mode enabled');
-    // eslint-disable-next-line no-console
     console.log(`[DEBUG] Root path: ${root}`);
   }
 
@@ -499,29 +478,21 @@ async function main(): Promise<void> {
     files = await findTsFiles(root);
   }
 
-  // eslint-disable-next-line no-console
   console.log(`Found ${files.length} TypeScript file(s) to process`);
 
   for (let i = 0; i < files.length; i++) {
     await processFile(files[i], i + 1, files.length);
   }
 
-  // eslint-disable-next-line no-console
   console.log('\n📊 Statistics:');
-  // eslint-disable-next-line no-console
   console.log(`  Files processed: ${stats.filesProcessed}`);
-  // eslint-disable-next-line no-console
   console.log(`  Files updated: ${stats.filesUpdated}`);
-  // eslint-disable-next-line no-console
   console.log(`  Files unchanged: ${stats.filesUnchanged}`);
-  // eslint-disable-next-line no-console
   console.log(`  Elements updated: ${stats.elementsUpdated}`);
-  // eslint-disable-next-line no-console
   console.log(`  Elements skipped: ${stats.elementsSkipped}`);
 }
 
 main().catch((error) => {
-  // eslint-disable-next-line no-console
   console.error('Fatal error:', error);
   process.exit(1);
 });
