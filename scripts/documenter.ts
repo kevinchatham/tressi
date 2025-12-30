@@ -438,7 +438,7 @@ async function processFile(
   const elementsNeedingJsDoc = elements.filter((el) => !el.hasJsDoc);
 
   if (elementsNeedingJsDoc.length === 0) {
-    logDebug(`No elements need JSDoc in: ${file}`);
+    console.log(`[${current}/${total}] ${file} (unchanged)`);
     stats.filesUnchanged++;
     stats.filesProcessed++;
     return;
@@ -456,7 +456,6 @@ async function processFile(
       const jsDocText = await generateJsDoc(element, relative(root, file));
 
       if (jsDocText === 'SKIP') {
-        console.log(`[${current}/${total}] ${file} (unchanged)`);
         continue;
       }
 
