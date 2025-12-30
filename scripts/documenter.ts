@@ -333,15 +333,42 @@ Rules:
 
     // Remove markdown code block wrapper if present
     const codeMatch = result.match(/```(?:typescript|ts)?\n?([\s\S]*?)\n?```$/);
-    const cleanedResult = codeMatch ? codeMatch[1] : result;
+    let cleanedResult = codeMatch ? codeMatch[1] : result;
 
-    // Ensure it starts with /** and ends with */
-    const jsDoc = cleanedResult.trim();
-    if (!jsDoc.startsWith('/**')) {
-      return `/** ${jsDoc} */`;
+    logDebug('Raw LLM result:', JSON.stringify(result));
+    logDebug('After markdown cleanup:', JSON.stringify(cleanedResult));
+
+    // Check if the result is already a complete JSDoc comment
+    const jsDocMatch = cleanedResult.match(/^\/\*\*([\s\S]*?)\*\/$/);
+    if (jsDocMatch) {
+      // Extract just the content between /** and */
+      let content = jsDocMatch[1];
+      // Remove leading * from each line and clean up
+      content = content
+        .replace(/^\s*\*\s?/gm, '')  // Remove leading * from each line
+        .replace(/^\s*/, '')          // Remove leading whitespace
+        .replace(/\s*$/, '');         // Remove trailing whitespace
+      
+      logDebug('Extracted content from JSDoc:', JSON.stringify(content));
+      
+      if (!content || content === 'SKIP') {
+        return 'SKIP';
+      }
+      
+      // Return properly formatted JSDoc
+      return `/** ${content} */`;
     }
 
-    return jsDoc;
+    // If not already a JSDoc, clean it up and wrap it
+    cleanedResult = cleanedResult.trim();
+    if (!cleanedResult || cleanedResult === 'SKIP') {
+      return 'SKIP';
+    }
+
+    logDebug('Final cleaned result:', JSON.stringify(cleanedResult));
+
+    // Wrap in proper JSDoc markers
+    return `/** ${cleanedResult} */`;
   } catch (error) {
     clearTimeout(timeoutId);
     if (error instanceof Error && error.name === 'AbortError') {
@@ -425,7 +452,15 @@ async function processFile(
       }
 
       // Add JSDoc using ts-morph
-      element.node.addJsDoc(jsDocText);
+      logDebug('About to add JSDoc text:', JSON.stringify(jsDocText));
+      
+      // ts-morph's addJsDoc expects just the content, not the full JSDoc comment
+      // So we need to strip the /** and */ markers
+      const jsDocContent = jsDocText.replace(/^\/\*\*\s*/, '').replace(/\s*\*\/$/, '');
+      logDebug('Stripped content for ts-morph:', JSON.stringify(jsDocContent));
+      
+      element.node.addJsDoc(jsDocContent);
+      sourceFile.saveSync(); // Ensure changes are committed to in-memory filesystem
       elementsUpdated++;
       logDebug(`Added JSDoc to ${element.kind} "${element.name}"`);
     } catch (error) {
