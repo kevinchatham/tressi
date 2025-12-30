@@ -20,6 +20,7 @@
 
 import { readdir, readFile, stat, writeFile } from 'fs/promises';
 import { join } from 'path';
+import * as ts from 'typescript';
 
 const root = process.argv[2] ?? '.';
 const llama = 'http://desktop:8080/v1/chat/completions';
@@ -95,23 +96,20 @@ Rules:
 - JSDoc comments must contain description text only.
 - Do NOT add any JSDoc tags by default.
 - The ONLY allowed JSDoc tags are @example and @remarks.
-- Add an @example or @remarks tag ONLY when the behavior of the code is not obvious from
-  the name, signature, or types.
+- Add an @example or @remarks tag ONLY when the behavior of the code is not obvious
+  from the name, signature, or types.
 - Do NOT add @example or @remarks for simple data structures, enums, or straightforward
   getters/setters.
-- If existing JSDoc contains tags other than @example or @remarks, remove them.
+- Remove any existing JSDoc tags other than @example or @remarks.
 - Wrap description lines if they exceed approximately 80 characters.
 - NEVER add JSDoc comments to constructor methods.
 - If constructor methods have JSDoc comments, remove them.
 - Constructors are methods named "constructor" inside classes.
+- Do NOT add, remove, or modify any non-JSDoc code.
+- Preserve all existing imports, exports, statements, and punctuation exactly.
+- The output MUST be valid, syntactically correct TypeScript.
 - If no changes are needed, return the file unchanged.
 - Output ONLY the TypeScript source code.
-- The output MUST be valid, syntactically correct TypeScript.
-- Preserve all existing imports, exports, statements, and punctuation exactly
-  unless a change is required to add, update, or remove JSDoc comments.
-- Do NOT refactor, reorder, or rewrite code.
-- Do NOT add, remove, or modify any non-JSDoc code.
-- NEVER change imports, exports, or any non-JSDoc code.
 - Do NOT include explanations, markdown, or code fences.
 `,
         },
@@ -135,6 +133,19 @@ Rules:
   return codeMatch ? codeMatch[1] : result;
 }
 
+function isValidTs(source: string): boolean {
+  const file = ts.createSourceFile(
+    'check.ts',
+    source,
+    ts.ScriptTarget.Latest,
+    true,
+  );
+  return (
+    (file as ts.SourceFile & { parseDiagnostics: ts.Diagnostic[] })
+      .parseDiagnostics.length === 0
+  );
+}
+
 /* -------------------------------------------------- */
 /* main logic                                          */
 /* -------------------------------------------------- */
@@ -149,6 +160,15 @@ async function processFile(
   logDebug(`Processing file: ${file}`);
 
   const documentedContent = await generateJsDoc(content);
+
+  // Validate TypeScript output before writing
+  if (!isValidTs(documentedContent)) {
+    // eslint-disable-next-line no-console
+    console.error(`❌ Invalid TypeScript output, skipping: ${file}`);
+    stats.filesUnchanged++;
+    stats.filesProcessed++;
+    return;
+  }
 
   // Check if content changed
   if (documentedContent === content) {
