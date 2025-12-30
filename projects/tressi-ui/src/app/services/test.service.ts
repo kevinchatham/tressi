@@ -5,7 +5,6 @@ import type {
   DeleteTestResponseSuccess,
   TestDocument,
   TestMetrics,
-  TestStatus,
 } from './rpc.service';
 import { RPCService } from './rpc.service';
 
@@ -176,41 +175,5 @@ export class TestService {
     }
 
     return `${seconds}s`;
-  }
-
-  /**
-   * Get status color class for UI styling
-   * @param status The test status
-   * @returns string CSS class name
-   */
-  getStatusColor(status: TestStatus): string {
-    switch (status) {
-      case 'running':
-        return 'text-blue-600 bg-blue-100';
-      case 'completed':
-        return 'text-green-600 bg-green-100';
-      case 'failed':
-        return 'text-red-600 bg-red-100';
-      default:
-        return 'text-gray-600 bg-gray-100';
-    }
-  }
-
-  /**
-   * Get status icon for UI display
-   * @param status The test status
-   * @returns string Icon name
-   */
-  getStatusIcon(status: TestStatus): string {
-    switch (status) {
-      case 'running':
-        return 'play';
-      case 'completed':
-        return 'check-circle';
-      case 'failed':
-        return 'x-circle';
-      default:
-        return 'help-circle';
-    }
   }
 }

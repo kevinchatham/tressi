@@ -89,13 +89,7 @@
             }
             @if (column.key === 'status') {
               <td class="text-center">
-                <span
-                  class="badge mx-auto gap-1"
-                  [ngClass]="getStatusColor(test.status)"
-                >
-                  <app-icon [name]="getStatusIcon(test.status)" />
-                  {{ test.status || 'unknown' | titlecase }}
-                </span>
+                <app-status-badge [status]="test.status" />
               </td>
             }
             @if (column.key === 'startTime') {

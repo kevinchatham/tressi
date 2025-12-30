@@ -11,7 +11,6 @@ import { type TestDocument } from '../../services/rpc.service';
 import { TestService } from '../../services/test.service';
 import { DeleteConfirmationModalComponent } from './delete-confirmation-modal/delete-confirmation-modal.component';
 import { EndpointFilterComponent } from './endpoint-filter/endpoint-filter.component';
-import { MetricsSummaryCardComponent } from './metrics-summary-card/metrics-summary-card.component';
 import { TestDetailService } from './test-detail.service';
 import { ChartData, EndpointChartDataCache } from './test-detail.types';
 import { TestDetailExportService } from './test-detail-export.service';
@@ -26,7 +25,6 @@ import { TestInfoCardComponent } from './test-info-card/test-info-card.component
     HeaderComponent,
     IconComponent,
     TestInfoCardComponent,
-    MetricsSummaryCardComponent,
     EndpointFilterComponent,
     DeleteConfirmationModalComponent,
   ],
@@ -50,9 +48,7 @@ export class TestDetailComponent {
   readonly showDeleteModal = signal(false);
 
   // Collapsible state
-  readonly testInfoCollapsed = signal(false);
-  readonly globalSummaryCollapsed = signal(false);
-  readonly endpointSummaryCollapsed = signal(false);
+  readonly testInfoCollapsed = signal(true);
 
   // Animation state
   readonly globalTabFadingIn = signal(false);
@@ -69,8 +65,8 @@ export class TestDetailComponent {
       test?.summary?.endpoints?.map((endpoint) => ({
         url: endpoint.url,
         method: endpoint.method,
-        avgThroughput: endpoint.actualRps,
-        avgLatency: endpoint.avgLatencyMs,
+        avgThroughput: Math.round(endpoint.actualRps),
+        avgLatency: Math.round(endpoint.avgLatencyMs),
         avgErrorRate: (endpoint.failedRequests / endpoint.totalRequests) * 100,
         totalRequests: endpoint.totalRequests,
         successfulRequests: endpoint.successfulRequests,
@@ -93,6 +89,7 @@ export class TestDetailComponent {
 
     const data = metrics.global.map((m) => m.metric?.requestsPerSecond || 0);
     const labels = metrics.global.map((m) => m.epoch);
+
     return { data, labels };
   });
 

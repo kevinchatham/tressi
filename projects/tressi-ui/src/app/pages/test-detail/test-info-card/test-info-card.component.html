@@ -1,11 +1,17 @@
-<div class="ring-neutral bg-base-100 rounded-lg p-6 ring-1">
+<div class="ring-neutral bg-base-100 rounded-lg p-4 ring-1">
   <div class="flex items-center justify-between">
     <h2 class="text-xl font-semibold">Test Information</h2>
-    <button class="btn btn-ghost btn-sm btn-circle" (click)="toggleCollapsed()">
-      <app-icon
-        [name]="collapsed() ? 'keyboard_arrow_down' : 'keyboard_arrow_up'"
-      />
-    </button>
+    <div class="flex items-center justify-end gap-4">
+      <app-status-badge [status]="test().status" [showPulse]="isRealTime()" />
+      <button
+        class="btn btn-ghost btn-sm btn-circle"
+        (click)="toggleCollapsed()"
+      >
+        <app-icon
+          [name]="collapsed() ? 'keyboard_arrow_down' : 'keyboard_arrow_up'"
+        />
+      </button>
+    </div>
   </div>
 
   @if (!collapsed()) {
@@ -16,22 +22,11 @@
           <span class="text-base-content/70 text-sm">Test ID</span>
           <p class="font-mono text-sm">{{ test().id }}</p>
         </div>
-        <div class="flex items-center gap-2">
-          <span class="text-base-content/70 text-sm">Status</span>
-          <div class="badge" [ngClass]="getStatusBadgeClass()">
-            {{ test().status }}
-            @if (isRealTime()) {
-              <span
-                class="ml-1 inline-block h-2 w-2 animate-pulse rounded-full bg-current"
-              ></span>
-            }
-          </div>
-        </div>
       </div>
 
       <!-- Configuration -->
       <div>
-        <span class="text-base-content/70 text-sm">Configuration</span>
+        <span class="text-base-content/70 text-sm">Configuration ID</span>
         <p class="font-medium">{{ configName() }}</p>
       </div>
 
@@ -59,19 +54,11 @@
       </div>
 
       <!-- Test Parameters -->
-      <div class="grid grid-cols-2 gap-4">
-        <div>
-          <span class="text-base-content/70 text-sm">Duration</span>
-          <p class="font-medium">
-            {{ test().summary?.global?.duration || 'N/A' }}s
-          </p>
-        </div>
-        <div>
-          <span class="text-base-content/70 text-sm">Total Requests</span>
-          <p class="font-medium">
-            {{ test().summary?.global?.totalRequests || 'N/A' }}
-          </p>
-        </div>
+      <div>
+        <span class="text-base-content/70 text-sm">Total Requests</span>
+        <p class="font-medium">
+          {{ test().summary?.global?.totalRequests || 'N/A' }}
+        </p>
       </div>
 
       <!-- Real-time Indicator -->
@@ -79,6 +66,81 @@
         <div class="text-info flex items-center gap-2 text-sm">
           <app-icon name="bolt" class="animate-pulse" />
           <span>Real-time updates active</span>
+        </div>
+      }
+
+      <!-- Global Metrics Summary -->
+      @if (metrics()?.global?.length) {
+        <div class="pt-4">
+          <h3 class="text-base-content mb-3 text-lg font-semibold">
+            Global Summary
+          </h3>
+          <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
+            <div>
+              <span class="text-base-content/70 text-sm">Total Requests</span>
+              <p class="font-medium">{{ getTotalRequests() }}</p>
+            </div>
+            <div>
+              <span class="text-base-content/70 text-sm"
+                >Average Throughput</span
+              >
+              <p class="font-medium">{{ getGlobalAvgThroughput() }} req/sec</p>
+            </div>
+            <div>
+              <span class="text-base-content/70 text-sm">Average Latency</span>
+              <p class="font-medium">{{ getGlobalAvgLatency() }} ms</p>
+            </div>
+            <div>
+              <span class="text-base-content/70 text-sm"
+                >Average Error Rate</span
+              >
+              <p class="font-medium">{{ getGlobalAvgErrorRate() }}%</p>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Endpoint Metrics Summary -->
+      @if (summary()?.endpoints?.length) {
+        <div class="pt-4">
+          <h3 class="text-base-content mb-3 text-lg font-semibold">
+            Endpoint Summary
+          </h3>
+          <div class="grid grid-cols-2 gap-4 md:grid-cols-5">
+            <div>
+              <span class="text-base-content/70 text-sm">Total Endpoints</span>
+              <p class="font-medium">{{ summary()!.global.totalEndpoints }}</p>
+            </div>
+            <div>
+              <span class="text-base-content/70 text-sm">Total Requests</span>
+              <p class="font-medium">{{ summary()!.global.totalRequests }}</p>
+            </div>
+            <div>
+              <span class="text-base-content/70 text-sm">Avg Throughput</span>
+              <p class="font-medium">
+                {{ roundNumber(summary()!.global.actualRps) }} req/sec
+              </p>
+            </div>
+            <div>
+              <span class="text-base-content/70 text-sm">Avg Latency</span>
+              <p class="font-medium">
+                {{ summary()!.global.avgLatencyMs.toFixed(2) }} ms
+              </p>
+            </div>
+            <div>
+              <span class="text-base-content/70 text-sm">Avg Error Rate</span>
+              <p class="font-medium">
+                {{ summary()!.global.avgErrorRate.toFixed(2) }}%
+              </p>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- No Metrics Available Messages -->
+      @if (!metrics()?.global?.length && !summary()?.endpoints?.length) {
+        <div class="text-base-content/50 flex items-center justify-center py-4">
+          <p class="italic">No metrics data available</p>
         </div>
       }
     </div>

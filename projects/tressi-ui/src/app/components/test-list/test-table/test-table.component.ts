@@ -5,13 +5,14 @@ import { Component, inject, input, output } from '@angular/core';
 import type { TestDocument } from '../../../services/rpc.service';
 import { TestService } from '../../../services/test.service';
 import { IconComponent, IconName } from '../../icon/icon.component';
+import { StatusBadgeComponent } from '../../status-badge/status-badge.component';
 import { ColumnKey } from '../column-keys.enum';
 import type { ColumnConfig, SortConfig } from '../test-list-columns.service';
 
 @Component({
   selector: 'app-test-table',
   standalone: true,
-  imports: [CommonModule, IconComponent, DragDropModule],
+  imports: [CommonModule, IconComponent, DragDropModule, StatusBadgeComponent],
   templateUrl: './test-table.component.html',
 })
 export class TestTableComponent {
@@ -103,23 +104,6 @@ export class TestTableComponent {
     return this.testService.formatDuration(
       this.testService.getTestDuration(test),
     );
-  }
-
-  getStatusColor(status: TestDocument['status']): string {
-    return this.testService.getStatusColor(status);
-  }
-
-  getStatusIcon(status: TestDocument['status']): IconName {
-    switch (status) {
-      case 'running':
-        return 'rocket';
-      case 'completed':
-        return 'select';
-      case 'failed':
-        return 'warning';
-      default:
-        return 'info';
-    }
   }
 
   formatDate(timestamp: number): string {

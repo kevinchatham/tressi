@@ -39,36 +39,17 @@
 
   <!-- Test Details -->
   @if (!hasError() && testData()) {
-    <div class="space-y-8">
-      <!-- Test Info Card -->
+    <div class="flex flex-col gap-4">
+      <!-- Test Info Card (Consolidated with Metrics Summary) -->
       <app-test-info-card
         [test]="testData()!"
         [configName]="displayConfigName()"
         [isRealTime]="isRealTime()"
+        [metrics]="metricsData()"
+        [summary]="endpointSummary()"
         [collapsed]="testInfoCollapsed()"
         (collapsedChange)="testInfoCollapsed.set($event)"
       />
-
-      <!-- Global Summary Card -->
-      @if (metricsData()?.global?.length) {
-        <app-metrics-summary-card
-          [metrics]="metricsData()!"
-          [type]="'global'"
-          [collapsed]="globalSummaryCollapsed()"
-          (collapsedChange)="globalSummaryCollapsed.set($event)"
-        />
-      }
-
-      <!-- Endpoint Summary Card -->
-      @if (endpointSummaries().length) {
-        <app-metrics-summary-card
-          [metrics]="metricsData()!"
-          [type]="'endpoint'"
-          [summary]="endpointSummary()"
-          [collapsed]="endpointSummaryCollapsed()"
-          (collapsedChange)="endpointSummaryCollapsed.set($event)"
-        />
-      }
 
       <!-- Export Buttons -->
       <div class="flex gap-2">
@@ -224,7 +205,7 @@
                       >Average Throughput</label
                     >
                     <span class="text-base-content text-lg font-semibold"
-                      >{{ endpoint.avgThroughput.toFixed(2) }} req/sec</span
+                      >{{ endpoint.avgThroughput }} req/sec</span
                     >
                   </div>
                   <div class="space-y-1">
