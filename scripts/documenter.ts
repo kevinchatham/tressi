@@ -135,7 +135,11 @@ ${content}
 /* main logic                                          */
 /* -------------------------------------------------- */
 
-async function processFile(file: string): Promise<void> {
+async function processFile(
+  file: string,
+  current: number,
+  total: number,
+): Promise<void> {
   const content = await readFile(file, 'utf8');
 
   logDebug(`Processing file: ${file}`);
@@ -150,7 +154,7 @@ async function processFile(file: string): Promise<void> {
     await writeFile(file, documentedContent, 'utf8');
     stats.filesUpdated++;
     // eslint-disable-next-line no-console
-    console.log(`✔ ${file}`);
+    console.log(`[${current}/${total}] ${file}`);
   }
 
   stats.filesProcessed++;
@@ -176,8 +180,8 @@ async function processFile(file: string): Promise<void> {
   // eslint-disable-next-line no-console
   console.log(`Found ${files.length} TypeScript file(s) to process`);
 
-  for (const file of files) {
-    await processFile(file);
+  for (let i = 0; i < files.length; i++) {
+    await processFile(files[i], i + 1, files.length);
   }
 
   // eslint-disable-next-line no-console
