@@ -27,7 +27,7 @@ export interface ChartOption {
 export const CHART_OPTIONS: ChartOption[] = [
   { value: 'throughput', label: 'Throughput' },
   { value: 'latency', label: 'Latency' },
-  { value: 'errorRate', label: 'Error Rate' },
+  { value: 'errorRate', label: 'Error' },
 ];
 
 /**

@@ -1,4 +1,4 @@
-<div class="ring-neutral bg-base-100 rounded-lg p-4 ring-1">
+<div class="border-base-content/5 bg-base-200 rounded-xl border-2 p-4">
   <div class="flex justify-between">
     <span class="text-lg font-semibold">{{ input().name }}</span>
     <div class="-mt-1.5 ml-2 flex gap-1">
@@ -48,7 +48,7 @@
             track request.url
           ) {
             <div
-              class="bg-base-200/50 flex items-center justify-between rounded p-2"
+              class="bg-base-200/50 flex items-center justify-between rounded-xl p-2"
             >
               <div class="flex items-center gap-2">
                 <span
@@ -133,7 +133,7 @@
           </h4>
           <div class="space-y-1">
             @for (header of getHeadersEntries().slice(0, 3); track header[0]) {
-              <div class="bg-base-200/50 flex justify-between rounded p-2">
+              <div class="bg-base-200/50 flex justify-between rounded-xl p-2">
                 <span class="font-mono text-sm">{{ header[0] }}:</span>
                 <span class="truncate text-sm" [title]="header[1]">{{
                   header[1]

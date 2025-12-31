@@ -1,4 +1,4 @@
-<div class="bg-base-100 ring-neutral rounded p-6 ring-1">
+<div class="bg-base-200 border-base-content/5 rounded-xl border-2 p-6">
   <h2 class="mb-4 flex items-center gap-2 text-lg font-semibold">
     <app-icon name="settings" class="h-5 w-5" />
     Basic Configuration
@@ -39,7 +39,7 @@
         </h3>
         <button
           type="button"
-          class="btn btn-primary btn-circle btn-outline btn-sm"
+          class="btn btn-primary btn-circle btn-outline"
           (click)="addRequest.emit()"
         >
           <app-icon name="add" />
@@ -47,7 +47,7 @@
       </div>
 
       @for (request of model().config.requests; track $index) {
-        <div class="bg-base-100 ring-neutral mb-4 rounded ring-1">
+        <div class="bg-base-200 border-base-content/5 mb-4 rounded-xl border-2">
           <div class="flex items-center justify-between p-4">
             <h3 class="truncate text-lg font-medium">
               Request {{ $index + 1 }}:

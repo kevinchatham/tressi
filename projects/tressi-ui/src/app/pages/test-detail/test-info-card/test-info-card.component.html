@@ -1,12 +1,9 @@
-<div class="ring-neutral bg-base-100 rounded-lg p-4 ring-1">
+<div class="border-base-content/5 bg-base-200 rounded-xl border-2 p-4">
   <div class="flex items-center justify-between">
     <h2 class="text-xl font-semibold">Test Information</h2>
     <div class="flex items-center justify-end gap-4">
       <app-status-badge [status]="test().status" [showPulse]="isRealTime()" />
-      <button
-        class="btn btn-ghost btn-sm btn-circle"
-        (click)="toggleCollapsed()"
-      >
+      <button class="btn btn-ghost btn-circle" (click)="toggleCollapsed()">
         <app-icon
           [name]="collapsed() ? 'keyboard_arrow_down' : 'keyboard_arrow_up'"
         />

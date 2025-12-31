@@ -2,15 +2,49 @@
   <app-header>
     <button
       (click)="deleteTest()"
-      class="btn btn-sm btn-error btn-circle btn-outline"
+      class="btn btn-error btn-circle btn-outline"
       title="Delete Test"
       [disabled]="testData()?.status === 'running'"
     >
       <app-icon name="delete" />
     </button>
+    <div class="dropdown dropdown-center">
+      <button tabindex="0" class="btn btn-outline btn-circle btn-primary">
+        <app-icon name="save_as" />
+      </button>
+      <ul
+        tabindex="0"
+        class="dropdown-content bg-base-100 rounded-box ring-base-content/10 z-50 mt-4 w-36 p-2 shadow-lg ring-1"
+      >
+        <li>
+          <button
+            class="btn btn-ghost w-full justify-center"
+            (click)="exportResults('json')"
+          >
+            Save as JSON
+          </button>
+        </li>
+        <li>
+          <button
+            class="btn btn-ghost w-full justify-center"
+            (click)="exportResults('csv')"
+          >
+            Save as CSV
+          </button>
+        </li>
+        <li>
+          <button
+            class="btn btn-ghost w-full justify-center"
+            (click)="exportResults('xlsx')"
+          >
+            Save as XLSX
+          </button>
+        </li>
+      </ul>
+    </div>
     <button
       (click)="goBack()"
-      class="btn btn-ghost btn-circle"
+      class="btn btn-outline btn-circle"
       title="Back to Test List"
     >
       <app-icon name="home" />
@@ -51,21 +85,8 @@
         (collapsedChange)="testInfoCollapsed.set($event)"
       />
 
-      <!-- Export Buttons and Chart Type Selector -->
-      <div class="flex gap-2">
-        <button class="btn btn-sm" (click)="exportResults('json')">
-          Export JSON
-        </button>
-        <button class="btn btn-sm" (click)="exportResults('csv')">
-          Export CSV
-        </button>
-        <button class="btn btn-sm" (click)="exportResults('xlsx')">
-          Export XLSX
-        </button>
-      </div>
-
       <!-- Tabs -->
-      <div class="tabs tabs-box">
+      <div class="tabs tabs-box border-base-content/5 border-2 p-4">
         <!-- Global Metrics Tab -->
         <input
           type="radio"
@@ -75,10 +96,10 @@
           [checked]="activeTabName() === 'global'"
           (change)="setActiveTab('global')"
         />
-        <div class="tab-content bg-base-100 border-base-300 p-6">
+        <div class="tab-content bg-base-200 p-6">
           <!-- Throughput Chart -->
           @if (isThroughputChart()) {
-            <div class="mb-6">
+            <div>
               <div>
                 @if (throughputChartData().data.length > 0) {
                   <app-line-chart
@@ -103,7 +124,7 @@
 
           <!-- Latency Chart -->
           @if (isLatencyChart()) {
-            <div class="mb-6">
+            <div>
               <div>
                 @if (latencyChartData().data.length > 0) {
                   <app-line-chart
@@ -161,7 +182,7 @@
           [checked]="activeTabName() === 'endpoints'"
           (change)="setActiveTab('endpoints')"
         />
-        <div class="tab-content bg-base-100 border-base-300 p-6">
+        <div class="tab-content bg-base-200 p-6">
           <!-- Endpoint Filter -->
           <app-endpoint-filter
             [endpoints]="endpointUrls()"
@@ -178,7 +199,7 @@
 
           @for (endpoint of endpointSummaries(); track endpoint.url) {
             <div
-              class="ring-neutral bg-base-100 mb-6 rounded-lg p-6 ring-1 last:mb-0"
+              class="border-base-content/5 bg-base-200 mb-6 rounded-xl border-2 p-6 last:mb-0"
             >
               <h3 class="mb-4 text-lg font-semibold break-all">
                 {{ endpoint.url }}
@@ -227,7 +248,7 @@
                 <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
                   <!-- Throughput Chart -->
                   @if (selectedChartType() === 'throughput') {
-                    <div class="ring-neutral rounded-lg p-4 ring-1">
+                    <div class="border-base-content/5 rounded-xl border-2 p-4">
                       <div>
                         <app-line-chart
                           [data]="
@@ -258,7 +279,7 @@
                   }
                   <!-- Latency Chart -->
                   @if (selectedChartType() === 'latency') {
-                    <div class="ring-neutral rounded-lg p-4 ring-1">
+                    <div class="border-base-content/5 rounded-xl border-2 p-4">
                       <div>
                         <app-line-chart
                           [data]="
@@ -287,7 +308,7 @@
                 <!-- Error Rate Chart -->
                 @if (selectedChartType() === 'errorRate') {
                   <div class="grid grid-cols-1 gap-4 lg:grid-cols-1">
-                    <div class="ring-neutral rounded-lg p-4 ring-1">
+                    <div class="border-base-content/5 rounded-xl border-2 p-4">
                       <div>
                         <app-line-chart
                           [data]="
@@ -326,7 +347,7 @@
         <div class="ml-auto flex items-center self-center hover:cursor-pointer">
           <select
             id="chart-type-select"
-            class="select select-ghost border-none outline-none"
+            class="select select-ghost"
             [value]="selectedChartType()"
             (change)="onChartTypeChange($event)"
           >

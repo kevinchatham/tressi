@@ -1,4 +1,4 @@
-<div class="ring-neutral bg-base-100 rounded-lg p-4 ring-1">
+<div class="border-base-content/5 bg-base-200 rounded-xl border-2 p-4">
   <h3 class="mb-4 text-lg font-semibold">Filter Endpoints</h3>
 
   <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -50,7 +50,7 @@
       Showing {{ filteredCount }} of {{ totalCount }} endpoints
     </span>
     <button
-      class="btn btn-ghost btn-sm"
+      class="btn btn-ghost"
       (click)="clearFilters()"
       [disabled]="!hasActiveFilters()"
     >

@@ -5,14 +5,14 @@
     @if (!hasNoConfigs() && !showForm()) {
       <button
         (click)="startCreate()"
-        class="btn btn-sm btn-primary btn-circle btn-outline"
+        class="btn btn-primary btn-circle btn-outline"
         title="New Config"
       >
         <app-icon name="add" />
       </button>
       <button
         (click)="navigateToDashboard()"
-        class="btn btn-ghost btn-circle"
+        class="btn btn-outline btn-circle"
         title="Dashboard"
       >
         <app-icon name="home" />
@@ -41,7 +41,9 @@
     </div>
 
     @if (hasNoConfigs()) {
-      <div class="ring-neutral mx-auto rounded-lg p-8 ring-1">
+      <div
+        class="border-base-content/5 bg-base-200 mx-auto rounded-xl border-2 p-8"
+      >
         <div class="text-center">
           <p class="text-base-content/70 mb-4 text-lg">
             No configurations found
@@ -58,7 +60,7 @@
   <!-- Edit/Create Form -->
   @if (showForm()) {
     <div class="mx-auto max-w-4xl">
-      <div class="ring-neutral bg-base-100 rounded-lg p-6 ring-1">
+      <div class="border-base-content/5 bg-base-200 rounded-xl border-2 p-6">
         <h2 class="mb-4 text-xl font-semibold">
           {{
             currentConfig()?.id ? 'Edit Configuration' : 'Create Configuration'
@@ -77,7 +79,7 @@
 <!-- Delete Confirmation Modal -->
 <div class="modal" [class.modal-open]="showDeleteModal()">
   <div
-    class="ring-neutral bg-base-100 rounded-lg p-6 ring-1 sm:m-4 sm:max-w-[calc(100%-2rem)]"
+    class="border-base-content/5 bg-base-200 rounded-xl border-2 p-6 sm:m-4 sm:max-w-[calc(100%-2rem)]"
   >
     <h3 class="text-lg font-semibold">Delete Configuration</h3>
     <p class="py-4">
