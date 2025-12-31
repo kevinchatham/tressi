@@ -1,12 +1,12 @@
-export type EndpointMetric = {
+export type Metric = {
   averageLatency: number;
-  errorRate: number;
+  errorPercentage: number;
   failedRequests: number;
   maxLatency: number;
   minLatency: number;
   networkBytesReceived: number;
   networkBytesSent: number;
-  networkThroughputMBps: number;
+  networkBytesPerSec: number;
   p50Latency: number;
   p95Latency: number;
   p99Latency: number;
@@ -19,12 +19,12 @@ export type EndpointMetric = {
 /**
  * Aggregated metrics from all workers and endpoints
  */
-export type AggregatedMetric = {
+export type AggregatedMetrics = {
   epoch: number;
   cpuUsagePercent: number;
   memoryUsageMB: number;
-  global: EndpointMetric;
+  global: Metric;
   endpoints: {
-    [url: string]: EndpointMetric;
+    [url: string]: Metric;
   };
 };

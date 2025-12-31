@@ -1,5 +1,5 @@
 import { TressiConfig } from '../common/config/types';
-import { EndpointMetric } from '../common/metrics';
+import { Metric } from '../common/metrics';
 import { TestSummary } from '../reporting/types';
 
 /**
@@ -56,7 +56,7 @@ export type GlobalMetricDocument = {
   /** Timestamp when the document was created (milliseconds since epoch) */
   epoch: number;
   /** The actual metric data from the load test */
-  metric: EndpointMetric;
+  metric: Metric;
 };
 
 /**
@@ -73,5 +73,5 @@ export type EndpointMetricDocument = {
   /** The specific endpoint URL this metric represents */
   url: string;
   /** The actual metric data from the load test */
-  metric: EndpointMetric;
+  metric: Metric;
 };

@@ -1,22 +1,31 @@
 import pkg from '../../../../../package.json';
-import type { AggregatedMetric } from '../../common/metrics';
+import type { TressiConfig } from '../../common/config/types';
+import type { AggregatedMetrics } from '../../common/metrics';
 import { roundToDecimals } from '../../utils/math-utils';
 import { TestSummary } from '../types';
 
 export function transformAggregatedMetricToTestSummary(
-  metrics: AggregatedMetric,
+  metrics: AggregatedMetrics,
   actualDurationSec: number,
   endpointMethodMap: Record<string, string>,
+  config: TressiConfig,
   testId?: string,
 ): TestSummary {
   const global = metrics.global;
 
+  // Calculate total configured RPS from all endpoints
+  const totalConfiguredRps = config.requests.reduce((sum, request) => {
+    return sum + (request.rps || 1); // Default to 1 if not specified
+  }, 0);
+
+  // Calculate achieved percentage based on configured RPS instead of theoretical max
+  const achievedPercentage =
+    totalConfiguredRps > 0
+      ? (global.requestsPerSecond / totalConfiguredRps) * 100
+      : 0;
+
   const theoreticalMaxRps =
     global.averageLatency > 0 ? 1000 / global.averageLatency : 0;
-  const achievedPercentage =
-    theoreticalMaxRps > 0
-      ? (global.requestsPerSecond / theoreticalMaxRps) * 100
-      : 0;
 
   const globalSummary = {
     totalEndpoints: Object.keys(metrics.endpoints).length,

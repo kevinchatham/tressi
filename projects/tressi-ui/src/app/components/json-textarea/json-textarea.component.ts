@@ -50,7 +50,7 @@ export class JsonTextareaComponent<T> implements FormValueControl<T> {
     EditorView.theme(
       {
         '&.cm-editor': {
-          backgroundColor: this.themeService.base200(),
+          backgroundColor: this.themeService.base100(),
           color: this.themeService.baseContent(),
           height: 'auto',
           borderRadius: '8px',

@@ -54,7 +54,7 @@ export class TestTableComponent {
     switch (column.field) {
       case 'summary.global.totalRequests':
         return g.totalRequests.toLocaleString();
-      case 'summary.global.errorRate':
+      case 'summary.global.errorPercentage':
         return `${(g.failedRequests / g.totalRequests) * 100}%`;
       case 'summary.global.successfulRequests':
         return g.successfulRequests.toLocaleString();

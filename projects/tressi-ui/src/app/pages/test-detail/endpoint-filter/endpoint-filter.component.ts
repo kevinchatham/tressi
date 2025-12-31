@@ -93,7 +93,7 @@ export class EndpointFilterComponent {
 
     if (this.maxErrorRate < 100) {
       filtered = filtered.filter(
-        (endpoint) => endpoint.metric.errorRate <= this.maxErrorRate,
+        (endpoint) => endpoint.metric.errorPercentage <= this.maxErrorRate,
       );
     }
 

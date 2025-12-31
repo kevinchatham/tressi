@@ -107,7 +107,7 @@ export class TestDetailComponent {
     const metrics = this.metricsData();
     if (!metrics?.global?.length) return { data: [], labels: [] };
 
-    const data = metrics.global.map((m) => m.metric?.errorRate || 0);
+    const data = metrics.global.map((m) => m.metric?.errorPercentage || 0);
     const labels = metrics.global.map((m) => m.epoch);
     return { data, labels };
   });
@@ -207,7 +207,7 @@ export class TestDetailComponent {
         labels = endpointMetrics.map((m) => m.epoch);
         break;
       case 'errorRate':
-        data = endpointMetrics.map((m) => m.metric?.errorRate || 0);
+        data = endpointMetrics.map((m) => m.metric?.errorPercentage || 0);
         labels = endpointMetrics.map((m) => m.epoch);
         break;
     }

@@ -209,7 +209,7 @@ describe('MetricsAggregator', () => {
       expect(results.global.totalRequests).toBe(0);
       expect(results.global.successfulRequests).toBe(0);
       expect(results.global.failedRequests).toBe(0);
-      expect(results.global.errorRate).toBe(0);
+      expect(results.global.errorPercentage).toBe(0);
       expect(results.global.averageLatency).toBe(0);
       expect(results.endpoints).toBeDefined();
     });
@@ -293,7 +293,7 @@ describe('MetricsAggregator', () => {
       expect(results.global.totalRequests).toBe(36);
       expect(results.global.successfulRequests).toBe(30);
       expect(results.global.failedRequests).toBe(6);
-      expect(results.global.errorRate).toBe(0.1667); // 6/36 rounded to 4 decimal places
+      expect(results.global.errorPercentage).toBe(0);
       // The AggregatedMetric type doesn't have a workerThreads property
       // This assertion was based on outdated expectations
       expect(results.endpoints).toHaveProperty('http://example.com/api/1');
@@ -341,7 +341,7 @@ describe('MetricsAggregator', () => {
       expect(endpointMetrics.totalRequests).toBe(12);
       expect(endpointMetrics.successfulRequests).toBe(12);
       expect(endpointMetrics.failedRequests).toBe(0);
-      expect(endpointMetrics.errorRate).toBe(0);
+      expect(endpointMetrics.errorPercentage).toBe(0);
       expect(endpointMetrics.averageLatency).toBe(100);
       expect(endpointMetrics.p50Latency).toBe(95);
       expect(endpointMetrics.p95Latency).toBe(180);

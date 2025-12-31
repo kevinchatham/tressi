@@ -328,6 +328,7 @@ async function generateTestSummaryFromWorkers(
     aggregatedMetrics,
     actualDurationSec,
     endpointMethodMap,
+    config,
   );
 }
 

@@ -75,7 +75,7 @@ export const DEFAULT_COLUMN_CONFIGS: ColumnConfig[] = [
   {
     key: ColumnKey.ERROR_RATE,
     label: 'Error Rate',
-    field: 'summary.global.errorRate',
+    field: 'summary.global.errorPercentage',
     format: 'percentage',
     visible: false,
     group: 'basic',

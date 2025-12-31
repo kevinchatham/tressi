@@ -1,5 +1,5 @@
 import { TressiConfig } from '../common/config/types';
-import { AggregatedMetric } from '../common/metrics';
+import { AggregatedMetrics } from '../common/metrics';
 import { ServerEvents, TestEventData } from '../events/event-types';
 import type { TestSummary } from '../reporting/types';
 import { EndpointCounters, LatencyHistogram, WorkerState } from './types';
@@ -23,7 +23,7 @@ export interface IGlobalServerEvents {
 
 export interface IRunnerEvents {
   start: (data: { config: TressiConfig; startTime: number }) => void;
-  complete: (results: AggregatedMetric | undefined) => void;
+  complete: (results: AggregatedMetrics | undefined) => void;
   error: (err: unknown) => void;
 }
 
@@ -103,7 +103,7 @@ export interface IEarlyExitCoordinator {
 export interface IMetricsAggregator {
   startPolling(intervalMs?: number): void;
   stopPolling(): void;
-  getResults(workersCount: number, endpoints: string[]): AggregatedMetric;
+  getResults(workersCount: number, endpoints: string[]): AggregatedMetrics;
   getBodySamplesForEndpoint(
     endpointIndex: number,
   ): Array<{ sampleIndex: number; statusCode: number }>;

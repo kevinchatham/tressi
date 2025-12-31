@@ -3,7 +3,8 @@ import { cpus, loadavg } from 'os';
 import { endpointMetricStorage } from '../collections/endpoint-metrics-collection';
 import { globalMetricStorage } from '../collections/global-metrics-collection';
 import { testStorage } from '../collections/test-collection';
-import type { AggregatedMetric, EndpointMetric } from '../common/metrics';
+import type { TressiConfig } from '../common/config/types';
+import type { AggregatedMetrics, Metric } from '../common/metrics';
 import { ServerEvents } from '../events/event-types';
 import { globalEventEmitter } from '../events/global-event-emitter';
 import type { TestSummary } from '../reporting/types';
@@ -21,6 +22,7 @@ export class MetricsAggregator implements IMetricsAggregator {
   private pollingInterval: NodeJS.Timeout | null = null;
   private startTime: number = 0;
   private endpoints: string[] = [];
+  private config: TressiConfig | null = null;
 
   constructor(
     private hdrHistogramManagers: IHdrHistogramManager[],
@@ -28,6 +30,14 @@ export class MetricsAggregator implements IMetricsAggregator {
     private bodySampleManagers: IBodySampleManager[],
     private endpointMethodMap: Record<string, string> = {},
   ) {}
+
+  /**
+   * Set the configuration for metrics aggregation
+   * @param config The Tressi configuration
+   */
+  setConfig(config: TressiConfig): void {
+    this.config = config;
+  }
 
   /**
    * Set the endpoints for metrics collection
@@ -141,7 +151,7 @@ export class MetricsAggregator implements IMetricsAggregator {
    * @param endpoints Array of endpoint URLs
    * @returns Aggregated metrics
    */
-  getResults(workersCount: number, endpoints: string[]): AggregatedMetric {
+  getResults(workersCount: number, endpoints: string[]): AggregatedMetrics {
     let totalSuccess = 0;
     let totalFailure = 0;
     let totalRequests = 0;
@@ -229,7 +239,7 @@ export class MetricsAggregator implements IMetricsAggregator {
     });
 
     // Build per-endpoint metrics
-    const endpointMetrics: AggregatedMetric['endpoints'] = {};
+    const endpointMetrics: AggregatedMetrics['endpoints'] = {};
     endpoints.forEach((url) => {
       const histograms = endpointHistograms[url];
       const statusCounts = endpointStatusCounts[url];
@@ -269,18 +279,16 @@ export class MetricsAggregator implements IMetricsAggregator {
         });
       }
 
-      const endpointThroughputMBps =
+      const endpointBytesPerSec =
         duration > 0
-          ? (endpointBytesSent + endpointBytesReceived) /
-            (duration / 1000) /
-            (1024 * 1024)
+          ? (endpointBytesSent + endpointBytesReceived) / (duration / 1000)
           : 0;
 
       endpointMetrics[url] = {
         totalRequests: endpointTotalRequests,
         successfulRequests: endpointSuccessRequests,
         failedRequests: endpointFailureRequests,
-        errorRate: roundToDecimals(
+        errorPercentage: roundToDecimals(
           endpointTotalRequests > 0
             ? endpointFailureRequests / endpointTotalRequests
             : 0,
@@ -297,7 +305,7 @@ export class MetricsAggregator implements IMetricsAggregator {
         statusCodeDistribution: statusCounts,
         networkBytesSent: endpointBytesSent,
         networkBytesReceived: endpointBytesReceived,
-        networkThroughputMBps: roundToDecimals(endpointThroughputMBps),
+        networkBytesPerSec: roundToDecimals(endpointBytesPerSec),
       };
     });
 
@@ -315,18 +323,16 @@ export class MetricsAggregator implements IMetricsAggregator {
     );
 
     // Calculate global network throughput
-    const globalThroughputMBps =
+    const globalBytesPerSec =
       duration > 0
-        ? (totalBytesSent + totalBytesReceived) /
-          (duration / 1000) /
-          (1024 * 1024)
+        ? (totalBytesSent + totalBytesReceived) / (duration / 1000)
         : 0;
 
-    const globalMetrics: EndpointMetric = {
+    const globalMetrics: Metric = {
       totalRequests,
       successfulRequests: totalSuccess,
       failedRequests: totalFailure,
-      errorRate: roundToDecimals(errorRate),
+      errorPercentage: roundToDecimals(errorRate),
       averageLatency: roundToDecimals(globalStats.averageLatency),
       minLatency: roundToDecimals(globalStats.minLatency),
       maxLatency: roundToDecimals(globalStats.maxLatency),
@@ -337,7 +343,7 @@ export class MetricsAggregator implements IMetricsAggregator {
       statusCodeDistribution: globalStatusCodeDistribution,
       networkBytesSent: totalBytesSent,
       networkBytesReceived: totalBytesReceived,
-      networkThroughputMBps: roundToDecimals(globalThroughputMBps),
+      networkBytesPerSec: roundToDecimals(globalBytesPerSec),
     };
 
     return {
@@ -364,10 +370,16 @@ export class MetricsAggregator implements IMetricsAggregator {
     const metrics = this.getResults(workersCount, endpoints);
     const duration =
       this.startTime > 0 ? (Date.now() - this.startTime) / 1000 : 0;
+
+    if (!this.config) {
+      throw new Error('Config not set in MetricsAggregator');
+    }
+
     return transformAggregatedMetricToTestSummary(
       metrics,
       duration,
       this.endpointMethodMap,
+      this.config,
       testId,
     );
   }

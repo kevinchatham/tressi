@@ -2,7 +2,7 @@ import os from 'os';
 import { Worker } from 'worker_threads';
 
 import { TressiConfig, TressiRequestConfig } from '../common/config/types';
-import type { AggregatedMetric } from '../common/metrics';
+import type { AggregatedMetrics } from '../common/metrics';
 import { FileUtils } from '../utils/file-utils';
 import { EarlyExitCoordinator } from './early-exit-coordinator';
 import { MetricsAggregator } from './metrics-aggregator';
@@ -89,6 +89,9 @@ export class WorkerPoolManager {
       this.bodySampleManagers,
       endpointMethodMap,
     );
+
+    // Set the config for metrics aggregation
+    this.metricsAggregator.setConfig(config);
 
     this.earlyExitCoordinator = new EarlyExitCoordinator(
       config,
@@ -289,7 +292,7 @@ export class WorkerPoolManager {
    * It combines histogram data, counters, and network metrics from all workers
    * into a single comprehensive metrics object.
    */
-  getAggregatedResults(): AggregatedMetric {
+  getAggregatedResults(): AggregatedMetrics {
     const endpoints = this.config.requests.map((req) => req.url);
     return this.metricsAggregator.getResults(this.workers.length, endpoints);
   }

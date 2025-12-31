@@ -77,7 +77,7 @@ export class TestInfoCardComponent {
     const metrics = this.metrics();
     if (!metrics?.global?.length) return 0;
 
-    const values = metrics.global.map((m) => m.metric?.errorRate || 0);
+    const values = metrics.global.map((m) => m.metric?.errorPercentage || 0);
     return values.reduce((sum, val) => sum + val, 0) / values.length || 0;
   }
 
