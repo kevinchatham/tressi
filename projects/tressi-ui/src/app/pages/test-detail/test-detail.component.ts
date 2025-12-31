@@ -6,13 +6,15 @@ import { HeaderComponent } from '../../components/header/header.component';
 import { IconComponent } from '../../components/icon/icon.component';
 import { LineChartComponent } from '../../components/line-chart/line-chart.component';
 import { LoadingService } from '../../services/loading.service';
+import { LocalStorageService } from '../../services/local-storage.service';
 import { LogService } from '../../services/log.service';
 import { type TestDocument } from '../../services/rpc.service';
 import { TestService } from '../../services/test.service';
+import { CHART_OPTIONS, ChartData, ChartType } from '../../types/chart.types';
 import { DeleteConfirmationModalComponent } from './delete-confirmation-modal/delete-confirmation-modal.component';
 import { EndpointFilterComponent } from './endpoint-filter/endpoint-filter.component';
 import { TestDetailService } from './test-detail.service';
-import { ChartData, EndpointChartDataCache } from './test-detail.types';
+import { EndpointChartDataCache } from './test-detail.types';
 import { TestDetailExportService } from './test-detail-export.service';
 import { TestInfoCardComponent } from './test-info-card/test-info-card.component';
 
@@ -38,6 +40,7 @@ export class TestDetailComponent {
   private readonly logService = inject(LogService);
   private readonly testDetailService = inject(TestDetailService);
   private readonly exportService = inject(TestDetailExportService);
+  private readonly localStorageService = inject(LocalStorageService);
 
   // Signals
   readonly testId = signal<string | null>(null);
@@ -46,6 +49,8 @@ export class TestDetailComponent {
   readonly errorMessage = signal('');
   readonly isDeleting = signal(false);
   readonly showDeleteModal = signal(false);
+  readonly selectedChartType = signal<ChartType>('throughput');
+  readonly chartOptions = CHART_OPTIONS;
 
   // Collapsible state
   readonly testInfoCollapsed = signal(true);
@@ -121,6 +126,10 @@ export class TestDetailComponent {
   private readonly cachedEndpointChartData: EndpointChartDataCache = new Map();
 
   constructor() {
+    // Load chart type preference from localStorage
+    const preferences = this.localStorageService.getPreferences();
+    this.selectedChartType.set(preferences.selectedChartType as ChartType);
+
     // Subscribe to route params to ensure we get the testId
     this.route.params.subscribe((params) => {
       const id = params['testId'] || null;
@@ -130,6 +139,8 @@ export class TestDetailComponent {
 
     // Set up real-time updates after we have a test ID
     this.setupRealTimeUpdates();
+
+    // No need for effect - saving is handled in onChartTypeChange method
   }
 
   async loadTestDetails(testId: string | null): Promise<void> {
@@ -175,7 +186,7 @@ export class TestDetailComponent {
     }
   }
 
-  getCachedEndpointChartData(url: string, metricType: string): ChartData {
+  getCachedEndpointChartData(url: string, metricType: ChartType): ChartData {
     const cacheKey = `${url}-${metricType}`;
 
     if (!this.cachedEndpointChartData.has(url)) {
@@ -252,8 +263,35 @@ export class TestDetailComponent {
     this.showDeleteModal.set(false);
   }
 
+  onChartTypeChange(event: Event): void {
+    const target = event.target as HTMLSelectElement;
+    const value = target.value as ChartType;
+    this.selectedChartType.set(value);
+
+    // Save the preference to localStorage
+    const currentPreferences = this.localStorageService.getPreferences();
+    const newPreferences = {
+      ...currentPreferences,
+      selectedChartType: value,
+    };
+    this.localStorageService.savePreferences(newPreferences);
+  }
+
   goBack(): void {
     this.router.navigate(['/']);
+  }
+
+  // Helper methods for template type checking
+  isThroughputChart(): boolean {
+    return this.selectedChartType() === 'throughput';
+  }
+
+  isLatencyChart(): boolean {
+    return this.selectedChartType() === 'latency';
+  }
+
+  isErrorRateChart(): boolean {
+    return this.selectedChartType() === 'errorRate';
   }
 
   async exportResults(format: 'json' | 'csv' | 'xlsx'): Promise<void> {

@@ -1,10 +1,4 @@
-/**
- * Chart data structure for line charts
- */
-export interface ChartData {
-  data: number[];
-  labels: number[];
-}
+import { ChartData } from '../../types/chart.types';
 
 /**
  * Cache structure for endpoint chart data

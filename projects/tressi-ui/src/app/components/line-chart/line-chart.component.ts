@@ -138,6 +138,7 @@ export class LineChartComponent {
         },
       ],
       chart: {
+        offsetX: 4,
         height: height,
         type: 'line',
         zoom: {
@@ -268,14 +269,13 @@ export class LineChartComponent {
           },
         },
         labels: {
+          offsetX: 8,
           style: {
             colors: themeColors.text,
             fontFamily: 'Roboto Mono, monospace',
             fontSize: '11px',
           },
-          formatter: (value: number): string => {
-            return humanNumber(Math.round(value));
-          },
+          formatter: this.getYAxisFormatter(),
         },
         axisBorder: {
           color: themeColors.border,
@@ -389,8 +389,6 @@ export class LineChartComponent {
     const seriesName = this.seriesName();
     const data = this.data();
     const labels = this.labels();
-    const title = this.title();
-    const yAxisLabel = this.yAxisLabel();
 
     const chart = this.chart();
     if (!chart) return;
@@ -437,31 +435,10 @@ export class LineChartComponent {
 
       // Update tracking state
       this.lastDataLength = data.length;
-
-      // Always update options (lightweight operation)
-      chart.updateOptions(
-        {
-          title: {
-            text: title,
-          },
-          yaxis: {
-            title: {
-              text: yAxisLabel,
-            },
-          },
-        },
-        false,
-        false,
-      );
     });
   }
 
   private shouldUseIncrementalUpdate(newData: number[]): boolean {
-    // Use incremental update if:
-    // 1. We have existing data
-    // 2. Data is being appended (not replaced)
-    // 3. The change is small and incremental
-
     if (this.lastDataLength === 0) {
       return false; // First load, use full update
     }
@@ -487,5 +464,11 @@ export class LineChartComponent {
     }
 
     return seriesData.slice(expectedLength);
+  }
+
+  private getYAxisFormatter(): (value: number) => string {
+    return (value: number): string => {
+      return humanNumber(Math.round(value));
+    };
   }
 }

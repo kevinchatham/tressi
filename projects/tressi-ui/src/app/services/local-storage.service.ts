@@ -2,6 +2,7 @@ import { inject, Injectable, signal } from '@angular/core';
 import { z } from 'zod';
 
 import { DEFAULT_COLUMN_CONFIGS } from '../components/test-list/column-config.constants';
+import { CHART_TYPES, DEFAULT_CHART_TYPE } from '../types/chart.types';
 import { LogService } from './log.service';
 import { ConfigDocument } from './rpc.service';
 import { Theme } from './theme.service';
@@ -36,6 +37,7 @@ export const UserPreferencesSchema = z.object({
       draggable: z.boolean().optional(),
     }),
   ),
+  selectedChartType: z.enum(CHART_TYPES),
 });
 
 export type UserPreferences = z.infer<typeof UserPreferencesSchema>;
@@ -103,6 +105,7 @@ export class LocalStorageService {
       selectedTheme: 'dark',
       lastSelectedConfig: null,
       columnPreferences: DEFAULT_COLUMN_CONFIGS,
+      selectedChartType: DEFAULT_CHART_TYPE,
     };
   }
 

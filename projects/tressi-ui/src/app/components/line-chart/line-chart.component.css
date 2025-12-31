@@ -54,6 +54,7 @@
   justify-content: center !important;
   align-items: center !important;
   right: 8px !important;
+  top: -8px !important;
 }
 
 :host ::ng-deep .apexcharts-toolbar div {

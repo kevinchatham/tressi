@@ -51,7 +51,7 @@
         (collapsedChange)="testInfoCollapsed.set($event)"
       />
 
-      <!-- Export Buttons -->
+      <!-- Export Buttons and Chart Type Selector -->
       <div class="flex gap-2">
         <button class="btn btn-sm" (click)="exportResults('json')">
           Export JSON
@@ -80,6 +80,18 @@
         >
           Endpoint Metrics
         </button>
+        <div class="ml-auto flex items-center">
+          <select
+            id="chart-type-select"
+            class="select select-bordered"
+            [value]="selectedChartType()"
+            (change)="onChartTypeChange($event)"
+          >
+            @for (option of chartOptions; track option.value) {
+              <option [value]="option.value">{{ option.label }}</option>
+            }
+          </select>
+        </div>
       </div>
 
       <!-- Global Metrics Tab -->
@@ -89,11 +101,11 @@
           [class.opacity-0]="globalTabFadingIn()"
           [class.opacity-100]="!globalTabFadingIn()"
         >
-          <div class="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">
-            <!-- Throughput Chart -->
+          <!-- Throughput Chart -->
+          @if (isThroughputChart()) {
             <div class="ring-neutral bg-base-100 rounded-lg p-6 ring-1">
               <h3 class="mb-4 text-lg font-semibold">Throughput Over Time</h3>
-              <div class="h-75">
+              <div>
                 @if (throughputChartData().data.length > 0) {
                   <app-line-chart
                     [data]="throughputChartData().data"
@@ -114,13 +126,15 @@
                 }
               </div>
             </div>
+          }
 
-            <!-- Latency Chart -->
+          <!-- Latency Chart -->
+          @if (isLatencyChart()) {
             <div class="ring-neutral bg-base-100 rounded-lg p-6 ring-1">
               <h3 class="mb-4 text-lg font-semibold">
                 Response Time Over Time
               </h3>
-              <div class="h-75">
+              <div>
                 @if (latencyChartData().data.length > 0) {
                   <app-line-chart
                     [data]="latencyChartData().data"
@@ -141,11 +155,13 @@
                 }
               </div>
             </div>
+          }
 
-            <!-- Error Rate Chart -->
+          <!-- Error Rate Chart -->
+          @if (selectedChartType() === 'errorRate') {
             <div class="ring-neutral bg-base-100 rounded-lg p-6 ring-1">
               <h3 class="mb-4 text-lg font-semibold">Error Rate Over Time</h3>
-              <div class="h-75">
+              <div>
                 @if (errorRateChartData().data.length > 0) {
                   <app-line-chart
                     [data]="errorRateChartData().data"
@@ -166,7 +182,7 @@
                 }
               </div>
             </div>
-          </div>
+          }
         </div>
       }
 
@@ -238,93 +254,110 @@
               <!-- Endpoint Charts -->
               <div class="space-y-4">
                 <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                  <div class="ring-neutral rounded-lg p-4 ring-1">
-                    <h4 class="text-base-content mb-2 font-semibold">
-                      Throughput
-                    </h4>
-                    <div class="h-50">
-                      <app-line-chart
-                        [data]="
-                          getCachedEndpointChartData(endpoint.url, 'throughput')
-                            .data
-                        "
-                        [labels]="
-                          getCachedEndpointChartData(endpoint.url, 'throughput')
-                            .labels
-                        "
-                        [height]="200"
-                        [seriesName]="'Throughput'"
-                        [yAxisLabel]="'Requests/sec'"
-                        [chartId]="
-                          'endpoint-' +
-                          sanitizeForChartId(endpoint.url) +
-                          '-throughput'
-                        "
-                        [syncGroup]="
-                          'endpoint-' + sanitizeForChartId(endpoint.url)
-                        "
-                      />
+                  <!-- Throughput Chart -->
+                  @if (selectedChartType() === 'throughput') {
+                    <div class="ring-neutral rounded-lg p-4 ring-1">
+                      <h4 class="text-base-content mb-2 font-semibold">
+                        Throughput
+                      </h4>
+                      <div class="h-50">
+                        <app-line-chart
+                          [data]="
+                            getCachedEndpointChartData(
+                              endpoint.url,
+                              'throughput'
+                            ).data
+                          "
+                          [labels]="
+                            getCachedEndpointChartData(
+                              endpoint.url,
+                              'throughput'
+                            ).labels
+                          "
+                          [height]="200"
+                          [seriesName]="'Throughput'"
+                          [yAxisLabel]="'Requests/sec'"
+                          [chartId]="
+                            'endpoint-' +
+                            sanitizeForChartId(endpoint.url) +
+                            '-throughput'
+                          "
+                          [syncGroup]="
+                            'endpoint-' + sanitizeForChartId(endpoint.url)
+                          "
+                        />
+                      </div>
                     </div>
-                  </div>
-                  <div class="ring-neutral rounded-lg p-4 ring-1">
-                    <h4 class="text-base-content mb-2 font-semibold">
-                      Latency
-                    </h4>
-                    <div class="h-50">
-                      <app-line-chart
-                        [data]="
-                          getCachedEndpointChartData(endpoint.url, 'latency')
-                            .data
-                        "
-                        [labels]="
-                          getCachedEndpointChartData(endpoint.url, 'latency')
-                            .labels
-                        "
-                        [height]="200"
-                        [seriesName]="'Latency'"
-                        [yAxisLabel]="'Response Time (ms)'"
-                        [chartId]="
-                          'endpoint-' +
-                          sanitizeForChartId(endpoint.url) +
-                          '-latency'
-                        "
-                        [syncGroup]="
-                          'endpoint-' + sanitizeForChartId(endpoint.url)
-                        "
-                      />
+                  }
+                  <!-- Latency Chart -->
+                  @if (selectedChartType() === 'latency') {
+                    <div class="ring-neutral rounded-lg p-4 ring-1">
+                      <h4 class="text-base-content mb-2 font-semibold">
+                        Latency
+                      </h4>
+                      <div class="h-50">
+                        <app-line-chart
+                          [data]="
+                            getCachedEndpointChartData(endpoint.url, 'latency')
+                              .data
+                          "
+                          [labels]="
+                            getCachedEndpointChartData(endpoint.url, 'latency')
+                              .labels
+                          "
+                          [height]="200"
+                          [seriesName]="'Latency'"
+                          [yAxisLabel]="'Response Time (ms)'"
+                          [chartId]="
+                            'endpoint-' +
+                            sanitizeForChartId(endpoint.url) +
+                            '-latency'
+                          "
+                          [syncGroup]="
+                            'endpoint-' + sanitizeForChartId(endpoint.url)
+                          "
+                        />
+                      </div>
                     </div>
-                  </div>
+                  }
                 </div>
-                <div class="grid grid-cols-1 gap-4 lg:grid-cols-1">
-                  <div class="ring-neutral rounded-lg p-4 ring-1">
-                    <h4 class="text-base-content mb-2 font-semibold">
-                      Error Rate
-                    </h4>
-                    <div class="h-50">
-                      <app-line-chart
-                        [data]="
-                          getCachedEndpointChartData(endpoint.url, 'errorRate')
-                            .data
-                        "
-                        [labels]="
-                          getCachedEndpointChartData(endpoint.url, 'errorRate')
-                            .labels
-                        "
-                        [height]="200"
-                        [seriesName]="'Error Rate'"
-                        [yAxisLabel]="'Error Rate (%)'"
-                        [chartId]="
-                          'endpoint-' +
-                          sanitizeForChartId(endpoint.url) +
-                          '-error-rate'
-                        "
-                        [syncGroup]="
-                          'endpoint-' + sanitizeForChartId(endpoint.url)
-                        "
-                      />
+                <!-- Error Rate Chart -->
+                @if (selectedChartType() === 'errorRate') {
+                  <div class="grid grid-cols-1 gap-4 lg:grid-cols-1">
+                    <div class="ring-neutral rounded-lg p-4 ring-1">
+                      <h4 class="text-base-content mb-2 font-semibold">
+                        Error Rate
+                      </h4>
+                      <div class="h-50">
+                        <app-line-chart
+                          [data]="
+                            getCachedEndpointChartData(
+                              endpoint.url,
+                              'errorRate'
+                            ).data
+                          "
+                          [labels]="
+                            getCachedEndpointChartData(
+                              endpoint.url,
+                              'errorRate'
+                            ).labels
+                          "
+                          [height]="200"
+                          [seriesName]="'Error Rate'"
+                          [yAxisLabel]="'Error Rate (%)'"
+                          [chartId]="
+                            'endpoint-' +
+                            sanitizeForChartId(endpoint.url) +
+                            '-error-rate'
+                          "
+                          [syncGroup]="
+                            'endpoint-' + sanitizeForChartId(endpoint.url)
+                          "
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
+                }
               </div>
             </div>
           }
