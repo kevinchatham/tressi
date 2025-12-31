@@ -55,10 +55,6 @@ export class TestDetailComponent {
   // Collapsible state
   readonly testInfoCollapsed = signal(true);
 
-  // Animation state
-  readonly globalTabFadingIn = signal(false);
-  readonly endpointsTabFadingIn = signal(false);
-
   // Computed signals
   readonly testData = computed(() => this.testDetailService.test());
   readonly metricsData = computed(() => this.testDetailService.metrics());
@@ -173,17 +169,7 @@ export class TestDetailComponent {
 
   setActiveTab(tab: 'global' | 'endpoints'): void {
     if (this.activeTabName() === tab) return;
-
     this.activeTabName.set(tab);
-
-    // Handle fade animation
-    if (tab === 'global') {
-      this.globalTabFadingIn.set(true);
-      setTimeout(() => this.globalTabFadingIn.set(false), 300);
-    } else {
-      this.endpointsTabFadingIn.set(true);
-      setTimeout(() => this.endpointsTabFadingIn.set(false), 300);
-    }
   }
 
   getCachedEndpointChartData(url: string, metricType: ChartType): ChartData {

@@ -80,31 +80,31 @@ export const routes: Routes = [
   {
     path: 'server-unavailable',
     component: ServerUnavailableComponent,
-    data: { title: 'Tressi Server Unavailable' },
+    data: { title: 'Tressi - Server Unavailable' },
   },
   {
     path: 'welcome',
     component: WelcomeComponent,
     canActivate: [healthCheckGuard, configGuard],
-    data: { title: 'Tressi Welcome' },
+    data: { title: 'Tressi - Welcome' },
   },
   {
     path: 'settings',
     component: SettingsComponent,
     canActivate: [healthCheckGuard, configGuard],
-    data: { title: 'Tressi Settings' },
+    data: { title: 'Tressi - Settings' },
   },
   {
     path: 'dashboard',
     component: DashboardComponent,
     canActivate: [healthCheckGuard, configGuard],
-    data: { title: 'Tressi Dashboard' },
+    data: { title: 'Tressi - Dashboard' },
   },
   {
     path: 'tests/:testId',
     component: TestDetailComponent,
     canActivate: [healthCheckGuard],
-    data: { title: 'Test Details' },
+    data: { title: 'Tressi - Test Details' },
   },
   {
     path: '',

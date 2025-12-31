@@ -65,54 +65,27 @@
       </div>
 
       <!-- Tabs -->
-      <div class="tabs tabs-boxed">
-        <button
+      <div class="tabs tabs-box">
+        <!-- Global Metrics Tab -->
+        <input
+          type="radio"
+          name="test_detail_tabs"
           class="tab"
-          [class.tab-active]="activeTabName() === 'global'"
-          (click)="setActiveTab('global')"
-        >
-          Global Metrics
-        </button>
-        <button
-          class="tab"
-          [class.tab-active]="activeTabName() === 'endpoints'"
-          (click)="setActiveTab('endpoints')"
-        >
-          Endpoint Metrics
-        </button>
-        <div class="ml-auto flex items-center">
-          <select
-            id="chart-type-select"
-            class="select select-bordered"
-            [value]="selectedChartType()"
-            (change)="onChartTypeChange($event)"
-          >
-            @for (option of chartOptions; track option.value) {
-              <option [value]="option.value">{{ option.label }}</option>
-            }
-          </select>
-        </div>
-      </div>
-
-      <!-- Global Metrics Tab -->
-      @if (activeTabName() === 'global') {
-        <div
-          class="space-y-8 transition-opacity duration-300 ease-out"
-          [class.opacity-0]="globalTabFadingIn()"
-          [class.opacity-100]="!globalTabFadingIn()"
-        >
+          aria-label="Global Metrics"
+          [checked]="activeTabName() === 'global'"
+          (change)="setActiveTab('global')"
+        />
+        <div class="tab-content bg-base-100 border-base-300 p-6">
           <!-- Throughput Chart -->
           @if (isThroughputChart()) {
-            <div class="ring-neutral bg-base-100 rounded-lg p-6 ring-1">
-              <h3 class="mb-4 text-lg font-semibold">Throughput Over Time</h3>
+            <div class="mb-6">
               <div>
                 @if (throughputChartData().data.length > 0) {
                   <app-line-chart
                     [data]="throughputChartData().data"
                     [labels]="throughputChartData().labels"
-                    [height]="300"
-                    [seriesName]="'Throughput'"
-                    [yAxisLabel]="'Requests/sec'"
+                    [height]="350"
+                    [yAxisLabel]="'Req/sec'"
                     [chartId]="'global-throughput'"
                     [syncGroup]="'global'"
                   />
@@ -130,18 +103,14 @@
 
           <!-- Latency Chart -->
           @if (isLatencyChart()) {
-            <div class="ring-neutral bg-base-100 rounded-lg p-6 ring-1">
-              <h3 class="mb-4 text-lg font-semibold">
-                Response Time Over Time
-              </h3>
+            <div class="mb-6">
               <div>
                 @if (latencyChartData().data.length > 0) {
                   <app-line-chart
                     [data]="latencyChartData().data"
                     [labels]="latencyChartData().labels"
-                    [height]="300"
-                    [seriesName]="'Latency'"
-                    [yAxisLabel]="'Response Time (ms)'"
+                    [height]="350"
+                    [yAxisLabel]="'ms'"
                     [chartId]="'global-latency'"
                     [syncGroup]="'global'"
                   />
@@ -159,16 +128,14 @@
 
           <!-- Error Rate Chart -->
           @if (selectedChartType() === 'errorRate') {
-            <div class="ring-neutral bg-base-100 rounded-lg p-6 ring-1">
-              <h3 class="mb-4 text-lg font-semibold">Error Rate Over Time</h3>
+            <div>
               <div>
                 @if (errorRateChartData().data.length > 0) {
                   <app-line-chart
                     [data]="errorRateChartData().data"
                     [labels]="errorRateChartData().labels"
-                    [height]="300"
-                    [seriesName]="'Error Rate'"
-                    [yAxisLabel]="'Error Rate (%)'"
+                    [height]="350"
+                    [yAxisLabel]="'%'"
                     [chartId]="'global-error-rate'"
                     [syncGroup]="'global'"
                   />
@@ -184,15 +151,17 @@
             </div>
           }
         </div>
-      }
 
-      <!-- Endpoint Metrics Tab -->
-      @if (activeTabName() === 'endpoints') {
-        <div
-          class="space-y-8 transition-opacity duration-300 ease-out"
-          [class.opacity-0]="endpointsTabFadingIn()"
-          [class.opacity-100]="!endpointsTabFadingIn()"
-        >
+        <!-- Endpoint Metrics Tab -->
+        <input
+          type="radio"
+          name="test_detail_tabs"
+          class="tab"
+          aria-label="Endpoint Metrics"
+          [checked]="activeTabName() === 'endpoints'"
+          (change)="setActiveTab('endpoints')"
+        />
+        <div class="tab-content bg-base-100 border-base-300 p-6">
           <!-- Endpoint Filter -->
           <app-endpoint-filter
             [endpoints]="endpointUrls()"
@@ -208,7 +177,9 @@
           }
 
           @for (endpoint of endpointSummaries(); track endpoint.url) {
-            <div class="ring-neutral bg-base-100 rounded-lg p-6 ring-1">
+            <div
+              class="ring-neutral bg-base-100 mb-6 rounded-lg p-6 ring-1 last:mb-0"
+            >
               <h3 class="mb-4 text-lg font-semibold break-all">
                 {{ endpoint.url }}
               </h3>
@@ -257,10 +228,7 @@
                   <!-- Throughput Chart -->
                   @if (selectedChartType() === 'throughput') {
                     <div class="ring-neutral rounded-lg p-4 ring-1">
-                      <h4 class="text-base-content mb-2 font-semibold">
-                        Throughput
-                      </h4>
-                      <div class="h-50">
+                      <div>
                         <app-line-chart
                           [data]="
                             getCachedEndpointChartData(
@@ -274,9 +242,8 @@
                               'throughput'
                             ).labels
                           "
-                          [height]="200"
-                          [seriesName]="'Throughput'"
-                          [yAxisLabel]="'Requests/sec'"
+                          [height]="350"
+                          [yAxisLabel]="'Req/sec'"
                           [chartId]="
                             'endpoint-' +
                             sanitizeForChartId(endpoint.url) +
@@ -292,10 +259,7 @@
                   <!-- Latency Chart -->
                   @if (selectedChartType() === 'latency') {
                     <div class="ring-neutral rounded-lg p-4 ring-1">
-                      <h4 class="text-base-content mb-2 font-semibold">
-                        Latency
-                      </h4>
-                      <div class="h-50">
+                      <div>
                         <app-line-chart
                           [data]="
                             getCachedEndpointChartData(endpoint.url, 'latency')
@@ -305,9 +269,8 @@
                             getCachedEndpointChartData(endpoint.url, 'latency')
                               .labels
                           "
-                          [height]="200"
-                          [seriesName]="'Latency'"
-                          [yAxisLabel]="'Response Time (ms)'"
+                          [height]="350"
+                          [yAxisLabel]="'ms'"
                           [chartId]="
                             'endpoint-' +
                             sanitizeForChartId(endpoint.url) +
@@ -325,10 +288,7 @@
                 @if (selectedChartType() === 'errorRate') {
                   <div class="grid grid-cols-1 gap-4 lg:grid-cols-1">
                     <div class="ring-neutral rounded-lg p-4 ring-1">
-                      <h4 class="text-base-content mb-2 font-semibold">
-                        Error Rate
-                      </h4>
-                      <div class="h-50">
+                      <div>
                         <app-line-chart
                           [data]="
                             getCachedEndpointChartData(
@@ -342,9 +302,8 @@
                               'errorRate'
                             ).labels
                           "
-                          [height]="200"
-                          [seriesName]="'Error Rate'"
-                          [yAxisLabel]="'Error Rate (%)'"
+                          [height]="350"
+                          [yAxisLabel]="'%'"
                           [chartId]="
                             'endpoint-' +
                             sanitizeForChartId(endpoint.url) +
@@ -362,7 +321,22 @@
             </div>
           }
         </div>
-      }
+
+        <!-- Chart Type Selector - positioned after tabs -->
+        <div class="ml-auto flex items-center self-center hover:cursor-pointer">
+          <select
+            id="chart-type-select"
+            class="select select-ghost border-none outline-none"
+            [value]="selectedChartType()"
+            (change)="onChartTypeChange($event)"
+          >
+            <option disabled selected>Chart Type</option>
+            @for (option of chartOptions; track option.value) {
+              <option [value]="option.value">{{ option.label }}</option>
+            }
+          </select>
+        </div>
+      </div>
 
       <!-- Delete Confirmation Modal -->
       <app-delete-confirmation-modal
