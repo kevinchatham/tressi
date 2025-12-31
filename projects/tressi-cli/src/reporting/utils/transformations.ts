@@ -15,7 +15,7 @@ export function transformAggregatedMetricToTestSummary(
 
   // Calculate total configured RPS from all endpoints
   const totalConfiguredRps = config.requests.reduce((sum, request) => {
-    return sum + (request.rps || 1); // Default to 1 if not specified
+    return sum + request.rps;
   }, 0);
 
   // Calculate achieved percentage based on configured RPS instead of theoretical max
