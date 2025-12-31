@@ -54,7 +54,7 @@ export function transformAggregatedMetricToTestSummary(
         p95LatencyMs: endpoint.p95Latency,
         p99LatencyMs: endpoint.p99Latency,
         actualRps: endpoint.requestsPerSecond,
-        theoreticalMaxRps: Math.round(theoreticalMaxRps * 100) / 100,
+        theoreticalMaxRps: roundToDecimals(theoreticalMaxRps),
       };
     },
   );
