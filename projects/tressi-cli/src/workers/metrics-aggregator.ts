@@ -8,6 +8,7 @@ import { ServerEvents } from '../events/event-types';
 import { globalEventEmitter } from '../events/global-event-emitter';
 import type { TestSummary } from '../reporting/types';
 import { transformAggregatedMetricToTestSummary } from '../reporting/utils/transformations';
+import { roundToDecimals } from '../utils/math-utils';
 import {
   IBodySampleManager,
   IHdrHistogramManager,
@@ -132,15 +133,6 @@ export class MetricsAggregator implements IMetricsAggregator {
       // eslint-disable-next-line no-console
       console.error('Failed to persist metrics to database:', error);
     }
-  }
-
-  /**
-   * Round a number to 4 decimal places
-   * @param value Number to round
-   * @returns Rounded number
-   */
-  private roundTo4Decimals(value: number): number {
-    return Math.round(value * 10000) / 10000;
   }
 
   /**
@@ -288,24 +280,24 @@ export class MetricsAggregator implements IMetricsAggregator {
         totalRequests: endpointTotalRequests,
         successfulRequests: endpointSuccessRequests,
         failedRequests: endpointFailureRequests,
-        errorRate: this.roundTo4Decimals(
+        errorRate: roundToDecimals(
           endpointTotalRequests > 0
             ? endpointFailureRequests / endpointTotalRequests
             : 0,
         ),
-        averageLatency: this.roundTo4Decimals(endpointStats.averageLatency),
-        minLatency: this.roundTo4Decimals(endpointStats.minLatency),
-        maxLatency: this.roundTo4Decimals(endpointStats.maxLatency),
-        p50Latency: this.roundTo4Decimals(endpointStats.p50Latency),
-        p95Latency: this.roundTo4Decimals(endpointStats.p95Latency),
-        p99Latency: this.roundTo4Decimals(endpointStats.p99Latency),
-        requestsPerSecond: this.roundTo4Decimals(
+        averageLatency: roundToDecimals(endpointStats.averageLatency),
+        minLatency: roundToDecimals(endpointStats.minLatency),
+        maxLatency: roundToDecimals(endpointStats.maxLatency),
+        p50Latency: roundToDecimals(endpointStats.p50Latency),
+        p95Latency: roundToDecimals(endpointStats.p95Latency),
+        p99Latency: roundToDecimals(endpointStats.p99Latency),
+        requestsPerSecond: roundToDecimals(
           duration > 0 ? endpointTotalRequests / (duration / 1000) : 0,
         ),
         statusCodeDistribution: statusCounts,
         networkBytesSent: endpointBytesSent,
         networkBytesReceived: endpointBytesReceived,
-        networkThroughputMBps: this.roundTo4Decimals(endpointThroughputMBps),
+        networkThroughputMBps: roundToDecimals(endpointThroughputMBps),
       };
     });
 
@@ -334,18 +326,18 @@ export class MetricsAggregator implements IMetricsAggregator {
       totalRequests,
       successfulRequests: totalSuccess,
       failedRequests: totalFailure,
-      errorRate: this.roundTo4Decimals(errorRate),
-      averageLatency: this.roundTo4Decimals(globalStats.averageLatency),
-      minLatency: this.roundTo4Decimals(globalStats.minLatency),
-      maxLatency: this.roundTo4Decimals(globalStats.maxLatency),
-      p50Latency: this.roundTo4Decimals(globalStats.p50Latency),
-      p95Latency: this.roundTo4Decimals(globalStats.p95Latency),
-      p99Latency: this.roundTo4Decimals(globalStats.p99Latency),
-      requestsPerSecond: this.roundTo4Decimals(requestsPerSecond),
+      errorRate: roundToDecimals(errorRate),
+      averageLatency: roundToDecimals(globalStats.averageLatency),
+      minLatency: roundToDecimals(globalStats.minLatency),
+      maxLatency: roundToDecimals(globalStats.maxLatency),
+      p50Latency: roundToDecimals(globalStats.p50Latency),
+      p95Latency: roundToDecimals(globalStats.p95Latency),
+      p99Latency: roundToDecimals(globalStats.p99Latency),
+      requestsPerSecond: roundToDecimals(requestsPerSecond),
       statusCodeDistribution: globalStatusCodeDistribution,
       networkBytesSent: totalBytesSent,
       networkBytesReceived: totalBytesReceived,
-      networkThroughputMBps: this.roundTo4Decimals(globalThroughputMBps),
+      networkThroughputMBps: roundToDecimals(globalThroughputMBps),
     };
 
     return {
@@ -586,14 +578,12 @@ export class MetricsAggregator implements IMetricsAggregator {
     });
 
     return {
-      averageLatency: this.roundTo4Decimals(averageLatency),
-      minLatency: this.roundTo4Decimals(
-        minLatency === Infinity ? 0 : minLatency,
-      ),
-      maxLatency: this.roundTo4Decimals(maxLatency),
-      p50Latency: this.roundTo4Decimals(weightedP50),
-      p95Latency: this.roundTo4Decimals(weightedP95),
-      p99Latency: this.roundTo4Decimals(weightedP99),
+      averageLatency: roundToDecimals(averageLatency),
+      minLatency: roundToDecimals(minLatency === Infinity ? 0 : minLatency),
+      maxLatency: roundToDecimals(maxLatency),
+      p50Latency: roundToDecimals(weightedP50),
+      p95Latency: roundToDecimals(weightedP95),
+      p99Latency: roundToDecimals(weightedP99),
       totalCount,
     };
   }

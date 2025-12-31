@@ -1,5 +1,6 @@
 import pkg from '../../../../../package.json';
 import type { AggregatedMetric } from '../../common/metrics';
+import { roundToDecimals } from '../../utils/math-utils';
 import { TestSummary } from '../types';
 
 export function transformAggregatedMetricToTestSummary(
@@ -28,9 +29,9 @@ export function transformAggregatedMetricToTestSummary(
     p95LatencyMs: global.p95Latency,
     p99LatencyMs: global.p99Latency,
     actualRps: global.requestsPerSecond,
-    theoreticalMaxRps: Math.round(theoreticalMaxRps * 100) / 100,
-    achievedPercentage: Math.round(achievedPercentage * 100) / 100,
-    duration: actualDurationSec,
+    theoreticalMaxRps: roundToDecimals(theoreticalMaxRps),
+    achievedPercentage: roundToDecimals(achievedPercentage),
+    duration: roundToDecimals(actualDurationSec),
     avgErrorRate:
       global.totalRequests > 0
         ? (global.failedRequests / global.totalRequests) * 100

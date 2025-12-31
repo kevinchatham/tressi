@@ -684,9 +684,7 @@ async function myCustomScript() {
 
   // Now you can use the summary object for custom logic
   if (summary.global.avgLatencyMs > 500) {
-    console.error(
-      `High latency detected: ${summary.global.avgLatencyMs.toFixed(0)}ms!`,
-    );
+    console.error(`High latency detected: ${summary.global.avgLatencyMs}ms!`);
     // You could trigger an alert or fail a CI/CD pipeline here
   }
 
@@ -739,7 +737,7 @@ async function earlyExitTest() {
     console.log('Test completed successfully!');
     console.log(`Total requests: ${summary.global.totalRequests}`);
     console.log(`Failed requests: ${summary.global.failedRequests}`);
-    console.log(`Average latency: ${summary.global.avgLatencyMs.toFixed(2)}ms`);
+    console.log(`Average latency: ${summary.global.avgLatencyMs}ms`);
 
     // Check if test exited early
     if (summary.global.failedRequests > 0) {

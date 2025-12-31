@@ -72,19 +72,14 @@ export class StatsFormatter {
    * Formats latency in milliseconds with appropriate precision
    */
   private formatLatency(ms: number): string {
-    if (ms < 1) return `${ms.toFixed(2)}ms`;
-    if (ms < 10) return `${ms.toFixed(1)}ms`;
-    return `${Math.round(ms)}ms`;
+    return `${ms}ms`;
   }
 
   /**
    * Formats requests per second with appropriate precision
    */
   private formatRps(rps: number): string {
-    if (rps === 0) return '0';
-    if (rps < 1) return rps.toFixed(2);
-    if (rps < 10) return rps.toFixed(1);
-    return Math.round(rps).toLocaleString();
+    return String(rps);
   }
 
   /**
@@ -92,8 +87,8 @@ export class StatsFormatter {
    */
   private formatPercentage(percentage: number): string {
     if (percentage === 0) return '0%';
-    if (percentage < 0.1) return `${percentage.toFixed(2)}%`;
-    if (percentage < 1) return `${percentage.toFixed(1)}%`;
+    if (percentage < 0.1) return `${percentage}%`;
+    if (percentage < 1) return `${percentage}%`;
     return `${Math.round(percentage)}%`;
   }
 
@@ -101,12 +96,12 @@ export class StatsFormatter {
    * Formats duration in seconds
    */
   private formatDuration(seconds: number): string {
-    if (seconds < 1) return `${(seconds * 1000).toFixed(0)}ms`;
-    if (seconds < 60) return `${seconds.toFixed(1)}s`;
+    if (seconds < 1) return `${seconds * 1000}ms`;
+    if (seconds < 60) return `${seconds}s`;
 
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
-    return `${minutes}m ${remainingSeconds.toFixed(0)}s`;
+    return `${minutes}m ${remainingSeconds}s`;
   }
 
   /**
@@ -179,12 +174,12 @@ export class StatsFormatter {
   private calculateSuccessRate(global: GlobalSummary): string {
     if (global.totalRequests === 0) return '0.0';
     const rate = (global.successfulRequests / global.totalRequests) * 100;
-    return rate.toFixed(1);
+    return String(rate);
   }
 
   private calculateFailureRate(global: GlobalSummary): string {
     if (global.totalRequests === 0) return '0.0';
     const rate = (global.failedRequests / global.totalRequests) * 100;
-    return rate.toFixed(1);
+    return String(rate);
   }
 }

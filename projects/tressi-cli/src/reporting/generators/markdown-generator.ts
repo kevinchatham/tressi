@@ -113,9 +113,7 @@ export class MarkdownGenerator {
         (endpoint.failedRequests / endpoint.totalRequests) * 100;
       if (failureRate > 10) {
         warnings.push(
-          `**High Failure Rate**: The endpoint \`${endpoint.url}\` had a failure rate of ${failureRate.toFixed(
-            1,
-          )}%. This may indicate a problem under load.`,
+          `**High Failure Rate**: The endpoint \`${endpoint.url}\` had a failure rate of ${failureRate}%. This may indicate a problem under load.`,
         );
       }
     }
@@ -156,17 +154,17 @@ export class MarkdownGenerator {
     let md = `## Global Summary\n\n`;
     md += `> *A high-level overview of the entire test performance across all endpoints.*\n\n`;
     md += `| Stat | Value |\n| --- | --- |\n`;
-    md += `| Duration | ${global.duration.toFixed(0)}s |\n`;
+    md += `| Duration | ${global.duration}s |\n`;
     md += `| Total Requests | ${global.totalRequests} |\n`;
     md += `| Successful | ${global.successfulRequests} |\n`;
     md += `| Failed | ${global.failedRequests} |\n`;
-    md += `| Req/s | ${global.actualRps.toFixed(0)} |\n`;
-    md += `| Req/m | ${(global.actualRps * 60).toFixed(0)} |\n`;
-    md += `| Avg Latency | ${global.avgLatencyMs.toFixed(0)}ms |\n`;
-    md += `| Min Latency | ${global.minLatencyMs.toFixed(0)}ms |\n`;
-    md += `| Max Latency | ${global.maxLatencyMs.toFixed(0)}ms |\n`;
-    md += `| p95 Latency | ${global.p95LatencyMs.toFixed(0)}ms |\n`;
-    md += `| p99 Latency | ${global.p99LatencyMs.toFixed(0)}ms |\n\n`;
+    md += `| Req/s | ${global.actualRps} |\n`;
+    md += `| Req/m | ${global.actualRps * 60} |\n`;
+    md += `| Avg Latency | ${global.avgLatencyMs}ms |\n`;
+    md += `| Min Latency | ${global.minLatencyMs}ms |\n`;
+    md += `| Max Latency | ${global.maxLatencyMs}ms |\n`;
+    md += `| p95 Latency | ${global.p95LatencyMs}ms |\n`;
+    md += `| p99 Latency | ${global.p99LatencyMs}ms |\n\n`;
 
     return md;
   }
@@ -270,7 +268,7 @@ export class MarkdownGenerator {
     md += `| Endpoint | Avg | Min | Max | P95 | P99 |\n`;
     md += `|---|---|---|---|---|---|\n`;
     for (const endpoint of endpoints) {
-      md += `| ${endpoint.method} ${endpoint.url} | ${endpoint.avgLatencyMs.toFixed(0)}ms | ${endpoint.minLatencyMs.toFixed(0)}ms | ${endpoint.maxLatencyMs.toFixed(0)}ms | ${endpoint.p95LatencyMs.toFixed(0)}ms | ${endpoint.p99LatencyMs.toFixed(0)}ms |\n`;
+      md += `| ${endpoint.method} ${endpoint.url} | ${endpoint.avgLatencyMs}ms | ${endpoint.minLatencyMs}ms | ${endpoint.maxLatencyMs}ms | ${endpoint.p95LatencyMs}ms | ${endpoint.p99LatencyMs}ms |\n`;
     }
 
     return md;

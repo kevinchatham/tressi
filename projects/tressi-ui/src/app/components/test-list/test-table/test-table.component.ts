@@ -55,27 +55,27 @@ export class TestTableComponent {
       case 'summary.global.totalRequests':
         return g.totalRequests.toLocaleString();
       case 'summary.global.errorRate':
-        return `${((g.failedRequests / g.totalRequests) * 100).toFixed(2)}%`;
+        return `${(g.failedRequests / g.totalRequests) * 100}%`;
       case 'summary.global.successfulRequests':
         return g.successfulRequests.toLocaleString();
       case 'summary.global.failedRequests':
         return g.failedRequests.toLocaleString();
       case 'summary.global.averageLatency':
-        return `${g.avgLatencyMs.toFixed(0)}ms`;
+        return `${g.avgLatencyMs}ms`;
       case 'summary.global.p95Latency':
-        return `${g.p95LatencyMs.toFixed(0)}ms`;
+        return `${g.p95LatencyMs}ms`;
       case 'summary.global.p99Latency':
-        return `${g.p99LatencyMs.toFixed(0)}ms`;
+        return `${g.p99LatencyMs}ms`;
       case 'summary.global.requestsPerSecond':
         return g.actualRps.toLocaleString();
       case 'summary.global.achievedPercentage':
-        return `${g.achievedPercentage.toFixed(2)}%`;
+        return `${g.achievedPercentage}%`;
       case 'summary.tressiVersion':
         return test.summary.tressiVersion;
       case 'summary.global.minLatency':
-        return `${g.minLatencyMs.toFixed(0)}ms`;
+        return `${g.minLatencyMs}ms`;
       case 'summary.global.maxLatency':
-        return `${g.maxLatencyMs.toFixed(0)}ms`;
+        return `${g.maxLatencyMs}ms`;
       case 'summary.global.theoreticalMaxRps':
         return g.theoreticalMaxRps.toLocaleString();
       default:
@@ -115,7 +115,7 @@ export class TestTableComponent {
     if (test.summary) {
       const { global: g } = test.summary;
       const errorRate = (g.failedRequests / g.totalRequests) * 100;
-      return `${errorRate.toFixed(2)}%`;
+      return `${errorRate}%`;
     }
 
     // Failed tests without summary

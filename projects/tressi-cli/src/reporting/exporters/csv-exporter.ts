@@ -40,7 +40,7 @@ export class CsvExporter {
       result.timestamp,
       this.escapeCsvValue(result.url),
       result.status,
-      result.latencyMs.toFixed(0),
+      result.latencyMs,
       result.success,
       this.escapeCsvValue(result.error || ''),
       result.method,
