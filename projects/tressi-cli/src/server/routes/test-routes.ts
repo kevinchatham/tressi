@@ -88,7 +88,7 @@ const app = new Hono()
         (async (): Promise<void> => {
           try {
             // runLoadTest now returns the summary
-            const summary = await runLoadTest(config);
+            const summary = await runLoadTest(config, id);
 
             // Update test to completed status WITH embedded summary
             await testStorage.edit({

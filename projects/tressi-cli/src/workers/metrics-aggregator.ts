@@ -11,12 +11,17 @@ import type { TestSummary } from '../reporting/types';
 import { transformAggregatedMetricToTestSummary } from '../reporting/utils/transformations';
 import { roundToDecimals } from '../utils/math-utils';
 import {
-  IBodySampleManager,
   IHdrHistogramManager,
   IMetricsAggregator,
   IStatsCounterManager,
 } from './interfaces';
 import { LatencyHistogram } from './types';
+
+// Store for body samples collected during test
+const bodySamplesStore = new Map<
+  string,
+  Map<string, Array<{ statusCode: number; body: string }>>
+>();
 
 export class MetricsAggregator implements IMetricsAggregator {
   private pollingInterval: NodeJS.Timeout | null = null;
@@ -27,7 +32,6 @@ export class MetricsAggregator implements IMetricsAggregator {
   constructor(
     private hdrHistogramManagers: IHdrHistogramManager[],
     private statsCounterManagers: IStatsCounterManager[],
-    private bodySampleManagers: IBodySampleManager[],
     private endpointMethodMap: Record<string, string> = {},
   ) {}
 
@@ -375,29 +379,87 @@ export class MetricsAggregator implements IMetricsAggregator {
       throw new Error('Config not set in MetricsAggregator');
     }
 
+    // Collect body samples for this test
+    this.collectBodySamples(testId);
+    const bodySamplesMap = this.getCollectedBodySamples(testId);
+
+    // Convert Map to Record for TestSummary
+    const bodySamples: Record<
+      string,
+      Array<{ statusCode: number; body: string }>
+    > = {};
+
+    Array.from(bodySamplesMap.entries()).forEach(([url, samples]) => {
+      bodySamples[url] = samples;
+    });
+
     return transformAggregatedMetricToTestSummary(
       metrics,
       duration,
       this.endpointMethodMap,
       this.config,
       testId,
+      bodySamples,
     );
   }
 
   /**
-   * Get body samples for a specific endpoint
-   * @param endpointIndex Global endpoint index
-   * @returns Array of body samples
+   * Collect body samples for all endpoints and store them
+   * @param testId The test ID to associate samples with
    */
-  getBodySamplesForEndpoint(endpointIndex: number): Array<{
-    sampleIndex: number;
-    statusCode: number;
-  }> {
-    if (endpointIndex < 0 || endpointIndex >= this.bodySampleManagers.length) {
-      return [];
+  collectBodySamples(testId: string): void {
+    // If we have stored body samples for 'current' test, move them to the testId
+    if (bodySamplesStore.has('current')) {
+      const currentSamples = bodySamplesStore.get('current')!;
+      bodySamplesStore.set(testId, new Map(currentSamples));
+      bodySamplesStore.delete('current');
+    }
+  }
+
+  /**
+   * Get collected body samples for a test
+   * @param testId The test ID
+   * @returns Map of endpoint URL to body samples
+   */
+  getCollectedBodySamples(
+    testId: string,
+  ): Map<string, Array<{ statusCode: number; body: string }>> {
+    const samples = bodySamplesStore.get(testId) || new Map();
+    return samples;
+  }
+
+  /**
+   * Record a body sample from a worker thread
+   * @param statusCode HTTP status code
+   * @param body Response body content
+   * @param url Endpoint URL
+   */
+  recordBodySample(statusCode: number, body: string, url: string): void {
+    // For now, store in a simple in-memory map
+    // In a real implementation, this would be stored in a database or passed to the test summary
+    const key = url;
+    if (!bodySamplesStore.has('current')) {
+      bodySamplesStore.set('current', new Map());
+    }
+    const testSamples = bodySamplesStore.get('current')!;
+
+    if (!testSamples.has(key)) {
+      testSamples.set(key, []);
     }
 
-    return this.bodySampleManagers[endpointIndex].getBodySampleIndices(0);
+    const endpointSamples = testSamples.get(key)!;
+
+    // Only store one sample per status code (as per the original design)
+    const existingSampleIndex = endpointSamples.findIndex(
+      (s) => s.statusCode === statusCode,
+    );
+
+    if (existingSampleIndex === -1) {
+      endpointSamples.push({
+        statusCode,
+        body,
+      });
+    }
   }
 
   /**
@@ -412,13 +474,6 @@ export class MetricsAggregator implements IMetricsAggregator {
       for (let i = 0; i < endpoints; i++) {
         // Note: Individual counters can't be reset due to atomic safety
         // This is intentional - counters should only increment
-      }
-    });
-
-    // Reset body sample managers
-    this.bodySampleManagers.forEach((manager) => {
-      for (let i = 0; i < manager.getEndpointsCount(); i++) {
-        manager.clearBodySamples(i);
       }
     });
   }

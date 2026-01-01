@@ -107,6 +107,7 @@ describe('config', () => {
     it('should return validation errors for invalid config', async () => {
       const invalidConfig = { ...minimalConfig, requests: 'not-an-array' };
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await expect(loadConfig(invalidConfig as any)).rejects.toThrow();
     });
 
@@ -116,6 +117,7 @@ describe('config', () => {
         requests: [{}], // Missing required fields
       };
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await expect(loadConfig(invalidConfig as any)).rejects.toThrow();
     });
 

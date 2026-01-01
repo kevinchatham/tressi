@@ -75,4 +75,15 @@ export class Runner extends EventEmitter<IRunnerEvents> {
   public getConfig(): TressiConfig {
     return this.config;
   }
+
+  /**
+   * Gets body samples collected during the test.
+   * @param testId The test ID to retrieve samples for
+   * @returns Record of endpoint URL to body samples
+   */
+  public getBodySamples(
+    testId: string,
+  ): Record<string, Array<{ statusCode: number; body: string }>> {
+    return this.workerPool.getBodySamples(testId);
+  }
 }

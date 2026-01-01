@@ -54,6 +54,7 @@ export class ServerManager {
 
       // Also listen for stderr in case there are startup issues
       this.process?.stderr?.on('data', (data: Buffer) => {
+        // eslint-disable-next-line no-console
         console.error('Server stderr:', data.toString());
       });
     });

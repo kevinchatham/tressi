@@ -45,49 +45,6 @@
  * - GET /rate-limit - 30% chance of returning 429 rate limit error
  * - GET / - Root endpoint with available endpoints documentation
  */
-
-/**
- * Tressi Test Server - HTTP Testing Endpoints
- *
- * This server provides various HTTP endpoints for testing different scenarios.
- * All endpoints support GET method unless specified otherwise.
- *
- * ENDPOINTS BY HTTP METHOD:
- *
- * GET endpoints:
- * - /health - Health check with uptime and request count
- * - /status/:code - Returns specified HTTP status code (100-599)
- * - /success - 200 OK response
- * - /created - 201 Created response
- * - /accepted - 202 Accepted response
- * - /bad-request - 400 Bad Request response
- * - /unauthorized - 401 Unauthorized response
- * - /forbidden - 403 Forbidden response
- * - /not-found - 404 Not Found response
- * - /server-error - 500 Internal Server Error response
- * - /service-unavailable - 503 Service Unavailable response
- * - /delay/:ms - Delays response by specified milliseconds (max 30s)
- * - /timeout - Never responds (for timeout testing)
- * - /chunked - Chunked transfer encoding with 5 chunks over 5 seconds
- * - /random-size - Returns random response size (100-10100 bytes)
- * - /headers - Returns request headers and client info
- * - /ip - Returns client IP address
- * - /metrics - Server metrics (uptime, requests, memory usage)
- * - /config - Server configuration details
- * - /redirect/:code - Redirects to specified URL with given status code
- *   Usage: /redirect/301?url=https://example.com
- *   Valid codes: 301, 302, 303, 307, 308
- * - /payload/:size - Returns response of specified size in KB (1-100 KB)
- * - /slow-response - Slow incremental JSON response over 5 seconds
- * - /rate-limit - 30% chance of returning 429 rate limit error
- * - / - Root endpoint with available endpoints documentation
- *
- * POST endpoints:
- * - /echo - Echoes request data including body (supports JSON and text payloads)
- *
- * All endpoints return JSON responses unless specified otherwise.
- */
-
 /* eslint-disable no-console */
 import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
@@ -487,7 +444,7 @@ app.get('/', (c) => {
       chunked: '/chunked - Chunked transfer encoding',
       randomSize: '/random-size - Random response size',
       echo: '/echo - Echoes request data',
-      redirect: '/redirect/:code/:url - Redirect testing',
+      redirect: '/redirect/:code?url= - Redirect testing',
       payload: '/payload/:size - Returns response of specified size (KB)',
       slowResponse: '/slow-response - Slow incremental response',
       rateLimit: '/rate-limit - Simulates rate limiting',
@@ -524,7 +481,7 @@ app.notFound((c) => {
         '/chunked',
         '/random-size',
         '/echo',
-        '/redirect/:code/:url',
+        '/redirect/:code?url=',
         '/payload/:size',
         '/slow-response',
         '/rate-limit',
@@ -559,15 +516,59 @@ app.onError((err, c) => {
 // Start server
 console.log(`🚀 Tressi Test Server starting at http://localhost:${PORT}`);
 console.log('Available endpoints:');
-console.log('  GET  /health - Health check');
-console.log('  GET  /status/:code - Return specific status code');
-console.log('  GET  /delay/:ms - Delayed response');
-console.log('  GET  /timeout - Never responds (timeout testing)');
-console.log('  GET  /echo - Echo request data');
-console.log('  GET  /payload/:size - Return response of specified size (KB)');
-console.log('  GET  /metrics - Server metrics');
-console.log('  GET  / - This help message');
-console.log('Press Ctrl+C to stop the server');
+console.log('\n📊 Health & Metrics:');
+console.log('  GET  /health - Health check with uptime and request count');
+console.log(
+  '  GET  /metrics - Server metrics (uptime, requests, memory usage)',
+);
+console.log('  GET  /config - Server configuration details');
+console.log('\n🔢 Status Code Testing:');
+console.log(
+  '  GET  /status/:code - Returns specified HTTP status code (100-599)',
+);
+console.log('  GET  /success - 200 OK');
+console.log('  GET  /created - 201 Created');
+console.log('  GET  /accepted - 202 Accepted');
+console.log('  GET  /bad-request - 400 Bad Request');
+console.log('  GET  /unauthorized - 401 Unauthorized');
+console.log('  GET  /forbidden - 403 Forbidden');
+console.log('  GET  /not-found - 404 Not Found');
+console.log('  GET  /server-error - 500 Internal Server Error');
+console.log('  GET  /service-unavailable - 503 Service Unavailable');
+console.log('\n⏱️  Timing & Performance:');
+console.log(
+  '  GET  /delay/:ms - Delays response by specified milliseconds (max 30s)',
+);
+console.log('  GET  /timeout - Never responds (for timeout testing)');
+console.log(
+  '  GET  /slow-response - Slow incremental JSON response over 5 seconds',
+);
+console.log(
+  '  GET  /chunked - Chunked transfer encoding with 5 chunks over 5 seconds',
+);
+console.log('\n📦 Response Size Testing:');
+console.log(
+  '  GET  /random-size - Returns random response size (100-10100 bytes)',
+);
+console.log(
+  '  GET  /payload/:size - Returns response of specified size in KB (1-100 KB)',
+);
+console.log('\n🔍 Request Inspection:');
+console.log('  GET  /echo - Echoes request data (method, URL, headers, query)');
+console.log('  POST /echo - Echoes request data including body');
+console.log('  GET  /headers - Returns request headers and client info');
+console.log('  GET  /ip - Returns client IP address');
+console.log('\n🔄 Redirect Testing:');
+console.log(
+  '  GET  /redirect/:code?url= - Redirects to specified URL with given status code',
+);
+console.log('       Valid codes: 301, 302, 303, 307, 308');
+console.log('\n🚦 Miscellaneous:');
+console.log(
+  '  GET  /rate-limit - 30% chance of returning 429 rate limit error',
+);
+console.log('  GET  / - Root endpoint with available endpoints documentation');
+console.log('\nPress Ctrl+C to stop the server');
 
 const server = serve({
   fetch: app.fetch,

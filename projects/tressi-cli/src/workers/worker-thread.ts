@@ -4,7 +4,6 @@ import { TressiRequestConfig } from '../common/config/types';
 import { RequestExecutor } from '../http/request-executor';
 import { ResponseSampler } from '../http/response-sampler';
 import { terminal } from '../tui/terminal';
-import { BodySampleManager } from './shared-memory/body-sample-manager';
 import { EndpointStateManager } from './shared-memory/endpoint-state-manager';
 import { HdrHistogramManager } from './shared-memory/hdr-histogram-manager';
 import { StatsCounterManager } from './shared-memory/stats-counter-manager';
@@ -36,7 +35,6 @@ export class WorkerThread {
   private rateLimiter: WorkerRateLimiter;
   private statsCounterManager: StatsCounterManager;
   private hdrHistogramManager: HdrHistogramManager;
-  private bodySampleManagers: BodySampleManager[];
   private workerStateManager: WorkerStateManager;
   private endpointStateManager: EndpointStateManager;
   private requestExecutor: RequestExecutor;
@@ -69,11 +67,6 @@ export class WorkerThread {
       120_000_000,
       data.histogramBuffer,
     );
-
-    // Create body sample managers for each endpoint
-    this.bodySampleManagers = data.bodySampleBuffers.map((buffer) => {
-      return new BodySampleManager(1, 1000, buffer);
-    });
 
     this.workerStateManager = new WorkerStateManager(
       this.totalWorkers,
@@ -246,18 +239,16 @@ export class WorkerThread {
       // Record latency
       this.hdrHistogramManager.recordLatency(localEndpointIndex, latency);
 
-      // Record body sample if response body exists
-      if (result.body && result.status) {
-        // Record body sample using the correct body sample manager
-        if (globalEndpointIndex < this.bodySampleManagers.length) {
-          // For now, use a simple index - in real implementation, this would be coordinated
-          const sampleIndex = Math.floor(Math.random() * 1000);
-          this.bodySampleManagers[globalEndpointIndex].recordBodySample(
-            0, // Always 0 for per-endpoint managers
-            sampleIndex,
-            result.status,
-          );
-        }
+      // Send body sample to main thread if response body exists
+      if (result.body && result.status && parentPort) {
+        parentPort.postMessage({
+          type: 'bodySample',
+          endpointIndex: globalEndpointIndex,
+          statusCode: result.status,
+          body: result.body,
+          url: request.url,
+          method: request.method || 'GET',
+        });
       }
 
       // Release result object back to pool

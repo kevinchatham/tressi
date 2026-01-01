@@ -94,6 +94,13 @@ export type EndpointSummary = {
   actualRps: number;
   /** Theoretical maximum requests per second based on average latency. */
   theoreticalMaxRps: number;
+  /** Response body samples captured for this endpoint during the test. */
+  bodySamples?: Array<{
+    /** The HTTP status code of the sampled response. */
+    statusCode: number;
+    /** The sampled response body. */
+    body: string;
+  }>;
 };
 
 /**
@@ -128,6 +135,16 @@ export type GlobalSummary = {
   duration: number;
   /** Average error rate across all endpoints as a percentage. */
   avgErrorRate: number;
+  /** Response body samples captured across all endpoints during the test. */
+  bodySamples?: Record<
+    string,
+    Array<{
+      /** The HTTP status code of the sampled response. */
+      statusCode: number;
+      /** The sampled response body. */
+      body: string;
+    }>
+  >;
 };
 
 /**

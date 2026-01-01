@@ -10,6 +10,7 @@ export function transformAggregatedMetricToTestSummary(
   endpointMethodMap: Record<string, string>,
   config: TressiConfig,
   testId?: string,
+  bodySamples?: Record<string, Array<{ statusCode: number; body: string }>>,
 ): TestSummary {
   const global = metrics.global;
 
@@ -45,12 +46,14 @@ export function transformAggregatedMetricToTestSummary(
       global.totalRequests > 0
         ? (global.failedRequests / global.totalRequests) * 100
         : 0,
+    bodySamples,
   };
 
   const endpointSummaries = Object.entries(metrics.endpoints).map(
     ([url, endpoint]) => {
       const theoreticalMaxRps =
         endpoint.averageLatency > 0 ? 1000 / endpoint.averageLatency : 0;
+      const endpointBodySamples = bodySamples?.[url] || [];
       return {
         method: endpointMethodMap[url],
         url,
@@ -64,6 +67,7 @@ export function transformAggregatedMetricToTestSummary(
         p99LatencyMs: endpoint.p99Latency,
         actualRps: endpoint.requestsPerSecond,
         theoreticalMaxRps: roundToDecimals(theoreticalMaxRps),
+        bodySamples: endpointBodySamples,
       };
     },
   );

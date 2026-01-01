@@ -1,6 +1,5 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
-import { logger } from 'hono/logger';
 
 import { ServerEventMessage, ServerEvents } from '../../events/event-types';
 import { globalEventEmitter } from '../../events/global-event-emitter';
@@ -22,7 +21,6 @@ import tests from './test-routes';
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export function createApp(sseManager: ISSEClientManager, port: number) {
   const app = new Hono()
-    .use(logger())
     .use('*', async (c, next) => {
       const middleware = cors({
         origin: [`http://localhost:${port}`, 'http://localhost:4200'],

@@ -66,7 +66,6 @@ describe('SharedMemoryFactory', () => {
       expect(result.hdrHistogram).toHaveLength(2);
       expect(result.workerState).toBeDefined();
       expect(result.statsCounter).toHaveLength(2);
-      expect(result.bodySample).toHaveLength(4);
       expect(result.endpointState).toBeDefined();
 
       // Check that all managers are properly initialized
@@ -114,7 +113,6 @@ describe('SharedMemoryFactory', () => {
       const result = SharedMemoryFactory.createManagers(2, []);
 
       expect(result.hdrHistogram).toHaveLength(2);
-      expect(result.bodySample).toHaveLength(0);
       expect(result.endpointState.getTotalEndpoints()).toBe(0);
     });
   });
@@ -217,7 +215,6 @@ describe('SharedMemoryFactory', () => {
 
       expect('error' in result).toBe(false);
       if (!('error' in result)) {
-        expect(result.bodySample).toHaveLength(0);
         expect(result.endpointState.getTotalEndpoints()).toBe(0);
       }
     });
@@ -320,7 +317,6 @@ describe('SharedMemoryFactory', () => {
       // Verify endpoint counts match
       const totalEndpoints = endpoints.length;
       expect(result.endpointState.getTotalEndpoints()).toBe(totalEndpoints);
-      expect(result.bodySample).toHaveLength(totalEndpoints);
     });
 
     it('should handle realistic load testing configuration', () => {
@@ -354,7 +350,6 @@ describe('SharedMemoryFactory', () => {
 
       expect(result.hdrHistogram).toHaveLength(workersCount);
       expect(result.statsCounter).toHaveLength(workersCount);
-      expect(result.bodySample).toHaveLength(endpoints.length);
 
       // Verify memory usage is reasonable
       const memoryUsage = SharedMemoryFactory.calculateMemoryUsage(

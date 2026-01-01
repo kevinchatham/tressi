@@ -177,7 +177,10 @@ function printEndpointSummary(summary: TestSummary): void {
  * @param config The TressiConfig for the test.
  * @returns A Promise that resolves with the TestSummary object.
  */
-export async function runLoadTest(config: TressiConfig): Promise<TestSummary> {
+export async function runLoadTest(
+  config: TressiConfig,
+  testId?: string,
+): Promise<TestSummary> {
   const { silent, exportPath } = config.options;
 
   const runner = new Runner(config);
@@ -209,6 +212,7 @@ export async function runLoadTest(config: TressiConfig): Promise<TestSummary> {
   const summary = await generateTestSummaryFromWorkers(
     actualDurationSec,
     runner,
+    testId,
   );
 
   if (exportPath && !silent) {
@@ -312,6 +316,7 @@ export async function runLoadTest(config: TressiConfig): Promise<TestSummary> {
 async function generateTestSummaryFromWorkers(
   actualDurationSec: number,
   runner: Runner,
+  testId?: string,
 ): Promise<TestSummary> {
   // Get the actual aggregated metrics from the runner
   const aggregatedMetrics = runner.getAggregatedMetrics();
@@ -323,12 +328,17 @@ async function generateTestSummaryFromWorkers(
     endpointMethodMap[request.url] = request.method;
   }
 
+  // Get body samples from the runner's metrics aggregator
+  const bodySamples = testId ? runner.getBodySamples(testId) : {};
+
   // Transform AggregatedMetric to TestSummary format
   return transformAggregatedMetricToTestSummary(
     aggregatedMetrics,
     actualDurationSec,
     endpointMethodMap,
     config,
+    testId,
+    bodySamples,
   );
 }
 

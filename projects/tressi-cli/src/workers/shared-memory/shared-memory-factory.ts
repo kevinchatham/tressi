@@ -5,7 +5,6 @@
 
 import { TressiRequestConfig } from '../../common/config/types';
 import { SharedMemoryOptions } from '../types';
-import { BodySampleManager } from './body-sample-manager';
 import { EndpointStateManager } from './endpoint-state-manager';
 import { HdrHistogramManager } from './hdr-histogram-manager';
 import { StatsCounterManager } from './stats-counter-manager';
@@ -27,7 +26,6 @@ export class SharedMemoryFactory {
     hdrHistogram: HdrHistogramManager[]; // Array per worker
     workerState: WorkerStateManager;
     statsCounter: StatsCounterManager[]; // Array per worker
-    bodySample: BodySampleManager[]; // Array per endpoint
     endpointState: EndpointStateManager;
   } {
     const {
@@ -35,7 +33,6 @@ export class SharedMemoryFactory {
       lowestTrackableValue = 1,
       highestTrackableValue = 120_000_000, // 120 seconds in microseconds
       ringBufferSize = 100,
-      bodySampleBufferSize = 1000,
     } = options || {};
 
     // Create single worker state manager (shared across all workers)
@@ -68,24 +65,10 @@ export class SharedMemoryFactory {
       );
     }
 
-    // Create per-endpoint body sample managers
-    const bodySample: BodySampleManager[] = [];
-    for (
-      let endpointIndex = 0;
-      endpointIndex < endpoints.length;
-      endpointIndex++
-    ) {
-      bodySample[endpointIndex] = new BodySampleManager(
-        1, // One endpoint per manager
-        bodySampleBufferSize,
-      );
-    }
-
     return {
       hdrHistogram,
       workerState,
       statsCounter,
-      bodySample,
       endpointState,
     };
   }

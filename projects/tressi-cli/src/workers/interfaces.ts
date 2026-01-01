@@ -61,22 +61,6 @@ export interface IHdrHistogramManager {
 }
 
 /**
- * Interface for managing body samples
- */
-export interface IBodySampleManager {
-  getBodySampleIndices(
-    endpointIndex: number,
-  ): Array<{ sampleIndex: number; statusCode: number }>;
-  recordBodySample(
-    endpointIndex: number,
-    sampleIndex: number,
-    statusCode: number,
-  ): void;
-  clearBodySamples(endpointIndex: number): void;
-  getEndpointsCount(): number;
-}
-
-/**
  * Interface for managing worker states
  */
 export interface IWorkerStateManager {
@@ -104,8 +88,6 @@ export interface IMetricsAggregator {
   startPolling(intervalMs?: number): void;
   stopPolling(): void;
   getResults(workersCount: number, endpoints: string[]): AggregatedMetrics;
-  getBodySamplesForEndpoint(
-    endpointIndex: number,
-  ): Array<{ sampleIndex: number; statusCode: number }>;
+  recordBodySample(statusCode: number, body: string, url: string): void;
   reset(): void;
 }
