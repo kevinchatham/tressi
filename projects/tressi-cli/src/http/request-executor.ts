@@ -109,6 +109,7 @@ export class RequestExecutor {
       result.latencyMs = latencyMs;
       result.success = statusCode >= 200 && statusCode < 300;
       result.body = body;
+      result.headers = responseHeaders;
       result.timestamp = performance.now();
       result.bytesSent = bytesSent;
       result.bytesReceived = responseBodySize;

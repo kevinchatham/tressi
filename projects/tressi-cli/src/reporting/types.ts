@@ -1,38 +1,4 @@
 /**
- * @deprecated for old markdown exporter
- * Type for formatted statistics output
- */
-export type DeprecatedFormattedStats = {
-  global: {
-    totalRequests: string;
-    successfulRequests: string;
-    failedRequests: string;
-    avgLatencyMs: string;
-    minLatencyMs: string;
-    maxLatencyMs: string;
-    p95LatencyMs: string;
-    p99LatencyMs: string;
-    actualRps: string;
-    theoreticalMaxRps: string;
-    achievedPercentage: string;
-    duration: string;
-  };
-  endpoints: Array<{
-    method: string;
-    url: string;
-    totalRequests: string;
-    successfulRequests: string;
-    failedRequests: string;
-    avgLatencyMs: string;
-    minLatencyMs: string;
-    maxLatencyMs: string;
-    p95LatencyMs: string;
-    p99LatencyMs: string;
-    failureRate: string;
-  }>;
-};
-
-/**
  * Configuration options for HTTP agents used in load testing.
  */
 export type AgentConfig = {
@@ -93,12 +59,16 @@ export type EndpointSummary = {
   p99LatencyMs: number;
   /** Actual requests per second achieved for this endpoint. */
   actualRps: number;
+  /** Percentage of configured RPS achieved, derived from actualRps */
+  targetAchieved: number;
   /** Theoretical maximum requests per second based on average latency. */
   theoreticalMaxRps: number;
   /** Response body samples captured for this endpoint during the test. */
-  bodySamples?: Array<{
+  responseSamples?: Array<{
     /** The HTTP status code of the sampled response. */
     statusCode: number;
+    /** The HTTP headers of the samples response */
+    headers: Record<string, string>;
     /** The sampled response body. */
     body: string;
   }>;
@@ -126,26 +96,8 @@ export type GlobalSummary = {
   p95LatencyMs: number;
   /** 99th percentile latency in milliseconds across all requests. */
   p99LatencyMs: number;
-  /** Actual requests per second achieved during the test. */
-  actualRps: number;
-  /** Theoretical maximum requests per second based on average latency. */
-  theoreticalMaxRps: number;
-  /** Percentage of theoretical maximum RPS that was achieved. */
-  achievedPercentage: number;
   /** Total duration of the test in seconds. */
   duration: number;
-  /** Average error rate across all endpoints as a percentage. */
-  avgErrorRate: number;
-  /** Response body samples captured across all endpoints during the test. */
-  bodySamples?: Record<
-    string,
-    Array<{
-      /** The HTTP status code of the sampled response. */
-      statusCode: number;
-      /** The sampled response body. */
-      body: string;
-    }>
-  >;
 };
 
 /**
@@ -182,6 +134,8 @@ export type RequestResult = {
   timestamp: number;
   /** The sampled response body, if captured. */
   body?: string;
+  /** The HTTP response headers. */
+  headers?: Record<string, unknown>;
   /** Number of bytes sent in the request body. */
   bytesSent?: number;
   /** Number of bytes received in the response body. */

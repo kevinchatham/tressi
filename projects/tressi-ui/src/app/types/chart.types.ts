@@ -33,7 +33,7 @@ export const CHART_OPTIONS: ChartOption[] = [
 /**
  * Default chart type
  */
-export const DEFAULT_CHART_TYPE: ChartType = 'throughput';
+export const DEFAULT_CHART_TYPE: ChartType = 'latency';
 
 /**
  * Chart data structure for line charts

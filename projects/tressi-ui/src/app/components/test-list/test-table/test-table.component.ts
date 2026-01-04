@@ -2,12 +2,13 @@ import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
 import { CommonModule } from '@angular/common';
 import { Component, inject, input, output } from '@angular/core';
 
+import { ColumnConfig } from '../../../services/local-storage.service';
 import type { TestDocument } from '../../../services/rpc.service';
 import { TestService } from '../../../services/test.service';
 import { IconComponent, IconName } from '../../icon/icon.component';
 import { StatusBadgeComponent } from '../../status-badge/status-badge.component';
 import { ColumnKey } from '../column-keys.enum';
-import type { ColumnConfig, SortConfig } from '../test-list-columns.service';
+import type { SortConfig } from '../test-list-columns.service';
 
 @Component({
   selector: 'app-test-table',
@@ -66,18 +67,12 @@ export class TestTableComponent {
         return `${g.p95LatencyMs}ms`;
       case 'summary.global.p99Latency':
         return `${g.p99LatencyMs}ms`;
-      case 'summary.global.requestsPerSecond':
-        return g.actualRps.toLocaleString();
-      case 'summary.global.achievedPercentage':
-        return `${g.achievedPercentage}%`;
       case 'summary.tressiVersion':
         return test.summary.tressiVersion;
       case 'summary.global.minLatency':
         return `${g.minLatencyMs}ms`;
       case 'summary.global.maxLatency':
         return `${g.maxLatencyMs}ms`;
-      case 'summary.global.theoreticalMaxRps':
-        return g.theoreticalMaxRps.toLocaleString();
       default:
         return '—';
     }

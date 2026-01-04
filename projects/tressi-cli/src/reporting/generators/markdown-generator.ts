@@ -158,8 +158,6 @@ export class MarkdownGenerator {
     md += `| Total Requests | ${global.totalRequests} |\n`;
     md += `| Successful | ${global.successfulRequests} |\n`;
     md += `| Failed | ${global.failedRequests} |\n`;
-    md += `| Req/s | ${global.actualRps} |\n`;
-    md += `| Req/m | ${global.actualRps * 60} |\n`;
     md += `| Avg Latency | ${global.avgLatencyMs}ms |\n`;
     md += `| Min Latency | ${global.minLatencyMs}ms |\n`;
     md += `| Max Latency | ${global.maxLatencyMs}ms |\n`;

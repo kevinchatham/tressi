@@ -111,11 +111,6 @@ function printGlobalSummary(summary: TestSummary): void {
   );
 
   summaryTable.push(
-    ['Req/s', Math.ceil(globalSummary.actualRps)],
-    ['Req/m', Math.ceil(globalSummary.actualRps * 60)],
-  );
-
-  summaryTable.push(
     ['Avg Latency', `${Math.ceil(globalSummary.avgLatencyMs)}ms`],
     ['Min Latency', `${Math.ceil(globalSummary.minLatencyMs)}ms`],
     ['Max Latency', `${Math.ceil(globalSummary.maxLatencyMs)}ms`],
@@ -219,7 +214,7 @@ async function executeLoadTest(
   const summary = runner.getTestSummary();
 
   // Always clean up body samples (they're ephemeral)
-  runner.cleanupBodySamples();
+  runner.cleanupResponseSamples();
 
   // Handle export and printing only for CLI
   if (options.enableTUI) {

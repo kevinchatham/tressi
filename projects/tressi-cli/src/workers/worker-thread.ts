@@ -246,6 +246,7 @@ export class WorkerThread {
           endpointIndex: globalEndpointIndex,
           statusCode: result.status,
           body: result.body,
+          headers: result.headers,
           url: request.url,
           method: request.method || 'GET',
         });

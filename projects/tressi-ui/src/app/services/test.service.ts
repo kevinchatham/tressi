@@ -30,7 +30,7 @@ export class TestService {
         throw new Error(`Failed to load tests: ${response.statusText}`);
       }
 
-      const allTests = await response.json();
+      const allTests: TestDocument[] = await response.json();
       const filteredTests = allTests.filter(
         (test) => test.configId === configId,
       );

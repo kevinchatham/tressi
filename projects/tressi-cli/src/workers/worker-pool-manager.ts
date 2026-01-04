@@ -188,11 +188,12 @@ export class WorkerPoolManager {
         'body' in message &&
         'url' in message
       ) {
-        this.metricsAggregator.recordBodySample(
-          message.statusCode as number,
-          message.body as string,
-          message.url as string,
+        this.metricsAggregator.recordResponseSample(
           this.runId,
+          message.url as string,
+          message.statusCode as number,
+          (message as { headers?: Record<string, string> }).headers || {},
+          message.body as string,
         );
       }
     });
@@ -297,22 +298,30 @@ export class WorkerPoolManager {
    * Get body samples collected during the test
    * @returns Record of endpoint URL to body samples
    */
-  getBodySamples(): Record<
+  getResponseSamples(): Record<
     string,
-    Array<{ statusCode: number; body: string }>
+    Array<{
+      statusCode: number;
+      headers: Record<string, unknown>;
+      body: string;
+    }>
   > {
-    const bodySamplesMap = this.metricsAggregator.getCollectedBodySamples(
-      this.runId,
-    );
+    const responseSamplesMap =
+      this.metricsAggregator.getCollectedResponseSamples(this.runId);
 
     // Convert Map to Record
     const result: Record<
       string,
-      Array<{ statusCode: number; body: string }>
+      Array<{
+        statusCode: number;
+        headers: Record<string, unknown>;
+        body: string;
+      }>
     > = {};
-    for (const [url, samples] of bodySamplesMap.entries()) {
+
+    responseSamplesMap.forEach((samples, url) => {
       result[url] = samples;
-    }
+    });
 
     return result;
   }
@@ -320,8 +329,8 @@ export class WorkerPoolManager {
   /**
    * Clean up body samples for this run
    */
-  cleanupBodySamples(): void {
-    this.metricsAggregator.cleanupBodySamples(this.runId);
+  cleanupResponseSamples(): void {
+    this.metricsAggregator.cleanupResponseSamples(this.runId);
   }
 
   /**

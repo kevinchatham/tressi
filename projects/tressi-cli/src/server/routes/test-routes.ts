@@ -64,6 +64,7 @@ const app = new Hono()
         // Create test document with 'running' status
         const { id } = await testStorage.create({
           configId,
+          configSnapshot: configDoc.config,
         });
 
         // Update status to running

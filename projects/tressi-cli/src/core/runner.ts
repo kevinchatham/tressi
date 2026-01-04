@@ -100,18 +100,18 @@ export class Runner extends EventEmitter<IRunnerEvents> {
    * Gets body samples collected during the test.
    * @returns Record of endpoint URL to body samples
    */
-  public getBodySamples(): Record<
+  public getResponseSamples(): Record<
     string,
     Array<{ statusCode: number; body: string }>
   > {
-    return this.workerPool.getBodySamples();
+    return this.workerPool.getResponseSamples();
   }
 
   /**
    * Clean up body samples for this run.
    */
-  public cleanupBodySamples(): void {
-    this.workerPool.cleanupBodySamples();
+  public cleanupResponseSamples(): void {
+    this.workerPool.cleanupResponseSamples();
   }
 
   public setTestId(testId: string): void {

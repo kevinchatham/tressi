@@ -1,22 +1,12 @@
 import { inject, Injectable, linkedSignal, signal } from '@angular/core';
 
-import { LocalStorageService } from '../../services/local-storage.service';
+import {
+  ColumnConfig,
+  LocalStorageService,
+} from '../../services/local-storage.service';
 import { LogService } from '../../services/log.service';
 import { DEFAULT_COLUMN_CONFIGS } from './column-config.constants';
 import { ColumnKey } from './column-keys.enum';
-
-export interface ColumnConfig {
-  key: string;
-  label: string;
-  field: string;
-  format?: 'number' | 'percentage' | 'milliseconds' | 'datetime' | 'duration';
-  visible: boolean;
-  group: 'basic' | 'performance' | 'advanced';
-  sortable?: boolean;
-  order: number; // 0-based position in table
-  draggable?: boolean; // whether column can be reordered
-  width?: number; // column width in pixels
-}
 
 export interface SortConfig {
   columnKey: string;
@@ -70,8 +60,8 @@ export class TestListColumnsService {
     computation: (columns) => {
       const groups: Record<string, ColumnConfig[]> = {
         basic: [],
-        performance: [],
-        advanced: [],
+        latency: [],
+        request: [],
       };
       columns.forEach((col) => {
         if (

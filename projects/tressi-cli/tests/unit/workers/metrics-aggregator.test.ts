@@ -328,7 +328,7 @@ describe('MetricsAggregator', () => {
     });
   });
 
-  describe('recordBodySample', () => {
+  describe('recordResponseSample', () => {
     beforeEach(() => {
       aggregator = new MetricsAggregator(
         mockHdrHistogramManagers,
@@ -338,12 +338,13 @@ describe('MetricsAggregator', () => {
       );
     });
 
-    it('should record a body sample for an endpoint', () => {
-      aggregator.recordBodySample(
-        200,
-        '{"message":"success"}',
-        'http://example.com/api',
+    it('should record a response sample for an endpoint', () => {
+      aggregator.recordResponseSample(
         'test-run-id',
+        'http://example.com/api',
+        200,
+        { 'content-type': 'application/json' },
+        '{"message":"success"}',
       );
 
       // The method should not throw and should store the sample
@@ -353,35 +354,45 @@ describe('MetricsAggregator', () => {
 
     it('should only store one sample per status code', () => {
       // Record first sample for status 200
-      aggregator.recordBodySample(
-        200,
-        '{"message":"first"}',
-        'http://example.com/api',
+      aggregator.recordResponseSample(
         'test-run-id',
+        'http://example.com/api',
+        200,
+        { 'content-type': 'application/json' },
+        '{"message":"first"}',
       );
 
       // Record second sample for status 200 (should be ignored)
-      aggregator.recordBodySample(
-        200,
-        '{"message":"second"}',
-        'http://example.com/api',
+      aggregator.recordResponseSample(
         'test-run-id',
+        'http://example.com/api',
+        200,
+        { 'content-type': 'application/json' },
+        '{"message":"second"}',
       );
 
       // Record sample for different status code
-      aggregator.recordBodySample(
-        404,
-        '{"message":"not found"}',
-        'http://example.com/api',
+      aggregator.recordResponseSample(
         'test-run-id',
+        'http://example.com/api',
+        404,
+        { 'content-type': 'application/json' },
+        '{"message":"not found"}',
       );
 
-      // Should have samples for both status codes
-      expect(true).toBe(true);
+      // Verify samples were stored correctly
+      const samples = aggregator.getCollectedResponseSamples('test-run-id');
+      const endpointSamples = samples.get('http://example.com/api') || [];
+      expect(endpointSamples.length).toBe(2);
+      expect(endpointSamples[0].statusCode).toBe(200);
+      expect(endpointSamples[0].headers).toEqual({
+        'content-type': 'application/json',
+      });
+      expect(endpointSamples[1].statusCode).toBe(404);
     });
   });
 
-  describe('cleanupBodySamples', () => {
+  describe('cleanupResponseSamples', () => {
     beforeEach(() => {
       aggregator = new MetricsAggregator(
         mockHdrHistogramManagers,
@@ -391,24 +402,26 @@ describe('MetricsAggregator', () => {
       );
     });
 
-    it('should cleanup body samples for a run', () => {
-      // Record some body samples first
-      aggregator.recordBodySample(
-        200,
-        '{"message":"success"}',
-        'http://example.com/api',
+    it('should cleanup response samples for a run', () => {
+      // Record some response samples first
+      aggregator.recordResponseSample(
         'test-run-id',
+        'http://example.com/api',
+        200,
+        { 'content-type': 'application/json' },
+        '{"message":"success"}',
       );
 
       // Verify samples were recorded
-      const samples = aggregator.getCollectedBodySamples('test-run-id');
+      const samples = aggregator.getCollectedResponseSamples('test-run-id');
       expect(samples.size).toBeGreaterThan(0);
 
       // Cleanup samples
-      aggregator.cleanupBodySamples('test-run-id');
+      aggregator.cleanupResponseSamples('test-run-id');
 
       // Verify samples were cleaned up
-      const cleanedSamples = aggregator.getCollectedBodySamples('test-run-id');
+      const cleanedSamples =
+        aggregator.getCollectedResponseSamples('test-run-id');
       expect(cleanedSamples.size).toBe(0);
     });
   });

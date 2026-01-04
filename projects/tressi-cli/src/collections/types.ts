@@ -28,18 +28,20 @@ export type TestDocument = {
   id: string;
   /** Reference to the configuration used for this test */
   configId: string;
+  /** Current status of the test run */
+  status: 'running' | 'completed' | 'failed' | null;
   /** Timestamp when the document was created (milliseconds since epoch) */
   epochCreatedAt: number;
-  /** Timestamp when the test ended (milliseconds since epoch), undefined if still running */
-  epochEndedAt: number | null;
   /** Timestamp when the test started (milliseconds since epoch) */
   epochStartedAt: number | null;
   /** Timestamp when the document was last updated (milliseconds since epoch) */
   epochUpdatedAt: number | null;
+  /** Timestamp when the test ended (milliseconds since epoch), undefined if still running */
+  epochEndedAt: number | null;
   /** Error of a failed test run */
   error: string | null;
-  /** Current status of the test run */
-  status: 'running' | 'completed' | 'failed' | null;
+  /** Snapshot of TressiConfig when test was run */
+  configSnapshot: TressiConfig;
   /** Test summary statistics - null for running tests or failed tests without summary */
   summary: TestSummary | null;
 };

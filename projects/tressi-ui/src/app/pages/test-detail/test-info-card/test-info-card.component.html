@@ -113,18 +113,8 @@
               <p class="font-medium">{{ summary()!.global.totalRequests }}</p>
             </div>
             <div>
-              <span class="text-base-content/70 text-sm">Avg Throughput</span>
-              <p class="font-medium">
-                {{ roundNumber(summary()!.global.actualRps) }} req/sec
-              </p>
-            </div>
-            <div>
               <span class="text-base-content/70 text-sm">Avg Latency</span>
               <p class="font-medium">{{ summary()!.global.avgLatencyMs }} ms</p>
-            </div>
-            <div>
-              <span class="text-base-content/70 text-sm">Avg Error Rate</span>
-              <p class="font-medium">{{ summary()!.global.avgErrorRate }}%</p>
             </div>
           </div>
         </div>

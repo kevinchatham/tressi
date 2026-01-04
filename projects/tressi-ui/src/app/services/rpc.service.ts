@@ -91,7 +91,7 @@ export type GetTestsResponseError = Extract<
   { error: object }
 >;
 
-export type TestDocument = Extract<GetTestsResponseSuccess, unknown[]>[number];
+export type TestDocument = GetTestsResponseSuccess[number];
 
 export type TestStatus = TestDocument['status'];
 

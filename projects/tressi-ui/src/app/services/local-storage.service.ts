@@ -7,36 +7,27 @@ import { LogService } from './log.service';
 import { ConfigDocument } from './rpc.service';
 import { Theme } from './theme.service';
 
-export interface ColumnConfig {
-  key: string;
-  label: string;
-  field: string;
-  format?: 'number' | 'percentage' | 'milliseconds' | 'datetime' | 'duration';
-  visible: boolean;
-  group: 'basic' | 'performance' | 'advanced';
-  sortable?: boolean;
-  order: number;
-  draggable?: boolean;
-}
+export const ColumnConfigSchema = z.object({
+  key: z.string(),
+  label: z.string(),
+  field: z.string(),
+  format: z
+    .enum(['number', 'percentage', 'milliseconds', 'datetime', 'duration'])
+    .optional(),
+  visible: z.boolean(),
+  group: z.enum(['basic', 'latency', 'request']),
+  sortable: z.boolean().optional(),
+  order: z.number(),
+  draggable: z.boolean().optional(),
+  width: z.number().optional(),
+});
+
+export type ColumnConfig = z.infer<typeof ColumnConfigSchema>;
 
 export const UserPreferencesSchema = z.object({
   selectedTheme: z.custom<Theme>(),
   lastSelectedConfig: z.custom<ConfigDocument | null>(),
-  columnPreferences: z.array(
-    z.object({
-      key: z.string(),
-      label: z.string(),
-      field: z.string(),
-      format: z
-        .enum(['number', 'percentage', 'milliseconds', 'datetime', 'duration'])
-        .optional(),
-      visible: z.boolean(),
-      group: z.enum(['basic', 'performance', 'advanced']),
-      sortable: z.boolean().optional(),
-      order: z.number(),
-      draggable: z.boolean().optional(),
-    }),
-  ),
+  columnPreferences: z.array(ColumnConfigSchema).nullable(),
   selectedChartType: z.enum(CHART_TYPES),
 });
 

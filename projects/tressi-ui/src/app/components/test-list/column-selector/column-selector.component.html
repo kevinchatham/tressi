@@ -45,11 +45,9 @@
           </label>
         }
       </div>
-
-      <!-- Performance Columns -->
       <div>
-        <h4 class="text-base-content/70 text-sm font-medium">Performance</h4>
-        @for (col of columnGroups()['performance']; track col.key) {
+        <h4 class="text-base-content/70 text-sm font-medium">Request</h4>
+        @for (col of columnGroups()['request']; track col.key) {
           <label
             class="hover:bg-base-200/50 my-4 flex cursor-pointer items-center rounded transition-colors duration-150"
           >
@@ -63,11 +61,9 @@
           </label>
         }
       </div>
-
-      <!-- Advanced Columns -->
       <div>
-        <h4 class="text-base-content/70 text-sm font-medium">Advanced</h4>
-        @for (col of columnGroups()['advanced']; track col.key) {
+        <h4 class="text-base-content/70 text-sm font-medium">Latency</h4>
+        @for (col of columnGroups()['latency']; track col.key) {
           <label
             class="hover:bg-base-200/50 my-4 flex cursor-pointer items-center rounded transition-colors duration-150"
           >

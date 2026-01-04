@@ -1,7 +1,7 @@
 import { createCollectionForType } from './adapter';
 import { TestDocument } from './types';
 
-export type TestCreate = Pick<TestDocument, 'configId'>;
+export type TestCreate = Pick<TestDocument, 'configId' | 'configSnapshot'>;
 
 export type TestEdit = Pick<TestDocument, 'id' | 'configId'> &
   Partial<
@@ -61,12 +61,13 @@ class TestCollection {
         id: crypto.randomUUID(),
         configId: input.configId,
         status: null,
+        epochCreatedAt: now,
         epochStartedAt: null,
+        epochUpdatedAt: now,
         epochEndedAt: null,
         error: null,
+        configSnapshot: input.configSnapshot,
         summary: null,
-        epochCreatedAt: now,
-        epochUpdatedAt: now,
       };
       this.collection.insert(testDoc);
       return testDoc;

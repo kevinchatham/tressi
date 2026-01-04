@@ -2,32 +2,25 @@ import pkg from '../../../../../package.json';
 import type { TressiConfig } from '../../common/config/types';
 import type { AggregatedMetrics } from '../../common/metrics';
 import { roundToDecimals } from '../../utils/math-utils';
-import { TestSummary } from '../types';
+import { EndpointSummary, GlobalSummary, TestSummary } from '../types';
 
 export function transformAggregatedMetricToTestSummary(
   metrics: AggregatedMetrics,
   actualDurationSec: number,
   endpointMethodMap: Record<string, string>,
   config: TressiConfig,
-  bodySamples?: Record<string, Array<{ statusCode: number; body: string }>>,
+  responseSamples?: Record<
+    string,
+    Array<{
+      statusCode: number;
+      headers: Record<string, string>;
+      body: string;
+    }>
+  >,
 ): TestSummary {
   const global = metrics.global;
 
-  // Calculate total configured RPS from all endpoints
-  const totalConfiguredRps = config.requests.reduce((sum, request) => {
-    return sum + request.rps;
-  }, 0);
-
-  // Calculate achieved percentage based on configured RPS instead of theoretical max
-  const achievedPercentage =
-    totalConfiguredRps > 0
-      ? (global.requestsPerSecond / totalConfiguredRps) * 100
-      : 0;
-
-  const theoreticalMaxRps =
-    global.averageLatency > 0 ? 1000 / global.averageLatency : 0;
-
-  const globalSummary = {
+  const globalSummary: GlobalSummary = {
     totalEndpoints: Object.keys(metrics.endpoints).length,
     totalRequests: global.totalRequests,
     successfulRequests: global.successfulRequests,
@@ -37,43 +30,49 @@ export function transformAggregatedMetricToTestSummary(
     maxLatencyMs: global.maxLatency,
     p95LatencyMs: global.p95Latency,
     p99LatencyMs: global.p99Latency,
-    actualRps: global.requestsPerSecond,
-    theoreticalMaxRps: roundToDecimals(theoreticalMaxRps),
-    achievedPercentage: roundToDecimals(achievedPercentage),
     duration: roundToDecimals(actualDurationSec),
-    avgErrorRate:
-      global.totalRequests > 0
-        ? (global.failedRequests / global.totalRequests) * 100
-        : 0,
-    bodySamples,
   };
 
-  const endpointSummaries = Object.entries(metrics.endpoints).map(
-    ([url, endpoint]) => {
-      const theoreticalMaxRps =
-        endpoint.averageLatency > 0 ? 1000 / endpoint.averageLatency : 0;
-      const endpointBodySamples = bodySamples?.[url] || [];
-      return {
-        method: endpointMethodMap[url],
-        url,
-        totalRequests: endpoint.totalRequests,
-        successfulRequests: endpoint.successfulRequests,
-        failedRequests: endpoint.failedRequests,
-        avgLatencyMs: endpoint.averageLatency,
-        minLatencyMs: endpoint.minLatency,
-        maxLatencyMs: endpoint.maxLatency,
-        p95LatencyMs: endpoint.p95Latency,
-        p99LatencyMs: endpoint.p99Latency,
-        actualRps: endpoint.requestsPerSecond,
-        theoreticalMaxRps: roundToDecimals(theoreticalMaxRps),
-        bodySamples: endpointBodySamples,
-      };
-    },
-  );
+  const endpointSummaries: EndpointSummary[] = Object.entries(
+    metrics.endpoints,
+  ).map(([url, endpoint]) => {
+    const theoreticalMaxRps =
+      endpoint.averageLatency > 0 ? 1000 / endpoint.averageLatency : 0;
+    const endpointResponseSamples = responseSamples?.[url] || [];
 
-  return {
+    // Find the request config for this URL to get the target RPS
+    const requestConfig = config.requests.find((req) => req.url === url)!;
+
+    // Calculate percentage of target RPS achieved
+    const targetAchieved = roundToDecimals(
+      (endpoint.requestsPerSecond / requestConfig.rps) * 100,
+    );
+
+    const summary: EndpointSummary = {
+      method: endpointMethodMap[url],
+      url,
+      totalRequests: endpoint.totalRequests,
+      successfulRequests: endpoint.successfulRequests,
+      failedRequests: endpoint.failedRequests,
+      avgLatencyMs: endpoint.averageLatency,
+      minLatencyMs: endpoint.minLatency,
+      maxLatencyMs: endpoint.maxLatency,
+      p95LatencyMs: endpoint.p95Latency,
+      p99LatencyMs: endpoint.p99Latency,
+      actualRps: endpoint.requestsPerSecond,
+      theoreticalMaxRps: roundToDecimals(theoreticalMaxRps),
+      targetAchieved,
+      responseSamples: endpointResponseSamples,
+    };
+
+    return summary;
+  });
+
+  const result: TestSummary = {
     global: globalSummary,
     endpoints: endpointSummaries,
     tressiVersion: pkg.version || 'unknown',
   };
+
+  return result;
 }

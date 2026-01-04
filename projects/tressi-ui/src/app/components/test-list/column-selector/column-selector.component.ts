@@ -1,8 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component, input, output } from '@angular/core';
 
+import { ColumnConfig } from '../../../services/local-storage.service';
 import { IconComponent } from '../../icon/icon.component';
-import type { ColumnConfig } from '../test-list-columns.service';
 
 @Component({
   selector: 'app-column-selector',

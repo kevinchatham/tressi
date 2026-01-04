@@ -394,14 +394,6 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
           valueA = a.summary?.global.p99LatencyMs || 0;
           valueB = b.summary?.global.p99LatencyMs || 0;
           break;
-        case 'actualRps':
-          valueA = a.summary?.global.actualRps || 0;
-          valueB = b.summary?.global.actualRps || 0;
-          break;
-        case 'achievedPercentage':
-          valueA = a.summary?.global.achievedPercentage || 0;
-          valueB = b.summary?.global.achievedPercentage || 0;
-          break;
         case 'minLatency':
           valueA = a.summary?.global.minLatencyMs || 0;
           valueB = b.summary?.global.minLatencyMs || 0;
@@ -409,10 +401,6 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
         case 'maxLatency':
           valueA = a.summary?.global.maxLatencyMs || 0;
           valueB = b.summary?.global.maxLatencyMs || 0;
-          break;
-        case 'theoreticalMaxRps':
-          valueA = a.summary?.global.theoreticalMaxRps || 0;
-          valueB = b.summary?.global.theoreticalMaxRps || 0;
           break;
         case 'id':
           valueA = a.id;

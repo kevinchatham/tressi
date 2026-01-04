@@ -17,9 +17,16 @@ import {
 import { LatencyHistogram } from './types';
 
 // Store for body samples collected during test
-const bodySamplesStore = new Map<
+const responseSamplesStore = new Map<
   string,
-  Map<string, Array<{ statusCode: number; body: string }>>
+  Map<
+    string,
+    Array<{
+      statusCode: number;
+      headers: Record<string, string>;
+      body: string;
+    }>
+  >
 >();
 
 export class MetricsAggregator implements IMetricsAggregator {
@@ -378,16 +385,20 @@ export class MetricsAggregator implements IMetricsAggregator {
       throw new Error('Config not set in MetricsAggregator');
     }
 
-    const bodySamplesMap = this.getCollectedBodySamples(this.runId);
+    const responseSamplesMap = this.getCollectedResponseSamples(this.runId);
 
     // Convert Map to Record for TestSummary
-    const bodySamples: Record<
+    const responseSamples: Record<
       string,
-      Array<{ statusCode: number; body: string }>
+      Array<{
+        statusCode: number;
+        headers: Record<string, string>;
+        body: string;
+      }>
     > = {};
 
-    Array.from(bodySamplesMap.entries()).forEach(([url, samples]) => {
-      bodySamples[url] = samples;
+    Array.from(responseSamplesMap.entries()).forEach(([url, samples]) => {
+      responseSamples[url] = samples;
     });
 
     return transformAggregatedMetricToTestSummary(
@@ -395,7 +406,7 @@ export class MetricsAggregator implements IMetricsAggregator {
       duration,
       this.endpointMethodMap,
       this.config,
-      bodySamples,
+      responseSamples,
     );
   }
 
@@ -404,10 +415,15 @@ export class MetricsAggregator implements IMetricsAggregator {
    * @param runId The run ID
    * @returns Map of endpoint URL to body samples
    */
-  getCollectedBodySamples(
-    runId: string,
-  ): Map<string, Array<{ statusCode: number; body: string }>> {
-    const samples = bodySamplesStore.get(runId) || new Map();
+  getCollectedResponseSamples(runId: string): Map<
+    string,
+    Array<{
+      statusCode: number;
+      headers: Record<string, string>;
+      body: string;
+    }>
+  > {
+    const samples = responseSamplesStore.get(runId) || new Map();
     return samples;
   }
 
@@ -418,23 +434,24 @@ export class MetricsAggregator implements IMetricsAggregator {
    * @param url Endpoint URL
    * @param runId The run ID to associate samples with
    */
-  recordBodySample(
-    statusCode: number,
-    body: string,
-    url: string,
+  recordResponseSample(
     runId: string,
+    url: string,
+    statusCode: number,
+    headers: Record<string, string>,
+    body: string,
   ): void {
     // Store directly under runId (no more 'current' key pattern)
-    if (!bodySamplesStore.has(runId)) {
-      bodySamplesStore.set(runId, new Map());
+    if (!responseSamplesStore.has(runId)) {
+      responseSamplesStore.set(runId, new Map());
     }
-    const testSamples = bodySamplesStore.get(runId)!;
+    const samples = responseSamplesStore.get(runId)!;
 
-    if (!testSamples.has(url)) {
-      testSamples.set(url, []);
+    if (!samples.has(url)) {
+      samples.set(url, []);
     }
 
-    const endpointSamples = testSamples.get(url)!;
+    const endpointSamples = samples.get(url)!;
 
     // Only store one sample per status code (as per the original design)
     const existingSampleIndex = endpointSamples.findIndex(
@@ -444,6 +461,7 @@ export class MetricsAggregator implements IMetricsAggregator {
     if (existingSampleIndex === -1) {
       endpointSamples.push({
         statusCode,
+        headers,
         body,
       });
     }
@@ -453,8 +471,8 @@ export class MetricsAggregator implements IMetricsAggregator {
    * Clean up body samples for a run
    * @param runId The run ID to clean up
    */
-  cleanupBodySamples(runId: string): void {
-    bodySamplesStore.delete(runId);
+  cleanupResponseSamples(runId: string): void {
+    responseSamplesStore.delete(runId);
   }
 
   /**

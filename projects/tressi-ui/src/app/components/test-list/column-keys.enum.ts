@@ -4,7 +4,7 @@ export enum ColumnKey {
   START_TIME = 'startTime',
   ID = 'id',
   DURATION = 'duration',
-  REQUESTS = 'requests',
+  TOTAL_REQUESTS = 'totalRequests',
   ERROR_RATE = 'errorRate',
   SUCCESSFUL_REQUESTS = 'successfulRequests',
   FAILED_REQUESTS = 'failedRequests',

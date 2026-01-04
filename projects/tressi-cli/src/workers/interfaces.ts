@@ -91,14 +91,15 @@ export interface IMetricsAggregator {
   startPolling(intervalMs?: number): void;
   stopPolling(): void;
   getResults(workersCount: number, endpoints: string[]): AggregatedMetrics;
-  recordBodySample(
-    statusCode: number,
-    body: string,
-    url: string,
+  recordResponseSample(
     runId: string,
+    url: string,
+    statusCode: number,
+    headers: Record<string, string>,
+    body: string,
   ): void;
-  getCollectedBodySamples(
+  getCollectedResponseSamples(
     runId: string,
   ): Map<string, Array<{ statusCode: number; body: string }>>;
-  cleanupBodySamples(runId: string): void;
+  cleanupResponseSamples(runId: string): void;
 }
