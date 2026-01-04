@@ -63,6 +63,7 @@ export function transformAggregatedMetricToTestSummary(
       theoreticalMaxRps: roundToDecimals(theoreticalMaxRps),
       targetAchieved,
       responseSamples: endpointResponseSamples,
+      statusCodeDistribution: endpoint.statusCodeDistribution,
     };
 
     return summary;

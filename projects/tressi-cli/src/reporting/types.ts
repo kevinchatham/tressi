@@ -72,6 +72,8 @@ export type EndpointSummary = {
     /** The sampled response body. */
     body: string;
   }>;
+  /** Distribution of HTTP status codes received for this endpoint */
+  statusCodeDistribution: Record<number, number>;
 };
 
 /**
