@@ -2,11 +2,11 @@ import { sValidator } from '@hono/standard-validator';
 import { Hono } from 'hono';
 import z from 'zod';
 
-import { runLoadTestForServer } from '../..';
 import { configStorage } from '../../collections/config-collection';
 import { endpointMetricStorage } from '../../collections/endpoint-metrics-collection';
 import { globalMetricStorage } from '../../collections/global-metrics-collection';
 import { testStorage } from '../../collections/test-collection';
+import { runLoadTestForServer } from '../../core/test-executor';
 import { ServerEvents, TestEventData } from '../../events/event-types';
 import { globalEventEmitter } from '../../events/global-event-emitter';
 import { createApiErrorResponse } from '../utils/error-response-generator';

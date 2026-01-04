@@ -83,8 +83,9 @@ describe('Per-endpoint RPS Configuration Tests', () => {
       const results = await runLoadTest(config);
 
       // Total should be close to 50 + 25 + 10 = 85 RPS
-      expect(results.global.actualRps).toBeGreaterThanOrEqual(75);
-      expect(results.global.actualRps).toBeLessThanOrEqual(95);
+      const actualRps = results.global.totalRequests / results.global.duration;
+      expect(actualRps).toBeGreaterThanOrEqual(75);
+      expect(actualRps).toBeLessThanOrEqual(95);
 
       // Each endpoint should have appropriate request counts
       const successEndpoint = results.endpoints.find((e) =>
@@ -234,8 +235,9 @@ describe('Per-endpoint RPS Configuration Tests', () => {
       const results = await runLoadTest(config);
 
       // Should achieve close to 300 RPS total
-      expect(results.global.actualRps).toBeGreaterThanOrEqual(250);
-      expect(results.global.actualRps).toBeLessThanOrEqual(320);
+      const actualRps = results.global.totalRequests / results.global.duration;
+      expect(actualRps).toBeGreaterThanOrEqual(250);
+      expect(actualRps).toBeLessThanOrEqual(320);
     });
 
     it('should support very low per-endpoint RPS', async () => {
@@ -290,8 +292,9 @@ describe('Per-endpoint RPS Configuration Tests', () => {
       const results = await runLoadTest(config);
 
       // Should achieve close to 4 RPS total
-      expect(results.global.actualRps).toBeGreaterThanOrEqual(3);
-      expect(results.global.actualRps).toBeLessThanOrEqual(5);
+      const actualRps = results.global.totalRequests / results.global.duration;
+      expect(actualRps).toBeGreaterThanOrEqual(3);
+      expect(actualRps).toBeLessThanOrEqual(5);
     });
   });
 
@@ -361,8 +364,9 @@ describe('Per-endpoint RPS Configuration Tests', () => {
       const results = await runLoadTest(config);
 
       // Expected: 40 + 15 + 20 = 75 RPS
-      expect(results.global.actualRps).toBeGreaterThanOrEqual(65);
-      expect(results.global.actualRps).toBeLessThanOrEqual(85);
+      const actualRps = results.global.totalRequests / results.global.duration;
+      expect(actualRps).toBeGreaterThanOrEqual(65);
+      expect(actualRps).toBeLessThanOrEqual(85);
     });
 
     it('should handle all endpoints using global RPS', async () => {
@@ -430,8 +434,9 @@ describe('Per-endpoint RPS Configuration Tests', () => {
       const results = await runLoadTest(config);
 
       // Should distribute 60 RPS across all endpoints
-      expect(results.global.actualRps).toBeGreaterThanOrEqual(55);
-      expect(results.global.actualRps).toBeLessThanOrEqual(65);
+      const actualRps = results.global.totalRequests / results.global.duration;
+      expect(actualRps).toBeGreaterThanOrEqual(55);
+      expect(actualRps).toBeLessThanOrEqual(65);
     });
   });
 
@@ -474,8 +479,9 @@ describe('Per-endpoint RPS Configuration Tests', () => {
 
       const results = await runLoadTest(config);
 
-      expect(results.global.actualRps).toBeGreaterThanOrEqual(90);
-      expect(results.global.actualRps).toBeLessThanOrEqual(110);
+      const actualRps = results.global.totalRequests / results.global.duration;
+      expect(actualRps).toBeGreaterThanOrEqual(90);
+      expect(actualRps).toBeLessThanOrEqual(110);
     });
 
     it('should handle low RPS values', async () => {
@@ -517,8 +523,9 @@ describe('Per-endpoint RPS Configuration Tests', () => {
       const results = await runLoadTest(config);
 
       // Should achieve close to 5 RPS total
-      expect(results.global.actualRps).toBeGreaterThanOrEqual(4.5);
-      expect(results.global.actualRps).toBeLessThanOrEqual(5.5);
+      const actualRps = results.global.totalRequests / results.global.duration;
+      expect(actualRps).toBeGreaterThanOrEqual(4.5);
+      expect(actualRps).toBeLessThanOrEqual(5.5);
     });
   });
 
@@ -563,13 +570,10 @@ describe('Per-endpoint RPS Configuration Tests', () => {
 
       const results = await runLoadTest(config);
 
+      const actualRps = results.global.totalRequests / results.global.duration;
       const tolerance = targetRps * 0.1; // 10% tolerance for real-world conditions
-      expect(results.global.actualRps).toBeGreaterThanOrEqual(
-        targetRps - tolerance,
-      );
-      expect(results.global.actualRps).toBeLessThanOrEqual(
-        targetRps + tolerance,
-      );
+      expect(actualRps).toBeGreaterThanOrEqual(targetRps - tolerance);
+      expect(actualRps).toBeLessThanOrEqual(targetRps + tolerance);
     });
 
     it('should maintain reasonable accuracy for multiple endpoints', async () => {
@@ -638,13 +642,10 @@ describe('Per-endpoint RPS Configuration Tests', () => {
 
       const results = await runLoadTest(config);
 
+      const actualRps = results.global.totalRequests / results.global.duration;
       const tolerance = expectedTotal * 0.15; // 15% tolerance for real-world conditions
-      expect(results.global.actualRps).toBeGreaterThanOrEqual(
-        expectedTotal - tolerance,
-      );
-      expect(results.global.actualRps).toBeLessThanOrEqual(
-        expectedTotal + tolerance,
-      );
+      expect(actualRps).toBeGreaterThanOrEqual(expectedTotal - tolerance);
+      expect(actualRps).toBeLessThanOrEqual(expectedTotal + tolerance);
     });
   });
 });
