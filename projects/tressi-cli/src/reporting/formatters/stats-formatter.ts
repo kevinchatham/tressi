@@ -1,18 +1,19 @@
 import {
+  DeprecatedFormattedStats,
   EndpointSummary,
-  FormattedStats,
   GlobalSummary,
   TestSummary,
 } from '../types';
 
 /**
+ * @deprecated This is deprecated because data is formatted correctly before it is stored in the collection.
  * Formats statistics for display and export purposes
  */
-export class StatsFormatter {
+export class DeprecatedStatsFormatter {
   /**
    * Formats test summary statistics with proper number formatting
    */
-  format(summary: TestSummary): FormattedStats {
+  format(summary: TestSummary): DeprecatedFormattedStats {
     return {
       global: this.formatGlobalStats(summary.global),
       endpoints: summary.endpoints.map((endpoint) =>
@@ -21,7 +22,9 @@ export class StatsFormatter {
     };
   }
 
-  private formatGlobalStats(global: GlobalSummary): FormattedStats['global'] {
+  private formatGlobalStats(
+    global: GlobalSummary,
+  ): DeprecatedFormattedStats['global'] {
     return {
       totalRequests: this.formatNumber(global.totalRequests),
       successfulRequests: this.formatNumber(global.successfulRequests),
@@ -40,7 +43,7 @@ export class StatsFormatter {
 
   private formatEndpointStats(
     endpoint: EndpointSummary,
-  ): FormattedStats['endpoints'][0] {
+  ): DeprecatedFormattedStats['endpoints'][0] {
     const failureRate =
       endpoint.totalRequests > 0
         ? (endpoint.failedRequests / endpoint.totalRequests) * 100

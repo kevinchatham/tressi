@@ -255,9 +255,9 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
   // Subscription methods
   private subscribeToMetrics(): void {
     this.metricsSubscription = this.eventService.getMetricsStream().subscribe({
-      next: (summary: TestSummary) => {
-        this.latestMetrics.set(summary);
-        this.updateRunningTest(summary);
+      next: ({ testSummary }) => {
+        this.latestMetrics.set(testSummary);
+        this.updateRunningTest(testSummary);
       },
       error: (error: Error) => {
         this.logService.error('Metrics stream error:', error);

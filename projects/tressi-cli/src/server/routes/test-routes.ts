@@ -2,7 +2,7 @@ import { sValidator } from '@hono/standard-validator';
 import { Hono } from 'hono';
 import z from 'zod';
 
-import { runLoadTest } from '../..';
+import { runLoadTestForServer } from '../..';
 import { configStorage } from '../../collections/config-collection';
 import { endpointMetricStorage } from '../../collections/endpoint-metrics-collection';
 import { globalMetricStorage } from '../../collections/global-metrics-collection';
@@ -60,7 +60,6 @@ const app = new Hono()
             404,
           );
         }
-        const config = configDoc.config;
 
         // Create test document with 'running' status
         const { id } = await testStorage.create({
@@ -87,8 +86,8 @@ const app = new Hono()
         // Start the load test asynchronously
         (async (): Promise<void> => {
           try {
-            // runLoadTest now returns the summary
-            const summary = await runLoadTest(config, id);
+            // runLoadTestForServer now returns the summary (looks up config from testId)
+            const summary = await runLoadTestForServer(id);
 
             // Update test to completed status WITH embedded summary
             await testStorage.edit({

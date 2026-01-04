@@ -3,6 +3,7 @@ import { performance } from 'perf_hooks';
 
 import { TressiConfig } from '../common/config/types';
 import type { AggregatedMetrics } from '../common/metrics';
+import type { TestSummary } from '../reporting/types';
 import { IRunnerEvents } from '../workers/interfaces';
 import { WorkerPoolManager } from '../workers/worker-pool-manager';
 
@@ -33,6 +34,9 @@ export class Runner extends EventEmitter<IRunnerEvents> {
    */
   public async run(): Promise<void> {
     this.startTime = performance.now();
+
+    // Sync start time with metrics aggregator
+    this.workerPool.setStartTime(this.startTime);
 
     try {
       this.emit('start', {
@@ -69,6 +73,14 @@ export class Runner extends EventEmitter<IRunnerEvents> {
   }
 
   /**
+   * Set the start time for metrics aggregation
+   * @param startTime Unix timestamp in milliseconds
+   */
+  public setStartTime(startTime: number): void {
+    this.workerPool.setStartTime(startTime);
+  }
+
+  /**
    * Gets the Tressi configuration.
    * @returns The TressiConfig used for this test run
    */
@@ -77,13 +89,32 @@ export class Runner extends EventEmitter<IRunnerEvents> {
   }
 
   /**
+   * Get test summary for report generation
+   * @returns TestSummary object
+   */
+  public getTestSummary(): TestSummary {
+    return this.workerPool.getTestSummary();
+  }
+
+  /**
    * Gets body samples collected during the test.
-   * @param testId The test ID to retrieve samples for
    * @returns Record of endpoint URL to body samples
    */
-  public getBodySamples(
-    testId: string,
-  ): Record<string, Array<{ statusCode: number; body: string }>> {
-    return this.workerPool.getBodySamples(testId);
+  public getBodySamples(): Record<
+    string,
+    Array<{ statusCode: number; body: string }>
+  > {
+    return this.workerPool.getBodySamples();
+  }
+
+  /**
+   * Clean up body samples for this run.
+   */
+  public cleanupBodySamples(): void {
+    this.workerPool.cleanupBodySamples();
+  }
+
+  public setTestId(testId: string): void {
+    this.workerPool.setTestId(testId);
   }
 }

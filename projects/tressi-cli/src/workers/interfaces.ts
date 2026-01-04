@@ -15,7 +15,10 @@ export interface ISSEClientManager {
 }
 
 export interface IGlobalServerEvents {
-  [ServerEvents.METRICS]: (testSummary: TestSummary) => void;
+  [ServerEvents.METRICS]: (data: {
+    testId?: string;
+    testSummary: TestSummary;
+  }) => void;
   [ServerEvents.TEST.STARTED]: (data: TestEventData) => void;
   [ServerEvents.TEST.COMPLETED]: (data: TestEventData) => void;
   [ServerEvents.TEST.FAILED]: (data: TestEventData) => void;
@@ -88,6 +91,14 @@ export interface IMetricsAggregator {
   startPolling(intervalMs?: number): void;
   stopPolling(): void;
   getResults(workersCount: number, endpoints: string[]): AggregatedMetrics;
-  recordBodySample(statusCode: number, body: string, url: string): void;
-  reset(): void;
+  recordBodySample(
+    statusCode: number,
+    body: string,
+    url: string,
+    runId: string,
+  ): void;
+  getCollectedBodySamples(
+    runId: string,
+  ): Map<string, Array<{ statusCode: number; body: string }>>;
+  cleanupBodySamples(runId: string): void;
 }

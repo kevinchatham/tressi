@@ -9,14 +9,14 @@ export class EventService {
   private readonly url = 'http://localhost:3108/api/metrics/stream';
   private eventSource: EventSource | null = null;
 
-  private readonly metricsSubject = new Subject<TestSummary>();
+  private readonly metricsSubject = new Subject<TestSummaryData>();
   private readonly testEventsSubject = new Subject<TestEventData>();
   private readonly connectedSubject = new Subject<ConnectedEventData>();
 
   /**
    * Get metrics stream with unified event format
    */
-  getMetricsStream(): Observable<TestSummary> {
+  getMetricsStream(): Observable<TestSummaryData> {
     this.ensureConnected();
     return this.metricsSubject.asObservable();
   }
@@ -63,7 +63,7 @@ export class EventService {
 
         switch (message.event) {
           case 'metrics':
-            this.metricsSubject.next(message.data as TestSummary);
+            this.metricsSubject.next(message.data as TestSummaryData);
             break;
           case 'test:started':
           case 'test:completed':
@@ -98,6 +98,11 @@ export class EventService {
 }
 
 // Define UI-compatible event types
+export interface TestSummaryData {
+  testId?: string;
+  testSummary: TestSummary;
+}
+
 export interface TestEventData {
   testId: string;
   timestamp: number;

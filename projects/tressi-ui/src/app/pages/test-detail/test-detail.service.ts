@@ -57,9 +57,9 @@ export class TestDetailService {
     this.metricsStreamSubscription = this.eventService
       .getMetricsStream()
       .subscribe({
-        next: (testSummary) => {
-          if (testSummary.testId === testId) {
-            this.mergeRealTimeMetrics(testSummary);
+        next: (data) => {
+          if (data.testId === testId) {
+            this.mergeRealTimeMetrics(data.testSummary);
           }
         },
         error: (error: unknown) => {

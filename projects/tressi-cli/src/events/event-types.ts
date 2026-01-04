@@ -42,7 +42,7 @@ export type TestEventData = {
 export type ServerEventMessage =
   | {
       event: typeof ServerEvents.METRICS;
-      data: TestSummary;
+      data: { testId?: string; testSummary: TestSummary };
     }
   | {
       event:

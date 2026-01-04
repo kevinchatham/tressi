@@ -2,7 +2,6 @@ import { cpus, loadavg } from 'os';
 
 import { endpointMetricStorage } from '../collections/endpoint-metrics-collection';
 import { globalMetricStorage } from '../collections/global-metrics-collection';
-import { testStorage } from '../collections/test-collection';
 import type { TressiConfig } from '../common/config/types';
 import type { AggregatedMetrics, Metric } from '../common/metrics';
 import { ServerEvents } from '../events/event-types';
@@ -28,12 +27,30 @@ export class MetricsAggregator implements IMetricsAggregator {
   private startTime: number = 0;
   private endpoints: string[] = [];
   private config: TressiConfig | null = null;
+  private testId?: string; // Optional for server persistence
 
   constructor(
     private hdrHistogramManagers: IHdrHistogramManager[],
     private statsCounterManagers: IStatsCounterManager[],
     private endpointMethodMap: Record<string, string> = {},
+    private runId: string,
   ) {}
+
+  /**
+   * Set the testId for server mode persistence
+   * @param testId The test ID from database
+   */
+  setTestId(testId: string): void {
+    this.testId = testId;
+  }
+
+  /**
+   * Set the start time for duration calculations
+   * @param startTime Unix timestamp in milliseconds
+   */
+  public setStartTime(startTime: number): void {
+    this.startTime = startTime;
+  }
 
   /**
    * Set the configuration for metrics aggregation
@@ -90,28 +107,6 @@ export class MetricsAggregator implements IMetricsAggregator {
    */
   private async pollMetrics(): Promise<void> {
     try {
-      // Get the currently running test first
-      const allTests = await testStorage.getAll();
-      const runningTests = allTests.filter((test) => test.status === 'running');
-
-      if (runningTests.length === 0) {
-        // eslint-disable-next-line no-console
-        console.warn('No running test found, skipping metrics persistence');
-        return;
-      }
-
-      if (runningTests.length > 1) {
-        // eslint-disable-next-line no-console
-        console.warn(
-          'Multiple running tests detected, using the most recent one',
-        );
-      }
-
-      // Use the most recently started test (should only be one due to system constraints)
-      const test = runningTests.sort(
-        (a, b) => (b.epochStartedAt || 0) - (a.epochStartedAt || 0),
-      )[0];
-
       const metrics = this.getResults(
         this.hdrHistogramManagers.length,
         this.endpoints,
@@ -120,28 +115,33 @@ export class MetricsAggregator implements IMetricsAggregator {
       const testSummary = this.getTestSummary(
         this.hdrHistogramManagers.length,
         this.endpoints,
-        test.id,
       );
 
       // ! terminal.clearAndPrint(metrics);
 
-      globalEventEmitter.emit(ServerEvents.METRICS, testSummary);
-
-      // Store global metrics
-      await globalMetricStorage.create({
-        testId: test.id,
-        metric: metrics.global,
-        epoch: metrics.epoch,
+      globalEventEmitter.emit(ServerEvents.METRICS, {
+        testId: this.testId,
+        testSummary,
       });
 
-      // Store per-endpoint metrics
-      for (const [url, endpointMetric] of Object.entries(metrics.endpoints)) {
-        await endpointMetricStorage.create({
-          testId: test.id,
-          url,
-          metric: endpointMetric,
+      // Store metrics if testId is provided (server mode)
+      if (this.testId) {
+        // Store global metrics
+        await globalMetricStorage.create({
+          testId: this.testId,
+          metric: metrics.global,
           epoch: metrics.epoch,
         });
+
+        // Store per-endpoint metrics
+        for (const [url, endpointMetric] of Object.entries(metrics.endpoints)) {
+          await endpointMetricStorage.create({
+            testId: this.testId,
+            url,
+            metric: endpointMetric,
+            epoch: metrics.epoch,
+          });
+        }
       }
     } catch (error) {
       // eslint-disable-next-line no-console
@@ -369,7 +369,6 @@ export class MetricsAggregator implements IMetricsAggregator {
   public getTestSummary(
     workersCount: number,
     endpoints: string[],
-    testId: string,
   ): TestSummary {
     const metrics = this.getResults(workersCount, endpoints);
     const duration =
@@ -379,9 +378,7 @@ export class MetricsAggregator implements IMetricsAggregator {
       throw new Error('Config not set in MetricsAggregator');
     }
 
-    // Collect body samples for this test
-    this.collectBodySamples(testId);
-    const bodySamplesMap = this.getCollectedBodySamples(testId);
+    const bodySamplesMap = this.getCollectedBodySamples(this.runId);
 
     // Convert Map to Record for TestSummary
     const bodySamples: Record<
@@ -398,33 +395,19 @@ export class MetricsAggregator implements IMetricsAggregator {
       duration,
       this.endpointMethodMap,
       this.config,
-      testId,
       bodySamples,
     );
   }
 
   /**
-   * Collect body samples for all endpoints and store them
-   * @param testId The test ID to associate samples with
-   */
-  collectBodySamples(testId: string): void {
-    // If we have stored body samples for 'current' test, move them to the testId
-    if (bodySamplesStore.has('current')) {
-      const currentSamples = bodySamplesStore.get('current')!;
-      bodySamplesStore.set(testId, new Map(currentSamples));
-      bodySamplesStore.delete('current');
-    }
-  }
-
-  /**
-   * Get collected body samples for a test
-   * @param testId The test ID
+   * Get collected body samples for a run
+   * @param runId The run ID
    * @returns Map of endpoint URL to body samples
    */
   getCollectedBodySamples(
-    testId: string,
+    runId: string,
   ): Map<string, Array<{ statusCode: number; body: string }>> {
-    const samples = bodySamplesStore.get(testId) || new Map();
+    const samples = bodySamplesStore.get(runId) || new Map();
     return samples;
   }
 
@@ -433,21 +416,25 @@ export class MetricsAggregator implements IMetricsAggregator {
    * @param statusCode HTTP status code
    * @param body Response body content
    * @param url Endpoint URL
+   * @param runId The run ID to associate samples with
    */
-  recordBodySample(statusCode: number, body: string, url: string): void {
-    // For now, store in a simple in-memory map
-    // In a real implementation, this would be stored in a database or passed to the test summary
-    const key = url;
-    if (!bodySamplesStore.has('current')) {
-      bodySamplesStore.set('current', new Map());
+  recordBodySample(
+    statusCode: number,
+    body: string,
+    url: string,
+    runId: string,
+  ): void {
+    // Store directly under runId (no more 'current' key pattern)
+    if (!bodySamplesStore.has(runId)) {
+      bodySamplesStore.set(runId, new Map());
     }
-    const testSamples = bodySamplesStore.get('current')!;
+    const testSamples = bodySamplesStore.get(runId)!;
 
-    if (!testSamples.has(key)) {
-      testSamples.set(key, []);
+    if (!testSamples.has(url)) {
+      testSamples.set(url, []);
     }
 
-    const endpointSamples = testSamples.get(key)!;
+    const endpointSamples = testSamples.get(url)!;
 
     // Only store one sample per status code (as per the original design)
     const existingSampleIndex = endpointSamples.findIndex(
@@ -463,19 +450,11 @@ export class MetricsAggregator implements IMetricsAggregator {
   }
 
   /**
-   * Clear all metrics (reset to zero)
+   * Clean up body samples for a run
+   * @param runId The run ID to clean up
    */
-  reset(): void {
-    this.startTime = Date.now();
-
-    // Reset all managers
-    this.statsCounterManagers.forEach((manager) => {
-      const endpoints = manager.getEndpointsCount();
-      for (let i = 0; i < endpoints; i++) {
-        // Note: Individual counters can't be reset due to atomic safety
-        // This is intentional - counters should only increment
-      }
-    });
+  cleanupBodySamples(runId: string): void {
+    bodySamplesStore.delete(runId);
   }
 
   /**

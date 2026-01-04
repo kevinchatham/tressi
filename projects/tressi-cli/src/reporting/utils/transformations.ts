@@ -9,7 +9,6 @@ export function transformAggregatedMetricToTestSummary(
   actualDurationSec: number,
   endpointMethodMap: Record<string, string>,
   config: TressiConfig,
-  testId?: string,
   bodySamples?: Record<string, Array<{ statusCode: number; body: string }>>,
 ): TestSummary {
   const global = metrics.global;
@@ -73,7 +72,6 @@ export function transformAggregatedMetricToTestSummary(
   );
 
   return {
-    testId,
     global: globalSummary,
     endpoints: endpointSummaries,
     tressiVersion: pkg.version || 'unknown',

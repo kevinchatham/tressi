@@ -3,17 +3,21 @@ import Table from 'cli-table3';
 import { promises as fs } from 'fs';
 import ora from 'ora';
 import path from 'path';
-import { performance } from 'perf_hooks';
 
 import { TressiConfig, TressiOptionsConfig } from './common/config/types';
 import { Runner } from './core/runner';
 import { DataExporter } from './reporting/exporters/data-exporter';
 import { MarkdownGenerator } from './reporting/generators/markdown-generator';
 import type { TestSummary } from './reporting/types';
-import { transformAggregatedMetricToTestSummary } from './reporting/utils/transformations';
 import { MinimalTUI } from './tui/minimal-tui';
 import { terminal } from './tui/terminal';
 import { FileUtils } from './utils/file-utils';
+
+interface LoadTestOptions {
+  enableTUI: boolean;
+  setupSignalHandlers: boolean;
+  testId?: string; // Only for server persistence
+}
 
 export type { TestSummary };
 export type { TressiConfig };
@@ -172,174 +176,160 @@ function printEndpointSummary(summary: TestSummary): void {
 }
 
 /**
- * The main function to execute a Tressi load test using the worker-based architecture.
- * It initializes the core components, manages the test execution, and handles reporting.
- * @param config The TressiConfig for the test.
- * @returns A Promise that resolves with the TestSummary object.
+ * Shared implementation for both load test entry points
+ * Generates ephemeral runId for body sampling
  */
-export async function runLoadTest(
+async function executeLoadTest(
   config: TressiConfig,
-  testId?: string,
+  options: LoadTestOptions,
 ): Promise<TestSummary> {
-  const { silent, exportPath } = config.options;
-
   const runner = new Runner(config);
 
-  const minimalUI = new MinimalTUI(config);
+  if (options.testId) runner.setTestId(options.testId);
 
-  const cleanup = async (): Promise<void> => {
-    await runner.stop();
-    process.exit(0); // Ensure clean exit
-  };
-
-  process.on('SIGINT', cleanup);
-  process.on('SIGTERM', cleanup);
-
-  minimalUI.start(runner);
-
-  await runner.run();
-
-  minimalUI.stop();
-
-  // Add this line to clean up resources after normal completion
-  await runner.stop();
-
-  const startTime = runner.getStartTime();
-  const actualDurationSec =
-    startTime > 0 ? (performance.now() - startTime) / 1000 : 0;
-
-  // Generate summary from worker results using the runner
-  const summary = await generateTestSummaryFromWorkers(
-    actualDurationSec,
-    runner,
-    testId,
-  );
-
-  if (exportPath && !silent) {
-    const exportSpinner = ora({
-      text: 'Exporting results...',
-    }).start();
-
-    try {
-      const baseExportName =
-        typeof exportPath === 'string' ? exportPath : 'tressi-report';
-      const runDate = new Date();
-
-      const reportDir = path.join(
-        process.cwd(),
-        FileUtils.getSafeDirectoryName(
-          `${baseExportName}-${runDate.toISOString()}`,
-        ),
-      );
-      await FileUtils.ensureDirectoryExists(reportDir);
-
-      // Create markdown generator and generate report
-      const markdownGenerator = new MarkdownGenerator();
-      const markdownReport = markdownGenerator.generate(
-        summary,
-        createRunnerInterface(summary),
-        config,
-        {
-          exportName: baseExportName,
-          runDate,
-        },
-      );
-      await fs.writeFile(path.join(reportDir, 'report.md'), markdownReport);
-
-      const dataExporter = new DataExporter();
-      await dataExporter.exportDataFiles(
-        summary,
-        [], // No sampled results in worker mode
-        reportDir,
-        createRunnerInterface(summary),
-      );
-
-      exportSpinner.succeed(`Successfully exported results to ${reportDir}`);
-    } catch (err) {
-      exportSpinner.fail(
-        chalk.red(`Failed to export results: ${(err as Error).message}`),
-      );
-    }
-  } else if (exportPath && silent) {
-    // Silent export without spinner
-    try {
-      const baseExportName =
-        typeof exportPath === 'string' ? exportPath : 'tressi-report';
-      const runDate = new Date();
-
-      const reportDir = path.join(
-        process.cwd(),
-        FileUtils.getSafeDirectoryName(
-          `${baseExportName}-${runDate.toISOString()}`,
-        ),
-      );
-      await FileUtils.ensureDirectoryExists(reportDir);
-
-      // Create markdown generator and generate report
-      const markdownGenerator = new MarkdownGenerator();
-      const markdownReport = markdownGenerator.generate(
-        summary,
-        createRunnerInterface(summary),
-        config,
-        {
-          exportName: baseExportName,
-          runDate,
-        },
-      );
-      await fs.writeFile(path.join(reportDir, 'report.md'), markdownReport);
-
-      const dataExporter = new DataExporter();
-      await dataExporter.exportDataFiles(
-        summary,
-        [], // No sampled results in worker mode
-        reportDir,
-        createRunnerInterface(summary),
-      );
-    } catch (err) {
-      // In silent mode, we don't output the error to console
-      // The error will be handled by the caller
-      throw err;
-    }
+  // Setup signal handlers only for CLI use
+  if (options.setupSignalHandlers) {
+    const cleanup = async (): Promise<void> => {
+      await runner.stop();
+      process.exit(0);
+    };
+    process.on('SIGINT', cleanup);
+    process.on('SIGTERM', cleanup);
   }
 
-  // Final summary to console
-  if (!silent) {
-    printSummary(summary, config.options, config);
+  // Setup TUI only for CLI use
+  let minimalUI: MinimalTUI | undefined;
+  if (options.enableTUI && !config.options.silent) {
+    minimalUI = new MinimalTUI(config);
+    minimalUI.start(runner);
+  }
+
+  // Execute test
+  await runner.run();
+
+  // Cleanup TUI
+  if (minimalUI) {
+    minimalUI.stop();
+  }
+
+  // Final cleanup
+  await runner.stop();
+
+  // Generate summary
+  const summary = runner.getTestSummary();
+
+  // Always clean up body samples (they're ephemeral)
+  runner.cleanupBodySamples();
+
+  // Handle export and printing only for CLI
+  if (options.enableTUI) {
+    await handleExport(summary, config);
+    if (!config.options.silent) {
+      printSummary(summary, config.options, config);
+    }
   }
 
   return summary;
 }
 
 /**
- * Generates a TestSummary from worker results using the runner's aggregated metrics.
+ * Execute a load test from CLI or programmatically
  */
-async function generateTestSummaryFromWorkers(
-  actualDurationSec: number,
-  runner: Runner,
-  testId?: string,
-): Promise<TestSummary> {
-  // Get the actual aggregated metrics from the runner
-  const aggregatedMetrics = runner.getAggregatedMetrics();
+export async function runLoadTest(config: TressiConfig): Promise<TestSummary> {
+  return executeLoadTest(config, {
+    enableTUI: true,
+    setupSignalHandlers: true,
+  });
+}
 
-  // Build endpoint method map from config
-  const config = runner.getConfig();
-  const endpointMethodMap: Record<string, string> = {};
-  for (const request of config.requests) {
-    endpointMethodMap[request.url] = request.method;
+/**
+ * Execute a load test from UI/server
+ * Looks up config from testId and executes load test
+ */
+export async function runLoadTestForServer(
+  testId: string,
+): Promise<TestSummary> {
+  // Import here to avoid circular dependency
+  const { testStorage } = await import('./collections/test-collection');
+  const { configStorage } = await import('./collections/config-collection');
+
+  // Get test document to find configId
+  const test = await testStorage.getById(testId);
+  if (!test) {
+    throw new Error(`Test with ID ${testId} not found`);
   }
 
-  // Get body samples from the runner's metrics aggregator
-  const bodySamples = testId ? runner.getBodySamples(testId) : {};
+  // Get config document
+  const configDoc = await configStorage.getById(test.configId);
+  if (!configDoc) {
+    throw new Error(`Config with ID ${test.configId} not found`);
+  }
 
-  // Transform AggregatedMetric to TestSummary format
-  return transformAggregatedMetricToTestSummary(
-    aggregatedMetrics,
-    actualDurationSec,
-    endpointMethodMap,
-    config,
-    testId,
-    bodySamples,
-  );
+  const config = configDoc.config;
+
+  // Pass runId directly as a parameter, not in options
+  return executeLoadTest(config, {
+    enableTUI: false,
+    setupSignalHandlers: false,
+    testId, // For database persistence
+  });
+}
+
+/**
+ * Handles export functionality for CLI mode
+ */
+async function handleExport(
+  summary: TestSummary,
+  config: TressiConfig,
+): Promise<void> {
+  const { exportPath } = config.options;
+
+  if (!exportPath) return;
+
+  const exportSpinner = ora({
+    text: 'Exporting results...',
+  }).start();
+
+  try {
+    const baseExportName =
+      typeof exportPath === 'string' ? exportPath : 'tressi-report';
+    const runDate = new Date();
+
+    const reportDir = path.join(
+      process.cwd(),
+      FileUtils.getSafeDirectoryName(
+        `${baseExportName}-${runDate.toISOString()}`,
+      ),
+    );
+    await FileUtils.ensureDirectoryExists(reportDir);
+
+    // Create markdown generator and generate report
+    const markdownGenerator = new MarkdownGenerator();
+    const markdownReport = markdownGenerator.generate(
+      summary,
+      createRunnerInterface(summary),
+      config,
+      {
+        exportName: baseExportName,
+        runDate,
+      },
+    );
+    await fs.writeFile(path.join(reportDir, 'report.md'), markdownReport);
+
+    const dataExporter = new DataExporter();
+    await dataExporter.exportDataFiles(
+      summary,
+      [], // No sampled results in worker mode
+      reportDir,
+      createRunnerInterface(summary),
+    );
+
+    exportSpinner.succeed(`Successfully exported results to ${reportDir}`);
+  } catch (err) {
+    exportSpinner.fail(
+      chalk.red(`Failed to export results: ${(err as Error).message}`),
+    );
+  }
 }
 
 /**

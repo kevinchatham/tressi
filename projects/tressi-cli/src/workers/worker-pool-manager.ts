@@ -1,8 +1,10 @@
+import { randomUUID } from 'crypto';
 import os from 'os';
 import { Worker } from 'worker_threads';
 
 import { TressiConfig, TressiRequestConfig } from '../common/config/types';
 import type { AggregatedMetrics } from '../common/metrics';
+import type { TestSummary } from '../reporting/types';
 import { FileUtils } from '../utils/file-utils';
 import { EarlyExitCoordinator } from './early-exit-coordinator';
 import { MetricsAggregator } from './metrics-aggregator';
@@ -48,7 +50,7 @@ export class WorkerPoolManager {
   private workerAssignments: TressiRequestConfig[][] = [];
   private hdrHistogramManagers: HdrHistogramManager[] = [];
   private statsCounterManagers: StatsCounterManager[] = [];
-
+  private readonly runId = `ephemeral-${randomUUID()}`;
   constructor(private config: TressiConfig) {
     const cpuCount = os.cpus().length;
     const requestedThreads = config.options.threads ?? cpuCount;
@@ -84,6 +86,7 @@ export class WorkerPoolManager {
       this.hdrHistogramManagers,
       this.statsCounterManagers,
       endpointMethodMap,
+      this.runId,
     );
 
     // Set the config for metrics aggregation
@@ -189,6 +192,7 @@ export class WorkerPoolManager {
           message.statusCode as number,
           message.body as string,
           message.url as string,
+          this.runId,
         );
       }
     });
@@ -291,14 +295,15 @@ export class WorkerPoolManager {
 
   /**
    * Get body samples collected during the test
-   * @param testId The test ID to retrieve samples for
    * @returns Record of endpoint URL to body samples
    */
-  getBodySamples(
-    testId: string,
-  ): Record<string, Array<{ statusCode: number; body: string }>> {
-    const bodySamplesMap =
-      this.metricsAggregator.getCollectedBodySamples(testId);
+  getBodySamples(): Record<
+    string,
+    Array<{ statusCode: number; body: string }>
+  > {
+    const bodySamplesMap = this.metricsAggregator.getCollectedBodySamples(
+      this.runId,
+    );
 
     // Convert Map to Record
     const result: Record<
@@ -310,6 +315,41 @@ export class WorkerPoolManager {
     }
 
     return result;
+  }
+
+  /**
+   * Clean up body samples for this run
+   */
+  cleanupBodySamples(): void {
+    this.metricsAggregator.cleanupBodySamples(this.runId);
+  }
+
+  /**
+   * Set the testId for server mode persistence
+   * @param testId The test ID from database
+   */
+  setTestId(testId: string): void {
+    this.metricsAggregator.setTestId(testId);
+  }
+
+  /**
+   * Set the start time for metrics aggregation
+   * @param startTime Unix timestamp in milliseconds
+   */
+  public setStartTime(startTime: number): void {
+    this.metricsAggregator.setStartTime(startTime);
+  }
+
+  /**
+   * Get test summary for final report generation
+   * @returns TestSummary object
+   */
+  public getTestSummary(): TestSummary {
+    const endpoints = this.config.requests.map((req) => req.url);
+    return this.metricsAggregator.getTestSummary(
+      this.workers.length,
+      endpoints,
+    );
   }
 
   /**

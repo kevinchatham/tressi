@@ -1,7 +1,8 @@
 /**
+ * @deprecated for old markdown exporter
  * Type for formatted statistics output
  */
-export type FormattedStats = {
+export type DeprecatedFormattedStats = {
   global: {
     totalRequests: string;
     successfulRequests: string;

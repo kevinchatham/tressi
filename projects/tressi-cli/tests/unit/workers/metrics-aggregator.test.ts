@@ -76,6 +76,8 @@ describe('MetricsAggregator', () => {
       aggregator = new MetricsAggregator(
         mockHdrHistogramManagers,
         mockStatsCounterManagers,
+        {},
+        'test-run-id',
       );
 
       expect(aggregator).toBeInstanceOf(MetricsAggregator);
@@ -87,6 +89,8 @@ describe('MetricsAggregator', () => {
       aggregator = new MetricsAggregator(
         mockHdrHistogramManagers,
         mockStatsCounterManagers,
+        {},
+        'test-run-id',
       );
     });
 
@@ -121,6 +125,8 @@ describe('MetricsAggregator', () => {
       aggregator = new MetricsAggregator(
         mockHdrHistogramManagers,
         mockStatsCounterManagers,
+        {},
+        'test-run-id',
       );
     });
 
@@ -327,6 +333,8 @@ describe('MetricsAggregator', () => {
       aggregator = new MetricsAggregator(
         mockHdrHistogramManagers,
         mockStatsCounterManagers,
+        {},
+        'test-run-id',
       );
     });
 
@@ -335,6 +343,7 @@ describe('MetricsAggregator', () => {
         200,
         '{"message":"success"}',
         'http://example.com/api',
+        'test-run-id',
       );
 
       // The method should not throw and should store the sample
@@ -348,6 +357,7 @@ describe('MetricsAggregator', () => {
         200,
         '{"message":"first"}',
         'http://example.com/api',
+        'test-run-id',
       );
 
       // Record second sample for status 200 (should be ignored)
@@ -355,6 +365,7 @@ describe('MetricsAggregator', () => {
         200,
         '{"message":"second"}',
         'http://example.com/api',
+        'test-run-id',
       );
 
       // Record sample for different status code
@@ -362,6 +373,7 @@ describe('MetricsAggregator', () => {
         404,
         '{"message":"not found"}',
         'http://example.com/api',
+        'test-run-id',
       );
 
       // Should have samples for both status codes
@@ -369,39 +381,35 @@ describe('MetricsAggregator', () => {
     });
   });
 
-  describe('reset', () => {
+  describe('cleanupBodySamples', () => {
     beforeEach(() => {
       aggregator = new MetricsAggregator(
         mockHdrHistogramManagers,
         mockStatsCounterManagers,
+        {},
+        'test-run-id',
       );
     });
 
-    it('should reset aggregation state', () => {
-      // Setup mock data for the test
-      mockStatsCounterManagers.forEach((manager) => {
-        vi.mocked(manager.getAllEndpointCounters).mockReturnValue([
-          {
-            successCount: 0,
-            failureCount: 0,
-            bytesSent: 0,
-            bytesReceived: 0,
-            statusCodeCounts: {},
-            sampledStatusCodes: [],
-            bodySampleIndices: [],
-          },
-        ]);
-      });
+    it('should cleanup body samples for a run', () => {
+      // Record some body samples first
+      aggregator.recordBodySample(
+        200,
+        '{"message":"success"}',
+        'http://example.com/api',
+        'test-run-id',
+      );
 
-      // Test that reset affects observable behavior through getResults
-      aggregator.reset();
+      // Verify samples were recorded
+      const samples = aggregator.getCollectedBodySamples('test-run-id');
+      expect(samples.size).toBeGreaterThan(0);
 
-      const resetResults = aggregator.getResults(2, [
-        'http://example.com/api/1',
-      ]);
+      // Cleanup samples
+      aggregator.cleanupBodySamples('test-run-id');
 
-      // Reset should affect the results returned by getResults
-      expect(resetResults.global.totalRequests).toBe(0);
+      // Verify samples were cleaned up
+      const cleanedSamples = aggregator.getCollectedBodySamples('test-run-id');
+      expect(cleanedSamples.size).toBe(0);
     });
   });
 });
