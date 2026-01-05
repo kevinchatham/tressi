@@ -2,16 +2,19 @@ import {
   Component,
   computed,
   inject,
+  OnDestroy,
   OnInit,
   signal,
   viewChild,
 } from '@angular/core';
 import { Router } from '@angular/router';
+import { Subject, takeUntil } from 'rxjs';
 
 import { HeaderComponent } from '../../components/header/header.component';
 import { IconComponent } from '../../components/icon/icon.component';
 import { TestListComponent } from '../../components/test-list/test-list.component';
 import { ConfigService } from '../../services/config.service';
+import { EventService } from '../../services/event.service';
 import { LoadingService } from '../../services/loading.service';
 import { LocalStorageService } from '../../services/local-storage.service';
 import { LogService } from '../../services/log.service';
@@ -22,9 +25,10 @@ import { ConfigDocument, RPCService } from '../../services/rpc.service';
   imports: [HeaderComponent, IconComponent, TestListComponent],
   templateUrl: './dashboard.component.html',
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent implements OnInit, OnDestroy {
   /** Service injection */
   private readonly configService = inject(ConfigService);
+  private readonly eventService = inject(EventService);
   private readonly logService = inject(LogService);
   private readonly router = inject(Router);
   private readonly rpc = inject(RPCService);
@@ -37,6 +41,9 @@ export class DashboardComponent implements OnInit {
   /** Reactive signal holding the selected configuration. */
   readonly selectedConfig = signal<ConfigDocument | null>(null);
 
+  /** Reactive signal tracking test execution state */
+  readonly isTestRunning = signal<boolean>(false);
+
   /** Computed signal that returns the ID of the selected config, or empty string if none */
   readonly selectedConfigId = computed(() => {
     const config = this.selectedConfig();
@@ -44,12 +51,26 @@ export class DashboardComponent implements OnInit {
     return config.id;
   });
 
+  /** Computed signal that returns true if start button should be disabled */
+  readonly isStartButtonDisabled = computed(
+    () => !this.selectedConfigId() || this.isTestRunning(),
+  );
+
   /** Reference to the test list component for refreshing tests */
   readonly testListComponent = viewChild<TestListComponent>(TestListComponent);
 
+  /** Subject for managing subscription cleanup */
+  private readonly destroy$ = new Subject<void>();
+
   ngOnInit(): void {
     this.loadingService.registerPage('dashboard');
+    this.setupTestEventsListener();
     this.loadConfigurations();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   /**
@@ -166,6 +187,30 @@ export class DashboardComponent implements OnInit {
       .catch((error) => {
         this.logService.error('Failed to start load test:', error);
         // Show user-friendly error message
+      });
+  }
+
+  /**
+   * Sets up test event listeners to track test execution state
+   */
+  private setupTestEventsListener(): void {
+    this.eventService
+      .getTestEventsStream()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (event) => {
+          if (event.status === 'running') {
+            this.isTestRunning.set(true);
+          } else if (
+            event.status === 'completed' ||
+            event.status === 'failed'
+          ) {
+            this.isTestRunning.set(false);
+          }
+        },
+        error: (error) => {
+          this.logService.error('Failed to handle test event:', error);
+        },
       });
   }
 }

@@ -7,10 +7,11 @@ import {
 } from '@angular/core';
 
 import { AllThemes, Theme, ThemeService } from '../../services/theme.service';
+import { IconComponent } from '../icon/icon.component';
 
 @Component({
   selector: 'app-theme-switcher',
-  imports: [CommonModule],
+  imports: [CommonModule, IconComponent],
   templateUrl: './theme-switcher.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -26,27 +27,22 @@ export class ThemeSwitcherComponent implements OnInit {
   /**
    * Handles theme selection changes from the UI dropdown.
    *
-   * @param event - The DOM change event from the select element
+   * @param theme - The selected theme name as a string
    *
    * @remarks
-   * Extracts the selected theme value from the event target and updates
-   * both the component's local state and the global theme service.
-   *
+   * Updates both the component's local state and the global theme service.
    * The theme change takes effect immediately across the entire application
-   * due to the theme service's global state management. The method includes
-   * proper type casting for DOM element access.
+   * due to the theme service's global state management.
    *
    * @example
    * ```typescript
    * // When user selects "dark" from dropdown:
-   * // - Updates currentTheme property
-   * // - Calls themeService.setTheme('dark')
-   * // - Application theme changes immediately
+   * // Updates currentTheme property
+   * // Calls themeService.setTheme('dark')
+   * // Application theme changes immediately
    * ```
    */
-  changeTheme(event: Event): void {
-    const select = event.target as HTMLSelectElement;
-    const theme = select.value;
+  changeTheme(theme: string): void {
     this.currentTheme = theme as Theme;
     this.themeService.setTheme(theme as Theme);
   }

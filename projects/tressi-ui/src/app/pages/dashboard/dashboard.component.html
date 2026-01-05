@@ -1,33 +1,49 @@
 <div class="p-16">
   <app-header>
     <!-- Configuration Selector -->
-    <div class="form-control">
-      <select
-        class="select select-bordered"
-        (change)="onConfigSelectEvent($event)"
-        [value]="selectedConfigId()"
+    <div class="dropdown dropdown-center">
+      <div
+        title="Configuration"
+        tabindex="0"
+        role="button"
+        class="btn btn-outline btn-circle btn-secondary"
       >
-        <option disabled>Select Configuration</option>
+        <app-icon name="text_snippet" />
+      </div>
+      <ul
+        tabindex="0"
+        class="dropdown-content bg-base-300 rounded-box z-1 max-h-96 w-52 overflow-y-auto p-2 shadow-2xl"
+      >
         @for (config of configs(); track config.id) {
-          <option [value]="config.id">{{ config.name }}</option>
+          <li>
+            <input
+              type="radio"
+              name="config-dropdown"
+              class="theme-controller btn btn-sm btn-block btn-ghost w-full justify-start"
+              [attr.aria-label]="config.name"
+              [value]="config.id"
+              [checked]="selectedConfigId() === config.id"
+              (change)="onConfigSelect(config.id)"
+            />
+          </li>
         }
-      </select>
+      </ul>
     </div>
 
     <button
       (click)="start()"
       class="btn btn-primary btn-circle btn-outline"
       title="Start New Test"
-      [disabled]="!selectedConfigId()"
+      [disabled]="isStartButtonDisabled()"
     >
-      <app-icon name="bolt" />
+      <app-icon name="dynamic_form" />
     </button>
     <button
       (click)="navigateToSettings()"
       class="btn btn-outline btn-circle"
       title="Settings"
     >
-      <app-icon name="settings" />
+      <app-icon name="sdk" />
     </button>
   </app-header>
 

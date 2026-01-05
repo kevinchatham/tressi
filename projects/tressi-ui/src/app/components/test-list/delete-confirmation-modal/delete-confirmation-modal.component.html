@@ -17,10 +17,7 @@
       }
     </p>
     <div class="text-base-content/70 space-y-2 text-sm">
-      @if (isBulkDelete()) {
-        <div><strong>Tests to delete:</strong> {{ getTestToDeleteId() }}</div>
-        <div><strong>Total tests:</strong> {{ selectedTestsCount() }}</div>
-      } @else {
+      @if (!isBulkDelete()) {
         <div><strong>Test ID:</strong> {{ getTestToDeleteId() }}</div>
         <div><strong>Status:</strong> {{ getTestToDeleteStatus() }}</div>
         <div><strong>Started:</strong> {{ getTestToDeleteStartTime() }}</div>

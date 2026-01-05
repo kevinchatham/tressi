@@ -59,7 +59,7 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
 
   // Signals for reactive state management
   private readonly tests = signal<TestDocument[]>([]);
-  private readonly configName = signal<string>('');
+  readonly configName = signal<string>('');
   private readonly error = signal<string | null>(null);
   readonly showDeleteModal = signal<boolean>(false);
   readonly testToDelete = signal<TestDocument | null>(null);

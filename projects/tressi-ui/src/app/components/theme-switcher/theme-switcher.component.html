@@ -1,12 +1,28 @@
-<select
-  class="select select-bordered w-fit transition-all duration-200 ease-in-out"
-  (change)="changeTheme($event)"
-  [value]="currentTheme"
->
-  <option disabled>Select Theme</option>
-  @for (theme of themes; track theme) {
-    <option [selected]="currentTheme === theme" [value]="theme">
-      {{ theme | titlecase }}
-    </option>
-  }
-</select>
+<div class="dropdown dropdown-center">
+  <div
+    title="Theme"
+    tabindex="0"
+    role="button"
+    class="btn btn-outline btn-circle btn-secondary"
+  >
+    <app-icon name="palette" />
+  </div>
+  <ul
+    tabindex="0"
+    class="dropdown-content bg-base-300 rounded-box z-1 max-h-96 w-52 overflow-y-auto p-2 shadow-2xl"
+  >
+    @for (theme of themes; track theme) {
+      <li>
+        <input
+          type="radio"
+          name="theme-dropdown"
+          class="theme-controller btn btn-sm btn-block btn-ghost w-full justify-start"
+          [attr.aria-label]="theme | titlecase"
+          [value]="theme"
+          [checked]="currentTheme === theme"
+          (change)="changeTheme(theme)"
+        />
+      </li>
+    }
+  </ul>
+</div>

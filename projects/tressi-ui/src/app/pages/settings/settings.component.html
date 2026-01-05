@@ -1,21 +1,22 @@
 <div class="p-16">
   <app-header>
-    <app-theme-switcher />
-
+    @if (!showForm()) {
+      <app-theme-switcher />
+    }
     @if (!hasNoConfigs() && !showForm()) {
       <button
         (click)="startCreate()"
         class="btn btn-primary btn-circle btn-outline"
         title="New Config"
       >
-        <app-icon name="add" />
+        <app-icon name="post_add" />
       </button>
       <button
         (click)="navigateToDashboard()"
         class="btn btn-outline btn-circle"
         title="Dashboard"
       >
-        <app-icon name="home" />
+        <app-icon name="browse_activity" />
       </button>
     }
   </app-header>
