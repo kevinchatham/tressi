@@ -3,7 +3,7 @@
     <!-- Configuration Selector -->
     <div class="dropdown dropdown-center">
       <div
-        title="Configuration"
+        title="Test Configurations"
         tabindex="0"
         role="button"
         class="btn btn-outline btn-circle btn-secondary"
@@ -30,14 +30,14 @@
       </ul>
     </div>
 
-    <button
-      (click)="start()"
-      class="btn btn-primary btn-circle btn-outline"
-      title="Start New Test"
-      [disabled]="isStartButtonDisabled()"
-    >
-      <app-icon name="dynamic_form" />
-    </button>
+    @if (hasTestHistory() || !selectedConfigId()) {
+      <app-start-button
+        [config]="selectedConfig()"
+        [testRunning]="isTestRunning()"
+        (testStarted)="onTestStarted()"
+        (testStartFailed)="onTestStartFailed($event)"
+      />
+    }
     <button
       (click)="navigateToSettings()"
       class="btn btn-outline btn-circle"
@@ -50,7 +50,10 @@
   <!-- Test List Component -->
   @if (selectedConfigId()) {
     <div class="mt-8">
-      <app-test-list [configId]="selectedConfigId()" />
+      <app-test-list
+        [config]="selectedConfig()!"
+        (testHistoryUpdate)="onTestHistoryUpdate($event)"
+      />
     </div>
   } @else {
     <!-- Empty State -->

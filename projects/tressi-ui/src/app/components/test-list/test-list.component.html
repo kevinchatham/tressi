@@ -78,6 +78,13 @@
         <p class="text-base-content/70 mb-4">
           Run a new test to see it appear here.
         </p>
+
+        <!-- Add Start Button Here -->
+        <app-start-button
+          [config]="config()"
+          (testStarted)="onTestStarted()"
+          (testStartFailed)="onTestStartFailed($event)"
+        />
       </div>
     </div>
   }

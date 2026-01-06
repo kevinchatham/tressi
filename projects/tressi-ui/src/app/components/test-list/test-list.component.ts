@@ -7,6 +7,7 @@ import {
   OnChanges,
   OnDestroy,
   OnInit,
+  output,
   signal,
   SimpleChanges,
 } from '@angular/core';
@@ -14,13 +15,13 @@ import { Router, RouterModule } from '@angular/router';
 import type { TestSummary } from '@tressi-cli/reporting/types';
 import { Subscription } from 'rxjs';
 
-import { ConfigService } from '../../services/config.service';
 import { EventService } from '../../services/event.service';
 import { LoadingService } from '../../services/loading.service';
 import { LogService } from '../../services/log.service';
-import type { TestDocument } from '../../services/rpc.service';
+import type { ConfigDocument, TestDocument } from '../../services/rpc.service';
 import { TestService } from '../../services/test.service';
 import { IconComponent } from '../icon/icon.component';
+import { StartButtonComponent } from '../start-button/start-button.component';
 import { ColumnSelectorComponent } from './column-selector/column-selector.component';
 import { DeleteConfirmationModalComponent } from './delete-confirmation-modal/delete-confirmation-modal.component';
 import { TestListColumnsService } from './test-list-columns.service';
@@ -41,15 +42,18 @@ import { TestTableComponent } from './test-table/test-table.component';
     TestTableComponent,
     ColumnSelectorComponent,
     DeleteConfirmationModalComponent,
+    StartButtonComponent,
   ],
   templateUrl: './test-list.component.html',
 })
 export class TestListComponent implements OnChanges, OnInit, OnDestroy {
-  configId = input.required<string>();
+  config = input.required<ConfigDocument>();
+
+  /** Output event to notify parent component about test history changes */
+  readonly testHistoryUpdate = output<boolean>();
 
   private readonly router = inject(Router);
   private readonly testService = inject(TestService);
-  private readonly configService = inject(ConfigService);
   private readonly logService = inject(LogService);
   private readonly loadingService = inject(LoadingService);
   private readonly eventService = inject(EventService);
@@ -59,7 +63,9 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
 
   // Signals for reactive state management
   private readonly tests = signal<TestDocument[]>([]);
-  readonly configName = signal<string>('');
+  readonly configName = computed(
+    () => this.config()?.name || '[Deleted Configuration]',
+  );
   private readonly error = signal<string | null>(null);
   readonly showDeleteModal = signal<boolean>(false);
   readonly testToDelete = signal<TestDocument | null>(null);
@@ -112,7 +118,7 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['configId'] && changes['configId'].currentValue) {
+    if (changes['config'] && changes['config'].currentValue) {
       this.loadTests();
     }
   }
@@ -122,22 +128,18 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
       this.loadingService.setPageLoading('test-list', true);
       this.error.set(null);
 
-      // Load config name for display
-      const config = await this.configService.getOne(this.configId());
-      if (config) {
-        this.configName.set(config.name);
-      } else {
-        this.configName.set('[Deleted Configuration]');
-      }
-
-      // Load tests for this config
-      const tests = await this.testService.getTestsByConfigId(this.configId());
+      // Load tests for this config - use config().id directly
+      const tests = await this.testService.getTestsByConfigId(this.config().id);
       this.tests.set(tests);
+      // Emit test history update
+      this.testHistoryUpdate.emit(tests.length > 0);
     } catch (err) {
       this.error.set(
         err instanceof Error ? err.message : 'Failed to load tests',
       );
       this.tests.set([]);
+      // Emit test history update (no tests due to error)
+      this.testHistoryUpdate.emit(false);
     } finally {
       this.loadingService.setPageLoading('test-list', false);
     }
@@ -150,6 +152,20 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
   async refreshTests(): Promise<void> {
     this.error.set(null);
     await this.loadTests();
+  }
+
+  /**
+   * Handles test started event from StartButtonComponent
+   */
+  onTestStarted(): void {
+    this.refreshTests();
+  }
+
+  /**
+   * Handles test start failed event from StartButtonComponent
+   */
+  onTestStartFailed(error: Error): void {
+    this.logService.error('Failed to start test:', error);
   }
 
   // Column management - delegate to service
@@ -239,6 +255,9 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
       this.tests.update((tests) =>
         tests.filter((test) => !deletedIds.includes(test.id)),
       );
+      // Emit test history update after deletion
+      const remainingTests = this.tests();
+      this.testHistoryUpdate.emit(remainingTests.length > 0);
     }
 
     if (result.failedCount > 0) {
@@ -270,7 +289,7 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
       .getTestEventsStream()
       .subscribe({
         next: (event) => {
-          if (event.configId === this.configId()) {
+          if (event.configId === this.config().id) {
             this.handleTestEvent(event);
           }
         },
