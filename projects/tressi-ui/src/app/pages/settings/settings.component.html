@@ -36,6 +36,7 @@
         <app-configuration-card
           [input]="config"
           (edit)="startEdit($event)"
+          (duplicate)="startDuplicate($event)"
           (delete)="showDeleteConfirm($event)"
         />
       }

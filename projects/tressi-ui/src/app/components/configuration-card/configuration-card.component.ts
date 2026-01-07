@@ -9,12 +9,13 @@ import {
 
 import { ConfigDocument } from '../../services/rpc.service';
 import { TimeService } from '../../services/time.service';
+import { ExportConfigButtonComponent } from '../export-config-button/export-config-button.component';
 import { IconComponent } from '../icon/icon.component';
 
 @Component({
   selector: 'app-configuration-card',
   standalone: true,
-  imports: [IconComponent],
+  imports: [IconComponent, ExportConfigButtonComponent],
   templateUrl: './configuration-card.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -23,6 +24,7 @@ export class ConfigurationCardComponent {
 
   /** Output events */
   readonly edit = output<ConfigDocument>();
+  readonly duplicate = output<ConfigDocument>();
   readonly delete = output<ConfigDocument>();
 
   /** Services */

@@ -113,6 +113,26 @@ export class SettingsComponent implements OnInit {
   }
 
   /**
+   * Starts duplicating an existing configuration.
+   */
+  startDuplicate(config: ConfigDocument): void {
+    // Generate new name by appending " - Copy" to original name
+    const newName = `${config.name} - Copy`;
+
+    // Create duplicate config without ID (so it's treated as new)
+    const duplicatedConfig: ConfigDocument = {
+      ...config,
+      id: '', // Empty ID that will be generated on save
+      name: newName,
+      epochCreatedAt: Date.now(),
+      epochUpdatedAt: Date.now(),
+    };
+
+    this.currentConfig.set(duplicatedConfig);
+    this.showForm.set(true);
+  }
+
+  /**
    * Shows delete confirmation modal.
    */
   showDeleteConfirm(config: ConfigDocument): void {

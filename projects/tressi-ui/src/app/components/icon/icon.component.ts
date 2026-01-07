@@ -32,7 +32,9 @@ export type IconName =
   | 'stat_3'
   | 'post_add'
   | 'palette'
-  | 'text_snippet';
+  | 'text_snippet'
+  | 'file_save'
+  | 'copy_all';
 
 @Component({
   selector: 'app-icon',

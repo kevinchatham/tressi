@@ -11,20 +11,6 @@
           [name]="collapsed() ? 'keyboard_arrow_down' : 'keyboard_arrow_up'"
         />
       </button>
-      <button
-        (click)="edit.emit(input())"
-        class="btn btn-ghost text-success btn-circle"
-        title="Edit"
-      >
-        <app-icon name="edit_square" />
-      </button>
-      <button
-        (click)="delete.emit(input())"
-        class="btn btn-ghost text-error btn-circle"
-        title="Delete"
-      >
-        <app-icon name="delete" />
-      </button>
     </div>
   </div>
   <div class="mt-2 space-y-1 text-sm">
@@ -149,6 +135,32 @@
           </div>
         </div>
       }
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="border-base-300 mt-4 flex justify-end gap-2 border-t pt-4">
+      <button
+        (click)="delete.emit(input())"
+        class="btn btn-ghost text-error btn-circle"
+        title="Delete"
+      >
+        <app-icon name="delete" />
+      </button>
+      <app-export-config-button [config]="input()" />
+      <button
+        (click)="edit.emit(input())"
+        class="btn btn-ghost text-success btn-circle"
+        title="Edit"
+      >
+        <app-icon name="edit_square" />
+      </button>
+      <button
+        (click)="duplicate.emit(input())"
+        class="btn btn-ghost btn-circle"
+        title="Duplicate"
+      >
+        <app-icon name="copy_all" />
+      </button>
     </div>
   }
 </div>
