@@ -71,9 +71,7 @@ export class EarlyExitCoordinator implements IEarlyExitCoordinator {
         // Use request-level configuration
         perEndpointMap.set(request.url, {
           errorRate: requestConfig.errorRateThreshold,
-          exitStatusCodes: new Set(
-            requestConfig.exitStatusCodes || [500, 502, 503, 504],
-          ),
+          exitStatusCodes: new Set(requestConfig.exitStatusCodes),
           monitoringWindowMs:
             requestConfig.monitoringWindowMs || globalMonitoringWindow,
         });

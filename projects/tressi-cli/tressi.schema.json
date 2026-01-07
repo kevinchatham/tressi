@@ -16,8 +16,8 @@
       "workerEarlyExit": {
         "enabled": false,
         "errorRateThreshold": 0,
-        "exitStatusCodes": [400, 401, 403, 500, 502, 503, 504],
-        "monitoringWindowMs": 5000
+        "exitStatusCodes": [],
+        "monitoringWindowMs": 1000
       }
     }
   },
@@ -43,8 +43,8 @@
           "earlyExit": {
             "enabled": false,
             "errorRateThreshold": 0,
-            "exitStatusCodes": [400, 401, 403, 500, 502, 503, 504],
-            "monitoringWindowMs": 5000
+            "exitStatusCodes": [],
+            "monitoringWindowMs": 1000
           }
         },
         "type": "object",
@@ -96,8 +96,8 @@
             "default": {
               "enabled": false,
               "errorRateThreshold": 0,
-              "exitStatusCodes": [400, 401, 403, 500, 502, 503, 504],
-              "monitoringWindowMs": 5000
+              "exitStatusCodes": [],
+              "monitoringWindowMs": 1000
             },
             "type": "object",
             "properties": {
@@ -155,8 +155,8 @@
         "workerEarlyExit": {
           "enabled": false,
           "errorRateThreshold": 0,
-          "exitStatusCodes": [400, 401, 403, 500, 502, 503, 504],
-          "monitoringWindowMs": 5000
+          "exitStatusCodes": [],
+          "monitoringWindowMs": 1000
         }
       },
       "type": "object",
@@ -208,8 +208,8 @@
           "default": {
             "enabled": false,
             "errorRateThreshold": 0,
-            "exitStatusCodes": [400, 401, 403, 500, 502, 503, 504],
-            "monitoringWindowMs": 5000
+            "exitStatusCodes": [],
+            "monitoringWindowMs": 1000
           },
           "type": "object",
           "properties": {
