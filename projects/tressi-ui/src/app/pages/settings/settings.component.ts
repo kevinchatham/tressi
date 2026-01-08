@@ -13,6 +13,7 @@ import { ConfigFormComponent } from '../../components/config-form/config-form.co
 import { ConfigurationCardComponent } from '../../components/configuration-card/configuration-card.component';
 import { HeaderComponent } from '../../components/header/header.component';
 import { IconComponent } from '../../components/icon/icon.component';
+import { ImportConfigButtonComponent } from '../../components/import-config-button/import-config-button.component';
 import { SearchBarComponent } from '../../components/search-bar/search-bar.component';
 import { ConfigService } from '../../services/config.service';
 import { LoadingService } from '../../services/loading.service';
@@ -21,6 +22,7 @@ import {
   ModifyConfigRequest,
 } from '../../services/rpc.service';
 import { TimeService } from '../../services/time.service';
+import { ToastService } from '../../services/toast.service';
 
 @Component({
   selector: 'app-settings',
@@ -31,6 +33,7 @@ import { TimeService } from '../../services/time.service';
     HeaderComponent,
     ConfigurationCardComponent,
     SearchBarComponent,
+    ImportConfigButtonComponent,
   ],
   templateUrl: './settings.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -41,6 +44,7 @@ export class SettingsComponent implements OnInit {
   private readonly router = inject(Router);
   readonly timeService = inject(TimeService);
   private readonly loadingService = inject(LoadingService);
+  private readonly toastService = inject(ToastService);
 
   /** Reactive signals for state management */
   readonly configs = signal<ConfigDocument[]>([]);
@@ -227,5 +231,35 @@ export class SettingsComponent implements OnInit {
    */
   onSearchQueryChange(query: string): void {
     this.searchQuery.set(query);
+  }
+
+  /**
+   * Handles successful config import
+   */
+  onConfigImported(importedConfig: ModifyConfigRequest): void {
+    // Set the imported config to trigger form population
+    this.currentConfig.set({
+      id: '',
+      epochCreatedAt: Date.now(),
+      epochUpdatedAt: Date.now(),
+      name: importedConfig.name,
+      config: importedConfig.config,
+    } as ConfigDocument);
+
+    this.showForm.set(true);
+  }
+
+  /**
+   * Handles import errors with toast notification
+   */
+  onImportError(error: string): void {
+    this.toastService.show(error, 'error');
+  }
+
+  /**
+   * Dismisses the toast notification
+   */
+  dismissToast(): void {
+    this.toastService.dismiss();
   }
 }

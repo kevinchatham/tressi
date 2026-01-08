@@ -7,13 +7,14 @@ import {
 import { RouterOutlet } from '@angular/router';
 
 import { LoadingComponent } from './components/loading/loading.component';
+import { ToastComponent } from './components/toast/toast.component';
 import { LoadingService } from './services/loading.service';
 import { ThemeService } from './services/theme.service';
 import { TitleService } from './services/title.service';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, LoadingComponent],
+  imports: [RouterOutlet, LoadingComponent, ToastComponent],
   templateUrl: './app.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

@@ -34,7 +34,12 @@ export type IconName =
   | 'palette'
   | 'text_snippet'
   | 'file_save'
-  | 'copy_all';
+  | 'copy_all'
+  | 'upload_file'
+  | 'close'
+  | 'error'
+  | 'check_circle'
+  | 'warning';
 
 @Component({
   selector: 'app-icon',

@@ -3,7 +3,7 @@
     title="Theme"
     tabindex="0"
     role="button"
-    class="btn btn-outline btn-circle btn-secondary"
+    class="btn btn-circle btn-rainbow-outline"
   >
     <app-icon name="palette" />
   </div>
@@ -16,7 +16,7 @@
         <input
           type="radio"
           name="theme-dropdown"
-          class="theme-controller btn btn-sm btn-block btn-ghost w-full justify-start"
+          class="theme-controller btn btn-ghost w-full justify-start"
           [attr.aria-label]="theme | titlecase"
           [value]="theme"
           [checked]="currentTheme === theme"

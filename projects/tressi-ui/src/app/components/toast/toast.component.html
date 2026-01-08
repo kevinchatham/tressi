@@ -1,0 +1,15 @@
+@if (toastService.showToast()) {
+  <div class="toast toast-end z-50">
+    <div [class]="alertClass() + ' toast-animation'" role="alert">
+      <app-icon [name]="iconName()" />
+      <span>{{ toastService.toastMessage() }}</span>
+      <button
+        class="btn btn-sm btn-ghost"
+        (click)="onDismiss()"
+        aria-label="Dismiss notification"
+      >
+        <app-icon name="close" />
+      </button>
+    </div>
+  </div>
+}

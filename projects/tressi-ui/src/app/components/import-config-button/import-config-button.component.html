@@ -1,0 +1,15 @@
+<input
+  #fileInput
+  type="file"
+  accept=".json,application/json"
+  class="hidden"
+  (change)="onFileSelected($event)"
+/>
+<button
+  type="button"
+  class="btn btn-circle btn-outline btn-secondary"
+  title="Import Configuration"
+  (click)="triggerFileInput(fileInput)"
+>
+  <app-icon name="upload_file" />
+</button>

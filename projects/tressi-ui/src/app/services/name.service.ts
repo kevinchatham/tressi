@@ -23,11 +23,4 @@ export class NameService {
   generate(): string {
     return uniqueNamesGenerator(this.config);
   }
-
-  /**
-   * Allows generating a name with custom overrides.
-   */
-  generateCustom(config: Partial<Config>): string {
-    return uniqueNamesGenerator({ ...this.config, ...config });
-  }
 }

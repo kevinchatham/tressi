@@ -2,6 +2,10 @@
   <app-header>
     @if (!showForm()) {
       <app-theme-switcher />
+      <app-import-config-button
+        (configImported)="onConfigImported($event)"
+        (importError)="onImportError($event)"
+      />
     }
     @if (!hasNoConfigs() && !showForm()) {
       <button
