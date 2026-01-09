@@ -67,8 +67,8 @@ export class TestTableComponent {
         return `${g.p95LatencyMs}ms`;
       case 'summary.global.p99Latency':
         return `${g.p99LatencyMs}ms`;
-      case 'summary.global.tressiVersion':
-        return test.summary.global.tressiVersion;
+      case 'summary.tressiVersion':
+        return test.summary.tressiVersion;
       case 'summary.global.minLatency':
         return `${g.minLatencyMs}ms`;
       case 'summary.global.maxLatency':

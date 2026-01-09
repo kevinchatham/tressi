@@ -62,7 +62,7 @@ export class XlsxExporter {
     }));
     globalArray.unshift({
       Stat: 'Tressi Version',
-      Value: summary.global.tressiVersion,
+      Value: summary.tressiVersion,
     });
 
     const wsGlobal = xlsx.utils.json_to_sheet(globalArray);
