@@ -32,6 +32,7 @@ const responseSamplesStore = new Map<
 export class MetricsAggregator implements IMetricsAggregator {
   private pollingInterval: NodeJS.Timeout | null = null;
   private startTime: number = 0;
+  private endTime: number = 0;
   private endpoints: string[] = [];
   private config: TressiConfig | null = null;
   private testId?: string; // Optional for server persistence
@@ -57,6 +58,14 @@ export class MetricsAggregator implements IMetricsAggregator {
    */
   public setStartTime(startTime: number): void {
     this.startTime = startTime;
+  }
+
+  /**
+   * Set the end time for duration calculations
+   * @param endTime Unix timestamp in milliseconds
+   */
+  public setEndTime(endTime: number): void {
+    this.endTime = endTime;
   }
 
   /**
@@ -99,6 +108,7 @@ export class MetricsAggregator implements IMetricsAggregator {
       clearInterval(this.pollingInterval);
       this.pollingInterval = null;
     }
+    this.endTime = Date.now(); // ← Capture end time
   }
 
   /**
@@ -401,11 +411,17 @@ export class MetricsAggregator implements IMetricsAggregator {
       responseSamples[url] = samples;
     });
 
+    // Use stored times (endTime captured in stopPolling)
+    const epochStartedAt = this.startTime;
+    const epochEndedAt = this.endTime > 0 ? this.endTime : Date.now();
+
     return transformAggregatedMetricToTestSummary(
       metrics,
       duration,
       this.endpointMethodMap,
       this.config,
+      epochStartedAt, // ← REQUIRED parameter
+      epochEndedAt, // ← REQUIRED parameter
       responseSamples,
     );
   }

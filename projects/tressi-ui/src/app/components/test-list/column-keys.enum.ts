@@ -2,6 +2,7 @@ export enum ColumnKey {
   SELECT = 'select',
   STATUS = 'status',
   START_TIME = 'startTime',
+  END_TIME = 'endTime',
   ID = 'id',
   DURATION = 'duration',
   TOTAL_REQUESTS = 'totalRequests',
@@ -18,3 +19,21 @@ export enum ColumnKey {
   MAX_LATENCY = 'maxLatency',
   THEORETICAL_MAX_RPS = 'theoreticalMaxRps',
 }
+
+export type FieldPath =
+  | 'select'
+  | 'test.status'
+  | 'test.epochStartedAt'
+  | 'test.duration'
+  | 'summary.global.totalRequests'
+  | 'summary.global.errorPercentage'
+  | 'summary.global.successfulRequests'
+  | 'summary.global.failedRequests'
+  | 'summary.global.averageLatency'
+  | 'summary.global.p95Latency'
+  | 'summary.global.p99Latency'
+  | 'summary.tressiVersion'
+  | 'summary.global.minLatency'
+  | 'summary.global.maxLatency'
+  | 'summary.global.epochStartedAt'
+  | 'summary.global.epochEndedAt';

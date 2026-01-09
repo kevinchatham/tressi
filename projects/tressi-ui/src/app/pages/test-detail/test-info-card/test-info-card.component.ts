@@ -25,7 +25,7 @@ export class TestInfoCardComponent {
     this.collapsedChange.emit(!this.collapsed());
   }
 
-  formatDate(epoch: number | null): string {
+  formatDate(epoch: number | null | undefined): string {
     if (!epoch) return 'N/A';
     return new Date(epoch).toLocaleString();
   }
@@ -35,8 +35,13 @@ export class TestInfoCardComponent {
     if (test.status === 'running') {
       return 'Running...';
     }
-    if (test.epochEndedAt && test.epochStartedAt) {
-      const duration = test.epochEndedAt - test.epochStartedAt;
+    // Use embedded summary fields first
+    if (
+      test.summary?.global.epochEndedAt &&
+      test.summary?.global.epochStartedAt
+    ) {
+      const duration =
+        test.summary.global.epochEndedAt - test.summary.global.epochStartedAt;
       return `${Math.round(duration / 1000)}s`;
     }
     return test.summary?.global?.actualDuration

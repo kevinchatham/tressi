@@ -337,7 +337,6 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
 
       const updatedTest = { ...tests[runningTestIndex] };
       updatedTest.summary = summary;
-      updatedTest.epochUpdatedAt = Date.now();
 
       const newTests = [...tests];
       newTests[runningTestIndex] = updatedTest;
@@ -364,20 +363,28 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
       // Handle different column keys and extract values
       switch (columnKey) {
         case 'startTime':
-          valueA = a.epochStartedAt || a.epochCreatedAt || 0;
-          valueB = b.epochStartedAt || b.epochCreatedAt || 0;
+          valueA = a.summary?.global.epochStartedAt || a.epochCreatedAt || 0;
+          valueB = b.summary?.global.epochStartedAt || b.epochCreatedAt || 0;
+          break;
+        case 'endTime':
+          valueA = a.summary?.global.epochEndedAt || 0;
+          valueB = b.summary?.global.epochEndedAt || 0;
           break;
         case 'duration':
-          // Use summary duration if available, otherwise calculate from timestamps
+          // Use summary duration if available, otherwise calculate from embedded summary timestamps
           valueA =
             a.summary?.global.actualDuration ||
-            (a.epochEndedAt && a.epochStartedAt
-              ? (a.epochEndedAt - a.epochStartedAt) / 1000
+            (a.summary?.global.epochEndedAt && a.summary?.global.epochStartedAt
+              ? (a.summary.global.epochEndedAt -
+                  a.summary.global.epochStartedAt) /
+                1000
               : 0);
           valueB =
             b.summary?.global.actualDuration ||
-            (b.epochEndedAt && b.epochStartedAt
-              ? (b.epochEndedAt - b.epochStartedAt) / 1000
+            (b.summary?.global.epochEndedAt && b.summary?.global.epochStartedAt
+              ? (b.summary.global.epochEndedAt -
+                  b.summary.global.epochStartedAt) /
+                1000
               : 0);
           break;
         case 'requests':

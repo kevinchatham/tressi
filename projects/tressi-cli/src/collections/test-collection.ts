@@ -4,12 +4,7 @@ import { TestDocument } from './types';
 export type TestCreate = Pick<TestDocument, 'configId'>;
 
 export type TestEdit = Pick<TestDocument, 'id' | 'configId'> &
-  Partial<
-    Pick<
-      TestDocument,
-      'status' | 'epochStartedAt' | 'epochEndedAt' | 'error' | 'summary'
-    >
-  >;
+  Partial<Pick<TestDocument, 'status' | 'error' | 'summary'>>;
 
 /**
  * Storage class for managing test runs using SignalDB
@@ -62,9 +57,6 @@ class TestCollection {
         configId: input.configId,
         status: null,
         epochCreatedAt: now,
-        epochStartedAt: null,
-        epochUpdatedAt: now,
-        epochEndedAt: null,
         error: null,
         summary: null,
       };
@@ -96,10 +88,7 @@ class TestCollection {
         ...existing,
         configId: input.configId ?? existing.configId,
         status: input.status ?? existing.status,
-        epochStartedAt: input.epochStartedAt ?? existing.epochStartedAt,
-        epochEndedAt: input.epochEndedAt ?? existing.epochEndedAt,
         error: input.error ?? existing.error,
-        epochUpdatedAt: Date.now(),
         summary: input.summary ?? existing.summary,
       };
 

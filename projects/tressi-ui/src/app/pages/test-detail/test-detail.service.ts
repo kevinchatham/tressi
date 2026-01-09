@@ -102,11 +102,11 @@ export class TestDetailService {
     const currentTest = this.test();
     if (!currentTest || currentTest.id !== event.testId) return;
 
-    // Update test status
+    // Update test status - note: we don't set epochEndedAt here anymore
+    // as it should be set by the backend when the test completes
     this.test.set({
       ...currentTest,
       status: event.status,
-      epochEndedAt: event.status === 'completed' ? Date.now() : null,
     });
 
     // Stop real-time updates when test completes

@@ -95,7 +95,7 @@
             @if (column.key === 'startTime') {
               <td class="text-center">
                 <div class="text-base-content font-medium">
-                  {{ formatDate(test.epochStartedAt || test.epochCreatedAt) }}
+                  {{ getColumnValue(test, column) }}
                 </div>
               </td>
             }
@@ -108,12 +108,12 @@
             }
             @if (column.key === 'duration') {
               <td class="text-base-content text-center">
-                {{ getTestDuration(test) }}
+                {{ getColumnValue(test, column) }}
               </td>
             }
             @if (column.key === 'requests') {
               <td class="text-base-content text-center">
-                {{ getRequestCount(test) }}
+                {{ getColumnValue(test, column) }}
               </td>
             }
             @if (column.key === 'errorRate') {
@@ -122,7 +122,7 @@
                   [class.text-error]="test.status === 'failed' || test.error"
                   class="font-medium"
                 >
-                  {{ calculateErrorRate(test) }}
+                  {{ getColumnValue(test, column) }}
                 </span>
               </td>
             }

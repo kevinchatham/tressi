@@ -48,7 +48,7 @@ export class DeleteConfirmationModalComponent {
     const test = this.testToDelete();
     if (!test) return '';
     return new Date(
-      test.epochStartedAt || test.epochCreatedAt,
+      test.summary?.global.epochStartedAt || test.epochCreatedAt,
     ).toLocaleString();
   }
 }

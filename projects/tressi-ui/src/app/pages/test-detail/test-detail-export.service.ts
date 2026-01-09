@@ -72,15 +72,19 @@ export class TestDetailExportService {
     lines.push('ID,Status,Config ID,Created At,Started At,Ended At,Duration');
 
     const createdAt = new Date(test.epochCreatedAt).toISOString();
-    const startedAt = test.epochStartedAt
-      ? new Date(test.epochStartedAt).toISOString()
+    const startedAt = test.summary?.global.epochStartedAt
+      ? new Date(test.summary.global.epochStartedAt).toISOString()
       : '';
-    const endedAt = test.epochEndedAt
-      ? new Date(test.epochEndedAt).toISOString()
+    const endedAt = test.summary?.global.epochEndedAt
+      ? new Date(test.summary.global.epochEndedAt).toISOString()
       : '';
     const duration =
-      test.epochStartedAt && test.epochEndedAt
-        ? Math.round((test.epochEndedAt - test.epochStartedAt) / 1000)
+      test.summary?.global.epochStartedAt && test.summary?.global.epochEndedAt
+        ? Math.round(
+            (test.summary.global.epochEndedAt -
+              test.summary.global.epochStartedAt) /
+              1000,
+          )
         : '';
 
     lines.push(

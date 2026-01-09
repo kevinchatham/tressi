@@ -102,6 +102,10 @@ export type GlobalSummary = {
   p99LatencyMs: number;
   /** Total duration of the test in seconds. */
   actualDuration: number;
+  /** Time of test start. */
+  epochStartedAt: number;
+  /** Time of test end. */
+  epochEndedAt: number;
 };
 
 /**

@@ -2,6 +2,7 @@ import { inject, Injectable, signal } from '@angular/core';
 import { z } from 'zod';
 
 import { DEFAULT_COLUMN_CONFIGS } from '../components/test-list/column-config.constants';
+import { FieldPath } from '../components/test-list/column-keys.enum';
 import { CHART_TYPES, DEFAULT_CHART_TYPE } from '../types/chart.types';
 import { LogService } from './log.service';
 import { ConfigDocument } from './rpc.service';
@@ -10,7 +11,7 @@ import { Theme } from './theme.service';
 export const ColumnConfigSchema = z.object({
   key: z.string(),
   label: z.string(),
-  field: z.string(),
+  field: z.custom<FieldPath>(),
   format: z
     .enum(['number', 'percentage', 'milliseconds', 'datetime', 'duration'])
     .optional(),

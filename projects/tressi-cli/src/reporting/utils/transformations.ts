@@ -9,6 +9,8 @@ export function transformAggregatedMetricToTestSummary(
   actualDurationSec: number,
   endpointMethodMap: Record<string, string>,
   config: TressiConfig,
+  epochStartedAt: number, // ← REQUIRED
+  epochEndedAt: number, // ← REQUIRED
   responseSamples?: Record<
     string,
     Array<{
@@ -31,6 +33,8 @@ export function transformAggregatedMetricToTestSummary(
     p95LatencyMs: global.p95Latency,
     p99LatencyMs: global.p99Latency,
     actualDuration: roundToDecimals(actualDurationSec),
+    epochStartedAt: epochStartedAt, // ← Use required param
+    epochEndedAt: epochEndedAt, // ← Use required param
   };
 
   const endpointSummaries: EndpointSummary[] = Object.entries(

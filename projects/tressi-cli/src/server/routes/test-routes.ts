@@ -66,12 +66,11 @@ const app = new Hono()
           configId,
         });
 
-        // Update status to running
+        // Update status to running (epochStartedAt is now set in the embedded summary)
         await testStorage.edit({
           id,
           configId,
           status: 'running',
-          epochStartedAt: Date.now(),
         });
 
         // Emit test started event
@@ -90,11 +89,11 @@ const app = new Hono()
             const summary = await runLoadTestForServer(id);
 
             // Update test to completed status WITH embedded summary
+            // The summary now contains epochStartedAt and epochEndedAt
             await testStorage.edit({
               id,
               configId,
               status: 'completed',
-              epochEndedAt: Date.now(),
               summary: summary, // ← EMBED SUMMARY DIRECTLY
             });
 
@@ -115,7 +114,6 @@ const app = new Hono()
               id,
               configId,
               status: 'failed',
-              epochEndedAt: Date.now(),
               error: error instanceof Error ? error.message : 'Unknown error',
               summary: null, // ← NULL FOR FAILED TESTS
             });
@@ -168,7 +166,9 @@ const app = new Hono()
       }
 
       const latestRunningTest = runningTests.sort(
-        (a, b) => (b.epochStartedAt || 0) - (a.epochStartedAt || 0),
+        (a, b) =>
+          (b.summary?.global.epochStartedAt || b.epochCreatedAt || 0) -
+          (a.summary?.global.epochStartedAt || a.epochCreatedAt || 0),
       )[0];
 
       return c.json({

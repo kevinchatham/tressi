@@ -425,4 +425,165 @@ describe('MetricsAggregator', () => {
       expect(cleanedSamples.size).toBe(0);
     });
   });
+
+  describe('Timestamp Management', () => {
+    let mockConfig: any;
+
+    beforeEach(() => {
+      mockConfig = {
+        requests: [
+          {
+            url: 'http://example.com',
+            method: 'GET',
+            rps: 10,
+            duration: 60,
+          },
+        ],
+      };
+    });
+
+    it('should set endTime when stopPolling is called', () => {
+      const aggregator = new MetricsAggregator(
+        mockHdrHistogramManagers,
+        mockStatsCounterManagers,
+        {},
+        'test-run-id',
+      );
+
+      aggregator.startPolling();
+      const beforeStop = Date.now();
+      aggregator.stopPolling();
+      const afterStop = Date.now();
+
+      // Access private endTime for testing
+      const endTime = (aggregator as any).endTime;
+      expect(endTime).toBeGreaterThanOrEqual(beforeStop);
+      expect(endTime).toBeLessThanOrEqual(afterStop);
+    });
+
+    it('should pass correct timestamps to transformAggregatedMetricToTestSummary', () => {
+      const aggregator = new MetricsAggregator(
+        mockHdrHistogramManagers,
+        mockStatsCounterManagers,
+        {},
+        'test-run-id',
+      );
+
+      const startTime = Date.now() - 5000; // 5 seconds ago
+      aggregator.setStartTime(startTime);
+      aggregator.setConfig(mockConfig);
+      aggregator.setEndpoints(['http://example.com']);
+
+      const endTime = Date.now();
+      aggregator.setEndTime(endTime);
+
+      const summary = aggregator.getTestSummary(1, ['http://example.com']);
+
+      expect(summary.global.epochStartedAt).toBe(startTime);
+      expect(summary.global.epochEndedAt).toBe(endTime);
+      expect(summary.global.epochEndedAt).toBeGreaterThan(
+        summary.global.epochStartedAt,
+      );
+    });
+
+    it('should use Date.now() as fallback when endTime not set', () => {
+      const aggregator = new MetricsAggregator(
+        mockHdrHistogramManagers,
+        mockStatsCounterManagers,
+        {},
+        'test-run-id',
+      );
+
+      const startTime = Date.now() - 5000;
+      aggregator.setStartTime(startTime);
+      aggregator.setConfig(mockConfig);
+      aggregator.setEndpoints(['http://example.com']);
+
+      // Don't call stopPolling() or setEndTime()
+      const beforeSummary = Date.now();
+      const summary = aggregator.getTestSummary(1, ['http://example.com']);
+      const afterSummary = Date.now();
+
+      expect(summary.global.epochStartedAt).toBe(startTime);
+      expect(summary.global.epochEndedAt).toBeGreaterThanOrEqual(beforeSummary);
+      expect(summary.global.epochEndedAt).toBeLessThanOrEqual(afterSummary);
+    });
+
+    it('should handle zero startTime gracefully', () => {
+      const aggregator = new MetricsAggregator(
+        mockHdrHistogramManagers,
+        mockStatsCounterManagers,
+        {},
+        'test-run-id',
+      );
+
+      // Don't set start time
+      aggregator.setConfig(mockConfig);
+      aggregator.setEndpoints(['http://example.com']);
+      aggregator.setEndTime(Date.now());
+
+      const summary = aggregator.getTestSummary(1, ['http://example.com']);
+
+      expect(summary.global.epochStartedAt).toBe(0);
+      expect(summary.global.epochEndedAt).toBeGreaterThan(0);
+    });
+
+    it('should maintain consistent timestamps across multiple getTestSummary calls', () => {
+      const aggregator = new MetricsAggregator(
+        mockHdrHistogramManagers,
+        mockStatsCounterManagers,
+        {},
+        'test-run-id',
+      );
+
+      const startTime = Date.now() - 5000;
+      aggregator.setStartTime(startTime);
+      aggregator.setConfig(mockConfig);
+      aggregator.setEndpoints(['http://example.com']);
+
+      aggregator.stopPolling(); // Sets endTime
+
+      const summary1 = aggregator.getTestSummary(1, ['http://example.com']);
+      const summary2 = aggregator.getTestSummary(1, ['http://example.com']);
+
+      expect(summary1.global.epochStartedAt).toBe(
+        summary2.global.epochStartedAt,
+      );
+      expect(summary1.global.epochEndedAt).toBe(summary2.global.epochEndedAt);
+    });
+
+    it('should set endTime via setEndTime method', () => {
+      const aggregator = new MetricsAggregator(
+        mockHdrHistogramManagers,
+        mockStatsCounterManagers,
+        {},
+        'test-run-id',
+      );
+
+      const testEndTime = Date.now() + 1000; // Future time
+      aggregator.setEndTime(testEndTime);
+
+      // Access private endTime for testing
+      const endTime = (aggregator as any).endTime;
+      expect(endTime).toBe(testEndTime);
+    });
+
+    it('should use stopPolling endTime over setEndTime when both are called', () => {
+      const aggregator = new MetricsAggregator(
+        mockHdrHistogramManagers,
+        mockStatsCounterManagers,
+        {},
+        'test-run-id',
+      );
+
+      const setEndTime = Date.now() - 2000;
+      aggregator.setEndTime(setEndTime);
+
+      aggregator.startPolling();
+      aggregator.stopPolling(); // This should override the previous endTime
+
+      const stopPollingEndTime = (aggregator as any).endTime;
+      expect(stopPollingEndTime).toBeGreaterThan(setEndTime);
+    });
+  });
 });

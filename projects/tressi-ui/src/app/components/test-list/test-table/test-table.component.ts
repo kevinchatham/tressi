@@ -7,8 +7,11 @@ import type { TestDocument } from '../../../services/rpc.service';
 import { TestService } from '../../../services/test.service';
 import { IconComponent, IconName } from '../../icon/icon.component';
 import { StatusBadgeComponent } from '../../status-badge/status-badge.component';
-import { ColumnKey } from '../column-keys.enum';
+import { ColumnKey, FieldPath } from '../column-keys.enum';
 import type { SortConfig } from '../test-list-columns.service';
+
+// Define extractor function type
+type ValueExtractor = (test: TestDocument) => string;
 
 @Component({
   selector: 'app-test-table',
@@ -32,50 +35,77 @@ export class TestTableComponent {
 
   private readonly testService = inject(TestService);
 
+  // Create complete mapping that TypeScript will type-check
+  private readonly VALUE_EXTRACTORS: Record<FieldPath, ValueExtractor> = {
+    select: () => '',
+    'test.status': (test) => test.status || 'unknown',
+    'test.epochStartedAt': (test) =>
+      this.formatDate(
+        test.summary?.global.epochStartedAt || test.epochCreatedAt,
+      ),
+    'test.duration': (test) => this.getTestDuration(test),
+    'summary.global.totalRequests': (test) => {
+      if (!test.summary) return '—';
+      return test.summary.global.totalRequests.toLocaleString();
+    },
+    'summary.global.errorPercentage': (test) => {
+      if (!test.summary) return test.status === 'failed' ? '100.00%' : '—';
+      const g = test.summary.global;
+      return `${(g.failedRequests / g.totalRequests) * 100}%`;
+    },
+    'summary.global.successfulRequests': (test) => {
+      if (!test.summary) return '—';
+      return test.summary.global.successfulRequests.toLocaleString();
+    },
+    'summary.global.failedRequests': (test) => {
+      if (!test.summary) return '—';
+      return test.summary.global.failedRequests.toLocaleString();
+    },
+    'summary.global.averageLatency': (test) => {
+      if (!test.summary) return '—';
+      return `${test.summary.global.avgLatencyMs}ms`;
+    },
+    'summary.global.p95Latency': (test) => {
+      if (!test.summary) return '—';
+      return `${test.summary.global.p95LatencyMs}ms`;
+    },
+    'summary.global.p99Latency': (test) => {
+      if (!test.summary) return '—';
+      return `${test.summary.global.p99LatencyMs}ms`;
+    },
+    'summary.tressiVersion': (test) => {
+      if (!test.summary) return '—';
+      return test.summary.tressiVersion;
+    },
+    'summary.global.minLatency': (test) => {
+      if (!test.summary) return '—';
+      return `${test.summary.global.minLatencyMs}ms`;
+    },
+    'summary.global.maxLatency': (test) => {
+      if (!test.summary) return '—';
+      return `${test.summary.global.maxLatencyMs}ms`;
+    },
+    'summary.global.epochStartedAt': (test) => {
+      if (!test.summary) return '—';
+      return this.formatDate(test.summary.global.epochStartedAt);
+    },
+    'summary.global.epochEndedAt': (test) => {
+      if (!test.summary) return '—';
+      return this.formatDate(test.summary.global.epochEndedAt);
+    },
+  };
+
   getColumnValue(test: TestDocument, column: ColumnConfig): string {
-    // Handle basic test fields
-    switch (column.field) {
-      case 'test.status':
-        return test.status || 'unknown';
-      case 'test.epochStartedAt':
-        return this.formatDate(test.epochStartedAt || test.epochCreatedAt);
-      case 'test.duration':
-        return this.getTestDuration(test);
+    // Handle special 'select' column which doesn't extract data
+    if (column.field === 'select') {
+      return '';
     }
 
-    // Handle summary fields - direct property access
-    if (!test.summary) {
-      return column.key === 'errorRate' && test.status === 'failed'
-        ? '100.00%'
-        : '—';
+    const extractor = this.VALUE_EXTRACTORS[column.field];
+    if (!extractor) {
+      return '—'; // This should never happen with proper typing
     }
-
-    const { global: g } = test.summary;
-
-    switch (column.field) {
-      case 'summary.global.totalRequests':
-        return g.totalRequests.toLocaleString();
-      case 'summary.global.errorPercentage':
-        return `${(g.failedRequests / g.totalRequests) * 100}%`;
-      case 'summary.global.successfulRequests':
-        return g.successfulRequests.toLocaleString();
-      case 'summary.global.failedRequests':
-        return g.failedRequests.toLocaleString();
-      case 'summary.global.averageLatency':
-        return `${g.avgLatencyMs}ms`;
-      case 'summary.global.p95Latency':
-        return `${g.p95LatencyMs}ms`;
-      case 'summary.global.p99Latency':
-        return `${g.p99LatencyMs}ms`;
-      case 'summary.tressiVersion':
-        return test.summary.tressiVersion;
-      case 'summary.global.minLatency':
-        return `${g.minLatencyMs}ms`;
-      case 'summary.global.maxLatency':
-        return `${g.maxLatencyMs}ms`;
-      default:
-        return '—';
-    }
+    return extractor(test);
   }
 
   getTestDuration(test: TestDocument): string {
@@ -86,13 +116,14 @@ export class TestTableComponent {
       );
     }
 
-    // Fallback to timestamp calculation
+    // Fallback to timestamp calculation using embedded summary fields
     if (
       test.status === 'completed' &&
-      test.epochStartedAt &&
-      test.epochEndedAt
+      test.summary?.global.epochStartedAt &&
+      test.summary?.global.epochEndedAt
     ) {
-      const duration = test.epochEndedAt - test.epochStartedAt;
+      const duration =
+        test.summary.global.epochEndedAt - test.summary.global.epochStartedAt;
       return this.testService.formatDuration(duration);
     }
 

@@ -144,12 +144,13 @@ export class TestService {
    * @returns number Duration in milliseconds, or 0 if test hasn't started
    */
   getTestDuration(test: TestDocument): number {
-    if (!test.epochStartedAt) {
-      return 0;
+    // Use embedded summary fields
+    if (test.summary?.global.epochStartedAt) {
+      const endTime = test.summary?.global.epochEndedAt || Date.now();
+      return endTime - test.summary.global.epochStartedAt;
     }
 
-    const endTime = test.epochEndedAt || Date.now();
-    return endTime - test.epochStartedAt;
+    return 0;
   }
 
   /**
