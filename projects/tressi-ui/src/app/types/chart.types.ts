@@ -6,7 +6,7 @@
 /**
  * Available chart types for displaying test metrics
  */
-export const CHART_TYPES = ['throughput', 'latency', 'errorRate'] as const;
+export const CHART_TYPES = ['throughput', 'latency'] as const;
 
 /**
  * Chart type union type derived from the constants
@@ -27,7 +27,6 @@ export interface ChartOption {
 export const CHART_OPTIONS: ChartOption[] = [
   { value: 'throughput', label: 'Throughput' },
   { value: 'latency', label: 'Latency' },
-  { value: 'errorRate', label: 'Error' },
 ];
 
 /**

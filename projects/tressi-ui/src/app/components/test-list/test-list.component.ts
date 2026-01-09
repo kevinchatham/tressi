@@ -373,14 +373,14 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
         case 'duration':
           // Use summary duration if available, otherwise calculate from embedded summary timestamps
           valueA =
-            a.summary?.global.actualDuration ||
+            a.summary?.global.finalDurationSec ||
             (a.summary?.global.epochEndedAt && a.summary?.global.epochStartedAt
               ? (a.summary.global.epochEndedAt -
                   a.summary.global.epochStartedAt) /
                 1000
               : 0);
           valueB =
-            b.summary?.global.actualDuration ||
+            b.summary?.global.finalDurationSec ||
             (b.summary?.global.epochEndedAt && b.summary?.global.epochStartedAt
               ? (b.summary.global.epochEndedAt -
                   b.summary.global.epochStartedAt) /
@@ -411,23 +411,23 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
           valueA = a.summary?.global.failedRequests || 0;
           valueB = b.summary?.global.failedRequests || 0;
           break;
-        case 'avgLatency':
-          valueA = a.summary?.global.avgLatencyMs || 0;
-          valueB = b.summary?.global.avgLatencyMs || 0;
+        case 'p50LatencyMs':
+          valueA = a.summary?.global.p50LatencyMs || 0;
+          valueB = b.summary?.global.p50LatencyMs || 0;
           break;
-        case 'p95Latency':
+        case 'p95LatencyMs':
           valueA = a.summary?.global.p95LatencyMs || 0;
           valueB = b.summary?.global.p95LatencyMs || 0;
           break;
-        case 'p99Latency':
+        case 'p99LatencyMs':
           valueA = a.summary?.global.p99LatencyMs || 0;
           valueB = b.summary?.global.p99LatencyMs || 0;
           break;
-        case 'minLatency':
+        case 'minLatencyMs':
           valueA = a.summary?.global.minLatencyMs || 0;
           valueB = b.summary?.global.minLatencyMs || 0;
           break;
-        case 'maxLatency':
+        case 'maxLatencyMs':
           valueA = a.summary?.global.maxLatencyMs || 0;
           valueB = b.summary?.global.maxLatencyMs || 0;
           break;

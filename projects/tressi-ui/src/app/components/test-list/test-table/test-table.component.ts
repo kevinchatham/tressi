@@ -48,11 +48,6 @@ export class TestTableComponent {
       if (!test.summary) return '—';
       return test.summary.global.totalRequests.toLocaleString();
     },
-    'summary.global.errorPercentage': (test) => {
-      if (!test.summary) return test.status === 'failed' ? '100.00%' : '—';
-      const g = test.summary.global;
-      return `${(g.failedRequests / g.totalRequests) * 100}%`;
-    },
     'summary.global.successfulRequests': (test) => {
       if (!test.summary) return '—';
       return test.summary.global.successfulRequests.toLocaleString();
@@ -61,15 +56,15 @@ export class TestTableComponent {
       if (!test.summary) return '—';
       return test.summary.global.failedRequests.toLocaleString();
     },
-    'summary.global.averageLatency': (test) => {
+    'summary.global.p50LatencyMs': (test) => {
       if (!test.summary) return '—';
-      return `${test.summary.global.avgLatencyMs}ms`;
+      return `${test.summary.global.p50LatencyMs}ms`;
     },
-    'summary.global.p95Latency': (test) => {
+    'summary.global.p95LatencyMs': (test) => {
       if (!test.summary) return '—';
       return `${test.summary.global.p95LatencyMs}ms`;
     },
-    'summary.global.p99Latency': (test) => {
+    'summary.global.p99LatencyMs': (test) => {
       if (!test.summary) return '—';
       return `${test.summary.global.p99LatencyMs}ms`;
     },
@@ -77,11 +72,11 @@ export class TestTableComponent {
       if (!test.summary) return '—';
       return test.summary.tressiVersion;
     },
-    'summary.global.minLatency': (test) => {
+    'summary.global.minLatencyMs': (test) => {
       if (!test.summary) return '—';
       return `${test.summary.global.minLatencyMs}ms`;
     },
-    'summary.global.maxLatency': (test) => {
+    'summary.global.maxLatencyMs': (test) => {
       if (!test.summary) return '—';
       return `${test.summary.global.maxLatencyMs}ms`;
     },
@@ -110,9 +105,9 @@ export class TestTableComponent {
 
   getTestDuration(test: TestDocument): string {
     // Use embedded summary duration first
-    if (test.summary?.global.actualDuration) {
+    if (test.summary?.global.finalDurationSec) {
       return this.testService.formatDuration(
-        test.summary.global.actualDuration * 1000,
+        test.summary.global.finalDurationSec * 1000,
       );
     }
 

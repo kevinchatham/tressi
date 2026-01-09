@@ -96,9 +96,9 @@ export class MinimalTUI {
       // Use aggregated metrics directly as requested in comments
       const aggregatedMetrics = runner.getAggregatedMetrics();
       const { memoryUsageMB, cpuUsagePercent } = aggregatedMetrics;
-      const { requestsPerSecond, averageLatency } = aggregatedMetrics.global;
+      const { requestsPerSecond, p50LatencyMs } = aggregatedMetrics.global;
 
-      metricsText = `${Math.round(requestsPerSecond)} rps | ${Math.round(averageLatency)}ms avg | ${memoryUsageMB}MB | ${cpuUsagePercent}% CPU`;
+      metricsText = `${requestsPerSecond} rps | ${p50LatencyMs}ms p50 | ${memoryUsageMB}MB | ${cpuUsagePercent}% CPU`;
     } catch {
       // Fallback to basic display if metrics unavailable
     }

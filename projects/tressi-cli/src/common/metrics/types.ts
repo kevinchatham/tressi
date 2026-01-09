@@ -1,15 +1,13 @@
 export type Metric = {
-  averageLatency: number;
-  errorPercentage: number;
   failedRequests: number;
-  maxLatency: number;
-  minLatency: number;
+  maxLatencyMs: number;
+  minLatencyMs: number;
   networkBytesReceived: number;
   networkBytesSent: number;
   networkBytesPerSec: number;
-  p50Latency: number;
-  p95Latency: number;
-  p99Latency: number;
+  p50LatencyMs: number;
+  p95LatencyMs: number;
+  p99LatencyMs: number;
   requestsPerSecond: number;
   statusCodeDistribution: Record<number, number>;
   successfulRequests: number;

@@ -117,29 +117,29 @@ export function createRunnerInterface(summary: TestSummary): {
 
         const distribution = [
           {
-            latency: `${Math.round(summary.global.minLatencyMs)}ms`,
-            count: `${Math.round(summary.global.totalRequests * 0.1)}`,
+            latency: `${summary.global.minLatencyMs}ms`,
+            count: `${summary.global.totalRequests}`,
             percent: '10%',
             cumulative: '10%',
             chart: '█',
           },
           {
-            latency: `${Math.round(summary.global.avgLatencyMs)}ms`,
-            count: `${Math.round(summary.global.totalRequests * 0.5)}`,
+            latency: `${summary.global.p50LatencyMs}ms`,
+            count: `${summary.global.totalRequests}`,
             percent: '50%',
             cumulative: '60%',
             chart: '█████',
           },
           {
-            latency: `${Math.round(summary.global.p95LatencyMs)}ms`,
-            count: `${Math.round(summary.global.totalRequests * 0.35)}`,
+            latency: `${summary.global.p95LatencyMs}ms`,
+            count: `${summary.global.totalRequests}`,
             percent: '35%',
             cumulative: '95%',
             chart: '███',
           },
           {
-            latency: `${Math.round(summary.global.p99LatencyMs)}ms`,
-            count: `${Math.round(summary.global.totalRequests * 0.04)}`,
+            latency: `${summary.global.p99LatencyMs}ms`,
+            count: `${summary.global.totalRequests}`,
             percent: '4%',
             cumulative: '99%',
             chart: '█',

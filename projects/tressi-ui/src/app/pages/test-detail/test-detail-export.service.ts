@@ -95,14 +95,12 @@ export class TestDetailExportService {
     // Global metrics
     if (metrics.global?.length) {
       lines.push('Global Metrics');
-      lines.push(
-        'Timestamp,Requests Per Second,Average Latency,Error Rate,Total Requests',
-      );
+      lines.push('Timestamp,Requests Per Second, Total Requests');
 
       for (const metric of metrics.global) {
         const m = metric.metric;
         lines.push(
-          `${new Date(metric.epoch).toISOString()},${m.requestsPerSecond},${m.averageLatency},${m.errorPercentage},${m.totalRequests}`,
+          `${new Date(metric.epoch).toISOString()},${m.requestsPerSecond},${m.totalRequests}`,
         );
       }
       lines.push('');
@@ -111,14 +109,12 @@ export class TestDetailExportService {
     // Endpoint metrics
     if (metrics.endpoints?.length) {
       lines.push('Endpoint Metrics');
-      lines.push(
-        'URL,Timestamp,Requests Per Second,Average Latency,Error Rate,Total Requests',
-      );
+      lines.push('URL,Timestamp,Requests Per Second,Total Requests');
 
       for (const metric of metrics.endpoints) {
         const m = metric.metric;
         lines.push(
-          `${metric.url},${new Date(metric.epoch).toISOString()},${m.requestsPerSecond},${m.averageLatency},${m.errorPercentage},${m.totalRequests}`,
+          `${metric.url},${new Date(metric.epoch).toISOString()},${m.requestsPerSecond},${m.totalRequests}`,
         );
       }
     }

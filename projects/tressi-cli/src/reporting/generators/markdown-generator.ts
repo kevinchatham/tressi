@@ -154,16 +154,15 @@ export class MarkdownGenerator {
     let md = `## Global Summary\n\n`;
     md += `> *A high-level overview of the entire test performance across all endpoints.*\n\n`;
     md += `| Stat | Value |\n| --- | --- |\n`;
-    md += `| Duration | ${global.actualDuration}s |\n`;
+    md += `| Duration | ${global.finalDurationSec}s |\n`;
     md += `| Total Requests | ${global.totalRequests} |\n`;
     md += `| Successful | ${global.successfulRequests} |\n`;
     md += `| Failed | ${global.failedRequests} |\n`;
-    md += `| Avg Latency | ${global.avgLatencyMs}ms |\n`;
     md += `| Min Latency | ${global.minLatencyMs}ms |\n`;
-    md += `| Max Latency | ${global.maxLatencyMs}ms |\n`;
+    md += `| p50 Latency | ${global.p50LatencyMs}ms |\n`;
     md += `| p95 Latency | ${global.p95LatencyMs}ms |\n`;
     md += `| p99 Latency | ${global.p99LatencyMs}ms |\n\n`;
-
+    md += `| Max Latency | ${global.maxLatencyMs}ms |\n`;
     return md;
   }
 
@@ -266,7 +265,7 @@ export class MarkdownGenerator {
     md += `| Endpoint | Avg | Min | Max | P95 | P99 |\n`;
     md += `|---|---|---|---|---|---|\n`;
     for (const endpoint of endpoints) {
-      md += `| ${endpoint.method} ${endpoint.url} | ${endpoint.avgLatencyMs}ms | ${endpoint.minLatencyMs}ms | ${endpoint.maxLatencyMs}ms | ${endpoint.p95LatencyMs}ms | ${endpoint.p99LatencyMs}ms |\n`;
+      md += `| ${endpoint.method} ${endpoint.url} | ${endpoint.p50LatencyMs}ms | ${endpoint.minLatencyMs}ms | ${endpoint.maxLatencyMs}ms | ${endpoint.p95LatencyMs}ms | ${endpoint.p99LatencyMs}ms |\n`;
     }
 
     return md;

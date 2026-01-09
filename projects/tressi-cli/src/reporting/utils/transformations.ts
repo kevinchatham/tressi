@@ -6,7 +6,7 @@ import { EndpointSummary, GlobalSummary, TestSummary } from '../types';
 
 export function transformAggregatedMetricToTestSummary(
   metrics: AggregatedMetrics,
-  actualDurationSec: number,
+  finalDurationSec: number,
   endpointMethodMap: Record<string, string>,
   config: TressiConfig,
   epochStartedAt: number, // ← REQUIRED
@@ -27,12 +27,12 @@ export function transformAggregatedMetricToTestSummary(
     totalRequests: global.totalRequests,
     successfulRequests: global.successfulRequests,
     failedRequests: global.failedRequests,
-    avgLatencyMs: global.averageLatency,
-    minLatencyMs: global.minLatency,
-    maxLatencyMs: global.maxLatency,
-    p95LatencyMs: global.p95Latency,
-    p99LatencyMs: global.p99Latency,
-    actualDuration: roundToDecimals(actualDurationSec),
+    minLatencyMs: global.minLatencyMs,
+    maxLatencyMs: global.maxLatencyMs,
+    p95LatencyMs: global.p95LatencyMs,
+    p99LatencyMs: global.p99LatencyMs,
+    p50LatencyMs: global.p50LatencyMs,
+    finalDurationSec: roundToDecimals(finalDurationSec),
     epochStartedAt: epochStartedAt, // ← Use required param
     epochEndedAt: epochEndedAt, // ← Use required param
   };
@@ -41,7 +41,7 @@ export function transformAggregatedMetricToTestSummary(
     metrics.endpoints,
   ).map(([url, endpoint]) => {
     const theoreticalMaxRps =
-      endpoint.averageLatency > 0 ? 1000 / endpoint.averageLatency : 0;
+      endpoint.p50LatencyMs > 0 ? 1000 / endpoint.p50LatencyMs : 0;
     const endpointResponseSamples = responseSamples?.[url] || [];
 
     // Find the request config for this URL to get the target RPS
@@ -58,12 +58,12 @@ export function transformAggregatedMetricToTestSummary(
       totalRequests: endpoint.totalRequests,
       successfulRequests: endpoint.successfulRequests,
       failedRequests: endpoint.failedRequests,
-      avgLatencyMs: endpoint.averageLatency,
-      minLatencyMs: endpoint.minLatency,
-      maxLatencyMs: endpoint.maxLatency,
-      p95LatencyMs: endpoint.p95Latency,
-      p99LatencyMs: endpoint.p99Latency,
-      actualRps: endpoint.requestsPerSecond,
+      minLatencyMs: endpoint.minLatencyMs,
+      maxLatencyMs: endpoint.maxLatencyMs,
+      p50LatencyMs: endpoint.p50LatencyMs,
+      p95LatencyMs: endpoint.p95LatencyMs,
+      p99LatencyMs: endpoint.p99LatencyMs,
+      requestsPerSecond: endpoint.requestsPerSecond,
       theoreticalMaxRps: roundToDecimals(theoreticalMaxRps),
       targetAchieved,
       responseSamples: endpointResponseSamples,

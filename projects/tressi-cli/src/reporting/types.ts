@@ -49,18 +49,18 @@ export type EndpointSummary = {
   successfulRequests: number;
   /** Number of failed requests (non-2xx status codes or network errors). */
   failedRequests: number;
-  /** Average latency in milliseconds across all requests. */
-  avgLatencyMs: number;
   /** Minimum latency in milliseconds observed for this endpoint. */
   minLatencyMs: number;
   /** Maximum latency in milliseconds observed for this endpoint. */
   maxLatencyMs: number;
+  /** 50th percentile latency in milliseconds across all requests. */
+  p50LatencyMs: number;
   /** 95th percentile latency in milliseconds (95% of requests were faster). */
   p95LatencyMs: number;
   /** 99th percentile latency in milliseconds (99% of requests were faster). */
   p99LatencyMs: number;
   /** Actual requests per second achieved for this endpoint. */
-  actualRps: number;
+  requestsPerSecond: number;
   /** Percentage of configured RPS achieved, derived from actualRps */
   targetAchieved: number;
   /** Theoretical maximum requests per second based on average latency. */
@@ -90,18 +90,18 @@ export type GlobalSummary = {
   successfulRequests: number;
   /** Total number of failed requests across all endpoints. */
   failedRequests: number;
-  /** Average latency in milliseconds across all requests. */
-  avgLatencyMs: number;
   /** Minimum latency in milliseconds observed across all requests. */
   minLatencyMs: number;
   /** Maximum latency in milliseconds observed across all requests. */
   maxLatencyMs: number;
+  /** 50th percentile latency in milliseconds across all requests. */
+  p50LatencyMs: number;
   /** 95th percentile latency in milliseconds across all requests. */
   p95LatencyMs: number;
   /** 99th percentile latency in milliseconds across all requests. */
   p99LatencyMs: number;
   /** Total duration of the test in seconds. */
-  actualDuration: number;
+  finalDurationSec: number;
   /** Time of test start. */
   epochStartedAt: number;
   /** Time of test end. */

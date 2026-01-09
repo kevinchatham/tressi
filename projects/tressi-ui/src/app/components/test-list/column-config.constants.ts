@@ -113,7 +113,7 @@ export const DEFAULT_COLUMN_CONFIGS: ColumnConfig[] = [
   {
     key: ColumnKey.MIN_LATENCY,
     label: 'Min Latency',
-    field: 'summary.global.minLatency',
+    field: 'summary.global.minLatencyMs',
     format: 'milliseconds',
     visible: false,
     group: 'latency',
@@ -123,9 +123,9 @@ export const DEFAULT_COLUMN_CONFIGS: ColumnConfig[] = [
     width: 120,
   },
   {
-    key: ColumnKey.AVG_LATENCY,
-    label: 'Avg Latency',
-    field: 'summary.global.averageLatency',
+    key: ColumnKey.p50_LATENCY,
+    label: 'P50 Latency',
+    field: 'summary.global.p50LatencyMs',
     format: 'milliseconds',
     visible: false,
     group: 'latency',
@@ -137,7 +137,7 @@ export const DEFAULT_COLUMN_CONFIGS: ColumnConfig[] = [
   {
     key: ColumnKey.P95_LATENCY,
     label: 'P95 Latency',
-    field: 'summary.global.p95Latency',
+    field: 'summary.global.p95LatencyMs',
     format: 'milliseconds',
     visible: false,
     group: 'latency',
@@ -149,7 +149,7 @@ export const DEFAULT_COLUMN_CONFIGS: ColumnConfig[] = [
   {
     key: ColumnKey.P99_LATENCY,
     label: 'P99 Latency',
-    field: 'summary.global.p99Latency',
+    field: 'summary.global.p99LatencyMs',
     format: 'milliseconds',
     visible: false,
     group: 'latency',
@@ -161,7 +161,7 @@ export const DEFAULT_COLUMN_CONFIGS: ColumnConfig[] = [
   {
     key: ColumnKey.MAX_LATENCY,
     label: 'Max Latency',
-    field: 'summary.global.maxLatency',
+    field: 'summary.global.maxLatencyMs',
     format: 'milliseconds',
     visible: false,
     group: 'latency',

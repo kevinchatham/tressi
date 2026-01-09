@@ -87,13 +87,7 @@ export class EndpointFilterComponent {
 
     if (this.maxLatency > 0) {
       filtered = filtered.filter(
-        (endpoint) => endpoint.metric.averageLatency <= this.maxLatency,
-      );
-    }
-
-    if (this.maxErrorRate < 100) {
-      filtered = filtered.filter(
-        (endpoint) => endpoint.metric.errorPercentage <= this.maxErrorRate,
+        (endpoint) => endpoint.metric.p50LatencyMs <= this.maxLatency,
       );
     }
 

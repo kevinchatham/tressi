@@ -44,8 +44,8 @@ export class TestInfoCardComponent {
         test.summary.global.epochEndedAt - test.summary.global.epochStartedAt;
       return `${Math.round(duration / 1000)}s`;
     }
-    return test.summary?.global?.actualDuration
-      ? `${test.summary.global.actualDuration}s`
+    return test.summary?.global?.finalDurationSec
+      ? `${test.summary.global.finalDurationSec}s`
       : 'N/A';
   }
 

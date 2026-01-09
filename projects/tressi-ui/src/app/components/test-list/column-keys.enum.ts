@@ -9,15 +9,12 @@ export enum ColumnKey {
   ERROR_RATE = 'errorRate',
   SUCCESSFUL_REQUESTS = 'successfulRequests',
   FAILED_REQUESTS = 'failedRequests',
-  AVG_LATENCY = 'avgLatency',
-  P95_LATENCY = 'p95Latency',
-  P99_LATENCY = 'p99Latency',
-  ACTUAL_RPS = 'actualRps',
-  ACHIEVED_PERCENTAGE = 'achievedPercentage',
+  p50_LATENCY = 'p50LatencyMs',
+  P95_LATENCY = 'p95LatencyMs',
+  P99_LATENCY = 'p99LatencyMs',
   TRESSI_VERSION = 'tressiVersion',
-  MIN_LATENCY = 'minLatency',
-  MAX_LATENCY = 'maxLatency',
-  THEORETICAL_MAX_RPS = 'theoreticalMaxRps',
+  MIN_LATENCY = 'minLatencyMs',
+  MAX_LATENCY = 'maxLatencyMs',
 }
 
 export type FieldPath =
@@ -26,14 +23,13 @@ export type FieldPath =
   | 'test.epochStartedAt'
   | 'test.duration'
   | 'summary.global.totalRequests'
-  | 'summary.global.errorPercentage'
   | 'summary.global.successfulRequests'
   | 'summary.global.failedRequests'
-  | 'summary.global.averageLatency'
-  | 'summary.global.p95Latency'
-  | 'summary.global.p99Latency'
+  | 'summary.global.p50LatencyMs'
+  | 'summary.global.p95LatencyMs'
+  | 'summary.global.p99LatencyMs'
   | 'summary.tressiVersion'
-  | 'summary.global.minLatency'
-  | 'summary.global.maxLatency'
+  | 'summary.global.minLatencyMs'
+  | 'summary.global.maxLatencyMs'
   | 'summary.global.epochStartedAt'
   | 'summary.global.epochEndedAt';

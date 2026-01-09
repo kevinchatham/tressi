@@ -75,11 +75,11 @@ export class XlsxExporter {
   ): void {
     const formattedEndpoints = endpoints.map((endpoint) => ({
       ...endpoint,
-      avgLatencyMs: Math.round(endpoint.avgLatencyMs),
-      minLatencyMs: Math.round(endpoint.minLatencyMs),
-      maxLatencyMs: Math.round(endpoint.maxLatencyMs),
-      p95LatencyMs: Math.round(endpoint.p95LatencyMs),
-      p99LatencyMs: Math.round(endpoint.p99LatencyMs),
+      minLatencyMs: endpoint.minLatencyMs,
+      maxLatencyMs: endpoint.maxLatencyMs,
+      p50LatencyMs: endpoint.p50LatencyMs,
+      p95LatencyMs: endpoint.p95LatencyMs,
+      p99LatencyMs: endpoint.p99LatencyMs,
     }));
 
     const wsEndpoints = xlsx.utils.json_to_sheet(formattedEndpoints);

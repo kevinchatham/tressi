@@ -242,7 +242,6 @@ export class MetricsAggregator implements IMetricsAggregator {
 
     // Calculate global metrics
     const duration = this.startTime > 0 ? Date.now() - this.startTime : 0;
-    const errorRate = totalRequests > 0 ? totalFailure / totalRequests : 0;
     const requestsPerSecond =
       duration > 0 ? totalRequests / (duration / 1000) : 0;
 
@@ -309,17 +308,11 @@ export class MetricsAggregator implements IMetricsAggregator {
         totalRequests: endpointTotalRequests,
         successfulRequests: endpointSuccessRequests,
         failedRequests: endpointFailureRequests,
-        errorPercentage: roundToDecimals(
-          endpointTotalRequests > 0
-            ? endpointFailureRequests / endpointTotalRequests
-            : 0,
-        ),
-        averageLatency: roundToDecimals(endpointStats.averageLatency),
-        minLatency: roundToDecimals(endpointStats.minLatency),
-        maxLatency: roundToDecimals(endpointStats.maxLatency),
-        p50Latency: roundToDecimals(endpointStats.p50Latency),
-        p95Latency: roundToDecimals(endpointStats.p95Latency),
-        p99Latency: roundToDecimals(endpointStats.p99Latency),
+        minLatencyMs: roundToDecimals(endpointStats.minLatency),
+        maxLatencyMs: roundToDecimals(endpointStats.maxLatency),
+        p50LatencyMs: roundToDecimals(endpointStats.p50Latency),
+        p95LatencyMs: roundToDecimals(endpointStats.p95Latency),
+        p99LatencyMs: roundToDecimals(endpointStats.p99Latency),
         requestsPerSecond: roundToDecimals(
           duration > 0 ? endpointTotalRequests / (duration / 1000) : 0,
         ),
@@ -353,13 +346,11 @@ export class MetricsAggregator implements IMetricsAggregator {
       totalRequests,
       successfulRequests: totalSuccess,
       failedRequests: totalFailure,
-      errorPercentage: roundToDecimals(errorRate),
-      averageLatency: roundToDecimals(globalStats.averageLatency),
-      minLatency: roundToDecimals(globalStats.minLatency),
-      maxLatency: roundToDecimals(globalStats.maxLatency),
-      p50Latency: roundToDecimals(globalStats.p50Latency),
-      p95Latency: roundToDecimals(globalStats.p95Latency),
-      p99Latency: roundToDecimals(globalStats.p99Latency),
+      minLatencyMs: roundToDecimals(globalStats.minLatency),
+      maxLatencyMs: roundToDecimals(globalStats.maxLatency),
+      p50LatencyMs: roundToDecimals(globalStats.p50Latency),
+      p95LatencyMs: roundToDecimals(globalStats.p95Latency),
+      p99LatencyMs: roundToDecimals(globalStats.p99Latency),
       requestsPerSecond: roundToDecimals(requestsPerSecond),
       statusCodeDistribution: globalStatusCodeDistribution,
       networkBytesSent: totalBytesSent,

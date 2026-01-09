@@ -64,9 +64,8 @@ export class TestDetailComponent {
       test?.summary?.endpoints?.map((endpoint) => ({
         url: endpoint.url,
         method: endpoint.method,
-        avgThroughput: Math.round(endpoint.actualRps),
-        avgLatency: Math.round(endpoint.avgLatencyMs),
-        avgErrorRate: (endpoint.failedRequests / endpoint.totalRequests) * 100,
+        requestsPerSecond: endpoint.requestsPerSecond,
+        p50LatencyMs: endpoint.p50LatencyMs,
         totalRequests: endpoint.totalRequests,
         successfulRequests: endpoint.successfulRequests,
         failedRequests: endpoint.failedRequests,
@@ -96,16 +95,7 @@ export class TestDetailComponent {
     const metrics = this.metricsData();
     if (!metrics?.global?.length) return { data: [], labels: [] };
 
-    const data = metrics.global.map((m) => m.metric?.averageLatency || 0);
-    const labels = metrics.global.map((m) => m.epoch);
-    return { data, labels };
-  });
-
-  readonly errorRateChartData = computed<ChartData>(() => {
-    const metrics = this.metricsData();
-    if (!metrics?.global?.length) return { data: [], labels: [] };
-
-    const data = metrics.global.map((m) => m.metric?.errorPercentage || 0);
+    const data = metrics.global.map((m) => m.metric?.p50LatencyMs || 0);
     const labels = metrics.global.map((m) => m.epoch);
     return { data, labels };
   });
@@ -196,11 +186,7 @@ export class TestDetailComponent {
         labels = endpointMetrics.map((m) => m.epoch);
         break;
       case 'latency':
-        data = endpointMetrics.map((m) => m.metric?.averageLatency || 0);
-        labels = endpointMetrics.map((m) => m.epoch);
-        break;
-      case 'errorRate':
-        data = endpointMetrics.map((m) => m.metric?.errorPercentage || 0);
+        data = endpointMetrics.map((m) => m.metric?.p50LatencyMs || 0);
         labels = endpointMetrics.map((m) => m.epoch);
         break;
     }
@@ -269,36 +255,50 @@ export class TestDetailComponent {
     return this.selectedChartType() === 'latency';
   }
 
-  isErrorRateChart(): boolean {
-    return this.selectedChartType() === 'errorRate';
-  }
-
   onEndpointChange(event: Event): void {
     const target = event.target as HTMLSelectElement;
     this.selectedEndpoint.set(target.value);
   }
 
-  getCurrentEndpointSummary() {
+  getCurrentEndpointSummary():
+    | {
+        url: string;
+        method: string;
+        requestsPerSecond: number;
+        p50LatencyMs: number;
+        totalRequests: number;
+        successfulRequests: number;
+        failedRequests: number;
+      }
+    | null
+    | undefined {
     const endpointUrl = this.selectedEndpoint();
     if (endpointUrl === 'global') return null;
     return this.endpointSummaries().find((e) => e.url === endpointUrl);
   }
 
-  getCurrentSummaryStats() {
+  getCurrentSummaryStats():
+    | {
+        url: string;
+        method: string;
+        requestsPerSecond: number;
+        p50LatencyMs: number;
+        totalRequests: number;
+        successfulRequests: number;
+        failedRequests: number;
+      }
+    | {
+        p50LatencyMs: number;
+        totalRequests: number;
+      }
+    | null
+    | undefined {
     const endpoint = this.selectedEndpoint();
     if (endpoint === 'global') {
       const test = this.testData();
       if (!test?.summary) return null;
       return {
-        avgThroughput: Math.round(
-          test.summary.global.totalRequests /
-            (test.summary.global.actualDuration / 1000),
-        ),
-        avgLatency: Math.round(test.summary.global.avgLatencyMs),
-        avgErrorRate:
-          (test.summary.global.failedRequests /
-            test.summary.global.totalRequests) *
-          100,
+        p50LatencyMs: test.summary.global.p50LatencyMs,
         totalRequests: test.summary.global.totalRequests,
       };
     } else {
@@ -331,12 +331,7 @@ export class TestDetailComponent {
         };
       case 'latency':
         return {
-          data: metrics.global.map((m) => m.metric?.averageLatency || 0),
-          labels: metrics.global.map((m) => m.epoch),
-        };
-      case 'errorRate':
-        return {
-          data: metrics.global.map((m) => m.metric?.errorPercentage || 0),
+          data: metrics.global.map((m) => m.metric?.p50LatencyMs || 0),
           labels: metrics.global.map((m) => m.epoch),
         };
     }

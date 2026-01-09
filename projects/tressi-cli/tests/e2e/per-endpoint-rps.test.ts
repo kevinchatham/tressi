@@ -84,7 +84,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
 
       // Total should be close to 50 + 25 + 10 = 85 RPS
       const actualRps =
-        results.global.totalRequests / results.global.actualDuration;
+        results.global.totalRequests / results.global.finalDurationSec;
       expect(actualRps).toBeGreaterThanOrEqual(75);
       expect(actualRps).toBeLessThanOrEqual(95);
 
@@ -237,7 +237,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
 
       // Should achieve close to 300 RPS total
       const actualRps =
-        results.global.totalRequests / results.global.actualDuration;
+        results.global.totalRequests / results.global.finalDurationSec;
       expect(actualRps).toBeGreaterThanOrEqual(250);
       expect(actualRps).toBeLessThanOrEqual(320);
     });
@@ -295,7 +295,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
 
       // Should achieve close to 4 RPS total
       const actualRps =
-        results.global.totalRequests / results.global.actualDuration;
+        results.global.totalRequests / results.global.finalDurationSec;
       expect(actualRps).toBeGreaterThanOrEqual(3);
       expect(actualRps).toBeLessThanOrEqual(5);
     });
@@ -368,7 +368,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
 
       // Expected: 40 + 15 + 20 = 75 RPS
       const actualRps =
-        results.global.totalRequests / results.global.actualDuration;
+        results.global.totalRequests / results.global.finalDurationSec;
       expect(actualRps).toBeGreaterThanOrEqual(65);
       expect(actualRps).toBeLessThanOrEqual(85);
     });
@@ -439,7 +439,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
 
       // Should distribute 60 RPS across all endpoints
       const actualRps =
-        results.global.totalRequests / results.global.actualDuration;
+        results.global.totalRequests / results.global.finalDurationSec;
       expect(actualRps).toBeGreaterThanOrEqual(55);
       expect(actualRps).toBeLessThanOrEqual(65);
     });
@@ -485,7 +485,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
       const results = await runLoadTest(config);
 
       const actualRps =
-        results.global.totalRequests / results.global.actualDuration;
+        results.global.totalRequests / results.global.finalDurationSec;
       expect(actualRps).toBeGreaterThanOrEqual(90);
       expect(actualRps).toBeLessThanOrEqual(110);
     });
@@ -530,7 +530,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
 
       // Should achieve close to 5 RPS total
       const actualRps =
-        results.global.totalRequests / results.global.actualDuration;
+        results.global.totalRequests / results.global.finalDurationSec;
       expect(actualRps).toBeGreaterThanOrEqual(4.5);
       expect(actualRps).toBeLessThanOrEqual(5.5);
     });
@@ -578,7 +578,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
       const results = await runLoadTest(config);
 
       const actualRps =
-        results.global.totalRequests / results.global.actualDuration;
+        results.global.totalRequests / results.global.finalDurationSec;
       const tolerance = targetRps * 0.1; // 10% tolerance for real-world conditions
       expect(actualRps).toBeGreaterThanOrEqual(targetRps - tolerance);
       expect(actualRps).toBeLessThanOrEqual(targetRps + tolerance);
@@ -651,7 +651,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
       const results = await runLoadTest(config);
 
       const actualRps =
-        results.global.totalRequests / results.global.actualDuration;
+        results.global.totalRequests / results.global.finalDurationSec;
       const tolerance = expectedTotal * 0.15; // 15% tolerance for real-world conditions
       expect(actualRps).toBeGreaterThanOrEqual(expectedTotal - tolerance);
       expect(actualRps).toBeLessThanOrEqual(expectedTotal + tolerance);

@@ -87,18 +87,18 @@ function printGlobalSummary(summary: TestSummary): void {
   });
 
   summaryTable.push(
-    ['Duration', `${Math.ceil(globalSummary.actualDuration)}s`],
+    ['Duration', `${globalSummary.finalDurationSec}s`],
     ['Total Requests', globalSummary.totalRequests],
     [chalk.green('Successful'), globalSummary.successfulRequests],
     [chalk.red('Failed'), globalSummary.failedRequests],
   );
 
   summaryTable.push(
-    ['Avg Latency', `${Math.ceil(globalSummary.avgLatencyMs)}ms`],
-    ['Min Latency', `${Math.ceil(globalSummary.minLatencyMs)}ms`],
-    ['Max Latency', `${Math.ceil(globalSummary.maxLatencyMs)}ms`],
-    ['p95 Latency', `${Math.ceil(globalSummary.p95LatencyMs)}ms`],
-    ['p99 Latency', `${Math.ceil(globalSummary.p99LatencyMs)}ms`],
+    ['Min Latency', `${globalSummary.minLatencyMs}ms`],
+    ['p50 Latency', `${globalSummary.p50LatencyMs}ms`],
+    ['p95 Latency', `${globalSummary.p95LatencyMs}ms`],
+    ['p99 Latency', `${globalSummary.p99LatencyMs}ms`],
+    ['Max Latency', `${globalSummary.maxLatencyMs}ms`],
   );
 
   terminal.print('\n' + chalk.bold('Global Test Summary'));
@@ -138,11 +138,11 @@ function printEndpointSummary(summary: TestSummary): void {
 
     endpointLatencyTable.push([
       displayUrl,
-      `${Math.round(endpoint.avgLatencyMs)}ms`,
-      `${Math.round(endpoint.minLatencyMs)}ms`,
-      `${Math.round(endpoint.maxLatencyMs)}ms`,
-      `${Math.round(endpoint.p95LatencyMs)}ms`,
-      `${Math.round(endpoint.p99LatencyMs)}ms`,
+      `${endpoint.p50LatencyMs}ms`,
+      `${endpoint.minLatencyMs}ms`,
+      `${endpoint.maxLatencyMs}ms`,
+      `${endpoint.p95LatencyMs}ms`,
+      `${endpoint.p99LatencyMs}ms`,
     ]);
   }
 

@@ -123,26 +123,10 @@
           <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
             <div class="space-y-1">
               <label class="text-base-content/70 text-sm font-medium"
-                >Average Throughput</label
+                >P50 Latency</label
               >
               <span class="text-base-content text-lg font-semibold"
-                >{{ getCurrentSummaryStats()?.avgThroughput }} req/sec</span
-              >
-            </div>
-            <div class="space-y-1">
-              <label class="text-base-content/70 text-sm font-medium"
-                >Average Latency</label
-              >
-              <span class="text-base-content text-lg font-semibold"
-                >{{ getCurrentSummaryStats()?.avgLatency }} ms</span
-              >
-            </div>
-            <div class="space-y-1">
-              <label class="text-base-content/70 text-sm font-medium"
-                >Average Error Rate</label
-              >
-              <span class="text-base-content text-lg font-semibold"
-                >{{ getCurrentSummaryStats()?.avgErrorRate }}%</span
+                >{{ getCurrentSummaryStats()?.p50LatencyMs }} ms</span
               >
             </div>
             <div class="space-y-1">
@@ -159,26 +143,10 @@
           <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
             <div class="space-y-1">
               <label class="text-base-content/70 text-sm font-medium"
-                >Average Throughput</label
+                >P50 Latency</label
               >
               <span class="text-base-content text-lg font-semibold"
-                >{{ getCurrentSummaryStats()?.avgThroughput }} req/sec</span
-              >
-            </div>
-            <div class="space-y-1">
-              <label class="text-base-content/70 text-sm font-medium"
-                >Average Latency</label
-              >
-              <span class="text-base-content text-lg font-semibold"
-                >{{ getCurrentSummaryStats()?.avgLatency }} ms</span
-              >
-            </div>
-            <div class="space-y-1">
-              <label class="text-base-content/70 text-sm font-medium"
-                >Average Error Rate</label
-              >
-              <span class="text-base-content text-lg font-semibold"
-                >{{ getCurrentSummaryStats()?.avgErrorRate }}%</span
+                >{{ getCurrentSummaryStats()?.p50LatencyMs }} ms</span
               >
             </div>
             <div class="space-y-1">
@@ -240,28 +208,6 @@
               }
             </div>
           }
-
-          @if (isErrorRateChart()) {
-            <div>
-              @if (getCurrentChartData().data.length > 0) {
-                <app-line-chart
-                  [data]="getCurrentChartData().data"
-                  [labels]="getCurrentChartData().labels"
-                  [height]="350"
-                  [yAxisLabel]="'%'"
-                  [chartId]="'global-error-rate'"
-                  [syncGroup]="'global'"
-                />
-              }
-              @if (getCurrentChartData().data.length === 0) {
-                <div
-                  class="text-base-content/50 flex h-full items-center justify-center italic"
-                >
-                  <p>No error rate data available</p>
-                </div>
-              }
-            </div>
-          }
         } @else {
           <!-- Endpoint Charts -->
           @if (isThroughputChart()) {
@@ -315,34 +261,6 @@
                   class="text-base-content/50 flex h-full items-center justify-center italic"
                 >
                   <p>No latency data available</p>
-                </div>
-              }
-            </div>
-          }
-
-          @if (isErrorRateChart()) {
-            <div>
-              @if (getCurrentChartData().data.length > 0) {
-                <app-line-chart
-                  [data]="getCurrentChartData().data"
-                  [labels]="getCurrentChartData().labels"
-                  [height]="350"
-                  [yAxisLabel]="'%'"
-                  [chartId]="
-                    'endpoint-' +
-                    sanitizeForChartId(selectedEndpoint()) +
-                    '-error-rate'
-                  "
-                  [syncGroup]="
-                    'endpoint-' + sanitizeForChartId(selectedEndpoint())
-                  "
-                />
-              }
-              @if (getCurrentChartData().data.length === 0) {
-                <div
-                  class="text-base-content/50 flex h-full items-center justify-center italic"
-                >
-                  <p>No error rate data available</p>
                 </div>
               }
             </div>
