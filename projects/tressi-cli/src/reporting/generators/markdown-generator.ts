@@ -48,7 +48,7 @@ export class MarkdownGenerator {
 
     md += `| Metric | Value |\n`;
     md += `|---|---|\n`;
-    md += `| Version | ${summary.tressiVersion} |\n`;
+    md += `| Version | ${summary.global.tressiVersion} |\n`;
     if (metadata?.exportName) {
       md += `| Export Name | ${metadata.exportName} |\n`;
     }

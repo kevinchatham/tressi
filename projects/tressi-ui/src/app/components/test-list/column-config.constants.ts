@@ -52,7 +52,7 @@ export const DEFAULT_COLUMN_CONFIGS: ColumnConfig[] = [
   {
     key: ColumnKey.TRESSI_VERSION,
     label: 'Version',
-    field: 'summary.tressiVersion',
+    field: 'summary.global.tressiVersion',
     visible: false,
     group: 'basic',
     order: 4,

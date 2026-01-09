@@ -31,6 +31,7 @@ export function transformAggregatedMetricToTestSummary(
     p95LatencyMs: global.p95Latency,
     p99LatencyMs: global.p99Latency,
     duration: roundToDecimals(actualDurationSec),
+    tressiVersion: pkg.version || 'unknown',
   };
 
   const endpointSummaries: EndpointSummary[] = Object.entries(
@@ -72,7 +73,6 @@ export function transformAggregatedMetricToTestSummary(
   const result: TestSummary = {
     global: globalSummary,
     endpoints: endpointSummaries,
-    tressiVersion: pkg.version || 'unknown',
   };
 
   return result;

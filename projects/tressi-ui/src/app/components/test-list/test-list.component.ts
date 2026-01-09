@@ -426,8 +426,8 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
           valueB = b.id;
           break;
         case 'tressiVersion':
-          valueA = a.summary?.tressiVersion || '';
-          valueB = b.summary?.tressiVersion || '';
+          valueA = a.summary?.global.tressiVersion || '';
+          valueB = b.summary?.global.tressiVersion || '';
           break;
         default:
           // For any other columns, use string comparison

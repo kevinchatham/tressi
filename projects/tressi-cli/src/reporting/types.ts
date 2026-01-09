@@ -100,16 +100,14 @@ export type GlobalSummary = {
   p99LatencyMs: number;
   /** Total duration of the test in seconds. */
   duration: number;
+  /** The version of Tressi used to run the test. */
+  tressiVersion: string;
 };
 
 /**
  * Complete test summary containing both global and per-endpoint statistics.
  */
 export type TestSummary = {
-  /** The unique identifier for this test run (set when running in server mode). */
-  testId?: string;
-  /** The version of Tressi used to run the test. */
-  tressiVersion: string;
   /** Global summary statistics across all endpoints. */
   global: GlobalSummary;
   /** Array of summary statistics for each individual endpoint. */

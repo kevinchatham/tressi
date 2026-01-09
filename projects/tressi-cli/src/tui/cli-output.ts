@@ -33,7 +33,7 @@ function printReportInfo(
     head: ['Metric', 'Value'],
     colWidths: [20, 35],
   });
-  reportInfoTable.push(['Version', summary.tressiVersion]);
+  reportInfoTable.push(['Version', summary.global.tressiVersion]);
   if (options.exportPath) {
     const baseExportName =
       typeof options.exportPath === 'string'
