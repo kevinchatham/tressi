@@ -12,7 +12,6 @@ import { type TestDocument } from '../../services/rpc.service';
 import { TestService } from '../../services/test.service';
 import { CHART_OPTIONS, ChartData, ChartType } from '../../types/chart.types';
 import { DeleteConfirmationModalComponent } from './delete-confirmation-modal/delete-confirmation-modal.component';
-import { EndpointFilterComponent } from './endpoint-filter/endpoint-filter.component';
 import { TestDetailService } from './test-detail.service';
 import { EndpointChartDataCache } from './test-detail.types';
 import { TestDetailExportService } from './test-detail-export.service';
@@ -27,7 +26,6 @@ import { TestInfoCardComponent } from './test-info-card/test-info-card.component
     HeaderComponent,
     IconComponent,
     TestInfoCardComponent,
-    EndpointFilterComponent,
     DeleteConfirmationModalComponent,
   ],
   templateUrl: './test-detail.component.html',
@@ -44,7 +42,7 @@ export class TestDetailComponent {
 
   // Signals
   readonly testId = signal<string | null>(null);
-  readonly activeTabName = signal<'global' | 'endpoints'>('global');
+  readonly selectedEndpoint = signal<string>('global');
   readonly hasError = signal(false);
   readonly errorMessage = signal('');
   readonly isDeleting = signal(false);
@@ -167,11 +165,6 @@ export class TestDetailComponent {
     }
   }
 
-  setActiveTab(tab: 'global' | 'endpoints'): void {
-    if (this.activeTabName() === tab) return;
-    this.activeTabName.set(tab);
-  }
-
   getCachedEndpointChartData(url: string, metricType: ChartType): ChartData {
     const cacheKey = `${url}-${metricType}`;
 
@@ -278,6 +271,75 @@ export class TestDetailComponent {
 
   isErrorRateChart(): boolean {
     return this.selectedChartType() === 'errorRate';
+  }
+
+  onEndpointChange(event: Event): void {
+    const target = event.target as HTMLSelectElement;
+    this.selectedEndpoint.set(target.value);
+  }
+
+  getCurrentEndpointSummary() {
+    const endpointUrl = this.selectedEndpoint();
+    if (endpointUrl === 'global') return null;
+    return this.endpointSummaries().find((e) => e.url === endpointUrl);
+  }
+
+  getCurrentSummaryStats() {
+    const endpoint = this.selectedEndpoint();
+    if (endpoint === 'global') {
+      const test = this.testData();
+      if (!test?.summary) return null;
+      return {
+        avgThroughput: Math.round(
+          test.summary.global.totalRequests /
+            (test.summary.global.duration / 1000),
+        ),
+        avgLatency: Math.round(test.summary.global.avgLatencyMs),
+        avgErrorRate:
+          (test.summary.global.failedRequests /
+            test.summary.global.totalRequests) *
+          100,
+        totalRequests: test.summary.global.totalRequests,
+      };
+    } else {
+      return this.getCurrentEndpointSummary();
+    }
+  }
+
+  // Get current chart data based on selected endpoint
+  getCurrentChartData(): ChartData {
+    const endpoint = this.selectedEndpoint();
+    if (endpoint === 'global') {
+      return this.getGlobalChartData(this.selectedChartType());
+    } else {
+      return this.getCachedEndpointChartData(
+        endpoint,
+        this.selectedChartType(),
+      );
+    }
+  }
+
+  private getGlobalChartData(metricType: ChartType): ChartData {
+    const metrics = this.metricsData();
+    if (!metrics?.global?.length) return { data: [], labels: [] };
+
+    switch (metricType) {
+      case 'throughput':
+        return {
+          data: metrics.global.map((m) => m.metric?.requestsPerSecond || 0),
+          labels: metrics.global.map((m) => m.epoch),
+        };
+      case 'latency':
+        return {
+          data: metrics.global.map((m) => m.metric?.averageLatency || 0),
+          labels: metrics.global.map((m) => m.epoch),
+        };
+      case 'errorRate':
+        return {
+          data: metrics.global.map((m) => m.metric?.errorPercentage || 0),
+          labels: metrics.global.map((m) => m.epoch),
+        };
+    }
   }
 
   async exportResults(format: 'json' | 'csv' | 'xlsx'): Promise<void> {

@@ -85,266 +85,21 @@
         (collapsedChange)="testInfoCollapsed.set($event)"
       />
 
-      <!-- Tabs -->
-      <div class="tabs tabs-box border-base-content/5 border-2 p-4">
-        <!-- Global Metrics Tab -->
-        <input
-          type="radio"
-          name="test_detail_tabs"
-          class="tab"
-          aria-label="Global Metrics"
-          [checked]="activeTabName() === 'global'"
-          (change)="setActiveTab('global')"
-        />
-        <div class="tab-content bg-base-200 p-6">
-          <!-- Throughput Chart -->
-          @if (isThroughputChart()) {
-            <div>
-              <div>
-                @if (throughputChartData().data.length > 0) {
-                  <app-line-chart
-                    [data]="throughputChartData().data"
-                    [labels]="throughputChartData().labels"
-                    [height]="350"
-                    [yAxisLabel]="'Req/sec'"
-                    [chartId]="'global-throughput'"
-                    [syncGroup]="'global'"
-                  />
-                }
-                @if (throughputChartData().data.length === 0) {
-                  <div
-                    class="text-base-content/50 flex h-full items-center justify-center italic"
-                  >
-                    <p>No throughput data available</p>
-                  </div>
-                }
-              </div>
-            </div>
-          }
-
-          <!-- Latency Chart -->
-          @if (isLatencyChart()) {
-            <div>
-              <div>
-                @if (latencyChartData().data.length > 0) {
-                  <app-line-chart
-                    [data]="latencyChartData().data"
-                    [labels]="latencyChartData().labels"
-                    [height]="350"
-                    [yAxisLabel]="'ms'"
-                    [chartId]="'global-latency'"
-                    [syncGroup]="'global'"
-                  />
-                }
-                @if (latencyChartData().data.length === 0) {
-                  <div
-                    class="text-base-content/50 flex h-full items-center justify-center italic"
-                  >
-                    <p>No latency data available</p>
-                  </div>
-                }
-              </div>
-            </div>
-          }
-
-          <!-- Error Rate Chart -->
-          @if (selectedChartType() === 'errorRate') {
-            <div>
-              <div>
-                @if (errorRateChartData().data.length > 0) {
-                  <app-line-chart
-                    [data]="errorRateChartData().data"
-                    [labels]="errorRateChartData().labels"
-                    [height]="350"
-                    [yAxisLabel]="'%'"
-                    [chartId]="'global-error-rate'"
-                    [syncGroup]="'global'"
-                  />
-                }
-                @if (errorRateChartData().data.length === 0) {
-                  <div
-                    class="text-base-content/50 flex h-full items-center justify-center italic"
-                  >
-                    <p>No error rate data available</p>
-                  </div>
-                }
-              </div>
-            </div>
-          }
-        </div>
-
-        <!-- Endpoint Metrics Tab -->
-        <input
-          type="radio"
-          name="test_detail_tabs"
-          class="tab"
-          aria-label="Endpoint Metrics"
-          [checked]="activeTabName() === 'endpoints'"
-          (change)="setActiveTab('endpoints')"
-        />
-        <div class="tab-content bg-base-200 p-6">
-          <!-- Endpoint Filter -->
-          <app-endpoint-filter
-            [endpoints]="endpointUrls()"
-            [metrics]="metricsData()!"
-          />
-
-          @if (!endpointSummaries().length) {
-            <div
-              class="text-base-content/50 flex min-h-50 items-center justify-center italic"
-            >
-              <p>No endpoint metrics available</p>
-            </div>
-          }
-
+      <!-- Endpoint Selector and Chart Type -->
+      <div class="mb-6 flex items-center gap-4">
+        <select
+          id="endpoint-selector"
+          class="select select-bordered w-full max-w-xs"
+          [value]="selectedEndpoint()"
+          (change)="onEndpointChange($event)"
+        >
+          <option value="global">Global Metrics</option>
           @for (endpoint of endpointSummaries(); track endpoint.url) {
-            <div
-              class="border-base-content/5 bg-base-200 mb-6 rounded-xl border-2 p-6 last:mb-0"
-            >
-              <h3 class="mb-4 text-lg font-semibold break-all">
-                {{ endpoint.url }}
-              </h3>
-
-              <!-- Endpoint Summary -->
-              <div class="mb-6">
-                <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
-                  <div class="space-y-1">
-                    <label class="text-base-content/70 text-sm font-medium"
-                      >Average Throughput</label
-                    >
-                    <span class="text-base-content text-lg font-semibold"
-                      >{{ endpoint.avgThroughput }} req/sec</span
-                    >
-                  </div>
-                  <div class="space-y-1">
-                    <label class="text-base-content/70 text-sm font-medium"
-                      >Average Latency</label
-                    >
-                    <span class="text-base-content text-lg font-semibold"
-                      >{{ endpoint.avgLatency }} ms</span
-                    >
-                  </div>
-                  <div class="space-y-1">
-                    <label class="text-base-content/70 text-sm font-medium"
-                      >Average Error Rate</label
-                    >
-                    <span class="text-base-content text-lg font-semibold"
-                      >{{ endpoint.avgErrorRate }}%</span
-                    >
-                  </div>
-                  <div class="space-y-1">
-                    <label class="text-base-content/70 text-sm font-medium"
-                      >Total Requests</label
-                    >
-                    <span class="text-base-content text-lg font-semibold">{{
-                      endpoint.totalRequests
-                    }}</span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Endpoint Charts -->
-              <div class="space-y-4">
-                <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                  <!-- Throughput Chart -->
-                  @if (selectedChartType() === 'throughput') {
-                    <div class="border-base-content/5 rounded-xl border-2 p-4">
-                      <div>
-                        <app-line-chart
-                          [data]="
-                            getCachedEndpointChartData(
-                              endpoint.url,
-                              'throughput'
-                            ).data
-                          "
-                          [labels]="
-                            getCachedEndpointChartData(
-                              endpoint.url,
-                              'throughput'
-                            ).labels
-                          "
-                          [height]="350"
-                          [yAxisLabel]="'Req/sec'"
-                          [chartId]="
-                            'endpoint-' +
-                            sanitizeForChartId(endpoint.url) +
-                            '-throughput'
-                          "
-                          [syncGroup]="
-                            'endpoint-' + sanitizeForChartId(endpoint.url)
-                          "
-                        />
-                      </div>
-                    </div>
-                  }
-                  <!-- Latency Chart -->
-                  @if (selectedChartType() === 'latency') {
-                    <div class="border-base-content/5 rounded-xl border-2 p-4">
-                      <div>
-                        <app-line-chart
-                          [data]="
-                            getCachedEndpointChartData(endpoint.url, 'latency')
-                              .data
-                          "
-                          [labels]="
-                            getCachedEndpointChartData(endpoint.url, 'latency')
-                              .labels
-                          "
-                          [height]="350"
-                          [yAxisLabel]="'ms'"
-                          [chartId]="
-                            'endpoint-' +
-                            sanitizeForChartId(endpoint.url) +
-                            '-latency'
-                          "
-                          [syncGroup]="
-                            'endpoint-' + sanitizeForChartId(endpoint.url)
-                          "
-                        />
-                      </div>
-                    </div>
-                  }
-                </div>
-                <!-- Error Rate Chart -->
-                @if (selectedChartType() === 'errorRate') {
-                  <div class="grid grid-cols-1 gap-4 lg:grid-cols-1">
-                    <div class="border-base-content/5 rounded-xl border-2 p-4">
-                      <div>
-                        <app-line-chart
-                          [data]="
-                            getCachedEndpointChartData(
-                              endpoint.url,
-                              'errorRate'
-                            ).data
-                          "
-                          [labels]="
-                            getCachedEndpointChartData(
-                              endpoint.url,
-                              'errorRate'
-                            ).labels
-                          "
-                          [height]="350"
-                          [yAxisLabel]="'%'"
-                          [chartId]="
-                            'endpoint-' +
-                            sanitizeForChartId(endpoint.url) +
-                            '-error-rate'
-                          "
-                          [syncGroup]="
-                            'endpoint-' + sanitizeForChartId(endpoint.url)
-                          "
-                        />
-                      </div>
-                    </div>
-                  </div>
-                }
-              </div>
-            </div>
+            <option [value]="endpoint.url">{{ endpoint.url }}</option>
           }
-        </div>
+        </select>
 
-        <!-- Chart Type Selector - positioned after tabs -->
-        <div class="ml-auto flex items-center self-center hover:cursor-pointer">
+        <div class="ml-auto flex items-center hover:cursor-pointer">
           <select
             id="chart-type-select"
             class="select select-ghost"
@@ -357,6 +112,242 @@
             }
           </select>
         </div>
+      </div>
+
+      <!-- Summary Card -->
+      <div
+        class="border-base-content/5 bg-base-200 mb-6 rounded-xl border-2 p-6"
+      >
+        @if (selectedEndpoint() === 'global') {
+          <!-- Global Summary Stats -->
+          <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
+            <div class="space-y-1">
+              <label class="text-base-content/70 text-sm font-medium"
+                >Average Throughput</label
+              >
+              <span class="text-base-content text-lg font-semibold"
+                >{{ getCurrentSummaryStats()?.avgThroughput }} req/sec</span
+              >
+            </div>
+            <div class="space-y-1">
+              <label class="text-base-content/70 text-sm font-medium"
+                >Average Latency</label
+              >
+              <span class="text-base-content text-lg font-semibold"
+                >{{ getCurrentSummaryStats()?.avgLatency }} ms</span
+              >
+            </div>
+            <div class="space-y-1">
+              <label class="text-base-content/70 text-sm font-medium"
+                >Average Error Rate</label
+              >
+              <span class="text-base-content text-lg font-semibold"
+                >{{ getCurrentSummaryStats()?.avgErrorRate }}%</span
+              >
+            </div>
+            <div class="space-y-1">
+              <label class="text-base-content/70 text-sm font-medium"
+                >Total Requests</label
+              >
+              <span class="text-base-content text-lg font-semibold">{{
+                getCurrentSummaryStats()?.totalRequests
+              }}</span>
+            </div>
+          </div>
+        } @else {
+          <!-- Endpoint Summary Stats -->
+          <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
+            <div class="space-y-1">
+              <label class="text-base-content/70 text-sm font-medium"
+                >Average Throughput</label
+              >
+              <span class="text-base-content text-lg font-semibold"
+                >{{ getCurrentSummaryStats()?.avgThroughput }} req/sec</span
+              >
+            </div>
+            <div class="space-y-1">
+              <label class="text-base-content/70 text-sm font-medium"
+                >Average Latency</label
+              >
+              <span class="text-base-content text-lg font-semibold"
+                >{{ getCurrentSummaryStats()?.avgLatency }} ms</span
+              >
+            </div>
+            <div class="space-y-1">
+              <label class="text-base-content/70 text-sm font-medium"
+                >Average Error Rate</label
+              >
+              <span class="text-base-content text-lg font-semibold"
+                >{{ getCurrentSummaryStats()?.avgErrorRate }}%</span
+              >
+            </div>
+            <div class="space-y-1">
+              <label class="text-base-content/70 text-sm font-medium"
+                >Total Requests</label
+              >
+              <span class="text-base-content text-lg font-semibold">{{
+                getCurrentSummaryStats()?.totalRequests
+              }}</span>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Charts Area -->
+      <div class="bg-base-200 rounded-xl p-6">
+        @if (selectedEndpoint() === 'global') {
+          <!-- Global Charts -->
+          @if (isThroughputChart()) {
+            <div>
+              @if (getCurrentChartData().data.length > 0) {
+                <app-line-chart
+                  [data]="getCurrentChartData().data"
+                  [labels]="getCurrentChartData().labels"
+                  [height]="350"
+                  [yAxisLabel]="'Req/sec'"
+                  [chartId]="'global-throughput'"
+                  [syncGroup]="'global'"
+                />
+              }
+              @if (getCurrentChartData().data.length === 0) {
+                <div
+                  class="text-base-content/50 flex h-full items-center justify-center italic"
+                >
+                  <p>No throughput data available</p>
+                </div>
+              }
+            </div>
+          }
+
+          @if (isLatencyChart()) {
+            <div>
+              @if (getCurrentChartData().data.length > 0) {
+                <app-line-chart
+                  [data]="getCurrentChartData().data"
+                  [labels]="getCurrentChartData().labels"
+                  [height]="350"
+                  [yAxisLabel]="'ms'"
+                  [chartId]="'global-latency'"
+                  [syncGroup]="'global'"
+                />
+              }
+              @if (getCurrentChartData().data.length === 0) {
+                <div
+                  class="text-base-content/50 flex h-full items-center justify-center italic"
+                >
+                  <p>No latency data available</p>
+                </div>
+              }
+            </div>
+          }
+
+          @if (isErrorRateChart()) {
+            <div>
+              @if (getCurrentChartData().data.length > 0) {
+                <app-line-chart
+                  [data]="getCurrentChartData().data"
+                  [labels]="getCurrentChartData().labels"
+                  [height]="350"
+                  [yAxisLabel]="'%'"
+                  [chartId]="'global-error-rate'"
+                  [syncGroup]="'global'"
+                />
+              }
+              @if (getCurrentChartData().data.length === 0) {
+                <div
+                  class="text-base-content/50 flex h-full items-center justify-center italic"
+                >
+                  <p>No error rate data available</p>
+                </div>
+              }
+            </div>
+          }
+        } @else {
+          <!-- Endpoint Charts -->
+          @if (isThroughputChart()) {
+            <div>
+              @if (getCurrentChartData().data.length > 0) {
+                <app-line-chart
+                  [data]="getCurrentChartData().data"
+                  [labels]="getCurrentChartData().labels"
+                  [height]="350"
+                  [yAxisLabel]="'Req/sec'"
+                  [chartId]="
+                    'endpoint-' +
+                    sanitizeForChartId(selectedEndpoint()) +
+                    '-throughput'
+                  "
+                  [syncGroup]="
+                    'endpoint-' + sanitizeForChartId(selectedEndpoint())
+                  "
+                />
+              }
+              @if (getCurrentChartData().data.length === 0) {
+                <div
+                  class="text-base-content/50 flex h-full items-center justify-center italic"
+                >
+                  <p>No throughput data available</p>
+                </div>
+              }
+            </div>
+          }
+
+          @if (isLatencyChart()) {
+            <div>
+              @if (getCurrentChartData().data.length > 0) {
+                <app-line-chart
+                  [data]="getCurrentChartData().data"
+                  [labels]="getCurrentChartData().labels"
+                  [height]="350"
+                  [yAxisLabel]="'ms'"
+                  [chartId]="
+                    'endpoint-' +
+                    sanitizeForChartId(selectedEndpoint()) +
+                    '-latency'
+                  "
+                  [syncGroup]="
+                    'endpoint-' + sanitizeForChartId(selectedEndpoint())
+                  "
+                />
+              }
+              @if (getCurrentChartData().data.length === 0) {
+                <div
+                  class="text-base-content/50 flex h-full items-center justify-center italic"
+                >
+                  <p>No latency data available</p>
+                </div>
+              }
+            </div>
+          }
+
+          @if (isErrorRateChart()) {
+            <div>
+              @if (getCurrentChartData().data.length > 0) {
+                <app-line-chart
+                  [data]="getCurrentChartData().data"
+                  [labels]="getCurrentChartData().labels"
+                  [height]="350"
+                  [yAxisLabel]="'%'"
+                  [chartId]="
+                    'endpoint-' +
+                    sanitizeForChartId(selectedEndpoint()) +
+                    '-error-rate'
+                  "
+                  [syncGroup]="
+                    'endpoint-' + sanitizeForChartId(selectedEndpoint())
+                  "
+                />
+              }
+              @if (getCurrentChartData().data.length === 0) {
+                <div
+                  class="text-base-content/50 flex h-full items-center justify-center italic"
+                >
+                  <p>No error rate data available</p>
+                </div>
+              }
+            </div>
+          }
+        }
       </div>
 
       <!-- Delete Confirmation Modal -->

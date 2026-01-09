@@ -44,43 +44,6 @@ export class TestInfoCardComponent {
       : 'N/A';
   }
 
-  // Methods from metrics-summary-card
-  getTotalRequests(): number {
-    const metrics = this.metrics();
-    if (!metrics?.global?.length) return 0;
-
-    return metrics.global.reduce(
-      (sum, m) => sum + (m.metric?.totalRequests || 0),
-      0,
-    );
-  }
-
-  getGlobalAvgThroughput(): number {
-    const metrics = this.metrics();
-    if (!metrics?.global?.length) return 0;
-
-    const values = metrics.global.map((m) => m.metric?.requestsPerSecond || 0);
-    const avg = values.reduce((sum, val) => sum + val, 0) / values.length || 0;
-    return Math.round(avg);
-  }
-
-  getGlobalAvgLatency(): number {
-    const metrics = this.metrics();
-    if (!metrics?.global?.length) return 0;
-
-    const values = metrics.global.map((m) => m.metric?.averageLatency || 0);
-    const avg = values.reduce((sum, val) => sum + val, 0) / values.length || 0;
-    return Math.round(avg);
-  }
-
-  getGlobalAvgErrorRate(): number {
-    const metrics = this.metrics();
-    if (!metrics?.global?.length) return 0;
-
-    const values = metrics.global.map((m) => m.metric?.errorPercentage || 0);
-    return values.reduce((sum, val) => sum + val, 0) / values.length || 0;
-  }
-
   roundNumber(num: number): number {
     return Math.round(num);
   }

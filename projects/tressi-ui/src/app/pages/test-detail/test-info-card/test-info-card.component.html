@@ -66,60 +66,6 @@
         </div>
       }
 
-      <!-- Global Metrics Summary -->
-      @if (metrics()?.global?.length) {
-        <div class="pt-4">
-          <h3 class="text-base-content mb-3 text-lg font-semibold">
-            Global Summary
-          </h3>
-          <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
-            <div>
-              <span class="text-base-content/70 text-sm">Total Requests</span>
-              <p class="font-medium">{{ getTotalRequests() }}</p>
-            </div>
-            <div>
-              <span class="text-base-content/70 text-sm"
-                >Average Throughput</span
-              >
-              <p class="font-medium">{{ getGlobalAvgThroughput() }} req/sec</p>
-            </div>
-            <div>
-              <span class="text-base-content/70 text-sm">Average Latency</span>
-              <p class="font-medium">{{ getGlobalAvgLatency() }} ms</p>
-            </div>
-            <div>
-              <span class="text-base-content/70 text-sm"
-                >Average Error Rate</span
-              >
-              <p class="font-medium">{{ getGlobalAvgErrorRate() }}%</p>
-            </div>
-          </div>
-        </div>
-      }
-
-      <!-- Endpoint Metrics Summary -->
-      @if (summary()?.endpoints?.length) {
-        <div class="pt-4">
-          <h3 class="text-base-content mb-3 text-lg font-semibold">
-            Endpoint Summary
-          </h3>
-          <div class="grid grid-cols-2 gap-4 md:grid-cols-5">
-            <div>
-              <span class="text-base-content/70 text-sm">Total Endpoints</span>
-              <p class="font-medium">{{ summary()!.global.totalEndpoints }}</p>
-            </div>
-            <div>
-              <span class="text-base-content/70 text-sm">Total Requests</span>
-              <p class="font-medium">{{ summary()!.global.totalRequests }}</p>
-            </div>
-            <div>
-              <span class="text-base-content/70 text-sm">Avg Latency</span>
-              <p class="font-medium">{{ summary()!.global.avgLatencyMs }} ms</p>
-            </div>
-          </div>
-        </div>
-      }
-
       <!-- No Metrics Available Messages -->
       @if (!metrics()?.global?.length && !summary()?.endpoints?.length) {
         <div class="text-base-content/50 flex items-center justify-center py-4">
