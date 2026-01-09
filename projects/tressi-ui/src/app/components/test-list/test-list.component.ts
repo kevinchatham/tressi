@@ -12,13 +12,16 @@ import {
   SimpleChanges,
 } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
-import type { TestSummary } from '@tressi-cli/reporting/types';
 import { Subscription } from 'rxjs';
 
 import { EventService } from '../../services/event.service';
 import { LoadingService } from '../../services/loading.service';
 import { LogService } from '../../services/log.service';
-import type { ConfigDocument, TestDocument } from '../../services/rpc.service';
+import type {
+  ConfigDocument,
+  TestDocument,
+  TestSummary,
+} from '../../services/rpc.service';
 import { TestService } from '../../services/test.service';
 import { IconComponent } from '../icon/icon.component';
 import { StartButtonComponent } from '../start-button/start-button.component';

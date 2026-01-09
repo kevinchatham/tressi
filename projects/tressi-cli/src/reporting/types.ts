@@ -1,3 +1,5 @@
+import { TressiConfig } from '../common/config/types';
+
 /**
  * Configuration options for HTTP agents used in load testing.
  */
@@ -108,6 +110,8 @@ export type GlobalSummary = {
  * Complete test summary containing both global and per-endpoint statistics.
  */
 export type TestSummary = {
+  /** Snapshot of TressiConfig when test was run */
+  configSnapshot: TressiConfig;
   /** Global summary statistics across all endpoints. */
   global: GlobalSummary;
   /** Array of summary statistics for each individual endpoint. */

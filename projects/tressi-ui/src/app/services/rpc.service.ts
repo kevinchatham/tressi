@@ -93,6 +93,8 @@ export type GetTestsResponseError = Extract<
 
 export type TestDocument = GetTestsResponseSuccess[number];
 
+export type TestSummary = TestDocument['summary'];
+
 export type TestStatus = TestDocument['status'];
 
 export type DeleteTestResponse = InferResponseType<

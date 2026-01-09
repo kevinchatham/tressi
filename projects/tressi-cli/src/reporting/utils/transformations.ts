@@ -71,6 +71,7 @@ export function transformAggregatedMetricToTestSummary(
   });
 
   const result: TestSummary = {
+    configSnapshot: config,
     global: globalSummary,
     endpoints: endpointSummaries,
   };

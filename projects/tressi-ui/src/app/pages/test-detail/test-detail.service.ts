@@ -1,12 +1,15 @@
 import { inject, Injectable } from '@angular/core';
 import { signal } from '@angular/core';
-import type { TestSummary } from '@tressi-cli/reporting/types';
 import { Subscription } from 'rxjs';
 
 import { EventService, TestEventData } from '../../services/event.service';
 import { LoadingService } from '../../services/loading.service';
 import { LogService } from '../../services/log.service';
-import { TestDocument, TestMetrics } from '../../services/rpc.service';
+import {
+  TestDocument,
+  TestMetrics,
+  TestSummary,
+} from '../../services/rpc.service';
 import { TestService } from '../../services/test.service';
 
 @Injectable({ providedIn: 'root' })

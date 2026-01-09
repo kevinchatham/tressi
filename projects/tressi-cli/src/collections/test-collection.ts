@@ -1,7 +1,7 @@
 import { createCollectionForType } from './adapter';
 import { TestDocument } from './types';
 
-export type TestCreate = Pick<TestDocument, 'configId' | 'configSnapshot'>;
+export type TestCreate = Pick<TestDocument, 'configId'>;
 
 export type TestEdit = Pick<TestDocument, 'id' | 'configId'> &
   Partial<
@@ -66,7 +66,6 @@ class TestCollection {
         epochUpdatedAt: now,
         epochEndedAt: null,
         error: null,
-        configSnapshot: input.configSnapshot,
         summary: null,
       };
       this.collection.insert(testDoc);

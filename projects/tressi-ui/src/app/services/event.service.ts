@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
-import type { TestSummary } from '@tressi-cli/reporting/types';
 import { Observable, Subject } from 'rxjs';
+
+import { TestSummary } from './rpc.service';
 
 @Injectable({
   providedIn: 'root',

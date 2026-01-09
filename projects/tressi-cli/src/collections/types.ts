@@ -40,8 +40,6 @@ export type TestDocument = {
   epochEndedAt: number | null;
   /** Error of a failed test run */
   error: string | null;
-  /** Snapshot of TressiConfig when test was run */
-  configSnapshot: TressiConfig;
   /** Test summary statistics - null for running tests or failed tests without summary */
   summary: TestSummary | null;
 };
