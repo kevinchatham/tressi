@@ -101,7 +101,7 @@ export type GlobalSummary = {
   /** 99th percentile latency in milliseconds across all requests. */
   p99LatencyMs: number;
   /** Total duration of the test in seconds. */
-  duration: number;
+  actualDuration: number;
 };
 
 /**

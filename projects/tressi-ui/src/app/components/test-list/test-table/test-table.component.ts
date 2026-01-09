@@ -80,9 +80,9 @@ export class TestTableComponent {
 
   getTestDuration(test: TestDocument): string {
     // Use embedded summary duration first
-    if (test.summary?.global.duration) {
+    if (test.summary?.global.actualDuration) {
       return this.testService.formatDuration(
-        test.summary.global.duration * 1000,
+        test.summary.global.actualDuration * 1000,
       );
     }
 

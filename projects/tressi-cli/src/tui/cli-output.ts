@@ -87,7 +87,7 @@ function printGlobalSummary(summary: TestSummary): void {
   });
 
   summaryTable.push(
-    ['Duration', `${Math.ceil(globalSummary.duration)}s`],
+    ['Duration', `${Math.ceil(globalSummary.actualDuration)}s`],
     ['Total Requests', globalSummary.totalRequests],
     [chalk.green('Successful'), globalSummary.successfulRequests],
     [chalk.red('Failed'), globalSummary.failedRequests],

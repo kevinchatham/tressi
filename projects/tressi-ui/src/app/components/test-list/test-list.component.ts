@@ -370,12 +370,12 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
         case 'duration':
           // Use summary duration if available, otherwise calculate from timestamps
           valueA =
-            a.summary?.global.duration ||
+            a.summary?.global.actualDuration ||
             (a.epochEndedAt && a.epochStartedAt
               ? (a.epochEndedAt - a.epochStartedAt) / 1000
               : 0);
           valueB =
-            b.summary?.global.duration ||
+            b.summary?.global.actualDuration ||
             (b.epochEndedAt && b.epochStartedAt
               ? (b.epochEndedAt - b.epochStartedAt) / 1000
               : 0);

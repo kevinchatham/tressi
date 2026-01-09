@@ -154,7 +154,7 @@ export class MarkdownGenerator {
     let md = `## Global Summary\n\n`;
     md += `> *A high-level overview of the entire test performance across all endpoints.*\n\n`;
     md += `| Stat | Value |\n| --- | --- |\n`;
-    md += `| Duration | ${global.duration}s |\n`;
+    md += `| Duration | ${global.actualDuration}s |\n`;
     md += `| Total Requests | ${global.totalRequests} |\n`;
     md += `| Successful | ${global.successfulRequests} |\n`;
     md += `| Failed | ${global.failedRequests} |\n`;

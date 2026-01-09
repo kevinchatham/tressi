@@ -292,7 +292,7 @@ export class TestDetailComponent {
       return {
         avgThroughput: Math.round(
           test.summary.global.totalRequests /
-            (test.summary.global.duration / 1000),
+            (test.summary.global.actualDuration / 1000),
         ),
         avgLatency: Math.round(test.summary.global.avgLatencyMs),
         avgErrorRate:

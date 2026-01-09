@@ -30,7 +30,7 @@ export function transformAggregatedMetricToTestSummary(
     maxLatencyMs: global.maxLatency,
     p95LatencyMs: global.p95Latency,
     p99LatencyMs: global.p99Latency,
-    duration: roundToDecimals(actualDurationSec),
+    actualDuration: roundToDecimals(actualDurationSec),
   };
 
   const endpointSummaries: EndpointSummary[] = Object.entries(
