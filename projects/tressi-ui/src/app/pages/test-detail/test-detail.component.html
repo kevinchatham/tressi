@@ -77,7 +77,7 @@
       <!-- Test Information -->
       <section class="bg-base-100 rounded-xl px-6">
         <app-collapsible-card
-          [title]="'Configuration: ' + displayConfigName()"
+          [title]="'Test Summary'"
           [collapsed]="testInfoCollapsed()"
           (collapsedChange)="testInfoCollapsed.set($event)"
         >
@@ -97,12 +97,6 @@
                 <span class="text-base-content/70 text-sm">Test ID</span>
                 <p class="font-mono text-sm">{{ testData()!.id }}</p>
               </div>
-            </div>
-
-            <!-- Configuration -->
-            <div>
-              <span class="text-base-content/70 text-sm">Configuration ID</span>
-              <p class="font-medium">{{ displayConfigId() }}</p>
             </div>
 
             <!-- Timing -->
@@ -165,6 +159,35 @@
         </app-collapsible-card>
       </section>
 
+      <!-- Configuration Details -->
+      <section class="bg-base-100 mt-2 rounded-xl px-6">
+        <app-collapsible-card
+          [title]="'Test Configuration'"
+          [collapsed]="configCollapsed()"
+          (collapsedChange)="configCollapsed.set($event)"
+        >
+          <!-- Main content projection -->
+          <div class="mt-4 space-y-4">
+            <!-- Configuration Name -->
+            <div>
+              <span class="text-base-content/70 text-sm">Name</span>
+              <p class="font-medium">{{ displayConfigName() }}</p>
+            </div>
+
+            <!-- Config Snapshot -->
+            <div>
+              <span class="text-base-content/70 text-sm">Snapshot</span>
+              <app-json-textarea
+                [value]="testData()?.summary?.configSnapshot"
+                [rows]="15"
+                [disabled]="true"
+                class="mt-2"
+              />
+            </div>
+          </div>
+        </app-collapsible-card>
+      </section>
+
       <!-- Performance Summary -->
       <section class="bg-base-100 mt-2 rounded-xl px-6">
         <app-collapsible-card
@@ -176,7 +199,7 @@
           <ng-template>
             <select
               id="endpoint-selector"
-              class="select select-sm w-auto"
+              class="select select-sm select-neutral w-auto"
               [value]="selectedEndpoint()"
               (change)="onEndpointChange($event)"
             >
@@ -208,7 +231,7 @@
           <ng-template>
             <select
               id="chart-type-select"
-              class="select select-sm w-auto"
+              class="select select-sm select-neutral w-auto"
               [value]="selectedChartType()"
               (change)="onChartTypeChange($event)"
             >

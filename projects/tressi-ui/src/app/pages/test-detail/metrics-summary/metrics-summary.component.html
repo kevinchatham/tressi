@@ -1,19 +1,5 @@
-<div class="grid grid-cols-2 gap-6 md:grid-cols-4">
-  <!-- Primary Metrics -->
-  <div class="bg-base-200 rounded-lg p-4">
-    <div class="text-base-content/70 mb-1 text-sm">Total Requests</div>
-    <div class="text-2xl font-bold">{{ stats?.totalRequests | number }}</div>
-    <div class="text-success mt-1 text-xs">
-      {{ stats?.successfulRequests }} success
-    </div>
-  </div>
-
-  <div class="bg-base-200 rounded-lg p-4">
-    <div class="text-base-content/70 mb-1 text-sm">Throughput</div>
-    <div class="text-2xl font-bold">{{ stats?.requestsPerSecond }}/s</div>
-    <div class="text-base-content/60 mt-1 text-xs">avg rate</div>
-  </div>
-
+<div class="grid grid-cols-2 gap-6 md:grid-cols-5">
+  <!-- First Row: Latency metrics (always visible) -->
   <div class="bg-base-200 rounded-lg p-4">
     <div class="text-base-content/70 mb-1 text-sm">Min Latency</div>
     <div class="text-2xl font-bold">{{ stats?.minLatencyMs }} ms</div>
@@ -29,14 +15,13 @@
   <div class="bg-base-200 rounded-lg p-4">
     <div class="text-base-content/70 mb-1 text-sm">P95 Latency</div>
     <div class="text-2xl font-bold">{{ stats?.p95LatencyMs }} ms</div>
-    <div class="text-base-content/60 mt-1 text-xs">95th percentile</div>
+    <div class="text-base-content/60 mt-1 text-xs">slow</div>
   </div>
 
-  <!-- Secondary Metrics -->
   <div class="bg-base-200 rounded-lg p-4">
     <div class="text-base-content/70 mb-1 text-sm">P99 Latency</div>
     <div class="text-2xl font-bold">{{ stats?.p99LatencyMs }} ms</div>
-    <div class="text-base-content/60 mt-1 text-xs">99th percentile</div>
+    <div class="text-base-content/60 mt-1 text-xs">slower</div>
   </div>
 
   <div class="bg-base-200 rounded-lg p-4">
@@ -45,6 +30,66 @@
     <div class="text-base-content/60 mt-1 text-xs">slowest</div>
   </div>
 
+  <!-- Second Row: View-specific metrics -->
+
+  <!-- Global view: Test Duration -->
+  @if (endpointType === 'global' && stats?.finalDurationSec !== undefined) {
+    <div class="bg-base-200 rounded-lg p-4">
+      <div class="text-base-content/70 mb-1 text-sm">Test Duration</div>
+      <div class="text-2xl font-bold">
+        {{ formatDuration(stats?.finalDurationSec) }}
+      </div>
+      <div class="text-base-content/60 mt-1 text-xs">total time</div>
+    </div>
+  }
+
+  <!-- Global view: Endpoints Tested -->
+  @if (endpointType === 'global' && stats?.totalEndpoints !== undefined) {
+    <div class="bg-base-200 rounded-lg p-4">
+      <div class="text-base-content/70 mb-1 text-sm">Endpoints</div>
+      <div class="text-2xl font-bold">{{ stats?.totalEndpoints | number }}</div>
+      <div class="text-base-content/60 mt-1 text-xs">tested</div>
+    </div>
+  }
+
+  <!-- Endpoint view: Target Achieved -->
+  @if (endpointType === 'endpoint' && stats?.targetAchieved !== undefined) {
+    <div class="bg-base-200 rounded-lg p-4">
+      <div class="text-base-content/70 mb-1 text-sm">Target Achieved</div>
+      <div class="text-2xl font-bold">
+        {{ formatPercentage(stats?.targetAchieved) }}
+      </div>
+      <div class="text-base-content/60 mt-1 text-xs">of target RPS</div>
+    </div>
+  }
+
+  <!-- Endpoint view: Theoretical Max RPS -->
+  @if (endpointType === 'endpoint' && stats?.theoreticalMaxRps !== undefined) {
+    <div class="bg-base-200 rounded-lg p-4">
+      <div class="text-base-content/70 mb-1 text-sm">Max Throughput</div>
+      <div class="text-2xl font-bold">
+        {{ formatRps(stats?.theoreticalMaxRps) }}
+      </div>
+      <div class="text-base-content/60 mt-1 text-xs">theoretical limit</div>
+    </div>
+  }
+
+  <div class="bg-base-200 rounded-lg p-4">
+    <div class="text-base-content/70 mb-1 text-sm">Throughput</div>
+    <div class="text-2xl font-bold">{{ stats?.requestsPerSecond }}/s</div>
+    <div class="text-base-content/60 mt-1 text-xs">requests per sec</div>
+  </div>
+
+  <!-- Common metrics for both views -->
+  <div class="bg-base-200 rounded-lg p-4">
+    <div class="text-base-content/70 mb-1 text-sm">Total Requests</div>
+    <div class="text-2xl font-bold">{{ stats?.totalRequests | number }}</div>
+    <div class="text-success mt-1 text-xs">
+      {{ stats?.successfulRequests }} success
+    </div>
+  </div>
+
+  <!-- Error Rate (spans full width when needed) -->
   <div
     class="rounded-lg p-4"
     [class.bg-error/20]="stats && stats.errorRate > 5"

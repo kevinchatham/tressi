@@ -1,5 +1,4 @@
 import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
-import { CommonModule } from '@angular/common';
 import { Component, inject, input, output } from '@angular/core';
 
 import { ColumnConfig } from '../../../services/local-storage.service';
@@ -16,7 +15,7 @@ type ValueExtractor = (test: TestDocument) => string;
 @Component({
   selector: 'app-test-table',
   standalone: true,
-  imports: [CommonModule, IconComponent, DragDropModule, StatusBadgeComponent],
+  imports: [IconComponent, DragDropModule, StatusBadgeComponent],
   templateUrl: './test-table.component.html',
 })
 export class TestTableComponent {

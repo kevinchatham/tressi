@@ -5,6 +5,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { CollapsibleCardComponent } from '../../components/collapsible-card/collapsible-card.component';
 import { HeaderComponent } from '../../components/header/header.component';
 import { IconComponent } from '../../components/icon/icon.component';
+import { JsonTextareaComponent } from '../../components/json-textarea/json-textarea.component';
 import { LineChartComponent } from '../../components/line-chart/line-chart.component';
 import { StatusBadgeComponent } from '../../components/status-badge/status-badge.component';
 import { ConfigService } from '../../services/config.service';
@@ -35,6 +36,7 @@ import { TestDetailExportService } from './test-detail-export.service';
     StatusBadgeComponent,
     DeleteConfirmationModalComponent,
     MetricsSummaryComponent,
+    JsonTextareaComponent,
   ],
   templateUrl: './test-detail.component.html',
 })
@@ -66,6 +68,7 @@ export class TestDetailComponent {
 
   // Collapsible state
   readonly testInfoCollapsed = signal(true);
+  readonly configCollapsed = signal(true);
   readonly performanceSummaryCollapsed = signal(false);
   readonly performanceOverTimeCollapsed = signal(false);
 

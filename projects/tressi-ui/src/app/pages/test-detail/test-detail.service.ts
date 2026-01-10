@@ -51,6 +51,9 @@ export class TestDetailService {
         ),
         successfulRequests: global.successfulRequests,
         failedRequests: global.failedRequests,
+        // Global-specific metrics
+        finalDurationSec: global.finalDurationSec,
+        totalEndpoints: global.totalEndpoints,
       };
     } else {
       const endpointUrl = this.selectedEndpoint();
@@ -74,6 +77,9 @@ export class TestDetailService {
         ),
         successfulRequests: endpoint.successfulRequests,
         failedRequests: endpoint.failedRequests,
+        // Endpoint-specific metrics
+        targetAchieved: endpoint.targetAchieved,
+        theoreticalMaxRps: endpoint.theoreticalMaxRps,
       };
     }
   });

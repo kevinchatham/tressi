@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, input, output } from '@angular/core';
 
 import { ColumnConfig } from '../../../services/local-storage.service';
@@ -7,7 +6,7 @@ import { IconComponent } from '../../icon/icon.component';
 @Component({
   selector: 'app-column-selector',
   standalone: true,
-  imports: [CommonModule, IconComponent],
+  imports: [IconComponent],
   templateUrl: './column-selector.component.html',
 })
 export class ColumnSelectorComponent {

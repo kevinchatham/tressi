@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import {
   Component,
   computed,
@@ -39,7 +38,6 @@ import { TestTableComponent } from './test-table/test-table.component';
   selector: 'app-test-list',
   standalone: true,
   imports: [
-    CommonModule,
     RouterModule,
     IconComponent,
     TestTableComponent,
