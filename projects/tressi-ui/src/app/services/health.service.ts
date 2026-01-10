@@ -68,8 +68,6 @@ export class HealthService {
   private subscribeToConnectedEvents(): void {
     this.subscription = this.eventService.getConnectedStream().subscribe({
       next: (connectedEvent) => {
-        this.log.info('Health monitoring connection established');
-
         // Update health state
         this.state.update((current) => ({
           ...current,

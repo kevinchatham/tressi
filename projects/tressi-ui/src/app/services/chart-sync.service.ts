@@ -6,7 +6,6 @@ export interface ChartSyncState {
   selectionStart: number | null;
   selectionEnd: number | null;
   lastInteractedChartId: string | null;
-  syncGroup: string | null;
 }
 
 @Injectable({
@@ -19,7 +18,6 @@ export class ChartSyncService {
     selectionStart: null,
     selectionEnd: null,
     lastInteractedChartId: null,
-    syncGroup: null,
   });
 
   readonly lastInteractedChartId = (): string | null =>
@@ -31,7 +29,7 @@ export class ChartSyncService {
     this.registeredCharts.add(chartId);
   }
 
-  setAsMaster(chartId: string, syncGroup?: string): void {
+  setAsMaster(chartId: string): void {
     if (!this.registeredCharts.has(chartId)) {
       // eslint-disable-next-line no-console
       console.warn(`Chart ${chartId} not registered`);
@@ -41,7 +39,6 @@ export class ChartSyncService {
     this.state.update((current) => ({
       ...current,
       lastInteractedChartId: chartId,
-      syncGroup: syncGroup || current.syncGroup,
     }));
   }
 
@@ -49,9 +46,7 @@ export class ChartSyncService {
   private lastUpdate = 0;
 
   broadcastState(
-    updates: Partial<
-      Omit<ChartSyncState, 'lastInteractedChartId' | 'syncGroup'>
-    >,
+    updates: Partial<Omit<ChartSyncState, 'lastInteractedChartId'>>,
   ): void {
     const now = performance.now();
     const span = now - this.lastUpdate;

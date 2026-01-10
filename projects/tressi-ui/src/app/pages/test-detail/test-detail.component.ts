@@ -10,7 +10,6 @@ import { LineChartComponent } from '../../components/line-chart/line-chart.compo
 import { StatusBadgeComponent } from '../../components/status-badge/status-badge.component';
 import { ConfigService } from '../../services/config.service';
 import { LoadingService } from '../../services/loading.service';
-import { LocalStorageService } from '../../services/local-storage.service';
 import { LogService } from '../../services/log.service';
 import {
   type ConfigDocument,
@@ -48,7 +47,6 @@ export class TestDetailComponent {
   private readonly logService = inject(LogService);
   private readonly testDetailService = inject(TestDetailService);
   private readonly exportService = inject(TestDetailExportService);
-  private readonly localStorageService = inject(LocalStorageService);
   private readonly configService = inject(ConfigService);
 
   // Signals
@@ -77,6 +75,20 @@ export class TestDetailComponent {
   readonly metricsData = computed(() => this.testDetailService.metrics());
   readonly isRealTime = computed(() => this.testData()?.status === 'running');
   readonly summaryStats = computed(() => this.testDetailService.summaryStats());
+
+  // Global test time range for all charts
+  readonly testTimeRange = computed(() => {
+    const test = this.testData();
+    if (!test?.summary?.global) {
+      return null;
+    }
+
+    const range = {
+      min: test.summary.global.epochStartedAt,
+      max: test.summary.global.epochEndedAt || Date.now(),
+    };
+    return range;
+  });
 
   readonly endpointSummaries = computed(() => {
     const test = this.testData();
@@ -134,10 +146,6 @@ export class TestDetailComponent {
   private readonly cachedEndpointChartData: EndpointChartDataCache = new Map();
 
   constructor() {
-    // Load chart type preference from localStorage
-    const preferences = this.localStorageService.getPreferences();
-    this.selectedChartType.set(preferences.selectedChartType as ChartType);
-
     // Subscribe to route params to ensure we get the testId
     this.route.params.subscribe((params) => {
       const id = params['testId'] || null;
@@ -287,14 +295,6 @@ export class TestDetailComponent {
     const target = event.target as HTMLSelectElement;
     const value = target.value as ChartType;
     this.selectedChartType.set(value);
-
-    // Save the preference to localStorage
-    const currentPreferences = this.localStorageService.getPreferences();
-    const newPreferences = {
-      ...currentPreferences,
-      selectedChartType: value,
-    };
-    this.localStorageService.savePreferences(newPreferences);
   }
 
   goBack(): void {
@@ -424,16 +424,6 @@ export class TestDetailComponent {
       return `global-${chartType}`;
     } else {
       return `endpoint-${this.sanitizeForChartId(endpoint)}-${chartType}`;
-    }
-  }
-
-  getSyncGroup(): string {
-    const endpoint = this.selectedEndpoint();
-
-    if (endpoint === 'global') {
-      return 'global';
-    } else {
-      return `endpoint-${this.sanitizeForChartId(endpoint)}`;
     }
   }
 

@@ -3,7 +3,6 @@ import { z } from 'zod';
 
 import { DEFAULT_COLUMN_CONFIGS } from '../components/test-list/column-config.constants';
 import { FieldPath } from '../components/test-list/column-keys.enum';
-import { CHART_TYPES, DEFAULT_CHART_TYPE } from '../types/chart.types';
 import { LogService } from './log.service';
 import { ConfigDocument } from './rpc.service';
 import { Theme } from './theme.service';
@@ -29,7 +28,6 @@ export const UserPreferencesSchema = z.object({
   selectedTheme: z.custom<Theme>(),
   lastSelectedConfig: z.custom<ConfigDocument | null>(),
   columnPreferences: z.array(ColumnConfigSchema).nullable(),
-  selectedChartType: z.enum(CHART_TYPES),
 });
 
 export type UserPreferences = z.infer<typeof UserPreferencesSchema>;
@@ -97,7 +95,6 @@ export class LocalStorageService {
       selectedTheme: 'dark',
       lastSelectedConfig: null,
       columnPreferences: DEFAULT_COLUMN_CONFIGS,
-      selectedChartType: DEFAULT_CHART_TYPE,
     };
   }
 
