@@ -123,7 +123,7 @@ export class ThemeService {
     return {
       primary: this.primaryColor(),
       secondary: this.secondaryColor(),
-      background: this.base200(),
+      background: this.base100(),
       grid: this.base300(),
       text: this.baseContent(),
       border: this.neutral(),

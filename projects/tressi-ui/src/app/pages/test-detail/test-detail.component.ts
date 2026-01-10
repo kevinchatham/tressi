@@ -5,13 +5,18 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { HeaderComponent } from '../../components/header/header.component';
 import { IconComponent } from '../../components/icon/icon.component';
 import { LineChartComponent } from '../../components/line-chart/line-chart.component';
+import { ConfigService } from '../../services/config.service';
 import { LoadingService } from '../../services/loading.service';
 import { LocalStorageService } from '../../services/local-storage.service';
 import { LogService } from '../../services/log.service';
-import { type TestDocument } from '../../services/rpc.service';
+import {
+  type ConfigDocument,
+  type TestDocument,
+} from '../../services/rpc.service';
 import { TestService } from '../../services/test.service';
 import { CHART_OPTIONS, ChartData, ChartType } from '../../types/chart.types';
 import { DeleteConfirmationModalComponent } from './delete-confirmation-modal/delete-confirmation-modal.component';
+import { MetricsSummaryComponent } from './metrics-summary/metrics-summary.component';
 import { TestDetailService } from './test-detail.service';
 import { EndpointChartDataCache } from './test-detail.types';
 import { TestDetailExportService } from './test-detail-export.service';
@@ -27,6 +32,7 @@ import { TestInfoCardComponent } from './test-info-card/test-info-card.component
     IconComponent,
     TestInfoCardComponent,
     DeleteConfirmationModalComponent,
+    MetricsSummaryComponent,
   ],
   templateUrl: './test-detail.component.html',
 })
@@ -39,6 +45,7 @@ export class TestDetailComponent {
   private readonly testDetailService = inject(TestDetailService);
   private readonly exportService = inject(TestDetailExportService);
   private readonly localStorageService = inject(LocalStorageService);
+  private readonly configService = inject(ConfigService);
 
   // Signals
   readonly testId = signal<string | null>(null);
@@ -50,6 +57,11 @@ export class TestDetailComponent {
   readonly selectedChartType = signal<ChartType>('throughput');
   readonly chartOptions = CHART_OPTIONS;
 
+  // Config signals
+  readonly config = signal<ConfigDocument | null>(null);
+  readonly configLoading = signal<boolean>(false);
+  readonly configError = signal<string>('');
+
   // Collapsible state
   readonly testInfoCollapsed = signal(true);
 
@@ -57,6 +69,7 @@ export class TestDetailComponent {
   readonly testData = computed(() => this.testDetailService.test());
   readonly metricsData = computed(() => this.testDetailService.metrics());
   readonly isRealTime = computed(() => this.testData()?.status === 'running');
+  readonly summaryStats = computed(() => this.testDetailService.summaryStats());
 
   readonly endpointSummaries = computed(() => {
     const test = this.testData();
@@ -101,9 +114,13 @@ export class TestDetailComponent {
   });
 
   readonly displayConfigName = computed(() => {
-    const test = this.testData();
-    if (!test) return '';
-    return test.configId; // Simplified for now
+    const config = this.config();
+    return config?.name || 'Unknown Configuration';
+  });
+
+  readonly displayConfigId = computed(() => {
+    const config = this.testData()?.configId;
+    return config || 'Unknown Configuration';
   });
 
   // Cache for endpoint chart data
@@ -123,8 +140,6 @@ export class TestDetailComponent {
 
     // Set up real-time updates after we have a test ID
     this.setupRealTimeUpdates();
-
-    // No need for effect - saving is handled in onChartTypeChange method
   }
 
   async loadTestDetails(testId: string | null): Promise<void> {
@@ -136,6 +151,12 @@ export class TestDetailComponent {
 
     try {
       await this.testDetailService.loadTestDetails(testId);
+
+      // Load config after test data is loaded
+      const testResult = this.testData();
+      if (testResult?.configId) {
+        await this.loadConfig(testResult.configId);
+      }
     } catch (error) {
       this.hasError.set(true);
       this.errorMessage.set(
@@ -144,6 +165,33 @@ export class TestDetailComponent {
       this.logService.error('Failed to load test details', error);
     } finally {
       this.loadingService.setPageLoading('test-detail', false);
+    }
+  }
+
+  async loadConfig(configId: string | undefined): Promise<void> {
+    if (!configId) return;
+
+    this.configLoading.set(true);
+    this.configError.set('');
+    this.loadingService.setPageLoading('test-detail-config', true);
+
+    try {
+      const configData = await this.configService.getOne(configId);
+      if (configData) {
+        this.config.set(configData);
+      } else {
+        this.config.set(null);
+        this.configError.set('Configuration not found');
+      }
+    } catch (error) {
+      this.config.set(null);
+      this.configError.set(
+        error instanceof Error ? error.message : 'Failed to load configuration',
+      );
+      this.logService.error('Failed to load configuration', error);
+    } finally {
+      this.configLoading.set(false);
+      this.loadingService.setPageLoading('test-detail-config', false);
     }
   }
 
@@ -257,7 +305,9 @@ export class TestDetailComponent {
 
   onEndpointChange(event: Event): void {
     const target = event.target as HTMLSelectElement;
-    this.selectedEndpoint.set(target.value);
+    const value = target.value;
+    this.selectedEndpoint.set(value);
+    this.testDetailService.selectedEndpoint.set(value);
   }
 
   getCurrentEndpointSummary():
@@ -352,5 +402,52 @@ export class TestDetailComponent {
     } catch (error) {
       this.logService.error('Failed to export results', error);
     }
+  }
+
+  // New helper methods for enhanced UI
+  getYAxisLabel(): string {
+    return this.selectedChartType() === 'throughput' ? 'Req/sec' : 'ms';
+  }
+
+  getChartId(): string {
+    const endpoint = this.selectedEndpoint();
+    const chartType = this.selectedChartType();
+
+    if (endpoint === 'global') {
+      return `global-${chartType}`;
+    } else {
+      return `endpoint-${this.sanitizeForChartId(endpoint)}-${chartType}`;
+    }
+  }
+
+  getSyncGroup(): string {
+    const endpoint = this.selectedEndpoint();
+
+    if (endpoint === 'global') {
+      return 'global';
+    } else {
+      return `endpoint-${this.sanitizeForChartId(endpoint)}`;
+    }
+  }
+
+  getChartStats(): {
+    min: number;
+    avg: number;
+    max: number;
+  } {
+    const data = this.getCurrentChartData().data;
+    if (data.length === 0) {
+      return { min: 0, avg: 0, max: 0 };
+    }
+
+    const min = Math.min(...data);
+    const max = Math.max(...data);
+    const avg = data.reduce((sum, val) => sum + val, 0) / data.length;
+
+    return {
+      min: Math.round(min * 100) / 100,
+      avg: Math.round(avg * 100) / 100,
+      max: Math.round(max * 100) / 100,
+    };
   }
 }

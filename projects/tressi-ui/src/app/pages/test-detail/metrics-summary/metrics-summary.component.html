@@ -1,0 +1,64 @@
+<div class="grid grid-cols-2 gap-6 md:grid-cols-4">
+  <!-- Primary Metrics -->
+  <div class="bg-base-200 rounded-lg p-4">
+    <div class="text-base-content/70 mb-1 text-sm">Total Requests</div>
+    <div class="text-2xl font-bold">{{ stats?.totalRequests | number }}</div>
+    <div class="text-success mt-1 text-xs">
+      {{ stats?.successfulRequests }} success
+    </div>
+  </div>
+
+  <div class="bg-base-200 rounded-lg p-4">
+    <div class="text-base-content/70 mb-1 text-sm">Throughput</div>
+    <div class="text-2xl font-bold">{{ stats?.requestsPerSecond }}/s</div>
+    <div class="text-base-content/60 mt-1 text-xs">avg rate</div>
+  </div>
+
+  <div class="bg-base-200 rounded-lg p-4">
+    <div class="text-base-content/70 mb-1 text-sm">Min Latency</div>
+    <div class="text-2xl font-bold">{{ stats?.minLatencyMs }} ms</div>
+    <div class="text-base-content/60 mt-1 text-xs">fastest</div>
+  </div>
+
+  <div class="bg-base-200 rounded-lg p-4">
+    <div class="text-base-content/70 mb-1 text-sm">P50 Latency</div>
+    <div class="text-2xl font-bold">{{ stats?.p50LatencyMs }} ms</div>
+    <div class="text-base-content/60 mt-1 text-xs">median</div>
+  </div>
+
+  <div class="bg-base-200 rounded-lg p-4">
+    <div class="text-base-content/70 mb-1 text-sm">P95 Latency</div>
+    <div class="text-2xl font-bold">{{ stats?.p95LatencyMs }} ms</div>
+    <div class="text-base-content/60 mt-1 text-xs">95th percentile</div>
+  </div>
+
+  <!-- Secondary Metrics -->
+  <div class="bg-base-200 rounded-lg p-4">
+    <div class="text-base-content/70 mb-1 text-sm">P99 Latency</div>
+    <div class="text-2xl font-bold">{{ stats?.p99LatencyMs }} ms</div>
+    <div class="text-base-content/60 mt-1 text-xs">99th percentile</div>
+  </div>
+
+  <div class="bg-base-200 rounded-lg p-4">
+    <div class="text-base-content/70 mb-1 text-sm">Max Latency</div>
+    <div class="text-2xl font-bold">{{ stats?.maxLatencyMs }} ms</div>
+    <div class="text-base-content/60 mt-1 text-xs">slowest</div>
+  </div>
+
+  <div
+    class="rounded-lg p-4"
+    [class.bg-error/20]="stats && stats.errorRate > 5"
+    [class.bg-base-200]="!stats || stats.errorRate <= 5"
+  >
+    <div class="text-base-content/70 mb-1 text-sm">Error Rate</div>
+    <div
+      class="text-2xl font-bold"
+      [class.text-error]="stats && stats.errorRate > 5"
+    >
+      {{ stats?.errorRate }}%
+    </div>
+    <div class="text-error mt-1 text-xs">
+      {{ stats?.failedRequests }} failed
+    </div>
+  </div>
+</div>

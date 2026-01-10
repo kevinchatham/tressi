@@ -9,8 +9,8 @@ export function transformAggregatedMetricToTestSummary(
   finalDurationSec: number,
   endpointMethodMap: Record<string, string>,
   config: TressiConfig,
-  epochStartedAt: number, // ← REQUIRED
-  epochEndedAt: number, // ← REQUIRED
+  epochStartedAt: number,
+  epochEndedAt: number,
   responseSamples?: Record<
     string,
     Array<{

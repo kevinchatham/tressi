@@ -73,208 +73,106 @@
 
   <!-- Test Details -->
   @if (!hasError() && testData()) {
-    <div class="flex flex-col gap-4">
-      <!-- Test Info Card (Consolidated with Metrics Summary) -->
-      <app-test-info-card
-        [test]="testData()!"
-        [configName]="displayConfigName()"
-        [isRealTime]="isRealTime()"
-        [metrics]="metricsData()"
-        [summary]="endpointSummary()"
-        [collapsed]="testInfoCollapsed()"
-        (collapsedChange)="testInfoCollapsed.set($event)"
-      />
+    <div class="flex flex-col">
+      <!-- Test Information -->
+      <section class="bg-base-100 rounded-xl px-6">
+        <h3 class="mb-4 text-lg font-semibold">
+          Configuration: {{ displayConfigName() }}
+        </h3>
+        <app-test-info-card
+          [test]="testData()!"
+          [configId]="displayConfigId()"
+          [isRealTime]="isRealTime()"
+          [metrics]="metricsData()"
+          [summary]="endpointSummary()"
+          [collapsed]="testInfoCollapsed()"
+          (collapsedChange)="testInfoCollapsed.set($event)"
+        />
+      </section>
 
-      <!-- Endpoint Selector and Chart Type -->
-      <div class="mb-6 flex items-center gap-4">
-        <select
-          id="endpoint-selector"
-          class="select select-bordered w-full max-w-xs"
-          [value]="selectedEndpoint()"
-          (change)="onEndpointChange($event)"
-        >
-          <option value="global">Global Metrics</option>
-          @for (endpoint of endpointSummaries(); track endpoint.url) {
-            <option [value]="endpoint.url">{{ endpoint.url }}</option>
-          }
-        </select>
+      <!-- Performance Summary -->
+      <section class="bg-base-100 rounded-xl px-6 pt-6">
+        <div class="mb-2 flex items-center justify-between">
+          <span class="mb-4 text-lg font-semibold">Performance Summary</span>
+          <select
+            id="endpoint-selector"
+            class="select select-sm w-auto"
+            [value]="selectedEndpoint()"
+            (change)="onEndpointChange($event)"
+          >
+            <option value="global">Global Metrics</option>
+            @for (endpoint of endpointSummaries(); track endpoint.url) {
+              <option [value]="endpoint.url">{{ endpoint.url }}</option>
+            }
+          </select>
+        </div>
+        <app-metrics-summary
+          [stats]="summaryStats()"
+          [endpointType]="
+            selectedEndpoint() === 'global' ? 'global' : 'endpoint'
+          "
+        />
+      </section>
 
-        <div class="ml-auto flex items-center hover:cursor-pointer">
+      <!-- Performance Over Time -->
+      <section class="bg-base-100 rounded-xl px-6 pt-6">
+        <div class="mb-4 flex items-center justify-between">
+          <h3 class="text-lg font-semibold">Performance Over Time</h3>
           <select
             id="chart-type-select"
-            class="select select-ghost"
+            class="select select-sm w-auto"
             [value]="selectedChartType()"
             (change)="onChartTypeChange($event)"
           >
-            <option disabled selected>Chart Type</option>
             @for (option of chartOptions; track option.value) {
               <option [value]="option.value">{{ option.label }}</option>
             }
           </select>
         </div>
-      </div>
 
-      <!-- Summary Card -->
-      <div
-        class="border-base-content/5 bg-base-200 mb-6 rounded-xl border-2 p-6"
-      >
-        @if (selectedEndpoint() === 'global') {
-          <!-- Global Summary Stats -->
-          <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
-            <div class="space-y-1">
-              <label class="text-base-content/70 text-sm font-medium"
-                >P50 Latency</label
-              >
-              <span class="text-base-content text-lg font-semibold"
-                >{{ getCurrentSummaryStats()?.p50LatencyMs }} ms</span
-              >
-            </div>
-            <div class="space-y-1">
-              <label class="text-base-content/70 text-sm font-medium"
-                >Total Requests</label
-              >
-              <span class="text-base-content text-lg font-semibold">{{
-                getCurrentSummaryStats()?.totalRequests
-              }}</span>
-            </div>
-          </div>
-        } @else {
-          <!-- Endpoint Summary Stats -->
-          <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
-            <div class="space-y-1">
-              <label class="text-base-content/70 text-sm font-medium"
-                >P50 Latency</label
-              >
-              <span class="text-base-content text-lg font-semibold"
-                >{{ getCurrentSummaryStats()?.p50LatencyMs }} ms</span
-              >
-            </div>
-            <div class="space-y-1">
-              <label class="text-base-content/70 text-sm font-medium"
-                >Total Requests</label
-              >
-              <span class="text-base-content text-lg font-semibold">{{
-                getCurrentSummaryStats()?.totalRequests
-              }}</span>
-            </div>
-          </div>
-        }
-      </div>
+        <!-- Unified Chart Container -->
+        <div>
+          @if (getCurrentChartData().data.length > 0) {
+            <app-line-chart
+              [data]="getCurrentChartData().data"
+              [labels]="getCurrentChartData().labels"
+              [height]="400"
+              [yAxisLabel]="getYAxisLabel()"
+              [chartId]="getChartId()"
+              [syncGroup]="getSyncGroup()"
+            />
 
-      <!-- Charts Area -->
-      <div class="bg-base-200 rounded-xl p-6">
-        @if (selectedEndpoint() === 'global') {
-          <!-- Global Charts -->
-          @if (isThroughputChart()) {
-            <div>
-              @if (getCurrentChartData().data.length > 0) {
-                <app-line-chart
-                  [data]="getCurrentChartData().data"
-                  [labels]="getCurrentChartData().labels"
-                  [height]="350"
-                  [yAxisLabel]="'Req/sec'"
-                  [chartId]="'global-throughput'"
-                  [syncGroup]="'global'"
-                />
-              }
-              @if (getCurrentChartData().data.length === 0) {
-                <div
-                  class="text-base-content/50 flex h-full items-center justify-center italic"
-                >
-                  <p>No throughput data available</p>
-                </div>
-              }
+            <!-- Chart Stats Footer -->
+            <div class="border-base-content/10 mt-6 border-t pt-4">
+              <div class="flex justify-between text-sm">
+                <span>Min: {{ getChartStats().min | number }}</span>
+                <span>Avg: {{ getChartStats().avg | number }}</span>
+                <span>Max: {{ getChartStats().max | number }}</span>
+              </div>
+            </div>
+          } @else {
+            <div class="text-base-content/50 py-12 text-center">
+              <app-icon name="stat_1" class="mx-auto mb-4 block text-4xl" />
+              <p class="mb-2">No {{ selectedChartType() }} data available</p>
+              <p class="text-sm">
+                @if (selectedEndpoint() === 'global') {
+                  Global metrics will appear here once the test generates data
+                } @else {
+                  Endpoint metrics for {{ selectedEndpoint() }} will appear here
+                }
+              </p>
             </div>
           }
-
-          @if (isLatencyChart()) {
-            <div>
-              @if (getCurrentChartData().data.length > 0) {
-                <app-line-chart
-                  [data]="getCurrentChartData().data"
-                  [labels]="getCurrentChartData().labels"
-                  [height]="350"
-                  [yAxisLabel]="'ms'"
-                  [chartId]="'global-latency'"
-                  [syncGroup]="'global'"
-                />
-              }
-              @if (getCurrentChartData().data.length === 0) {
-                <div
-                  class="text-base-content/50 flex h-full items-center justify-center italic"
-                >
-                  <p>No latency data available</p>
-                </div>
-              }
-            </div>
-          }
-        } @else {
-          <!-- Endpoint Charts -->
-          @if (isThroughputChart()) {
-            <div>
-              @if (getCurrentChartData().data.length > 0) {
-                <app-line-chart
-                  [data]="getCurrentChartData().data"
-                  [labels]="getCurrentChartData().labels"
-                  [height]="350"
-                  [yAxisLabel]="'Req/sec'"
-                  [chartId]="
-                    'endpoint-' +
-                    sanitizeForChartId(selectedEndpoint()) +
-                    '-throughput'
-                  "
-                  [syncGroup]="
-                    'endpoint-' + sanitizeForChartId(selectedEndpoint())
-                  "
-                />
-              }
-              @if (getCurrentChartData().data.length === 0) {
-                <div
-                  class="text-base-content/50 flex h-full items-center justify-center italic"
-                >
-                  <p>No throughput data available</p>
-                </div>
-              }
-            </div>
-          }
-
-          @if (isLatencyChart()) {
-            <div>
-              @if (getCurrentChartData().data.length > 0) {
-                <app-line-chart
-                  [data]="getCurrentChartData().data"
-                  [labels]="getCurrentChartData().labels"
-                  [height]="350"
-                  [yAxisLabel]="'ms'"
-                  [chartId]="
-                    'endpoint-' +
-                    sanitizeForChartId(selectedEndpoint()) +
-                    '-latency'
-                  "
-                  [syncGroup]="
-                    'endpoint-' + sanitizeForChartId(selectedEndpoint())
-                  "
-                />
-              }
-              @if (getCurrentChartData().data.length === 0) {
-                <div
-                  class="text-base-content/50 flex h-full items-center justify-center italic"
-                >
-                  <p>No latency data available</p>
-                </div>
-              }
-            </div>
-          }
-        }
-      </div>
-
-      <!-- Delete Confirmation Modal -->
-      <app-delete-confirmation-modal
-        [isOpen]="showDeleteModal()"
-        [test]="testData()!"
-        (confirmed)="handleDeleteConfirm()"
-        (closed)="handleDeleteCancel()"
-      />
+        </div>
+      </section>
     </div>
   }
+
+  <!-- Delete Confirmation Modal -->
+  <app-delete-confirmation-modal
+    [isOpen]="showDeleteModal()"
+    [test]="testData()!"
+    (confirmed)="handleDeleteConfirm()"
+    (closed)="handleDeleteCancel()"
+  />
 </div>

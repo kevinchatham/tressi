@@ -13,7 +13,7 @@ import { TestDocument, TestMetrics } from '../../../services/rpc.service';
 })
 export class TestInfoCardComponent {
   readonly test = input.required<TestDocument>();
-  readonly configName = input.required<string>();
+  readonly configId = input.required<string>();
   readonly isRealTime = input.required<boolean>();
   readonly collapsed = input.required<boolean>();
   readonly metrics = input<TestMetrics | null>(null);

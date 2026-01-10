@@ -1,4 +1,4 @@
-import { inject, Injectable } from '@angular/core';
+import { computed, inject, Injectable } from '@angular/core';
 import { signal } from '@angular/core';
 import { Subscription } from 'rxjs';
 
@@ -11,6 +11,7 @@ import {
   TestSummary,
 } from '../../services/rpc.service';
 import { TestService } from '../../services/test.service';
+import { SummaryStats } from './metrics-summary/metrics-summary.component';
 
 @Injectable({ providedIn: 'root' })
 export class TestDetailService {
@@ -22,6 +23,69 @@ export class TestDetailService {
   // Public signals
   readonly test = signal<TestDocument | null>(null);
   readonly metrics = signal<TestMetrics | null>(null);
+  readonly selectedEndpoint = signal<string>('global');
+
+  // Computed signals for enhanced metrics
+  readonly summaryStats = computed<SummaryStats | null>(() => {
+    const test = this.test();
+    if (!test?.summary) return null;
+
+    const isGlobal = this.selectedEndpoint() === 'global';
+
+    if (isGlobal) {
+      const global = test.summary.global;
+      const durationSec = global.finalDurationSec || 1;
+      const requestsPerSecond = Math.round(global.totalRequests / durationSec);
+
+      return {
+        totalRequests: global.totalRequests,
+        requestsPerSecond,
+        minLatencyMs: global.minLatencyMs,
+        maxLatencyMs: global.maxLatencyMs,
+        p50LatencyMs: global.p50LatencyMs,
+        p95LatencyMs: global.p95LatencyMs,
+        p99LatencyMs: global.p99LatencyMs,
+        errorRate: this.calculateErrorRate(
+          global.totalRequests,
+          global.failedRequests,
+        ),
+        successfulRequests: global.successfulRequests,
+        failedRequests: global.failedRequests,
+      };
+    } else {
+      const endpointUrl = this.selectedEndpoint();
+      const endpoint = test.summary.endpoints?.find(
+        (e) => e.url === endpointUrl,
+      );
+
+      if (!endpoint) return null;
+
+      return {
+        totalRequests: endpoint.totalRequests,
+        requestsPerSecond: endpoint.requestsPerSecond,
+        minLatencyMs: endpoint.minLatencyMs,
+        maxLatencyMs: endpoint.maxLatencyMs,
+        p50LatencyMs: endpoint.p50LatencyMs,
+        p95LatencyMs: endpoint.p95LatencyMs,
+        p99LatencyMs: endpoint.p99LatencyMs,
+        errorRate: this.calculateErrorRate(
+          endpoint.totalRequests,
+          endpoint.failedRequests,
+        ),
+        successfulRequests: endpoint.successfulRequests,
+        failedRequests: endpoint.failedRequests,
+      };
+    }
+  });
+
+  private calculateErrorRate(
+    totalRequests: number,
+    failedRequests: number,
+  ): number {
+    return totalRequests > 0
+      ? Math.round((failedRequests / totalRequests) * 100)
+      : 0;
+  }
 
   // Private state
   private metricsStreamSubscription: Subscription | null = null;
