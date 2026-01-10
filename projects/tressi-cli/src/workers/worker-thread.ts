@@ -73,8 +73,9 @@ export class WorkerThread {
       data.workerStateBuffer,
     );
 
+    const totalEndpoints = data.endpointStateBuffer.byteLength / 4; // 4 bytes per Int32
     this.endpointStateManager = new EndpointStateManager(
-      this.totalWorkers * this.assignedEndpoints.length,
+      totalEndpoints,
       data.endpointStateBuffer,
     );
 
