@@ -2,9 +2,11 @@ import { CommonModule } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
+import { CollapsibleCardComponent } from '../../components/collapsible-card/collapsible-card.component';
 import { HeaderComponent } from '../../components/header/header.component';
 import { IconComponent } from '../../components/icon/icon.component';
 import { LineChartComponent } from '../../components/line-chart/line-chart.component';
+import { StatusBadgeComponent } from '../../components/status-badge/status-badge.component';
 import { ConfigService } from '../../services/config.service';
 import { LoadingService } from '../../services/loading.service';
 import { LocalStorageService } from '../../services/local-storage.service';
@@ -20,7 +22,6 @@ import { MetricsSummaryComponent } from './metrics-summary/metrics-summary.compo
 import { TestDetailService } from './test-detail.service';
 import { EndpointChartDataCache } from './test-detail.types';
 import { TestDetailExportService } from './test-detail-export.service';
-import { TestInfoCardComponent } from './test-info-card/test-info-card.component';
 
 @Component({
   selector: 'app-test-detail',
@@ -30,7 +31,8 @@ import { TestInfoCardComponent } from './test-info-card/test-info-card.component
     LineChartComponent,
     HeaderComponent,
     IconComponent,
-    TestInfoCardComponent,
+    CollapsibleCardComponent,
+    StatusBadgeComponent,
     DeleteConfirmationModalComponent,
     MetricsSummaryComponent,
   ],
@@ -64,6 +66,8 @@ export class TestDetailComponent {
 
   // Collapsible state
   readonly testInfoCollapsed = signal(true);
+  readonly performanceSummaryCollapsed = signal(false);
+  readonly performanceOverTimeCollapsed = signal(false);
 
   // Computed signals
   readonly testData = computed(() => this.testDetailService.test());
@@ -449,5 +453,31 @@ export class TestDetailComponent {
       avg: Math.round(avg * 100) / 100,
       max: Math.round(max * 100) / 100,
     };
+  }
+
+  // Helper methods from test-info-card component
+  formatDate(epoch: number | null | undefined): string {
+    if (!epoch) return 'N/A';
+    return new Date(epoch).toLocaleString();
+  }
+
+  formatDuration(): string {
+    const test = this.testData();
+    if (!test) return 'N/A';
+    if (test.status === 'running') {
+      return 'Running...';
+    }
+    // Use embedded summary fields first
+    if (
+      test.summary?.global.epochEndedAt &&
+      test.summary?.global.epochStartedAt
+    ) {
+      const duration =
+        test.summary.global.epochEndedAt - test.summary.global.epochStartedAt;
+      return `${Math.round(duration / 1000)}s`;
+    }
+    return test.summary?.global?.finalDurationSec
+      ? `${test.summary.global.finalDurationSec}s`
+      : 'N/A';
   }
 }

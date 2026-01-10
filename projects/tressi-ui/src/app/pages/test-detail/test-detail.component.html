@@ -76,94 +76,187 @@
     <div class="flex flex-col">
       <!-- Test Information -->
       <section class="bg-base-100 rounded-xl px-6">
-        <h3 class="mb-4 text-lg font-semibold">
-          Configuration: {{ displayConfigName() }}
-        </h3>
-        <app-test-info-card
-          [test]="testData()!"
-          [configId]="displayConfigId()"
-          [isRealTime]="isRealTime()"
-          [metrics]="metricsData()"
-          [summary]="endpointSummary()"
+        <app-collapsible-card
+          [title]="'Configuration: ' + displayConfigName()"
           [collapsed]="testInfoCollapsed()"
           (collapsedChange)="testInfoCollapsed.set($event)"
-        />
+        >
+          <!-- Header controls projection -->
+          <ng-template>
+            <app-status-badge
+              [status]="testData()!.status"
+              [showPulse]="isRealTime()"
+            />
+          </ng-template>
+
+          <!-- Main content projection -->
+          <div class="mt-4 space-y-4">
+            <!-- Test ID and Status -->
+            <div class="flex items-center justify-between">
+              <div>
+                <span class="text-base-content/70 text-sm">Test ID</span>
+                <p class="font-mono text-sm">{{ testData()!.id }}</p>
+              </div>
+            </div>
+
+            <!-- Configuration -->
+            <div>
+              <span class="text-base-content/70 text-sm">Configuration ID</span>
+              <p class="font-medium">{{ displayConfigId() }}</p>
+            </div>
+
+            <!-- Timing -->
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <span class="text-base-content/70 text-sm">Created</span>
+                <p class="font-medium">
+                  {{ formatDate(testData()!.epochCreatedAt) }}
+                </p>
+              </div>
+              <div>
+                <span class="text-base-content/70 text-sm">Started</span>
+                <p class="font-medium">
+                  {{ formatDate(testData()!.summary?.global?.epochStartedAt) }}
+                </p>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <span class="text-base-content/70 text-sm">Ended</span>
+                <p class="font-medium">
+                  {{ formatDate(testData()!.summary?.global?.epochEndedAt) }}
+                </p>
+              </div>
+              <div>
+                <span class="text-base-content/70 text-sm">Duration</span>
+                <p class="font-medium">{{ formatDuration() }}</p>
+              </div>
+            </div>
+
+            <!-- Test Parameters -->
+            <div>
+              <span class="text-base-content/70 text-sm">Total Requests</span>
+              <p class="font-medium">
+                {{ testData()!.summary?.global?.totalRequests || 'N/A' }}
+              </p>
+            </div>
+
+            <!-- Real-time Indicator -->
+            @if (isRealTime()) {
+              <div class="text-info flex items-center gap-2 text-sm">
+                <app-icon name="dynamic_form" class="animate-pulse" />
+                <span>Real-time updates active</span>
+              </div>
+            }
+
+            <!-- No Metrics Available Messages -->
+            @if (
+              !metricsData()?.global?.length &&
+              !endpointSummary()?.endpoints?.length
+            ) {
+              <div
+                class="text-base-content/50 flex items-center justify-center py-4"
+              >
+                <p class="italic">No metrics data available</p>
+              </div>
+            }
+          </div>
+        </app-collapsible-card>
       </section>
 
       <!-- Performance Summary -->
-      <section class="bg-base-100 rounded-xl px-6 pt-6">
-        <div class="mb-2 flex items-center justify-between">
-          <span class="mb-4 text-lg font-semibold">Performance Summary</span>
-          <select
-            id="endpoint-selector"
-            class="select select-sm w-auto"
-            [value]="selectedEndpoint()"
-            (change)="onEndpointChange($event)"
-          >
-            <option value="global">Global Metrics</option>
-            @for (endpoint of endpointSummaries(); track endpoint.url) {
-              <option [value]="endpoint.url">{{ endpoint.url }}</option>
-            }
-          </select>
-        </div>
-        <app-metrics-summary
-          [stats]="summaryStats()"
-          [endpointType]="
-            selectedEndpoint() === 'global' ? 'global' : 'endpoint'
-          "
-        />
+      <section class="bg-base-100 mt-2 rounded-xl px-6">
+        <app-collapsible-card
+          title="Performance Summary"
+          [collapsed]="performanceSummaryCollapsed()"
+          (collapsedChange)="performanceSummaryCollapsed.set($event)"
+        >
+          <!-- Header controls projection -->
+          <ng-template>
+            <select
+              id="endpoint-selector"
+              class="select select-sm w-auto"
+              [value]="selectedEndpoint()"
+              (change)="onEndpointChange($event)"
+            >
+              <option value="global">Global Metrics</option>
+              @for (endpoint of endpointSummaries(); track endpoint.url) {
+                <option [value]="endpoint.url">{{ endpoint.url }}</option>
+              }
+            </select>
+          </ng-template>
+
+          <!-- Main content projection -->
+          <app-metrics-summary
+            [stats]="summaryStats()"
+            [endpointType]="
+              selectedEndpoint() === 'global' ? 'global' : 'endpoint'
+            "
+          />
+        </app-collapsible-card>
       </section>
 
       <!-- Performance Over Time -->
-      <section class="bg-base-100 rounded-xl px-6 pt-6">
-        <div class="mb-4 flex items-center justify-between">
-          <h3 class="text-lg font-semibold">Performance Over Time</h3>
-          <select
-            id="chart-type-select"
-            class="select select-sm w-auto"
-            [value]="selectedChartType()"
-            (change)="onChartTypeChange($event)"
-          >
-            @for (option of chartOptions; track option.value) {
-              <option [value]="option.value">{{ option.label }}</option>
-            }
-          </select>
-        </div>
+      <section class="bg-base-100 mt-2 rounded-xl px-6">
+        <app-collapsible-card
+          title="Performance Over Time"
+          [collapsed]="performanceOverTimeCollapsed()"
+          (collapsedChange)="performanceOverTimeCollapsed.set($event)"
+        >
+          <!-- Header controls projection -->
+          <ng-template>
+            <select
+              id="chart-type-select"
+              class="select select-sm w-auto"
+              [value]="selectedChartType()"
+              (change)="onChartTypeChange($event)"
+            >
+              @for (option of chartOptions; track option.value) {
+                <option [value]="option.value">{{ option.label }}</option>
+              }
+            </select>
+          </ng-template>
 
-        <!-- Unified Chart Container -->
-        <div>
-          @if (getCurrentChartData().data.length > 0) {
-            <app-line-chart
-              [data]="getCurrentChartData().data"
-              [labels]="getCurrentChartData().labels"
-              [height]="400"
-              [yAxisLabel]="getYAxisLabel()"
-              [chartId]="getChartId()"
-              [syncGroup]="getSyncGroup()"
-            />
-
-            <!-- Chart Stats Footer -->
-            <div class="border-base-content/10 mt-6 border-t pt-4">
-              <div class="flex justify-between text-sm">
-                <span>Min: {{ getChartStats().min | number }}</span>
-                <span>Avg: {{ getChartStats().avg | number }}</span>
-                <span>Max: {{ getChartStats().max | number }}</span>
+          <!-- Main content projection -->
+          <!-- Unified Chart Container -->
+          <div>
+            @if (getCurrentChartData().data.length > 0) {
+              <div class="mt-6">
+                <app-line-chart
+                  [data]="getCurrentChartData().data"
+                  [labels]="getCurrentChartData().labels"
+                  [height]="400"
+                  [yAxisLabel]="getYAxisLabel()"
+                  [chartId]="getChartId()"
+                  [syncGroup]="getSyncGroup()"
+                />
               </div>
-            </div>
-          } @else {
-            <div class="text-base-content/50 py-12 text-center">
-              <app-icon name="stat_1" class="mx-auto mb-4 block text-4xl" />
-              <p class="mb-2">No {{ selectedChartType() }} data available</p>
-              <p class="text-sm">
-                @if (selectedEndpoint() === 'global') {
-                  Global metrics will appear here once the test generates data
-                } @else {
-                  Endpoint metrics for {{ selectedEndpoint() }} will appear here
-                }
-              </p>
-            </div>
-          }
-        </div>
+
+              <!-- Chart Stats Footer -->
+              <div class="border-base-content/10 mt-6 border-t pt-4">
+                <div class="flex justify-between text-sm">
+                  <span>Min: {{ getChartStats().min | number }}</span>
+                  <span>Avg: {{ getChartStats().avg | number }}</span>
+                  <span>Max: {{ getChartStats().max | number }}</span>
+                </div>
+              </div>
+            } @else {
+              <div class="text-base-content/50 py-12 text-center">
+                <app-icon name="stat_1" class="mx-auto mb-4 block text-4xl" />
+                <p class="mb-2">No {{ selectedChartType() }} data available</p>
+                <p class="text-sm">
+                  @if (selectedEndpoint() === 'global') {
+                    Global metrics will appear here once the test generates data
+                  } @else {
+                    Endpoint metrics for {{ selectedEndpoint() }} will appear
+                    here
+                  }
+                </p>
+              </div>
+            }
+          </div>
+        </app-collapsible-card>
       </section>
     </div>
   }
