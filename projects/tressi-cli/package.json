@@ -17,5 +17,11 @@
     "test": "npm run typecheck:tests && vitest run",
     "typecheck:tests": "tsc -p tsconfig.tests.json --noEmit",
     "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.6.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13"
   }
 }
