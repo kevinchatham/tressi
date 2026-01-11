@@ -1,4 +1,5 @@
-import { createCollectionForType } from './adapter';
+import { db } from '../database/db';
+import { EndpointMetricRow } from '../database/schema';
 import { EndpointMetricDocument } from './types';
 
 export type EndpointMetricCreate = Pick<
@@ -6,22 +7,36 @@ export type EndpointMetricCreate = Pick<
   'testId' | 'url' | 'metric' | 'epoch'
 >;
 
-/**
- * Storage class for managing endpoint-specific metrics using SignalDB
- * Provides CRUD operations for endpoint metric documents
- */
-class EndpointMetricCollection {
-  private readonly collection = createCollectionForType<EndpointMetricDocument>(
-    'endpoint.metric.db.json',
-  );
+function mapEndpointMetricFromDb(
+  row: EndpointMetricRow,
+): EndpointMetricDocument {
+  return {
+    id: row.id,
+    testId: row.test_id,
+    url: row.url,
+    metric: JSON.parse(row.metric),
+    epoch: row.epoch,
+  };
+}
 
-  /**
-   * Get all endpoint metrics
-   * @returns Array of endpoint metric documents
-   */
+function mapEndpointMetricToDb(doc: EndpointMetricDocument): EndpointMetricRow {
+  return {
+    id: doc.id,
+    test_id: doc.testId,
+    url: doc.url,
+    metric: JSON.stringify(doc.metric),
+    epoch: doc.epoch,
+  };
+}
+
+class EndpointMetricCollection {
   async getAll(): Promise<EndpointMetricDocument[]> {
     try {
-      return this.collection.find({}).fetch();
+      const rows = await db
+        .selectFrom('endpoint_metrics')
+        .selectAll()
+        .execute();
+      return rows.map(mapEndpointMetricFromDb);
     } catch (error) {
       throw new Error(
         `Failed to retrieve endpoint metrics: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -29,15 +44,14 @@ class EndpointMetricCollection {
     }
   }
 
-  /**
-   * Get a single endpoint metric by ID
-   * @param id Endpoint metric ID
-   * @returns Endpoint metric document or undefined if not found
-   */
   async getById(id: string): Promise<EndpointMetricDocument | undefined> {
     try {
-      const docs = this.collection.find({ id }).fetch();
-      return docs[0] || undefined;
+      const row = await db
+        .selectFrom('endpoint_metrics')
+        .where('id', '=', id)
+        .selectAll()
+        .executeTakeFirst();
+      return row ? mapEndpointMetricFromDb(row) : undefined;
     } catch (error) {
       throw new Error(
         `Failed to retrieve endpoint metric: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -45,14 +59,14 @@ class EndpointMetricCollection {
     }
   }
 
-  /**
-   * Get all endpoint metrics for a specific test
-   * @param testId Test run ID
-   * @returns Array of endpoint metric documents for the test
-   */
   async getByTestId(testId: string): Promise<EndpointMetricDocument[]> {
     try {
-      return this.collection.find({ testId }).fetch();
+      const rows = await db
+        .selectFrom('endpoint_metrics')
+        .where('test_id', '=', testId)
+        .selectAll()
+        .execute();
+      return rows.map(mapEndpointMetricFromDb);
     } catch (error) {
       throw new Error(
         `Failed to retrieve endpoint metrics for test: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -60,14 +74,14 @@ class EndpointMetricCollection {
     }
   }
 
-  /**
-   * Get all endpoint metrics for a specific URL
-   * @param url Endpoint URL
-   * @returns Array of endpoint metric documents for the URL
-   */
   async getByUrl(url: string): Promise<EndpointMetricDocument[]> {
     try {
-      return this.collection.find({ url }).fetch();
+      const rows = await db
+        .selectFrom('endpoint_metrics')
+        .where('url', '=', url)
+        .selectAll()
+        .execute();
+      return rows.map(mapEndpointMetricFromDb);
     } catch (error) {
       throw new Error(
         `Failed to retrieve endpoint metrics for URL: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -75,11 +89,6 @@ class EndpointMetricCollection {
     }
   }
 
-  /**
-   * Create a new endpoint metric
-   * @param input Endpoint metric data
-   * @returns Created endpoint metric document
-   */
   async create(input: EndpointMetricCreate): Promise<EndpointMetricDocument> {
     try {
       const metricDoc: EndpointMetricDocument = {
@@ -89,7 +98,10 @@ class EndpointMetricCollection {
         metric: input.metric,
         epoch: input.epoch,
       };
-      this.collection.insert(metricDoc);
+      await db
+        .insertInto('endpoint_metrics')
+        .values(mapEndpointMetricToDb(metricDoc))
+        .execute();
       return metricDoc;
     } catch (error) {
       throw new Error(
@@ -98,11 +110,6 @@ class EndpointMetricCollection {
     }
   }
 
-  /**
-   * Delete an endpoint metric by ID
-   * @param id Endpoint metric ID
-   * @returns True if deleted, false if not found
-   */
   async delete(id: string): Promise<boolean> {
     try {
       const existing = await this.getById(id);
@@ -110,8 +117,11 @@ class EndpointMetricCollection {
         return false;
       }
 
-      const result = this.collection.removeOne({ id });
-      return result > 0;
+      const result = await db
+        .deleteFrom('endpoint_metrics')
+        .where('id', '=', id)
+        .executeTakeFirst();
+      return result.numDeletedRows > 0;
     } catch (error) {
       throw new Error(
         `Failed to delete endpoint metric: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -119,15 +129,13 @@ class EndpointMetricCollection {
     }
   }
 
-  /**
-   * Delete all endpoint metrics for a specific test
-   * @param testId Test run ID
-   * @returns Number of deleted documents
-   */
   async deleteByTestId(testId: string): Promise<number> {
     try {
-      const result = this.collection.removeMany({ testId });
-      return result;
+      const result = await db
+        .deleteFrom('endpoint_metrics')
+        .where('test_id', '=', testId)
+        .executeTakeFirst();
+      return Number(result.numDeletedRows || 0);
     } catch (error) {
       throw new Error(
         `Failed to delete endpoint metrics for test: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -135,34 +143,35 @@ class EndpointMetricCollection {
     }
   }
 
-  /**
-   * Get the last endpoint metrics for a specific test
-   * @param testId Test run ID
-   * @returns Object mapping URLs to their last endpoint metric, or empty object if not found
-   */
   async getLastByTestId(
     testId: string,
   ): Promise<Record<string, EndpointMetricDocument>> {
     try {
-      const metrics = await this.getByTestId(testId);
-      if (metrics.length === 0) {
+      const rows = await db
+        .selectFrom('endpoint_metrics')
+        .where('test_id', '=', testId)
+        // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+        .select(['url', (eb) => eb.fn.max('epoch').as('max_epoch')])
+        .groupBy('url')
+        .execute();
+
+      if (rows.length === 0) {
         return {};
       }
 
-      // Group by URL and find the last metric for each
-      const lastByUrl = new Map<string, EndpointMetricDocument>();
-
-      for (const metric of metrics) {
-        const existing = lastByUrl.get(metric.url);
-        if (!existing || metric.epoch > existing.epoch) {
-          lastByUrl.set(metric.url, metric);
-        }
-      }
-
-      // Convert Map to plain object
+      // For each URL, fetch the full row with the max epoch
       const result: Record<string, EndpointMetricDocument> = {};
-      for (const [url, metric] of lastByUrl) {
-        result[url] = metric;
+      for (const row of rows) {
+        const metricRow = await db
+          .selectFrom('endpoint_metrics')
+          .where('test_id', '=', testId)
+          .where('url', '=', row.url)
+          .where('epoch', '=', row.max_epoch)
+          .selectAll()
+          .executeTakeFirst();
+        if (metricRow) {
+          result[row.url] = mapEndpointMetricFromDb(metricRow);
+        }
       }
 
       return result;
@@ -174,7 +183,4 @@ class EndpointMetricCollection {
   }
 }
 
-/**
- * Global endpoint metric storage instance
- */
 export const endpointMetricStorage = new EndpointMetricCollection();

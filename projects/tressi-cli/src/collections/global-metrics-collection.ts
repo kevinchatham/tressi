@@ -1,4 +1,5 @@
-import { createCollectionForType } from './adapter';
+import { db } from '../database/db';
+import { GlobalMetricRow } from '../database/schema';
 import { GlobalMetricDocument } from './types';
 
 export type GlobalMetricCreate = Pick<
@@ -6,22 +7,29 @@ export type GlobalMetricCreate = Pick<
   'testId' | 'metric' | 'epoch'
 >;
 
-/**
- * Storage class for managing global metrics using SignalDB
- * Provides CRUD operations for global metric documents
- */
-class GlobalMetricCollection {
-  private readonly collection = createCollectionForType<GlobalMetricDocument>(
-    'global.metrics.db.json',
-  );
+function mapGlobalMetricFromDb(row: GlobalMetricRow): GlobalMetricDocument {
+  return {
+    id: row.id,
+    testId: row.test_id,
+    metric: JSON.parse(row.metric),
+    epoch: row.epoch,
+  };
+}
 
-  /**
-   * Get all global metrics
-   * @returns Array of global metric documents
-   */
+function mapGlobalMetricToDb(doc: GlobalMetricDocument): GlobalMetricRow {
+  return {
+    id: doc.id,
+    test_id: doc.testId,
+    metric: JSON.stringify(doc.metric),
+    epoch: doc.epoch,
+  };
+}
+
+class GlobalMetricCollection {
   async getAll(): Promise<GlobalMetricDocument[]> {
     try {
-      return this.collection.find({}).fetch();
+      const rows = await db.selectFrom('global_metrics').selectAll().execute();
+      return rows.map(mapGlobalMetricFromDb);
     } catch (error) {
       throw new Error(
         `Failed to retrieve global metrics: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -29,15 +37,14 @@ class GlobalMetricCollection {
     }
   }
 
-  /**
-   * Get a single global metric by ID
-   * @param id Global metric ID
-   * @returns Global metric document or undefined if not found
-   */
   async getById(id: string): Promise<GlobalMetricDocument | undefined> {
     try {
-      const docs = this.collection.find({ id }).fetch();
-      return docs[0] || undefined;
+      const row = await db
+        .selectFrom('global_metrics')
+        .where('id', '=', id)
+        .selectAll()
+        .executeTakeFirst();
+      return row ? mapGlobalMetricFromDb(row) : undefined;
     } catch (error) {
       throw new Error(
         `Failed to retrieve global metric: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -45,14 +52,14 @@ class GlobalMetricCollection {
     }
   }
 
-  /**
-   * Get all global metrics for a specific test
-   * @param testId Test run ID
-   * @returns Array of global metric documents for the test
-   */
   async getByTestId(testId: string): Promise<GlobalMetricDocument[]> {
     try {
-      return this.collection.find({ testId }).fetch();
+      const rows = await db
+        .selectFrom('global_metrics')
+        .where('test_id', '=', testId)
+        .selectAll()
+        .execute();
+      return rows.map(mapGlobalMetricFromDb);
     } catch (error) {
       throw new Error(
         `Failed to retrieve global metrics for test: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -60,11 +67,6 @@ class GlobalMetricCollection {
     }
   }
 
-  /**
-   * Create a new global metric
-   * @param input Global metric data
-   * @returns Created global metric document
-   */
   async create(input: GlobalMetricCreate): Promise<GlobalMetricDocument> {
     try {
       const metricDoc: GlobalMetricDocument = {
@@ -73,7 +75,10 @@ class GlobalMetricCollection {
         metric: input.metric,
         epoch: input.epoch,
       };
-      this.collection.insert(metricDoc);
+      await db
+        .insertInto('global_metrics')
+        .values(mapGlobalMetricToDb(metricDoc))
+        .execute();
       return metricDoc;
     } catch (error) {
       throw new Error(
@@ -82,11 +87,6 @@ class GlobalMetricCollection {
     }
   }
 
-  /**
-   * Delete a global metric by ID
-   * @param id Global metric ID
-   * @returns True if deleted, false if not found
-   */
   async delete(id: string): Promise<boolean> {
     try {
       const existing = await this.getById(id);
@@ -94,8 +94,11 @@ class GlobalMetricCollection {
         return false;
       }
 
-      const result = this.collection.removeOne({ id });
-      return result > 0;
+      const result = await db
+        .deleteFrom('global_metrics')
+        .where('id', '=', id)
+        .executeTakeFirst();
+      return result.numDeletedRows > 0;
     } catch (error) {
       throw new Error(
         `Failed to delete global metric: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -103,15 +106,13 @@ class GlobalMetricCollection {
     }
   }
 
-  /**
-   * Delete all global metrics for a specific test
-   * @param testId Test run ID
-   * @returns Number of deleted documents
-   */
   async deleteByTestId(testId: string): Promise<number> {
     try {
-      const result = this.collection.removeMany({ testId });
-      return result;
+      const result = await db
+        .deleteFrom('global_metrics')
+        .where('test_id', '=', testId)
+        .executeTakeFirst();
+      return Number(result.numDeletedRows || 0);
     } catch (error) {
       throw new Error(
         `Failed to delete global metrics for test: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -119,30 +120,49 @@ class GlobalMetricCollection {
     }
   }
 
-  /**
-   * Get the last global metric for a specific test
-   * @param testId Test run ID
-   * @returns Last global metric document or undefined if not found
-   */
   async getLastByTestId(
     testId: string,
   ): Promise<GlobalMetricDocument | undefined> {
     try {
-      const metrics = await this.getByTestId(testId);
-      if (metrics.length === 0) {
-        return undefined;
-      }
-      // Sort by epoch and return the last one
-      return metrics.sort((a, b) => a.epoch - b.epoch)[metrics.length - 1];
+      const row = await db
+        .selectFrom('global_metrics')
+        .where('test_id', '=', testId)
+        .orderBy('epoch', 'desc')
+        .selectAll()
+        .executeTakeFirst();
+      return row ? mapGlobalMetricFromDb(row) : undefined;
     } catch (error) {
       throw new Error(
         `Failed to retrieve last global metric: ${error instanceof Error ? error.message : 'Unknown error'}`,
       );
     }
   }
+
+  // For compatibility with existing code that expects createBatch
+  async createBatch(
+    inputs: GlobalMetricCreate[],
+  ): Promise<GlobalMetricDocument[]> {
+    try {
+      const metricDocs: GlobalMetricDocument[] = inputs.map((input) => ({
+        id: crypto.randomUUID(),
+        testId: input.testId,
+        metric: input.metric,
+        epoch: input.epoch,
+      }));
+      if (metricDocs.length === 0) {
+        return [];
+      }
+      await db
+        .insertInto('global_metrics')
+        .values(metricDocs.map(mapGlobalMetricToDb))
+        .execute();
+      return metricDocs;
+    } catch (error) {
+      throw new Error(
+        `Failed to create global metrics batch: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
+  }
 }
 
-/**
- * Global global metric storage instance
- */
 export const globalMetricStorage = new GlobalMetricCollection();

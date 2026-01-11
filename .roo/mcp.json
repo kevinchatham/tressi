@@ -8,7 +8,7 @@
         "DEFAULT_MINIMUM_TOKENS": "6000"
       },
       "disabled": false,
-      "alwaysAllow": ["resolve-library-id", "get-library-docs"]
+      "alwaysAllow": ["resolve-library-id", "get-library-docs", "query-docs"]
     }
   }
 }
