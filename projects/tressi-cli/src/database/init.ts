@@ -1,6 +1,6 @@
 import { db } from './db';
 
-export async function initializeDatabase() {
+export async function initializeDatabase(): Promise<void> {
   // Create configs table
   await db.schema
     .createTable('configs')

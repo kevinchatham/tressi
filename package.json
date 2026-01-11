@@ -23,7 +23,7 @@
     "tressi": "dist/cli.js"
   },
   "engines": {
-    "node": ">=22.5.0"
+    "node": ">=20.0.0"
   },
   "workspaces": [
     "projects/tressi-cli",
@@ -58,6 +58,7 @@
     "@hono/node-server": "^1.19.6",
     "@hono/standard-validator": "^0.2.0",
     "@tailwindcss/postcss": "^4.1.17",
+    "better-sqlite3": "^12.6.0",
     "chalk": "^5.4.1",
     "cli-table3": "^0.6.5",
     "commander": "^14.0.0",
@@ -67,7 +68,6 @@
     "hono": "^4.10.6",
     "human-number": "^2.0.8",
     "kysely": "^0.28.9",
-    "kysely-generic-sqlite": "^1.2.1",
     "ng-apexcharts": "^2.0.3",
     "ora": "^8.2.0",
     "postcss": "^8.5.6",
@@ -84,10 +84,10 @@
     "@angular/cli": "^21.0.2",
     "@angular/compiler-cli": "^21.0.3",
     "@eslint/eslintrc": "^3.1.0",
-    "@types/blessed": "^0.1.25",
+    "@types/better-sqlite3": "^7.6.13",
     "@types/human-number": "^1.0.2",
     "@types/jasmine": "~5.1.0",
-    "@types/node": "^22.5.0",
+    "@types/node": "^20.0.0",
     "@vitest/ui": "^4.0.15",
     "chokidar-cli": "^3.0.0",
     "daisyui": "^5.5.5",

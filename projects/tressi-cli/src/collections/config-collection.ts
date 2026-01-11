@@ -1,24 +1,25 @@
 import { db } from '../database/db';
+import { ConfigRow } from '../database/schema';
 import { ConfigDocument } from './types';
 
 export type ConfigCreate = Pick<ConfigDocument, 'name' | 'config'>;
 export type ConfigEdit = Pick<ConfigDocument, 'id' | 'name' | 'config'>;
 
-function mapConfigFromDb(row: any): ConfigDocument {
+function mapConfigFromDb(row: ConfigRow): ConfigDocument {
   return {
     id: row.id,
     name: row.name,
-    config: row.config,
+    config: JSON.parse(row.config),
     epochCreatedAt: row.epoch_created_at,
     epochUpdatedAt: row.epoch_updated_at,
   };
 }
 
-function mapConfigToDb(doc: ConfigDocument): any {
+function mapConfigToDb(doc: ConfigDocument): ConfigRow {
   return {
     id: doc.id,
     name: doc.name,
-    config: doc.config,
+    config: JSON.stringify(doc.config),
     epoch_created_at: doc.epochCreatedAt,
     epoch_updated_at: doc.epochUpdatedAt,
   };

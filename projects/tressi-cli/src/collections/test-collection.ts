@@ -1,11 +1,12 @@
 import { db } from '../database/db';
+import { TestRow } from '../database/schema';
 import { TestDocument } from './types';
 
 export type TestCreate = Pick<TestDocument, 'configId'>;
 export type TestEdit = Pick<TestDocument, 'id' | 'configId'> &
   Partial<Pick<TestDocument, 'status' | 'error' | 'summary'>>;
 
-function mapTestFromDb(row: any): TestDocument {
+function mapTestFromDb(row: TestRow): TestDocument {
   return {
     id: row.id,
     configId: row.config_id,
@@ -16,7 +17,7 @@ function mapTestFromDb(row: any): TestDocument {
   };
 }
 
-function mapTestToDb(doc: TestDocument): any {
+function mapTestToDb(doc: TestDocument): TestRow {
   return {
     id: doc.id,
     config_id: doc.configId,

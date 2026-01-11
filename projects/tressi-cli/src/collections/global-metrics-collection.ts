@@ -1,4 +1,5 @@
 import { db } from '../database/db';
+import { GlobalMetricRow } from '../database/schema';
 import { GlobalMetricDocument } from './types';
 
 export type GlobalMetricCreate = Pick<
@@ -6,20 +7,20 @@ export type GlobalMetricCreate = Pick<
   'testId' | 'metric' | 'epoch'
 >;
 
-function mapGlobalMetricFromDb(row: any): GlobalMetricDocument {
+function mapGlobalMetricFromDb(row: GlobalMetricRow): GlobalMetricDocument {
   return {
     id: row.id,
     testId: row.test_id,
-    metric: row.metric,
+    metric: JSON.parse(row.metric),
     epoch: row.epoch,
   };
 }
 
-function mapGlobalMetricToDb(doc: GlobalMetricDocument): any {
+function mapGlobalMetricToDb(doc: GlobalMetricDocument): GlobalMetricRow {
   return {
     id: doc.id,
     test_id: doc.testId,
-    metric: doc.metric,
+    metric: JSON.stringify(doc.metric),
     epoch: doc.epoch,
   };
 }

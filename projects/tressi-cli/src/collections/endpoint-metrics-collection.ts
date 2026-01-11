@@ -1,4 +1,5 @@
 import { db } from '../database/db';
+import { EndpointMetricRow } from '../database/schema';
 import { EndpointMetricDocument } from './types';
 
 export type EndpointMetricCreate = Pick<
@@ -6,22 +7,24 @@ export type EndpointMetricCreate = Pick<
   'testId' | 'url' | 'metric' | 'epoch'
 >;
 
-function mapEndpointMetricFromDb(row: any): EndpointMetricDocument {
+function mapEndpointMetricFromDb(
+  row: EndpointMetricRow,
+): EndpointMetricDocument {
   return {
     id: row.id,
     testId: row.test_id,
     url: row.url,
-    metric: row.metric,
+    metric: JSON.parse(row.metric),
     epoch: row.epoch,
   };
 }
 
-function mapEndpointMetricToDb(doc: EndpointMetricDocument): any {
+function mapEndpointMetricToDb(doc: EndpointMetricDocument): EndpointMetricRow {
   return {
     id: doc.id,
     test_id: doc.testId,
     url: doc.url,
-    metric: doc.metric,
+    metric: JSON.stringify(doc.metric),
     epoch: doc.epoch,
   };
 }
@@ -144,10 +147,10 @@ class EndpointMetricCollection {
     testId: string,
   ): Promise<Record<string, EndpointMetricDocument>> {
     try {
-      // Use SQL to get the latest metric per URL for the given test
       const rows = await db
         .selectFrom('endpoint_metrics')
         .where('test_id', '=', testId)
+        // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
         .select(['url', (eb) => eb.fn.max('epoch').as('max_epoch')])
         .groupBy('url')
         .execute();
