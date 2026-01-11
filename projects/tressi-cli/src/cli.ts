@@ -6,6 +6,7 @@ import { ConfigCommand } from './commands/config-command';
 import { InitCommand } from './commands/init-command';
 import { RunCommand } from './commands/run-command';
 import { ServeCommand } from './commands/serve-command';
+import { initializeDatabase } from './database/init';
 import { terminal } from './tui/terminal';
 
 /**
@@ -146,6 +147,8 @@ Examples:
     terminal.clear();
 
     try {
+      // Initialize database before any commands run
+      await initializeDatabase();
       await this.program.parseAsync(process.argv);
     } catch (error) {
       terminal.print(chalk.red(`CLI Error: ${(error as Error).message}`));
