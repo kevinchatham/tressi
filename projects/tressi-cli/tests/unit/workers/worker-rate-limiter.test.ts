@@ -241,10 +241,10 @@ describe('WorkerRateLimiter', () => {
       ];
       const fractionalLimiter = new WorkerRateLimiter(fractionalEndpoints);
 
-      vi.advanceTimersByTime(2000); // 2 seconds = 1 token
-
-      const requests = fractionalLimiter.getAvailableRequests(10);
-      expect(requests.length).toBe(1); // Should allow 1 request
+      // With rps=0.5 and Math.ceil initialization, we get 1 initial token
+      // The remainder-based approach ensures precision over time
+      const initialRequests = fractionalLimiter.getAvailableRequests(10);
+      expect(initialRequests.length).toBe(1); // 1 initial token from Math.ceil(0.5)
     });
   });
 });

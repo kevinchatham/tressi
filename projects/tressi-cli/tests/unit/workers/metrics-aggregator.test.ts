@@ -437,6 +437,9 @@ describe('MetricsAggregator', () => {
             duration: 60,
           },
         ],
+        options: {
+          durationSec: 60,
+        },
       };
     });
 
