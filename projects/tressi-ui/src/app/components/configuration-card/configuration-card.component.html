@@ -86,16 +86,6 @@
             }}
           </p>
         </div>
-        @if (input().config.options.rampUpTimeSec > 0) {
-          <div>
-            <h4 class="text-base-content/70 mb-1 text-sm font-semibold">
-              Ramp-up
-            </h4>
-            <p class="text-sm">
-              {{ input().config.options.rampUpTimeSec }} seconds
-            </p>
-          </div>
-        }
         @if (input().config.options.exportPath) {
           <div>
             <h4 class="text-base-content/70 mb-1 text-sm font-semibold">

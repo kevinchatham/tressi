@@ -53,7 +53,7 @@ function printRunConfiguration(
   options: TressiOptionsConfig,
   config: TressiConfig,
 ): void {
-  const { durationSec = 10, rampUpTimeSec, threads } = options;
+  const { durationSec = 10, threads } = options;
 
   const configTable = new Table({
     head: ['Option', 'Setting'],
@@ -66,10 +66,6 @@ function printRunConfiguration(
   configTable.push(['Total RPS', `${totalRps}`]);
   configTable.push(['Duration', `${durationSec}s`]);
   configTable.push(['Workers', `${threads || 'auto'}`]);
-
-  if (rampUpTimeSec) {
-    configTable.push(['Ramp-up Time', `${rampUpTimeSec}s`]);
-  }
 
   terminal.print('\n' + chalk.bold('Run Configuration'));
   terminal.print(configTable.toString());

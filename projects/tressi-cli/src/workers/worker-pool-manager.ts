@@ -146,10 +146,11 @@ export class WorkerPoolManager {
     // Set endpoints and start metrics aggregation polling
     const endpoints = this.config.requests.map((req) => req.url);
     this.metricsAggregator.setEndpoints(endpoints);
-    this.metricsAggregator.startPolling();
 
     // Wait for all workers to be ready
     await this.waitForWorkersReady();
+
+    this.metricsAggregator.startPolling();
   }
 
   /**

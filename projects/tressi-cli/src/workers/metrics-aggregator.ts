@@ -95,6 +95,9 @@ export class MetricsAggregator implements IMetricsAggregator {
     }
 
     this.startTime = Date.now();
+
+    this.pollMetrics();
+
     this.pollingInterval = setInterval(async () => {
       await this.pollMetrics();
     }, intervalMs);
@@ -314,7 +317,7 @@ export class MetricsAggregator implements IMetricsAggregator {
         p95LatencyMs: roundToDecimals(endpointStats.p95Latency),
         p99LatencyMs: roundToDecimals(endpointStats.p99Latency),
         requestsPerSecond: roundToDecimals(
-          duration > 0 ? endpointTotalRequests / (duration / 1000) : 0,
+          endpointTotalRequests / (duration / 1000),
         ),
         statusCodeDistribution: statusCounts,
         networkBytesSent: endpointBytesSent,

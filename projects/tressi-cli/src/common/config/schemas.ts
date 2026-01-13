@@ -35,7 +35,6 @@ export const requestDefaults = {
 
 export const optionsDefaults = {
   durationSec: 10,
-  rampUpTimeSec: 0,
   exportPath: '',
   silent: false,
   headers: headerDefaults,
@@ -105,13 +104,6 @@ export const TressiOptionsConfigSchema = z
       .int()
       .positive()
       .describe('The total duration of the test in seconds. Defaults to 10.'),
-    rampUpTimeSec: z
-      .number()
-      .int()
-      .nonnegative()
-      .describe(
-        'The time in seconds to ramp up to the target RPS. Defaults to 0.',
-      ),
     exportPath: z
       .string()
       .describe(

@@ -78,7 +78,7 @@ export class WorkerRateLimiter {
       const refill = Math.floor((elapsed / 1000) * rps);
 
       if (refill > 0) {
-        this.tokens[i] = Math.min(this.tokens[i] + refill, rps * 2); // Allow burst
+        this.tokens[i] = Math.min(this.tokens[i] + refill, rps);
         this.lastRefill[i] = now;
       }
 

@@ -65,7 +65,6 @@ describe('Per-endpoint RPS Configuration Tests', () => {
         ],
         options: {
           durationSec: 5, // Reduced duration for faster tests
-          rampUpTimeSec: 0,
           silent: true,
           headers: {},
           exportPath: '',
@@ -151,7 +150,6 @@ describe('Per-endpoint RPS Configuration Tests', () => {
         ],
         options: {
           durationSec: 5,
-          rampUpTimeSec: 0,
           silent: true,
           headers: {},
           exportPath: '',
@@ -218,7 +216,6 @@ describe('Per-endpoint RPS Configuration Tests', () => {
         ],
         options: {
           durationSec: 3,
-          rampUpTimeSec: 0,
           silent: true,
           headers: {},
           exportPath: '',
@@ -276,7 +273,6 @@ describe('Per-endpoint RPS Configuration Tests', () => {
         ],
         options: {
           durationSec: 10,
-          rampUpTimeSec: 0,
           silent: true,
           headers: {},
           exportPath: '',
@@ -349,7 +345,6 @@ describe('Per-endpoint RPS Configuration Tests', () => {
         ],
         options: {
           durationSec: 5,
-          rampUpTimeSec: 0,
           silent: true,
           headers: {},
           exportPath: '',
@@ -420,7 +415,6 @@ describe('Per-endpoint RPS Configuration Tests', () => {
         ],
         options: {
           durationSec: 5,
-          rampUpTimeSec: 0,
           silent: true,
           headers: {},
           exportPath: '',
@@ -467,7 +461,6 @@ describe('Per-endpoint RPS Configuration Tests', () => {
         ],
         options: {
           durationSec: 3,
-          rampUpTimeSec: 0,
           silent: true,
           headers: {},
           exportPath: '',
@@ -511,7 +504,6 @@ describe('Per-endpoint RPS Configuration Tests', () => {
         ],
         options: {
           durationSec: 10,
-          rampUpTimeSec: 0,
           silent: true,
           headers: {},
           exportPath: '',
@@ -560,7 +552,6 @@ describe('Per-endpoint RPS Configuration Tests', () => {
         ],
         options: {
           durationSec: 5,
-          rampUpTimeSec: 0,
           silent: true,
           headers: {},
           exportPath: '',
@@ -633,7 +624,6 @@ describe('Per-endpoint RPS Configuration Tests', () => {
         ],
         options: {
           durationSec: 5,
-          rampUpTimeSec: 0,
           silent: true,
           headers: {},
           exportPath: '',

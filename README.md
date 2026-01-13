@@ -255,48 +255,6 @@ Run with:
 npx tressi
 ```
 
-#### Ramp-up Load Test
-
-Gradually increases the load to your target requests per second over a specified duration:
-
-```json
-{
-  "$schema": "https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json",
-  "options": {
-    "workers": 20,
-    "durationSec": 60,
-    "rps": 500,
-    "rampUpTimeSec": 30
-  },
-  "requests": [
-    {
-      "url": "https://api.example.com/endpoint",
-      "method": "GET"
-    }
-  ]
-}
-```
-
-#### Spike Test
-
-A short, intense burst of traffic to test your system's ability to handle sudden surges:
-
-```json
-{
-  "$schema": "https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json",
-  "options": {
-    "workers": 100,
-    "durationSec": 10
-  },
-  "requests": [
-    {
-      "url": "https://api.example.com/endpoint",
-      "method": "GET"
-    }
-  ]
-}
-```
-
 #### Soak Test (Endurance Test)
 
 A long-running test to check for performance degradation, memory leaks, or other issues over an extended period:
@@ -485,7 +443,6 @@ The `tressi init` command will generate a `tressi.config.json` file with a `$sch
   "options": {
     "workers": 10,
     "durationSec": 30,
-    "rampUpTimeSec": 0,
     "rps": 200,
     "exportPath": null,
     "useUI": true,
@@ -524,7 +481,6 @@ All test configuration is now done through the JSON configuration file. The `opt
 | --------------------- | --------------------- | ------------------------------------------------------------------------------------ | ------- |
 | `workers`             | `integer`             | Maximum number of concurrent workers to use for dynamic scaling                      | `10`    |
 | `durationSec`         | `integer`             | Total test duration in seconds                                                       | `10`    |
-| `rampUpTimeSec`       | `integer`             | Time in seconds to ramp up to the target load                                        | `0`     |
 | `rps`                 | `number`              | Target requests per second (ramps up to this value)                                  | `1`     |
 | `threads`             | `integer`             | Number of worker threads to use (defaults to CPU count, max: CPU cores)              |         |
 | `workerMemoryLimit`   | `integer`             | Memory limit per worker in MB (16-512)                                               | `128`   |
