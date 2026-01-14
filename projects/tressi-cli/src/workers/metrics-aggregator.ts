@@ -243,8 +243,10 @@ export class MetricsAggregator implements IMetricsAggregator {
       });
     }
 
+    const endTime = this.endTime > 0 ? this.endTime : Date.now();
+
     // Calculate global metrics
-    const duration = this.startTime > 0 ? Date.now() - this.startTime : 0;
+    const duration = this.startTime > 0 ? endTime - this.startTime : 0;
     const requestsPerSecond =
       duration > 0 ? totalRequests / (duration / 1000) : 0;
 
@@ -382,8 +384,10 @@ export class MetricsAggregator implements IMetricsAggregator {
     endpoints: string[],
   ): TestSummary {
     const metrics = this.getResults(workersCount, endpoints);
-    const duration =
-      this.startTime > 0 ? (Date.now() - this.startTime) / 1000 : 0;
+
+    const endTime = this.endTime > 0 ? this.endTime : Date.now();
+
+    const duration = this.startTime > 0 ? (endTime - this.startTime) / 1000 : 0;
 
     if (!this.config) {
       throw new Error('Config not set in MetricsAggregator');

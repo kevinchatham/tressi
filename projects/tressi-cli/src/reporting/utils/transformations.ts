@@ -48,7 +48,7 @@ export function transformAggregatedMetricToTestSummary(
     const requestConfig = config.requests.find((req) => req.url === url)!;
 
     // Calculate percentage of target RPS achieved
-    const expectedRequests = requestConfig.rps * config.options.durationSec;
+    const expectedRequests = requestConfig.rps * finalDurationSec;
     const targetAchieved = roundToDecimals(
       (endpoint.totalRequests / expectedRequests) * 100,
     );
