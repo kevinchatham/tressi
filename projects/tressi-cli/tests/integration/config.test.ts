@@ -22,7 +22,6 @@ const minimalConfig = {
   ],
   options: {
     durationSec: 10,
-    rampUpTimeSec: 0,
     silent: false,
     workerMemoryLimit: 128,
     headers: {},
@@ -56,7 +55,6 @@ const expectedConfig = {
   ],
   options: {
     durationSec: 10,
-    rampUpTimeSec: 0,
     silent: false,
     workerMemoryLimit: 128,
     headers: {},
@@ -158,7 +156,6 @@ describe('config', () => {
             Authorization: 'Bearer global-token',
           },
           durationSec: 1,
-          rampUpTimeSec: 0,
           silent: false,
           workerMemoryLimit: 128,
           exportPath: '',

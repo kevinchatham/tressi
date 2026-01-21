@@ -26,7 +26,6 @@ export function createTestConfig(
     ],
     options: {
       durationSec: 5,
-      rampUpTimeSec: 0,
       silent: true,
       headers: {},
       exportPath: '',
@@ -96,7 +95,6 @@ export function createMinimalTestConfig(
     ],
     options: {
       durationSec: 1,
-      rampUpTimeSec: 0,
       silent: true,
       headers: {},
       exportPath: '',

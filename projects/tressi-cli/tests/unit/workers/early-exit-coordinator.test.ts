@@ -60,7 +60,6 @@ describe('EarlyExitCoordinator', () => {
       ],
       options: {
         durationSec: 60,
-        rampUpTimeSec: 0,
         exportPath: '',
         silent: false,
         headers: {},
@@ -142,7 +141,6 @@ describe('EarlyExitCoordinator', () => {
         requests: [],
         options: {
           durationSec: 60,
-          rampUpTimeSec: 0,
           headers: {},
           exportPath: '',
           silent: false,
@@ -184,7 +182,6 @@ describe('EarlyExitCoordinator', () => {
         requests: [],
         options: {
           durationSec: 60,
-          rampUpTimeSec: 0,
           headers: {},
           exportPath: '',
           silent: false,
@@ -260,7 +257,6 @@ describe('EarlyExitCoordinator', () => {
         ],
         options: {
           durationSec: 60,
-          rampUpTimeSec: 0,
           headers: {},
           exportPath: '',
           silent: false,
@@ -361,7 +357,6 @@ describe('EarlyExitCoordinator', () => {
         ],
         options: {
           durationSec: 60,
-          rampUpTimeSec: 0,
           headers: {},
           exportPath: '',
           silent: false,
@@ -436,7 +431,6 @@ describe('EarlyExitCoordinator', () => {
         ],
         options: {
           durationSec: 60,
-          rampUpTimeSec: 0,
           headers: {},
           exportPath: '',
           silent: false,
@@ -494,7 +488,6 @@ describe('EarlyExitCoordinator', () => {
         ],
         options: {
           durationSec: 60,
-          rampUpTimeSec: 0,
           headers: {},
           exportPath: '',
           silent: false,
@@ -538,7 +531,6 @@ describe('EarlyExitCoordinator', () => {
         ],
         options: {
           durationSec: 60,
-          rampUpTimeSec: 0,
           headers: {},
           exportPath: '',
           silent: false,
@@ -584,7 +576,6 @@ describe('EarlyExitCoordinator', () => {
         ],
         options: {
           durationSec: 60,
-          rampUpTimeSec: 0,
           headers: {},
           exportPath: '',
           silent: false,

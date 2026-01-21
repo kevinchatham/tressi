@@ -255,15 +255,6 @@
                   [testTimeRange]="testTimeRange()"
                 />
               </div>
-
-              <!-- Chart Stats Footer -->
-              <div class="border-base-content/10 mt-6 border-t pt-4">
-                <div class="flex justify-between text-sm">
-                  <span>Min: {{ getChartStats().min | number }}</span>
-                  <span>Avg: {{ getChartStats().avg | number }}</span>
-                  <span>Max: {{ getChartStats().max | number }}</span>
-                </div>
-              </div>
             } @else {
               <div class="text-base-content/50 py-12 text-center">
                 <app-icon name="stat_1" class="mx-auto mb-4 block text-4xl" />

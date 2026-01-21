@@ -67,6 +67,11 @@
 
   <!-- Empty State -->
   @if (!hasError() && !hasTests()) {
+    <div class="flex items-center gap-4">
+      <h2 class="text-base-content mb-4 text-xl font-semibold">
+        {{ pageTitle() }}
+      </h2>
+    </div>
     <div class="border-base-content/5 mx-auto rounded-xl border-2 p-8">
       <div class="text-center">
         <h2 class="text-base-content mb-2 text-xl font-semibold">

@@ -2,7 +2,6 @@
   "$schema": "./tressi.schema.json",
   "options": {
     "durationSec": 10,
-    "rampUpTimeSec": 0,
     "exportPath": "",
     "silent": false,
     "headers": {

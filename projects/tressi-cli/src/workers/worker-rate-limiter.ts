@@ -23,15 +23,18 @@ import { TressiRequestConfig } from '../common/config/types';
 export class WorkerRateLimiter {
   private tokens: number[];
   private lastRefill: number[];
+  private remainder: number[];
 
   constructor(private endpoints: TressiRequestConfig[]) {
     this.tokens = new Array(endpoints.length).fill(0);
     this.lastRefill = new Array(endpoints.length).fill(Date.now());
+    this.remainder = new Array(endpoints.length).fill(0);
 
     // Initialize with tokens to allow immediate requests
     for (let i = 0; i < endpoints.length; i++) {
       const rps = endpoints[i].rps || 1;
-      this.tokens[i] = Math.min(rps, 10); // Start with up to 10 tokens
+      // Use Math.ceil to ensure at least 1 token for low/fractional RPS values
+      this.tokens[i] = Math.min(Math.ceil(rps), 10); // Start with up to 10 tokens
     }
   }
 
@@ -75,10 +78,19 @@ export class WorkerRateLimiter {
     ) {
       const elapsed = now - this.lastRefill[i];
       const rps = this.endpoints[i].rps || 1;
-      const refill = Math.floor((elapsed / 1000) * rps);
+
+      // Calculate fractional token refill and accumulate remainder
+      const fractionalRefill = (elapsed / 1000) * rps;
+      this.remainder[i] += fractionalRefill;
+
+      // Extract integer portion for token replenishment
+      const refill = Math.floor(this.remainder[i]);
+
+      // Preserve fractional remainder for next cycle
+      this.remainder[i] -= refill;
 
       if (refill > 0) {
-        this.tokens[i] = Math.min(this.tokens[i] + refill, rps * 2); // Allow burst
+        this.tokens[i] = Math.min(this.tokens[i] + refill, rps);
         this.lastRefill[i] = now;
       }
 

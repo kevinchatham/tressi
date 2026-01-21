@@ -95,6 +95,9 @@ export class MetricsAggregator implements IMetricsAggregator {
     }
 
     this.startTime = Date.now();
+
+    this.pollMetrics();
+
     this.pollingInterval = setInterval(async () => {
       await this.pollMetrics();
     }, intervalMs);
@@ -240,8 +243,10 @@ export class MetricsAggregator implements IMetricsAggregator {
       });
     }
 
+    const endTime = this.endTime > 0 ? this.endTime : Date.now();
+
     // Calculate global metrics
-    const duration = this.startTime > 0 ? Date.now() - this.startTime : 0;
+    const duration = this.startTime > 0 ? endTime - this.startTime : 0;
     const requestsPerSecond =
       duration > 0 ? totalRequests / (duration / 1000) : 0;
 
@@ -314,7 +319,7 @@ export class MetricsAggregator implements IMetricsAggregator {
         p95LatencyMs: roundToDecimals(endpointStats.p95Latency),
         p99LatencyMs: roundToDecimals(endpointStats.p99Latency),
         requestsPerSecond: roundToDecimals(
-          duration > 0 ? endpointTotalRequests / (duration / 1000) : 0,
+          endpointTotalRequests / (duration / 1000),
         ),
         statusCodeDistribution: statusCounts,
         networkBytesSent: endpointBytesSent,
@@ -379,8 +384,10 @@ export class MetricsAggregator implements IMetricsAggregator {
     endpoints: string[],
   ): TestSummary {
     const metrics = this.getResults(workersCount, endpoints);
-    const duration =
-      this.startTime > 0 ? (Date.now() - this.startTime) / 1000 : 0;
+
+    const endTime = this.endTime > 0 ? this.endTime : Date.now();
+
+    const duration = this.startTime > 0 ? (endTime - this.startTime) / 1000 : 0;
 
     if (!this.config) {
       throw new Error('Config not set in MetricsAggregator');
