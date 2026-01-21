@@ -30,6 +30,7 @@ export const requestDefaults = {
   method: 'GET' as const,
   headers: headerDefaults,
   rps: 1,
+  rampUpDurationSec: 0,
   earlyExit: earlyExitDefaults,
 };
 
@@ -88,6 +89,13 @@ export const TressiRequestConfigSchema = z
       .int()
       .min(1)
       .describe('Per-endpoint requests per second limit. Defaults to 1.'),
+    rampUpDurationSec: z
+      .number()
+      .int()
+      .min(0)
+      .describe(
+        'Duration in seconds to linearly ramp up to target RPS. Defaults to 0 (no ramp-up).',
+      ),
     earlyExit: EarlyExitConfigSchema.describe(
       'Optional early exit configuration for this specific endpoint',
     ),
@@ -166,6 +174,20 @@ export const TressiConfigSchema = z
       'Configuration options for the test runner.',
     ),
   })
+  .refine(
+    (data) => {
+      // Validate that test duration is sufficient for ramp-up periods
+      const maxRampUpDuration = Math.max(
+        ...data.requests.map((r) => r.rampUpDurationSec || 0),
+      );
+      return data.options.durationSec >= maxRampUpDuration;
+    },
+    {
+      message:
+        'Test duration must be greater than or equal to the maximum ramp-up duration',
+      path: ['options', 'durationSec'],
+    },
+  )
   .default({
     $schema: schemaDefault,
     requests: [],

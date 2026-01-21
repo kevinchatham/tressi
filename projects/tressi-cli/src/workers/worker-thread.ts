@@ -1,3 +1,4 @@
+import { performance } from 'perf_hooks';
 import { parentPort, workerData } from 'worker_threads';
 
 import { TressiRequestConfig } from '../common/config/types';
@@ -42,7 +43,6 @@ export class WorkerThread {
   private workerId: number;
   private assignedEndpoints: TressiRequestConfig[];
   private endpointOffset: number;
-  private startTime: number;
   private durationMs: number;
   private totalWorkers: number;
 
@@ -81,7 +81,6 @@ export class WorkerThread {
 
     this.rateLimiter = new WorkerRateLimiter(this.assignedEndpoints);
     this.requestExecutor = new RequestExecutor(new ResponseSampler(), 1000);
-    this.startTime = Date.now();
     this.durationMs = data.durationSec * 1000;
   }
 
@@ -105,20 +104,22 @@ export class WorkerThread {
     this.isRunning = true;
     this.workerStateManager.setWorkerState(this.workerId, WorkerState.RUNNING);
 
-    // Pipeline configuration
-    const PIPELINE_DEPTH = 15; // Number of concurrent requests
+    const startTime = performance.now();
+    const durationMs = this.durationMs;
     const inFlightRequests = new Set<Promise<void>>();
 
     while (this.isRunning) {
-      const elapsed = Date.now() - this.startTime;
-      if (elapsed >= this.durationMs) break;
+      const now = performance.now();
+      const elapsed = now - startTime;
+
+      if (elapsed >= durationMs) break;
       if (this.allEndpointsStopped()) break;
 
-      // Get batch of available requests (NON-BLOCKING)
-      const requests = this.rateLimiter.getAvailableRequests(PIPELINE_DEPTH);
+      // Get batch of available requests (time-based calculation)
+      const requests = this.rateLimiter.getAvailableRequests(100);
 
       if (requests.length > 0) {
-        // CRITICAL: Fire requests WITHOUT waiting - TRUE PIPELINING
+        // Fire requests without waiting (maintain pipelining)
         requests.forEach((request, index) => {
           const localEndpointIndex = this.getLocalEndpointIndex(request);
           const globalEndpointIndex = this.endpointOffset + localEndpointIndex;
@@ -126,14 +127,12 @@ export class WorkerThread {
           if (
             this.endpointStateManager.isEndpointRunning(globalEndpointIndex)
           ) {
-            // Add small stagger to smooth out traffic (2ms between requests)
-            const pipelineDelay = index * 2;
-
+            // Use delayedExecute to handle stagger timing properly
             const requestPromise = this.delayedExecute(
               request,
               localEndpointIndex,
               globalEndpointIndex,
-              pipelineDelay,
+              index * 0.5, // 0.5ms stagger between requests
             );
 
             inFlightRequests.add(requestPromise);
@@ -143,12 +142,15 @@ export class WorkerThread {
           }
         });
 
-        // Don't wait for completion - keep pipeline full
         // Yield to prevent event loop starvation
         await new Promise((resolve) => setImmediate(resolve));
       } else {
-        // No tokens available, minimal wait
-        await new Promise((resolve) => setImmediate(resolve));
+        // No requests available, sleep briefly based on minimum RPS
+        const minRps = Math.min(
+          ...this.assignedEndpoints.map((ep) => ep.rps || 1),
+        );
+        const sleepTime = Math.max(0, Math.min(1, 1000 / minRps / 10));
+        await new Promise((resolve) => setTimeout(resolve, sleepTime));
       }
     }
 

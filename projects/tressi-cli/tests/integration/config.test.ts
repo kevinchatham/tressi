@@ -10,6 +10,7 @@ const minimalConfig = {
       url: 'http://localhost:8080/test',
       method: 'GET' as const,
       rps: 10,
+      rampUpDurationSec: 0,
       payload: {},
       headers: {},
       earlyExit: {
@@ -43,6 +44,7 @@ const expectedConfig = {
       url: 'http://localhost:8080/test',
       method: 'GET',
       rps: 10,
+      rampUpDurationSec: 0,
       payload: {},
       headers: {},
       earlyExit: {
@@ -175,6 +177,7 @@ describe('config', () => {
               'X-Request-ID': '123',
             },
             rps: 10,
+            rampUpDurationSec: 0,
             payload: {},
             earlyExit: {
               enabled: false,

@@ -15,6 +15,7 @@ export const createTestConfig = (
       url: 'http://localhost:8080/test',
       method: 'GET',
       rps: 10,
+      rampUpDurationSec: 0,
       payload: {},
       headers: {},
       earlyExit: {
@@ -71,6 +72,7 @@ export const createMinimalTestConfig = (
       url: 'http://localhost:8080/test',
       method: 'GET',
       rps: 1,
+      rampUpDurationSec: 0,
       payload: {},
       headers: {},
       earlyExit: {

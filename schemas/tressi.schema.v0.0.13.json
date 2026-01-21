@@ -39,6 +39,7 @@
             "User-Agent": "Tressi"
           },
           "rps": 1,
+          "rampUpDurationSec": 0,
           "earlyExit": {
             "enabled": false,
             "errorRateThreshold": 0,
@@ -90,6 +91,12 @@
             "minimum": 1,
             "maximum": 9007199254740991
           },
+          "rampUpDurationSec": {
+            "description": "Duration in seconds to linearly ramp up to target RPS. Defaults to 0 (no ramp-up).",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
           "earlyExit": {
             "description": "Optional early exit configuration for this specific endpoint",
             "default": {
@@ -135,7 +142,15 @@
             "additionalProperties": false
           }
         },
-        "required": ["url", "payload", "method", "headers", "rps", "earlyExit"],
+        "required": [
+          "url",
+          "payload",
+          "method",
+          "headers",
+          "rps",
+          "rampUpDurationSec",
+          "earlyExit"
+        ],
         "additionalProperties": false
       }
     },

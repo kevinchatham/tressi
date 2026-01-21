@@ -142,6 +142,27 @@ export class TestDetailComponent {
     return config || 'Unknown Configuration';
   });
 
+  // Add these computed signals to the class
+  readonly hasRampUpConfigured = computed(() => {
+    const config = this.config();
+    // Check if any request has rampUpDurationSec > 0
+    return (
+      config?.config.requests.some(
+        (r: any) => (r.rampUpDurationSec || 0) > 0,
+      ) ?? false
+    );
+  });
+
+  readonly endpointsWithRampUp = computed(() => {
+    const config = this.config();
+    // Return only requests with ramp-up
+    return (
+      config?.config.requests.filter(
+        (r: any) => (r.rampUpDurationSec || 0) > 0,
+      ) ?? []
+    );
+  });
+
   // Cache for endpoint chart data
   private readonly cachedEndpointChartData: EndpointChartDataCache = new Map();
 

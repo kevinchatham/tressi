@@ -4,6 +4,31 @@ import type { AggregatedMetrics } from '../../common/metrics';
 import { roundToDecimals } from '../../utils/math-utils';
 import { EndpointSummary, GlobalSummary, TestSummary } from '../types';
 
+/**
+ * Calculate expected number of requests accounting for linear ramp-up
+ *
+ * For ramp-up scenarios, calculates requests as:
+ * - Ramp-up phase: (targetRps / 2) * rampUpDuration (average of 0 to target)
+ * - Steady-state: targetRps * (duration - rampUpDuration)
+ */
+export function calculateExpectedRequests(
+  targetRps: number,
+  rampUpDurationSec: number | undefined,
+  finalDurationSec: number,
+): number {
+  const rampUp = rampUpDurationSec || 0;
+
+  if (rampUp <= 0 || rampUp > finalDurationSec) {
+    return targetRps * finalDurationSec;
+  }
+
+  // Linear ramp-up: average RPS during ramp = targetRps / 2
+  const rampUpRequests = (targetRps / 2) * rampUp;
+  const steadyStateRequests = targetRps * (finalDurationSec - rampUp);
+
+  return Math.ceil(rampUpRequests + steadyStateRequests);
+}
+
 export function transformAggregatedMetricToTestSummary(
   metrics: AggregatedMetrics,
   finalDurationSec: number,
@@ -48,7 +73,11 @@ export function transformAggregatedMetricToTestSummary(
     const requestConfig = config.requests.find((req) => req.url === url)!;
 
     // Calculate percentage of target RPS achieved
-    const expectedRequests = requestConfig.rps * finalDurationSec;
+    const expectedRequests = calculateExpectedRequests(
+      requestConfig.rps,
+      requestConfig.rampUpDurationSec,
+      finalDurationSec,
+    );
     const targetAchieved = roundToDecimals(
       (endpoint.totalRequests / expectedRequests) * 100,
     );

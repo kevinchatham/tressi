@@ -1,102 +1,117 @@
+import { performance } from 'perf_hooks';
+
 import { TressiRequestConfig } from '../common/config/types';
 
 /**
- * WorkerRateLimiter - Token bucket rate limiter for controlling request throughput per endpoint.
+ * WorkerRateLimiter - Time-based rate limiter for controlling request throughput per endpoint.
  *
- * Implements a non-blocking token bucket algorithm that allows burst traffic while maintaining
- * target requests per second (RPS) rates. Designed for high-throughput load testing scenarios
- * where traditional blocking rate limiters would create bottlenecks.
- *
- * @example
- * ```typescript
- * const limiter = new WorkerRateLimiter(endpoints);
- * const requests = limiter.getAvailableRequests(20); // Get up to 20 available requests
- * // Process requests immediately without waiting
- * ```
- *
- * @remarks
- * The token bucket algorithm provides smooth rate limiting with the ability to handle
- * traffic bursts. Each endpoint gets its own token bucket with tokens replenished
- * based on the target RPS rate. The non-blocking design is critical for maintaining
- * high throughput in load testing scenarios.
+ * Implements a time-based calculation approach that provides smooth, precise rate limiting
+ * with support for linear ramp-up. Replaces token bucket algorithm for better timing accuracy
+ * and predictable ramp-up behavior.
  */
 export class WorkerRateLimiter {
-  private tokens: number[];
-  private lastRefill: number[];
+  private lastExecutionTime: number[];
   private remainder: number[];
+  private startTime: number;
 
   constructor(private endpoints: TressiRequestConfig[]) {
-    this.tokens = new Array(endpoints.length).fill(0);
-    this.lastRefill = new Array(endpoints.length).fill(Date.now());
+    this.startTime = performance.now();
+    this.lastExecutionTime = new Array(endpoints.length).fill(this.startTime);
+    // CRITICAL: Initialize with 0 remainder for true ramp-up from 0
     this.remainder = new Array(endpoints.length).fill(0);
-
-    // Initialize with tokens to allow immediate requests
-    for (let i = 0; i < endpoints.length; i++) {
-      const rps = endpoints[i].rps || 1;
-      // Use Math.ceil to ensure at least 1 token for low/fractional RPS values
-      this.tokens[i] = Math.min(Math.ceil(rps), 10); // Start with up to 10 tokens
-    }
   }
 
   /**
-   * Gets available requests for immediate execution without blocking.
-   *
-   * @param batchSize - Maximum number of requests to return (default: 20)
-   * @returns Array of endpoint configurations ready for execution
-   *
-   * @remarks
-   * CRITICAL: This method is non-blocking and returns immediately with available requests.
-   * Implements token bucket algorithm where tokens are replenished based on elapsed time
-   * and target RPS rates. Allows burst traffic up to 2x the target RPS while maintaining
-   * average rate over time.
-   *
-   * The algorithm:
-   * 1. Calculates token replenishment based on elapsed time and RPS
-   * 2. Caps token count at 2x RPS to allow bursts
-   * 3. Returns available requests up to batch size limit
-   * 4. Updates token counts for consumed requests
-   *
-   * This design enables high-throughput pipeline execution where workers can
-   * process multiple requests concurrently without rate limiting bottlenecks.
-   *
-   * @example
-   * ```typescript
-   * // With endpoint RPS = 10 and 1 second elapsed:
-   * // Tokens replenished: 10, max tokens: 20
-   * const requests = limiter.getAvailableRequests(15);
-   * // Returns up to 15 requests if tokens available
-   * ```
+   * Calculate current RPS based on linear ramp-up progress
+   * Returns floating-point value for fractional request tracking
+   */
+  private getCurrentRps(index: number, elapsedMs: number): number {
+    const endpoint = this.endpoints[index];
+    const rampUpDuration = (endpoint.rampUpDurationSec || 0) * 1000;
+
+    if (rampUpDuration <= 0) {
+      return endpoint.rps || 1;
+    }
+
+    if (elapsedMs >= rampUpDuration) {
+      return endpoint.rps || 1;
+    }
+
+    // Linear ramp from 0 to target RPS (floating-point for accuracy)
+    const progress = elapsedMs / rampUpDuration;
+    const targetRps = endpoint.rps || 1;
+
+    // Return fractional RPS to enable smooth ramp-up at any rate
+    // Example: RPS=1 at 50% ramp-up = 0.5 RPS, accumulating 1 request every 2 seconds
+    return Math.max(0, targetRps * progress);
+  }
+
+  /**
+   * Get available requests based on elapsed time calculation.
+   * Uses high-resolution timing for precise rate control.
    */
   getAvailableRequests(batchSize: number = 20): TressiRequestConfig[] {
-    const now = Date.now();
+    const now = performance.now();
     const available: TressiRequestConfig[] = [];
+    const elapsedMs = now - this.startTime;
 
     for (
       let i = 0;
       i < this.endpoints.length && available.length < batchSize;
       i++
     ) {
-      const elapsed = now - this.lastRefill[i];
-      const rps = this.endpoints[i].rps || 1;
+      const currentRps = this.getCurrentRps(i, elapsedMs);
 
-      // Calculate fractional token refill and accumulate remainder
-      const fractionalRefill = (elapsed / 1000) * rps;
-      this.remainder[i] += fractionalRefill;
-
-      // Extract integer portion for token replenishment
-      const refill = Math.floor(this.remainder[i]);
-
-      // Preserve fractional remainder for next cycle
-      this.remainder[i] -= refill;
-
-      if (refill > 0) {
-        this.tokens[i] = Math.min(this.tokens[i] + refill, rps);
-        this.lastRefill[i] = now;
+      // Allow very small RPS values to accumulate (critical for low RPS ramp-up)
+      if (currentRps < 0.001) {
+        continue; // No requests during initial ramp-up phase
       }
 
-      while (this.tokens[i] >= 1 && available.length < batchSize) {
-        this.tokens[i] -= 1;
-        available.push(this.endpoints[i]);
+      // Special case: for first call, allow requests based on current RPS
+      const isFirstCall = this.lastExecutionTime[i] === this.startTime;
+
+      if (isFirstCall) {
+        // For first call, allow requests based on current RPS (handles both ramp-up and no ramp-up)
+        const requestsToAdd = Math.min(
+          Math.floor(currentRps),
+          batchSize - available.length,
+        );
+        for (let j = 0; j < requestsToAdd; j++) {
+          available.push(this.endpoints[i]);
+        }
+        this.lastExecutionTime[i] = now;
+        continue;
+      }
+
+      // Calculate how many requests should have been sent by now
+      const timeSinceLastExecution = now - this.lastExecutionTime[i];
+      const requestsNeeded =
+        (timeSinceLastExecution / 1000) * currentRps + this.remainder[i];
+
+      const wholeRequests = Math.floor(requestsNeeded);
+      let remainder = requestsNeeded - wholeRequests; // Start with fractional remainder
+
+      if (wholeRequests > 0) {
+        let addedCount = 0;
+        // Add requests to available batch
+        for (
+          let j = 0;
+          j < wholeRequests && available.length < batchSize;
+          j++
+        ) {
+          available.push(this.endpoints[i]);
+          addedCount++;
+        }
+
+        // CRITICAL FIX: Add un-added whole requests back to remainder
+        if (addedCount < wholeRequests) {
+          remainder += wholeRequests - addedCount;
+        }
+
+        this.remainder[i] = remainder;
+        this.lastExecutionTime[i] = now;
+      } else {
+        this.remainder[i] = remainder;
       }
     }
 

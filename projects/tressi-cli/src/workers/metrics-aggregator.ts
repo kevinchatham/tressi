@@ -37,6 +37,16 @@ export class MetricsAggregator implements IMetricsAggregator {
   private config: TressiConfig | null = null;
   private testId?: string; // Optional for server persistence
 
+  // Historical data for instantaneous RPS calculation
+  private requestHistory: Array<{ timestamp: number; totalRequests: number }> =
+    [];
+  private endpointRequestHistory: Map<
+    string,
+    Array<{ timestamp: number; totalRequests: number }>
+  > = new Map();
+  private readonly WINDOW_SIZE_MS = 5000; // 5 second window
+  private readonly MAX_HISTORY_POINTS = 20; // Keep 20 seconds of data
+
   constructor(
     private hdrHistogramManagers: IHdrHistogramManager[],
     private statsCounterManagers: IStatsCounterManager[],
@@ -250,6 +260,10 @@ export class MetricsAggregator implements IMetricsAggregator {
     const requestsPerSecond =
       duration > 0 ? totalRequests / (duration / 1000) : 0;
 
+    // Calculate instantaneous RPS
+    const instantaneousRequestsPerSecond =
+      this.calculateInstantaneousRps(totalRequests);
+
     // Calculate global latency statistics using weighted averages
     const globalStats = this.calculateGlobalLatencyStats(endpointHistograms);
 
@@ -309,6 +323,15 @@ export class MetricsAggregator implements IMetricsAggregator {
           ? (endpointBytesSent + endpointBytesReceived) / (duration / 1000)
           : 0;
 
+      // Calculate endpoint instantaneous RPS
+      const endpointInstantaneousRps = roundToDecimals(
+        this.calculateEndpointInstantaneousRps(url, endpointTotalRequests),
+      );
+
+      const averageRequestsPerSecond = roundToDecimals(
+        endpointTotalRequests / (duration / 1000),
+      );
+
       endpointMetrics[url] = {
         totalRequests: endpointTotalRequests,
         successfulRequests: endpointSuccessRequests,
@@ -318,9 +341,8 @@ export class MetricsAggregator implements IMetricsAggregator {
         p50LatencyMs: roundToDecimals(endpointStats.p50Latency),
         p95LatencyMs: roundToDecimals(endpointStats.p95Latency),
         p99LatencyMs: roundToDecimals(endpointStats.p99Latency),
-        requestsPerSecond: roundToDecimals(
-          endpointTotalRequests / (duration / 1000),
-        ),
+        requestsPerSecond: endpointInstantaneousRps,
+        instantaneousRequestsPerSecond: averageRequestsPerSecond, // ! TODO REVERSE : QUICK TEST
         statusCodeDistribution: statusCounts,
         networkBytesSent: endpointBytesSent,
         networkBytesReceived: endpointBytesReceived,
@@ -357,6 +379,9 @@ export class MetricsAggregator implements IMetricsAggregator {
       p95LatencyMs: roundToDecimals(globalStats.p95Latency),
       p99LatencyMs: roundToDecimals(globalStats.p99Latency),
       requestsPerSecond: roundToDecimals(requestsPerSecond),
+      instantaneousRequestsPerSecond: roundToDecimals(
+        instantaneousRequestsPerSecond,
+      ),
       statusCodeDistribution: globalStatusCodeDistribution,
       networkBytesSent: totalBytesSent,
       networkBytesReceived: totalBytesReceived,
@@ -692,5 +717,109 @@ export class MetricsAggregator implements IMetricsAggregator {
     // Calculate based on round-robin distribution
     const workersCount = this.hdrHistogramManagers.length;
     return workerId + localEndpointIndex * workersCount;
+  }
+
+  /**
+   * Calculate instantaneous RPS over a sliding time window
+   * @param currentTotalRequests Current total request count
+   * @returns Instantaneous RPS over the configured window
+   */
+  private calculateInstantaneousRps(currentTotalRequests: number): number {
+    const now = Date.now();
+
+    // Add current data point to history
+    this.requestHistory.push({
+      timestamp: now,
+      totalRequests: currentTotalRequests,
+    });
+
+    // Remove old data points (older than 2x window for safety)
+    const cutoffTime = now - 2 * this.WINDOW_SIZE_MS;
+    this.requestHistory = this.requestHistory.filter(
+      (h) => h.timestamp > cutoffTime,
+    );
+
+    // Keep only MAX_HISTORY_POINTS to prevent unbounded growth
+    if (this.requestHistory.length > this.MAX_HISTORY_POINTS) {
+      this.requestHistory = this.requestHistory.slice(-this.MAX_HISTORY_POINTS);
+    }
+
+    // Find the oldest data point within our window
+    const windowStart = now - this.WINDOW_SIZE_MS;
+    const oldestInWindow = this.requestHistory.find(
+      (h) => h.timestamp >= windowStart,
+    );
+
+    if (!oldestInWindow) {
+      // Not enough data yet, return 0 or current average
+      return 0;
+    }
+
+    // Calculate request delta and time delta
+    const requestDelta = currentTotalRequests - oldestInWindow.totalRequests;
+    const timeDeltaMs = now - oldestInWindow.timestamp;
+    const timeDeltaSec = timeDeltaMs / 1000;
+
+    // Calculate instantaneous RPS
+    return timeDeltaSec > 0 ? requestDelta / timeDeltaSec : 0;
+  }
+
+  /**
+   * Calculate instantaneous RPS for a specific endpoint over a sliding time window
+   * @param endpointUrl The endpoint URL
+   * @param currentTotalRequests Current total request count for this endpoint
+   * @returns Instantaneous RPS over the configured window for this endpoint
+   */
+  private calculateEndpointInstantaneousRps(
+    endpointUrl: string,
+    currentTotalRequests: number,
+  ): number {
+    const now = Date.now();
+
+    // Initialize history for this endpoint if needed
+    if (!this.endpointRequestHistory.has(endpointUrl)) {
+      this.endpointRequestHistory.set(endpointUrl, []);
+    }
+    const endpointHistory = this.endpointRequestHistory.get(endpointUrl)!;
+
+    // Add current data point to history
+    endpointHistory.push({
+      timestamp: now,
+      totalRequests: currentTotalRequests,
+    });
+
+    // Remove old data points (older than 2x window for safety)
+    const cutoffTime = now - 2 * this.WINDOW_SIZE_MS;
+    const filteredHistory = endpointHistory.filter(
+      (h) => h.timestamp > cutoffTime,
+    );
+    this.endpointRequestHistory.set(endpointUrl, filteredHistory);
+
+    // Keep only MAX_HISTORY_POINTS to prevent unbounded growth
+    if (filteredHistory.length > this.MAX_HISTORY_POINTS) {
+      this.endpointRequestHistory.set(
+        endpointUrl,
+        filteredHistory.slice(-this.MAX_HISTORY_POINTS),
+      );
+    }
+
+    // Find the oldest data point within our window
+    const windowStart = now - this.WINDOW_SIZE_MS;
+    const oldestInWindow = filteredHistory.find(
+      (h) => h.timestamp >= windowStart,
+    );
+
+    if (!oldestInWindow) {
+      // Not enough data yet, return 0 or current average
+      return 0;
+    }
+
+    // Calculate request delta and time delta
+    const requestDelta = currentTotalRequests - oldestInWindow.totalRequests;
+    const timeDeltaMs = now - oldestInWindow.timestamp;
+    const timeDeltaSec = timeDeltaMs / 1000;
+
+    // Calculate instantaneous RPS
+    return timeDeltaSec > 0 ? requestDelta / timeDeltaSec : 0;
   }
 }

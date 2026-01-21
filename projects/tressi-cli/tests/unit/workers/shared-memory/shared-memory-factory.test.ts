@@ -11,6 +11,7 @@ describe('SharedMemoryFactory', () => {
       payload: {},
       headers: {},
       rps: 10,
+      rampUpDurationSec: 0,
       earlyExit: {
         enabled: false,
         errorRateThreshold: 0,
@@ -24,6 +25,7 @@ describe('SharedMemoryFactory', () => {
       payload: {},
       headers: {},
       rps: 5,
+      rampUpDurationSec: 0,
       earlyExit: {
         enabled: false,
         errorRateThreshold: 0,
@@ -37,6 +39,7 @@ describe('SharedMemoryFactory', () => {
       payload: {},
       headers: {},
       rps: 8,
+      rampUpDurationSec: 0,
       earlyExit: {
         enabled: false,
         errorRateThreshold: 0,
@@ -50,6 +53,7 @@ describe('SharedMemoryFactory', () => {
       payload: {},
       headers: {},
       rps: 12,
+      rampUpDurationSec: 0,
       earlyExit: {
         enabled: false,
         errorRateThreshold: 0,
@@ -330,6 +334,7 @@ describe('SharedMemoryFactory', () => {
           payload: {},
           headers: {},
           rps: 10,
+          rampUpDurationSec: 0,
           earlyExit: {
             enabled: false,
             errorRateThreshold: 0,

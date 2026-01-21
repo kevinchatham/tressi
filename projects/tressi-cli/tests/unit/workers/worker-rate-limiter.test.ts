@@ -1,250 +1,158 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import type { TressiRequestConfig } from '../../../src/common/config/types';
+import { TressiRequestConfig } from '../../../src/common/config/types';
 import { WorkerRateLimiter } from '../../../src/workers/worker-rate-limiter';
 
 describe('WorkerRateLimiter', () => {
-  let mockEndpoints: TressiRequestConfig[];
-  let limiter: WorkerRateLimiter;
-
-  beforeEach(() => {
-    mockEndpoints = [
-      {
-        url: 'http://example.com/api/1',
-        method: 'GET',
-        payload: {},
-        headers: {},
-        rps: 10,
-        earlyExit: {
-          enabled: false,
-          errorRateThreshold: 0,
-          exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
-          monitoringWindowMs: 5000,
-        },
-      },
-      {
-        url: 'http://example.com/api/2',
-        method: 'POST',
-        payload: {},
-        headers: {},
-        rps: 5,
-        earlyExit: {
-          enabled: false,
-          errorRateThreshold: 0,
-          exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
-          monitoringWindowMs: 5000,
-        },
-      },
-      {
-        url: 'http://example.com/api/3',
-        method: 'PUT',
-        payload: {},
-        headers: {},
-        rps: 2,
-        earlyExit: {
-          enabled: false,
-          errorRateThreshold: 0,
-          exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
-          monitoringWindowMs: 5000,
-        },
-      },
-    ];
-
-    limiter = new WorkerRateLimiter(mockEndpoints);
-  });
-
-  afterEach(() => {
-    vi.clearAllMocks();
-    vi.restoreAllMocks();
-  });
-
-  describe('constructor', () => {
-    it('should initialize with provided endpoints', () => {
-      expect(limiter).toBeInstanceOf(WorkerRateLimiter);
-    });
-
-    it('should initialize rate limiting for provided endpoints', () => {
-      const requests = limiter.getAvailableRequests();
-      expect(Array.isArray(requests)).toBe(true);
-    });
-  });
-
-  describe('getAvailableRequests', () => {
-    beforeEach(() => {
-      // Mock Date.now to control timing
-      vi.useFakeTimers();
-    });
-
-    afterEach(() => {
-      vi.useRealTimers();
-    });
-
-    it('should return available requests immediately without blocking', () => {
-      const requests = limiter.getAvailableRequests();
-      expect(Array.isArray(requests)).toBe(true);
-      expect(requests.length).toBeGreaterThan(0);
-    });
-
-    it('should respect batch size limit', () => {
-      const batchSize = 2;
-      const requests = limiter.getAvailableRequests(batchSize);
-      expect(requests.length).toBeLessThanOrEqual(batchSize);
-    });
-
-    it('should respect RPS limits over time', () => {
-      // Initial requests should be available
-      const initialRequests = limiter.getAvailableRequests(20);
-      expect(initialRequests.length).toBeGreaterThan(0);
-
-      // Immediately check again - should have fewer/no requests due to token depletion
-      const immediateRequests = limiter.getAvailableRequests(20);
-      expect(immediateRequests.length).toBeLessThan(initialRequests.length);
-
-      // Advance time to allow token refill
-      vi.advanceTimersByTime(1000);
-
-      // Should have tokens available again
-      const refilledRequests = limiter.getAvailableRequests(20);
-      expect(refilledRequests.length).toBeGreaterThan(0);
-    });
-
-    it('should handle multiple endpoints with different RPS', () => {
-      const requests = limiter.getAvailableRequests(10);
-
-      // Should distribute across endpoints based on RPS
-      const endpointCounts = new Map<string, number>();
-      requests.forEach((req) => {
-        endpointCounts.set(req.url, (endpointCounts.get(req.url) || 0) + 1);
-      });
-
-      expect(endpointCounts.size).toBeGreaterThan(0);
-    });
-
-    it('should allow burst requests up to 2x RPS', () => {
-      // For 10 RPS endpoint, should allow up to 20 tokens
-      const endpoint = mockEndpoints[0]; // 10 RPS
-      const singleEndpointLimiter = new WorkerRateLimiter([endpoint]);
-
-      // Advance time to build up tokens
-      vi.advanceTimersByTime(2000); // 2 seconds = 20 tokens
-
-      const requests = singleEndpointLimiter.getAvailableRequests(25);
-      expect(requests.length).toBeLessThanOrEqual(20); // Max burst is 2x RPS
-    });
-
-    it('should return empty array when no tokens available', () => {
-      // Exhaust all tokens
-      limiter.getAvailableRequests(100);
-
-      // Immediately check again
-      const requests = limiter.getAvailableRequests(10);
-      expect(requests).toEqual([]);
-    });
-  });
-
-  describe('reset behavior', () => {
-    it('should naturally refill tokens over time', () => {
-      vi.useFakeTimers();
-
-      // Use up some tokens
-      limiter.getAvailableRequests(10);
-
-      // Advance time to allow token refill
-      vi.advanceTimersByTime(1000);
-
-      // Should have fresh tokens available
-      const requests = limiter.getAvailableRequests(10);
-      expect(requests.length).toBeGreaterThan(0);
-
-      vi.useRealTimers();
-    });
-  });
-
-  describe('edge cases', () => {
-    beforeEach(() => {
-      vi.useFakeTimers();
-    });
-
-    afterEach(() => {
-      vi.useRealTimers();
-    });
-
-    it('should handle empty endpoints array', () => {
-      const emptyLimiter = new WorkerRateLimiter([]);
-      const requests = emptyLimiter.getAvailableRequests();
-      expect(requests).toEqual([]);
-    });
-
-    it('should handle zero RPS as 1 RPS', () => {
-      const zeroRpsEndpoints: TressiRequestConfig[] = [
+  describe('ramp-up', () => {
+    it('should start at 0 RPS when rampUpDurationSec is set', () => {
+      const endpoints: TressiRequestConfig[] = [
         {
-          url: 'http://example.com/api/1',
+          url: 'http://test.com',
           method: 'GET',
           payload: {},
           headers: {},
-          rps: 0,
+          rps: 100,
+          rampUpDurationSec: 60,
           earlyExit: {
             enabled: false,
             errorRateThreshold: 0,
-            exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
+            exitStatusCodes: [],
             monitoringWindowMs: 5000,
           },
         },
       ];
-      const zeroRpsLimiter = new WorkerRateLimiter(zeroRpsEndpoints);
 
-      vi.advanceTimersByTime(1000);
+      const limiter = new WorkerRateLimiter(endpoints);
 
-      const requests = zeroRpsLimiter.getAvailableRequests(10);
-      expect(requests.length).toBeGreaterThan(0); // Should treat 0 as 1 RPS
+      // Immediately after creation, should not return requests due to epsilon check
+      const requests = limiter.getAvailableRequests(20);
+      expect(requests.length).toBe(0);
     });
 
-    it('should handle very high RPS values', () => {
-      const highRpsEndpoints: TressiRequestConfig[] = [
+    it('should work without ramp-up (rampUpDurationSec=0)', () => {
+      const endpoints: TressiRequestConfig[] = [
         {
-          url: 'http://example.com/api/1',
+          url: 'http://test.com',
           method: 'GET',
           payload: {},
           headers: {},
-          rps: 1000,
+          rps: 10,
+          rampUpDurationSec: 0,
           earlyExit: {
             enabled: false,
             errorRateThreshold: 0,
-            exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
+            exitStatusCodes: [],
             monitoringWindowMs: 5000,
           },
         },
       ];
-      const highRpsLimiter = new WorkerRateLimiter(highRpsEndpoints);
 
-      vi.advanceTimersByTime(1000);
+      const limiter = new WorkerRateLimiter(endpoints);
 
-      const requests = highRpsLimiter.getAvailableRequests(100);
-      expect(requests.length).toBe(100); // Should allow up to batch size
+      // Without ramp-up, should allow full RPS immediately via first-call logic
+      const requests = limiter.getAvailableRequests(20);
+      expect(requests.length).toBe(10);
     });
 
-    it('should handle fractional RPS values', () => {
-      const fractionalEndpoints: TressiRequestConfig[] = [
+    it('should handle multiple endpoints with different configurations', () => {
+      const endpoints: TressiRequestConfig[] = [
         {
-          url: 'http://example.com/api/1',
+          url: 'http://test1.com',
           method: 'GET',
           payload: {},
           headers: {},
-          rps: 0.5,
+          rps: 5,
+          rampUpDurationSec: 0,
           earlyExit: {
             enabled: false,
             errorRateThreshold: 0,
-            exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
+            exitStatusCodes: [],
+            monitoringWindowMs: 5000,
+          },
+        },
+        {
+          url: 'http://test2.com',
+          method: 'GET',
+          payload: {},
+          headers: {},
+          rps: 3,
+          rampUpDurationSec: 0,
+          earlyExit: {
+            enabled: false,
+            errorRateThreshold: 0,
+            exitStatusCodes: [],
             monitoringWindowMs: 5000,
           },
         },
       ];
-      const fractionalLimiter = new WorkerRateLimiter(fractionalEndpoints);
 
-      // With rps=0.5 and Math.ceil initialization, we get 1 initial token
-      // The remainder-based approach ensures precision over time
-      const initialRequests = fractionalLimiter.getAvailableRequests(10);
-      expect(initialRequests.length).toBe(1); // 1 initial token from Math.ceil(0.5)
+      const limiter = new WorkerRateLimiter(endpoints);
+
+      // Should return requests for both endpoints
+      const requests = limiter.getAvailableRequests(20);
+      expect(requests.length).toBe(8); // 5 + 3
+
+      // Verify the distribution
+      const endpoint1Requests = requests.filter(
+        (r) => r.url === 'http://test1.com',
+      ).length;
+      const endpoint2Requests = requests.filter(
+        (r) => r.url === 'http://test2.com',
+      ).length;
+      expect(endpoint1Requests).toBe(5);
+      expect(endpoint2Requests).toBe(3);
+    });
+
+    it('should respect batch size limits', () => {
+      const endpoints: TressiRequestConfig[] = [
+        {
+          url: 'http://test.com',
+          method: 'GET',
+          payload: {},
+          headers: {},
+          rps: 100,
+          rampUpDurationSec: 0,
+          earlyExit: {
+            enabled: false,
+            errorRateThreshold: 0,
+            exitStatusCodes: [],
+            monitoringWindowMs: 5000,
+          },
+        },
+      ];
+
+      const limiter = new WorkerRateLimiter(endpoints);
+
+      // Should respect batch size limit
+      const requests = limiter.getAvailableRequests(5);
+      expect(requests.length).toBe(5);
+    });
+
+    it('should handle very low RPS with ramp-up', () => {
+      const endpoints: TressiRequestConfig[] = [
+        {
+          url: 'http://test.com',
+          method: 'GET',
+          payload: {},
+          headers: {},
+          rps: 1,
+          rampUpDurationSec: 60,
+          earlyExit: {
+            enabled: false,
+            errorRateThreshold: 0,
+            exitStatusCodes: [],
+            monitoringWindowMs: 5000,
+          },
+        },
+      ];
+
+      const limiter = new WorkerRateLimiter(endpoints);
+
+      // With RPS=1 and 60s ramp-up, at t=0 the currentRps should be very low
+      const requests = limiter.getAvailableRequests(20);
+      // Should return 0 due to epsilon check (currentRps < 0.001)
+      expect(requests.length).toBe(0);
     });
   });
 });

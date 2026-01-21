@@ -53,9 +53,22 @@
                   {{ request.url }}
                 </span>
               </div>
-              <span class="text-base-content/60 text-xs">
-                {{ request.rps }} RPS
-              </span>
+              <div class="flex items-center gap-2">
+                <!-- NEW: Show ramp-up indicator if set -->
+                @if (
+                  request.rampUpDurationSec && request.rampUpDurationSec > 0
+                ) {
+                  <span
+                    class="text-info text-xs"
+                    title="Ramp-up: {{ request.rampUpDurationSec }}s"
+                  >
+                    <app-icon name="stat_1" />
+                  </span>
+                }
+                <span class="text-base-content/60 text-xs">
+                  {{ request.rps }} RPS
+                </span>
+              </div>
             </div>
           }
           @if (input().config.requests.length > 3) {

@@ -57,4 +57,11 @@ export class ConfigurationCardComponent {
   getHeadersCount(): number {
     return Object.keys(this.input().config.options.headers).length;
   }
+
+  /** Check if any request has ramp-up configured */
+  hasRampUp(): boolean {
+    return this.input().config.requests.some(
+      (r) => r.rampUpDurationSec && r.rampUpDurationSec > 0,
+    );
+  }
 }
