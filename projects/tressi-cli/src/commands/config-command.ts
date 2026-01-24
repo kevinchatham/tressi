@@ -94,9 +94,9 @@ export class ConfigCommand {
         default: defaultTressiConfig.options.durationSec,
       },
       {
-        key: 'rampUpTimeSec',
-        value: options.rampUpTimeSec,
-        default: defaultTressiConfig.options.rampUpTimeSec,
+        key: 'rampUpDurationSec',
+        value: options.rampUpDurationSec,
+        default: defaultTressiConfig.options.rampUpDurationSec,
       },
       {
         key: 'silent',

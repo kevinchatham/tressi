@@ -24,6 +24,7 @@ describe('EarlyExitCoordinator', () => {
           payload: {},
           headers: {},
           rps: 10,
+          rampUpDurationSec: 0,
           earlyExit: {
             enabled: false,
             errorRateThreshold: 0,
@@ -37,6 +38,7 @@ describe('EarlyExitCoordinator', () => {
           payload: {},
           headers: {},
           rps: 5,
+          rampUpDurationSec: 0,
           earlyExit: {
             enabled: false,
             errorRateThreshold: 0,
@@ -50,6 +52,7 @@ describe('EarlyExitCoordinator', () => {
           payload: {},
           headers: {},
           rps: 8,
+          rampUpDurationSec: 0,
           earlyExit: {
             enabled: false,
             errorRateThreshold: 0,
@@ -60,7 +63,7 @@ describe('EarlyExitCoordinator', () => {
       ],
       options: {
         durationSec: 60,
-        rampUpTimeSec: 0,
+        rampUpDurationSec: 0,
         exportPath: '',
         silent: false,
         headers: {},
@@ -142,7 +145,7 @@ describe('EarlyExitCoordinator', () => {
         requests: [],
         options: {
           durationSec: 60,
-          rampUpTimeSec: 0,
+          rampUpDurationSec: 0,
           headers: {},
           exportPath: '',
           silent: false,
@@ -184,7 +187,7 @@ describe('EarlyExitCoordinator', () => {
         requests: [],
         options: {
           durationSec: 60,
-          rampUpTimeSec: 0,
+          rampUpDurationSec: 0,
           headers: {},
           exportPath: '',
           silent: false,
@@ -237,6 +240,7 @@ describe('EarlyExitCoordinator', () => {
             payload: {},
             headers: {},
             rps: 10,
+            rampUpDurationSec: 0,
             earlyExit: {
               enabled: true,
               errorRateThreshold: 0.5,
@@ -250,6 +254,7 @@ describe('EarlyExitCoordinator', () => {
             payload: {},
             headers: {},
             rps: 5,
+            rampUpDurationSec: 0,
             earlyExit: {
               enabled: true,
               errorRateThreshold: 0.1,
@@ -260,7 +265,7 @@ describe('EarlyExitCoordinator', () => {
         ],
         options: {
           durationSec: 60,
-          rampUpTimeSec: 0,
+          rampUpDurationSec: 0,
           headers: {},
           exportPath: '',
           silent: false,
@@ -351,6 +356,7 @@ describe('EarlyExitCoordinator', () => {
             payload: {},
             headers: {},
             rps: 10,
+            rampUpDurationSec: 0,
             earlyExit: {
               enabled: true,
               errorRateThreshold: 0.1,
@@ -361,7 +367,7 @@ describe('EarlyExitCoordinator', () => {
         ],
         options: {
           durationSec: 60,
-          rampUpTimeSec: 0,
+          rampUpDurationSec: 0,
           headers: {},
           exportPath: '',
           silent: false,
@@ -413,6 +419,7 @@ describe('EarlyExitCoordinator', () => {
             payload: {},
             headers: {},
             rps: 10,
+            rampUpDurationSec: 0,
             earlyExit: {
               enabled: true,
               errorRateThreshold: 0.2,
@@ -426,6 +433,7 @@ describe('EarlyExitCoordinator', () => {
             payload: {},
             headers: {},
             rps: 5,
+            rampUpDurationSec: 0,
             earlyExit: {
               enabled: false,
               errorRateThreshold: 0,
@@ -436,7 +444,7 @@ describe('EarlyExitCoordinator', () => {
         ],
         options: {
           durationSec: 60,
-          rampUpTimeSec: 0,
+          rampUpDurationSec: 0,
           headers: {},
           exportPath: '',
           silent: false,
@@ -471,6 +479,7 @@ describe('EarlyExitCoordinator', () => {
             payload: {},
             headers: {},
             rps: 10,
+            rampUpDurationSec: 0,
             earlyExit: {
               enabled: false,
               errorRateThreshold: 0,
@@ -484,6 +493,7 @@ describe('EarlyExitCoordinator', () => {
             payload: {},
             headers: {},
             rps: 5,
+            rampUpDurationSec: 0,
             earlyExit: {
               enabled: false,
               errorRateThreshold: 0,
@@ -494,7 +504,7 @@ describe('EarlyExitCoordinator', () => {
         ],
         options: {
           durationSec: 60,
-          rampUpTimeSec: 0,
+          rampUpDurationSec: 0,
           headers: {},
           exportPath: '',
           silent: false,
@@ -528,6 +538,7 @@ describe('EarlyExitCoordinator', () => {
             payload: {},
             headers: {},
             rps: 10,
+            rampUpDurationSec: 0,
             earlyExit: {
               enabled: false,
               errorRateThreshold: 0.1,
@@ -538,7 +549,7 @@ describe('EarlyExitCoordinator', () => {
         ],
         options: {
           durationSec: 60,
-          rampUpTimeSec: 0,
+          rampUpDurationSec: 0,
           headers: {},
           exportPath: '',
           silent: false,
@@ -574,6 +585,7 @@ describe('EarlyExitCoordinator', () => {
             payload: {},
             headers: {},
             rps: 10,
+            rampUpDurationSec: 0,
             earlyExit: {
               enabled: true,
               exitStatusCodes: [500, 502],
@@ -584,7 +596,7 @@ describe('EarlyExitCoordinator', () => {
         ],
         options: {
           durationSec: 60,
-          rampUpTimeSec: 0,
+          rampUpDurationSec: 0,
           headers: {},
           exportPath: '',
           silent: false,

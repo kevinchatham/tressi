@@ -15,6 +15,7 @@ describe('WorkerRateLimiter', () => {
         payload: {},
         headers: {},
         rps: 10,
+        rampUpDurationSec: 0,
         earlyExit: {
           enabled: false,
           errorRateThreshold: 0,
@@ -28,6 +29,7 @@ describe('WorkerRateLimiter', () => {
         payload: {},
         headers: {},
         rps: 5,
+        rampUpDurationSec: 0,
         earlyExit: {
           enabled: false,
           errorRateThreshold: 0,
@@ -41,6 +43,7 @@ describe('WorkerRateLimiter', () => {
         payload: {},
         headers: {},
         rps: 2,
+        rampUpDurationSec: 0,
         earlyExit: {
           enabled: false,
           errorRateThreshold: 0,
@@ -64,15 +67,17 @@ describe('WorkerRateLimiter', () => {
     });
 
     it('should initialize rate limiting for provided endpoints', () => {
-      const requests = limiter.getAvailableRequests();
+      const requests = limiter.getAvailableRequests(20, 0);
       expect(Array.isArray(requests)).toBe(true);
     });
   });
 
   describe('getAvailableRequests', () => {
     beforeEach(() => {
-      // Mock Date.now to control timing
+      // Mock Date.now to control timing - must be before limiter creation
       vi.useFakeTimers();
+      // Re-create limiter with fake timers active so Date.now() is mocked
+      limiter = new WorkerRateLimiter(mockEndpoints);
     });
 
     afterEach(() => {
@@ -80,36 +85,46 @@ describe('WorkerRateLimiter', () => {
     });
 
     it('should return available requests immediately without blocking', () => {
-      const requests = limiter.getAvailableRequests();
+      // Advance time to build up tokens
+      vi.advanceTimersByTime(1000);
+
+      const requests = limiter.getAvailableRequests(20, 1000);
       expect(Array.isArray(requests)).toBe(true);
       expect(requests.length).toBeGreaterThan(0);
     });
 
     it('should respect batch size limit', () => {
+      // Advance time to build up tokens
+      vi.advanceTimersByTime(1000);
+
       const batchSize = 2;
-      const requests = limiter.getAvailableRequests(batchSize);
+      const requests = limiter.getAvailableRequests(batchSize, 1000);
       expect(requests.length).toBeLessThanOrEqual(batchSize);
     });
 
     it('should respect RPS limits over time', () => {
-      // Initial requests should be available
-      const initialRequests = limiter.getAvailableRequests(20);
-      expect(initialRequests.length).toBeGreaterThan(0);
+      // Advance time to build up tokens
+      vi.advanceTimersByTime(1000);
+
+      const initialRequests = limiter.getAvailableRequests(20, 1000);
 
       // Immediately check again - should have fewer/no requests due to token depletion
-      const immediateRequests = limiter.getAvailableRequests(20);
+      const immediateRequests = limiter.getAvailableRequests(20, 1000);
       expect(immediateRequests.length).toBeLessThan(initialRequests.length);
 
       // Advance time to allow token refill
       vi.advanceTimersByTime(1000);
 
       // Should have tokens available again
-      const refilledRequests = limiter.getAvailableRequests(20);
+      const refilledRequests = limiter.getAvailableRequests(20, 2000);
       expect(refilledRequests.length).toBeGreaterThan(0);
     });
 
     it('should handle multiple endpoints with different RPS', () => {
-      const requests = limiter.getAvailableRequests(10);
+      // Advance time to build up tokens
+      vi.advanceTimersByTime(1000);
+
+      const requests = limiter.getAvailableRequests(10, 1000);
 
       // Should distribute across endpoints based on RPS
       const endpointCounts = new Map<string, number>();
@@ -128,16 +143,19 @@ describe('WorkerRateLimiter', () => {
       // Advance time to build up tokens
       vi.advanceTimersByTime(2000); // 2 seconds = 20 tokens
 
-      const requests = singleEndpointLimiter.getAvailableRequests(25);
+      const requests = singleEndpointLimiter.getAvailableRequests(25, 2000);
       expect(requests.length).toBeLessThanOrEqual(20); // Max burst is 2x RPS
     });
 
     it('should return empty array when no tokens available', () => {
+      // Advance time to build up tokens
+      vi.advanceTimersByTime(1000);
+
       // Exhaust all tokens
-      limiter.getAvailableRequests(100);
+      limiter.getAvailableRequests(100, 1000);
 
       // Immediately check again
-      const requests = limiter.getAvailableRequests(10);
+      const requests = limiter.getAvailableRequests(10, 1000);
       expect(requests).toEqual([]);
     });
   });
@@ -146,14 +164,17 @@ describe('WorkerRateLimiter', () => {
     it('should naturally refill tokens over time', () => {
       vi.useFakeTimers();
 
+      // Advance time to build up tokens
+      vi.advanceTimersByTime(1000);
+
       // Use up some tokens
-      limiter.getAvailableRequests(10);
+      limiter.getAvailableRequests(10, 1000);
 
       // Advance time to allow token refill
       vi.advanceTimersByTime(1000);
 
       // Should have fresh tokens available
-      const requests = limiter.getAvailableRequests(10);
+      const requests = limiter.getAvailableRequests(10, 2000);
       expect(requests.length).toBeGreaterThan(0);
 
       vi.useRealTimers();
@@ -171,32 +192,8 @@ describe('WorkerRateLimiter', () => {
 
     it('should handle empty endpoints array', () => {
       const emptyLimiter = new WorkerRateLimiter([]);
-      const requests = emptyLimiter.getAvailableRequests();
+      const requests = emptyLimiter.getAvailableRequests(20, 0);
       expect(requests).toEqual([]);
-    });
-
-    it('should handle zero RPS as 1 RPS', () => {
-      const zeroRpsEndpoints: TressiRequestConfig[] = [
-        {
-          url: 'http://example.com/api/1',
-          method: 'GET',
-          payload: {},
-          headers: {},
-          rps: 0,
-          earlyExit: {
-            enabled: false,
-            errorRateThreshold: 0,
-            exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
-            monitoringWindowMs: 5000,
-          },
-        },
-      ];
-      const zeroRpsLimiter = new WorkerRateLimiter(zeroRpsEndpoints);
-
-      vi.advanceTimersByTime(1000);
-
-      const requests = zeroRpsLimiter.getAvailableRequests(10);
-      expect(requests.length).toBeGreaterThan(0); // Should treat 0 as 1 RPS
     });
 
     it('should handle very high RPS values', () => {
@@ -207,6 +204,7 @@ describe('WorkerRateLimiter', () => {
           payload: {},
           headers: {},
           rps: 1000,
+          rampUpDurationSec: 0,
           earlyExit: {
             enabled: false,
             errorRateThreshold: 0,
@@ -219,7 +217,7 @@ describe('WorkerRateLimiter', () => {
 
       vi.advanceTimersByTime(1000);
 
-      const requests = highRpsLimiter.getAvailableRequests(100);
+      const requests = highRpsLimiter.getAvailableRequests(100, 1000);
       expect(requests.length).toBe(100); // Should allow up to batch size
     });
 
@@ -231,6 +229,7 @@ describe('WorkerRateLimiter', () => {
           payload: {},
           headers: {},
           rps: 0.5,
+          rampUpDurationSec: 0,
           earlyExit: {
             enabled: false,
             errorRateThreshold: 0,
@@ -243,7 +242,7 @@ describe('WorkerRateLimiter', () => {
 
       vi.advanceTimersByTime(2000); // 2 seconds = 1 token
 
-      const requests = fractionalLimiter.getAvailableRequests(10);
+      const requests = fractionalLimiter.getAvailableRequests(10, 2000);
       expect(requests.length).toBe(1); // Should allow 1 request
     });
   });

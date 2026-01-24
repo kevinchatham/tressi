@@ -86,13 +86,13 @@
             }}
           </p>
         </div>
-        @if (input().config.options.rampUpTimeSec > 0) {
+        @if (input().config.options.rampUpDurationSec > 0) {
           <div>
             <h4 class="text-base-content/70 mb-1 text-sm font-semibold">
               Ramp-up
             </h4>
             <p class="text-sm">
-              {{ input().config.options.rampUpTimeSec }} seconds
+              {{ input().config.options.rampUpDurationSec }} seconds
             </p>
           </div>
         }

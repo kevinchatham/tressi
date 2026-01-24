@@ -10,6 +10,7 @@ const minimalConfig = {
       url: 'http://localhost:8080/test',
       method: 'GET' as const,
       rps: 10,
+      rampUpDurationSec: 0,
       payload: {},
       headers: {},
       earlyExit: {
@@ -22,7 +23,7 @@ const minimalConfig = {
   ],
   options: {
     durationSec: 10,
-    rampUpTimeSec: 0,
+    rampUpDurationSec: 0,
     silent: false,
     workerMemoryLimit: 128,
     headers: {},
@@ -44,6 +45,7 @@ const expectedConfig = {
       url: 'http://localhost:8080/test',
       method: 'GET',
       rps: 10,
+      rampUpDurationSec: 0,
       payload: {},
       headers: {},
       earlyExit: {
@@ -56,7 +58,7 @@ const expectedConfig = {
   ],
   options: {
     durationSec: 10,
-    rampUpTimeSec: 0,
+    rampUpDurationSec: 0,
     silent: false,
     workerMemoryLimit: 128,
     headers: {},
@@ -158,7 +160,7 @@ describe('config', () => {
             Authorization: 'Bearer global-token',
           },
           durationSec: 1,
-          rampUpTimeSec: 0,
+          rampUpDurationSec: 0,
           silent: false,
           workerMemoryLimit: 128,
           exportPath: '',
@@ -178,6 +180,7 @@ describe('config', () => {
               'X-Request-ID': '123',
             },
             rps: 10,
+            rampUpDurationSec: 0,
             payload: {},
             earlyExit: {
               enabled: false,

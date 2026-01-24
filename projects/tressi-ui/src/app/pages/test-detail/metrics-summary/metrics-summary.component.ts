@@ -3,7 +3,7 @@ import { Component, Input } from '@angular/core';
 
 export interface SummaryStats {
   totalRequests: number;
-  requestsPerSecond: number;
+  averageRequestsPerSecond: number;
   minLatencyMs: number;
   maxLatencyMs: number;
   p50LatencyMs: number;

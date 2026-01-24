@@ -59,8 +59,10 @@ export type EndpointSummary = {
   p95LatencyMs: number;
   /** 99th percentile latency in milliseconds (99% of requests were faster). */
   p99LatencyMs: number;
-  /** Actual requests per second achieved for this endpoint. */
-  requestsPerSecond: number;
+  /** Average requests per second achieved for this endpoint. */
+  averageRequestsPerSecond: number;
+  /** Last one sec requests per second achieved for this endpoint. */
+  peakRequestsPerSecond: number;
   /** Percentage of configured RPS achieved, derived from actualRps */
   targetAchieved: number;
   /** Theoretical maximum requests per second based on average latency. */
@@ -76,6 +78,8 @@ export type EndpointSummary = {
   }>;
   /** Distribution of HTTP status codes received for this endpoint */
   statusCodeDistribution: Record<number, number>;
+  /** error rate as a decimal */
+  errorRate: number;
 };
 
 /**
@@ -106,6 +110,12 @@ export type GlobalSummary = {
   epochStartedAt: number;
   /** Time of test end. */
   epochEndedAt: number;
+  /** error rate as a decimal */
+  errorRate: number;
+  /** Average requests per second achieved for this endpoint. */
+  averageRequestsPerSecond: number;
+  /** Last one sec requests per second achieved for this endpoint. */
+  peakRequestsPerSecond: number;
 };
 
 /**

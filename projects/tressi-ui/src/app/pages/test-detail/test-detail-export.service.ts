@@ -100,7 +100,7 @@ export class TestDetailExportService {
       for (const metric of metrics.global) {
         const m = metric.metric;
         lines.push(
-          `${new Date(metric.epoch).toISOString()},${m.requestsPerSecond},${m.totalRequests}`,
+          `${new Date(metric.epoch).toISOString()},${m.averageRequestsPerSecond},${m.totalRequests}`,
         );
       }
       lines.push('');
@@ -114,7 +114,7 @@ export class TestDetailExportService {
       for (const metric of metrics.endpoints) {
         const m = metric.metric;
         lines.push(
-          `${metric.url},${new Date(metric.epoch).toISOString()},${m.requestsPerSecond},${m.totalRequests}`,
+          `${metric.url},${new Date(metric.epoch).toISOString()},${m.averageRequestsPerSecond},${m.totalRequests}`,
         );
       }
     }

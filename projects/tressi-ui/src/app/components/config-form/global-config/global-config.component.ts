@@ -1,4 +1,5 @@
 import { Component, input, output } from '@angular/core';
+import { Field } from '@angular/forms/signals';
 
 import { ModifyConfigRequest } from '../../../services/rpc.service';
 import { IconComponent } from '../../icon/icon.component';
@@ -8,7 +9,12 @@ import { EarlyExitConfigComponent } from '../early-exit-config/early-exit-config
 
 @Component({
   selector: 'app-global-config',
-  imports: [IconComponent, EarlyExitConfigComponent, JsonTextareaComponent],
+  imports: [
+    Field,
+    IconComponent,
+    EarlyExitConfigComponent,
+    JsonTextareaComponent,
+  ],
   templateUrl: './global-config.component.html',
 })
 export class GlobalConfigComponent {

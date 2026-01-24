@@ -70,6 +70,7 @@ export type WorkerData = {
   workerId: number;
   totalWorkers: number;
   durationSec: number;
+  rampUpDurationSec: number;
   assignedEndpoints: TressiRequestConfig[];
   endpointOffset: number;
   statsBuffer: SharedArrayBuffer;

@@ -5,7 +5,7 @@
     "requests": [],
     "options": {
       "durationSec": 10,
-      "rampUpTimeSec": 0,
+      "rampUpDurationSec": 0,
       "exportPath": "",
       "silent": false,
       "headers": {
@@ -40,6 +40,7 @@
             "User-Agent": "Tressi"
           },
           "rps": 1,
+          "rampUpDurationSec": 0,
           "earlyExit": {
             "enabled": false,
             "errorRateThreshold": 0,
@@ -91,6 +92,12 @@
             "minimum": 1,
             "maximum": 9007199254740991
           },
+          "rampUpDurationSec": {
+            "description": "Per-endpoint ramp-up time in seconds. If 0, uses global rampUpDurationSec. Defaults to 0.",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
           "earlyExit": {
             "description": "Optional early exit configuration for this specific endpoint",
             "default": {
@@ -136,7 +143,15 @@
             "additionalProperties": false
           }
         },
-        "required": ["url", "payload", "method", "headers", "rps", "earlyExit"],
+        "required": [
+          "url",
+          "payload",
+          "method",
+          "headers",
+          "rps",
+          "rampUpDurationSec",
+          "earlyExit"
+        ],
         "additionalProperties": false
       }
     },
@@ -144,7 +159,7 @@
       "description": "Configuration options for the test runner.",
       "default": {
         "durationSec": 10,
-        "rampUpTimeSec": 0,
+        "rampUpDurationSec": 0,
         "exportPath": "",
         "silent": false,
         "headers": {
@@ -167,7 +182,7 @@
           "exclusiveMinimum": 0,
           "maximum": 9007199254740991
         },
-        "rampUpTimeSec": {
+        "rampUpDurationSec": {
           "description": "The time in seconds to ramp up to the target RPS. Defaults to 0.",
           "type": "integer",
           "minimum": 0,
@@ -250,7 +265,7 @@
       },
       "required": [
         "durationSec",
-        "rampUpTimeSec",
+        "rampUpDurationSec",
         "exportPath",
         "silent",
         "headers",

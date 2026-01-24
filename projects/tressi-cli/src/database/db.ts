@@ -1,6 +1,6 @@
 import Database from 'better-sqlite3';
 import { existsSync, mkdirSync } from 'fs';
-import { Kysely, SqliteDialect } from 'kysely';
+import { Kysely, sql, SqliteDialect } from 'kysely';
 import { homedir } from 'os';
 import { join } from 'path';
 
@@ -18,3 +18,6 @@ const dialect = new SqliteDialect({
 export const db = new Kysely<DatabaseSchema>({
   dialect,
 });
+
+// Enable foreign keys after connection
+db.executeQuery(sql`PRAGMA foreign_keys = ON`.compile(db));

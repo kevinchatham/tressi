@@ -34,21 +34,15 @@ export class TestDetailService {
 
     if (isGlobal) {
       const global = test.summary.global;
-      const durationSec = global.finalDurationSec || 1;
-      const requestsPerSecond = Math.round(global.totalRequests / durationSec);
-
       return {
         totalRequests: global.totalRequests,
-        requestsPerSecond,
+        averageRequestsPerSecond: global.averageRequestsPerSecond,
         minLatencyMs: global.minLatencyMs,
         maxLatencyMs: global.maxLatencyMs,
         p50LatencyMs: global.p50LatencyMs,
         p95LatencyMs: global.p95LatencyMs,
         p99LatencyMs: global.p99LatencyMs,
-        errorRate: this.calculateErrorRate(
-          global.totalRequests,
-          global.failedRequests,
-        ),
+        errorRate: global.errorRate,
         successfulRequests: global.successfulRequests,
         failedRequests: global.failedRequests,
         // Global-specific metrics
@@ -65,16 +59,13 @@ export class TestDetailService {
 
       return {
         totalRequests: endpoint.totalRequests,
-        requestsPerSecond: endpoint.requestsPerSecond,
+        averageRequestsPerSecond: endpoint.averageRequestsPerSecond,
         minLatencyMs: endpoint.minLatencyMs,
         maxLatencyMs: endpoint.maxLatencyMs,
         p50LatencyMs: endpoint.p50LatencyMs,
         p95LatencyMs: endpoint.p95LatencyMs,
         p99LatencyMs: endpoint.p99LatencyMs,
-        errorRate: this.calculateErrorRate(
-          endpoint.totalRequests,
-          endpoint.failedRequests,
-        ),
+        errorRate: endpoint.errorRate,
         successfulRequests: endpoint.successfulRequests,
         failedRequests: endpoint.failedRequests,
         // Endpoint-specific metrics
@@ -83,15 +74,6 @@ export class TestDetailService {
       };
     }
   });
-
-  private calculateErrorRate(
-    totalRequests: number,
-    failedRequests: number,
-  ): number {
-    return totalRequests > 0
-      ? Math.round((failedRequests / totalRequests) * 100)
-      : 0;
-  }
 
   // Private state
   private metricsStreamSubscription: Subscription | null = null;

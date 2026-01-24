@@ -266,7 +266,7 @@ Gradually increases the load to your target requests per second over a specified
     "workers": 20,
     "durationSec": 60,
     "rps": 500,
-    "rampUpTimeSec": 30
+    "rampUpDurationSec": 30
   },
   "requests": [
     {
@@ -485,7 +485,7 @@ The `tressi init` command will generate a `tressi.config.json` file with a `$sch
   "options": {
     "workers": 10,
     "durationSec": 30,
-    "rampUpTimeSec": 0,
+    "rampUpDurationSec": 0,
     "rps": 200,
     "exportPath": null,
     "useUI": true,
@@ -524,7 +524,7 @@ All test configuration is now done through the JSON configuration file. The `opt
 | --------------------- | --------------------- | ------------------------------------------------------------------------------------ | ------- |
 | `workers`             | `integer`             | Maximum number of concurrent workers to use for dynamic scaling                      | `10`    |
 | `durationSec`         | `integer`             | Total test duration in seconds                                                       | `10`    |
-| `rampUpTimeSec`       | `integer`             | Time in seconds to ramp up to the target load                                        | `0`     |
+| `rampUpDurationSec`   | `integer`             | Time in seconds to ramp up to the target load                                        | `0`     |
 | `rps`                 | `number`              | Target requests per second (ramps up to this value)                                  | `1`     |
 | `threads`             | `integer`             | Number of worker threads to use (defaults to CPU count, max: CPU cores)              |         |
 | `workerMemoryLimit`   | `integer`             | Memory limit per worker in MB (16-512)                                               | `128`   |

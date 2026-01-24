@@ -27,6 +27,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
             url: `${baseUrl}/success`,
             method: 'GET',
             rps: 50,
+            rampUpDurationSec: 0,
             payload: {},
             headers: {},
             earlyExit: {
@@ -40,6 +41,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
             url: `${baseUrl}/delay/100`,
             method: 'GET',
             rps: 25,
+            rampUpDurationSec: 0,
             payload: {},
             headers: {},
             earlyExit: {
@@ -53,6 +55,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
             url: `${baseUrl}/payload/1`,
             method: 'GET',
             rps: 10,
+            rampUpDurationSec: 0,
             payload: {},
             headers: {},
             earlyExit: {
@@ -65,7 +68,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
         ],
         options: {
           durationSec: 5, // Reduced duration for faster tests
-          rampUpTimeSec: 0,
+          rampUpDurationSec: 0,
           silent: true,
           headers: {},
           exportPath: '',
@@ -113,6 +116,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
             url: `${baseUrl}/success`,
             method: 'GET',
             rps: 1,
+            rampUpDurationSec: 0,
             payload: {},
             headers: {},
             earlyExit: {
@@ -126,6 +130,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
             url: `${baseUrl}/delay/50`,
             method: 'GET',
             rps: 30,
+            rampUpDurationSec: 0,
             payload: {},
             headers: {},
             earlyExit: {
@@ -139,6 +144,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
             url: `${baseUrl}/payload/1`,
             method: 'GET',
             rps: 20,
+            rampUpDurationSec: 0,
             payload: {},
             headers: {},
             earlyExit: {
@@ -151,7 +157,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
         ],
         options: {
           durationSec: 5,
-          rampUpTimeSec: 0,
+          rampUpDurationSec: 0,
           silent: true,
           headers: {},
           exportPath: '',
@@ -193,6 +199,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
             url: `${baseUrl}/success`,
             method: 'GET',
             rps: 100,
+            rampUpDurationSec: 0,
             payload: {},
             headers: {},
             earlyExit: {
@@ -206,6 +213,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
             url: `${baseUrl}/delay/50`,
             method: 'GET',
             rps: 200,
+            rampUpDurationSec: 0,
             payload: {},
             headers: {},
             earlyExit: {
@@ -218,7 +226,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
         ],
         options: {
           durationSec: 3,
-          rampUpTimeSec: 0,
+          rampUpDurationSec: 0,
           silent: true,
           headers: {},
           exportPath: '',
@@ -251,6 +259,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
             url: `${baseUrl}/success`,
             method: 'GET',
             rps: 2,
+            rampUpDurationSec: 0,
             payload: {},
             headers: {},
             earlyExit: {
@@ -264,6 +273,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
             url: `${baseUrl}/delay/100`,
             method: 'GET',
             rps: 3,
+            rampUpDurationSec: 0,
             payload: {},
             headers: {},
             earlyExit: {
@@ -276,7 +286,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
         ],
         options: {
           durationSec: 10,
-          rampUpTimeSec: 0,
+          rampUpDurationSec: 0,
           silent: true,
           headers: {},
           exportPath: '',
@@ -311,6 +321,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
             url: `${baseUrl}/delay/50`,
             method: 'GET',
             rps: 40,
+            rampUpDurationSec: 0,
             payload: {},
             headers: {},
             earlyExit: {
@@ -324,6 +335,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
             url: `${baseUrl}/success`,
             method: 'GET',
             rps: 15,
+            rampUpDurationSec: 0,
             payload: {},
             headers: {},
             earlyExit: {
@@ -337,6 +349,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
             url: `${baseUrl}/payload/10`,
             method: 'GET',
             rps: 20,
+            rampUpDurationSec: 0,
             payload: {},
             headers: {},
             earlyExit: {
@@ -349,7 +362,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
         ],
         options: {
           durationSec: 5,
-          rampUpTimeSec: 0,
+          rampUpDurationSec: 0,
           silent: true,
           headers: {},
           exportPath: '',
@@ -382,6 +395,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
             url: `${baseUrl}/success`,
             method: 'GET',
             rps: 20,
+            rampUpDurationSec: 0,
             payload: {},
             headers: {},
             earlyExit: {
@@ -395,6 +409,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
             url: `${baseUrl}/delay/100`,
             method: 'GET',
             rps: 20,
+            rampUpDurationSec: 0,
             payload: {},
             headers: {},
             earlyExit: {
@@ -408,6 +423,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
             url: `${baseUrl}/payload/10`,
             method: 'GET',
             rps: 20,
+            rampUpDurationSec: 0,
             payload: {},
             headers: {},
             earlyExit: {
@@ -420,7 +436,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
         ],
         options: {
           durationSec: 5,
-          rampUpTimeSec: 0,
+          rampUpDurationSec: 0,
           silent: true,
           headers: {},
           exportPath: '',
@@ -455,6 +471,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
             url: `${baseUrl}/success`,
             method: 'GET',
             rps: 100,
+            rampUpDurationSec: 0,
             payload: {},
             headers: {},
             earlyExit: {
@@ -467,7 +484,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
         ],
         options: {
           durationSec: 3,
-          rampUpTimeSec: 0,
+          rampUpDurationSec: 0,
           silent: true,
           headers: {},
           exportPath: '',
@@ -499,6 +516,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
             url: `${baseUrl}/success`,
             method: 'GET',
             rps: 5,
+            rampUpDurationSec: 0,
             payload: {},
             headers: {},
             earlyExit: {
@@ -511,7 +529,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
         ],
         options: {
           durationSec: 10,
-          rampUpTimeSec: 0,
+          rampUpDurationSec: 0,
           silent: true,
           headers: {},
           exportPath: '',
@@ -548,6 +566,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
             url: `${baseUrl}/success`,
             method: 'GET',
             rps: targetRps,
+            rampUpDurationSec: 0,
             payload: {},
             headers: {},
             earlyExit: {
@@ -560,7 +579,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
         ],
         options: {
           durationSec: 5,
-          rampUpTimeSec: 0,
+          rampUpDurationSec: 0,
           silent: true,
           headers: {},
           exportPath: '',
@@ -595,6 +614,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
             url: `${baseUrl}/success`,
             method: 'GET',
             rps: 30,
+            rampUpDurationSec: 0,
             payload: {},
             headers: {},
             earlyExit: {
@@ -608,6 +628,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
             url: `${baseUrl}/delay/100`,
             method: 'GET',
             rps: 20,
+            rampUpDurationSec: 0,
             payload: {},
             headers: {},
             earlyExit: {
@@ -621,6 +642,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
             url: `${baseUrl}/payload/10`,
             method: 'GET',
             rps: 10,
+            rampUpDurationSec: 0,
             payload: {},
             headers: {},
             earlyExit: {
@@ -633,7 +655,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
         ],
         options: {
           durationSec: 5,
-          rampUpTimeSec: 0,
+          rampUpDurationSec: 0,
           silent: true,
           headers: {},
           exportPath: '',

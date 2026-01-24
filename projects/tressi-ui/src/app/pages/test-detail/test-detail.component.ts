@@ -96,7 +96,7 @@ export class TestDetailComponent {
       test?.summary?.endpoints?.map((endpoint) => ({
         url: endpoint.url,
         method: endpoint.method,
-        requestsPerSecond: endpoint.requestsPerSecond,
+        averageRequestsPerSecond: endpoint.averageRequestsPerSecond,
         p50LatencyMs: endpoint.p50LatencyMs,
         totalRequests: endpoint.totalRequests,
         successfulRequests: endpoint.successfulRequests,
@@ -117,7 +117,9 @@ export class TestDetailComponent {
     const metrics = this.metricsData();
     if (!metrics?.global?.length) return { data: [], labels: [] };
 
-    const data = metrics.global.map((m) => m.metric?.requestsPerSecond || 0);
+    const data = metrics.global.map(
+      (m) => m.metric?.averageRequestsPerSecond || 0,
+    );
     const labels = metrics.global.map((m) => m.epoch);
 
     return { data, labels };
@@ -245,7 +247,9 @@ export class TestDetailComponent {
 
     switch (metricType) {
       case 'throughput':
-        data = endpointMetrics.map((m) => m.metric?.requestsPerSecond || 0);
+        data = endpointMetrics.map(
+          (m) => m.metric?.averageRequestsPerSecond || 0,
+        );
         labels = endpointMetrics.map((m) => m.epoch);
         break;
       case 'latency':
@@ -321,7 +325,7 @@ export class TestDetailComponent {
     | {
         url: string;
         method: string;
-        requestsPerSecond: number;
+        averageRequestsPerSecond: number;
         p50LatencyMs: number;
         totalRequests: number;
         successfulRequests: number;
@@ -338,7 +342,7 @@ export class TestDetailComponent {
     | {
         url: string;
         method: string;
-        requestsPerSecond: number;
+        averageRequestsPerSecond: number;
         p50LatencyMs: number;
         totalRequests: number;
         successfulRequests: number;
@@ -383,7 +387,9 @@ export class TestDetailComponent {
     switch (metricType) {
       case 'throughput':
         return {
-          data: metrics.global.map((m) => m.metric?.requestsPerSecond || 0),
+          data: metrics.global.map(
+            (m) => m.metric?.averageRequestsPerSecond || 0,
+          ),
           labels: metrics.global.map((m) => m.epoch),
         };
       case 'latency':

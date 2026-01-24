@@ -145,6 +145,37 @@
                 }
               </fieldset>
 
+              <!-- Ramp Up Duration -->
+              <fieldset class="fieldset">
+                <legend class="fieldset-legend">Ramp Up Time (seconds)</legend>
+                <input
+                  type="number"
+                  class="input"
+                  [field]="form().config.requests[$index].rampUpDurationSec"
+                  placeholder="Time to reach target RPS"
+                />
+                <p class="label">
+                  Endpoint ramp-up time (0 = use global rampUpDurationSec)
+                </p>
+                @if (
+                  form()
+                    .config.requests[$index].rampUpDurationSec()
+                    .touched() &&
+                  form().config.requests[$index].rampUpDurationSec().invalid()
+                ) {
+                  <p class="label text-error">
+                    @for (
+                      error of form()
+                        .config.requests[$index].rampUpDurationSec()
+                        .errors();
+                      track error
+                    ) {
+                      {{ error.message }}
+                    }
+                  </p>
+                }
+              </fieldset>
+
               <!-- Headers -->
               <fieldset class="fieldset md:col-span-2">
                 <legend class="fieldset-legend">

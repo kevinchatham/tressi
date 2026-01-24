@@ -36,6 +36,12 @@ export class MetricsAggregator implements IMetricsAggregator {
   private endpoints: string[] = [];
   private config: TressiConfig | null = null;
   private testId?: string; // Optional for server persistence
+  private previousEndpointCounts: Record<
+    string,
+    { success: number; failure: number; timestamp: number }
+  > = {};
+  private peakGlobalInstantRps: number = 0;
+  private peakEndpointInstantRps: Record<string, number> = {};
 
   constructor(
     private hdrHistogramManagers: IHdrHistogramManager[],
@@ -82,6 +88,18 @@ export class MetricsAggregator implements IMetricsAggregator {
    */
   setEndpoints(endpoints: string[]): void {
     this.endpoints = endpoints;
+    // Initialize previous endpoint counts
+    const startTime = this.startTime || Date.now();
+    this.previousEndpointCounts = {};
+    this.peakEndpointInstantRps = {};
+    endpoints.forEach((url) => {
+      this.previousEndpointCounts[url] = {
+        success: 0,
+        failure: 0,
+        timestamp: startTime,
+      };
+      this.peakEndpointInstantRps[url] = 0;
+    });
   }
 
   /**
@@ -191,6 +209,12 @@ export class MetricsAggregator implements IMetricsAggregator {
     let totalBytesSent = 0;
     let totalBytesReceived = 0;
 
+    // Track current endpoint counts for instant RPS calculation
+    const currentEndpointCounts: Record<
+      string,
+      { success: number; failure: number }
+    > = {};
+
     for (let workerId = 0; workerId < workersCount; workerId++) {
       const statsManager = this.statsCounterManagers[workerId];
       const histogramManager = this.hdrHistogramManagers[workerId];
@@ -213,10 +237,19 @@ export class MetricsAggregator implements IMetricsAggregator {
 
         const endpointUrl = endpoints[globalEndpointIndex];
 
+        // Initialize current counts for this endpoint if not exists
+        if (!currentEndpointCounts[endpointUrl]) {
+          currentEndpointCounts[endpointUrl] = { success: 0, failure: 0 };
+        }
+
         // Aggregate success/failure counts
         totalSuccess += counters.successCount;
         totalFailure += counters.failureCount;
         totalRequests += counters.successCount + counters.failureCount;
+
+        // Track current counts for instant RPS calculation
+        currentEndpointCounts[endpointUrl].success += counters.successCount;
+        currentEndpointCounts[endpointUrl].failure += counters.failureCount;
 
         // Aggregate network metrics
         totalBytesSent += counters.bytesSent;
@@ -240,9 +273,11 @@ export class MetricsAggregator implements IMetricsAggregator {
       });
     }
 
+    const currentTime = Date.now();
+
     // Calculate global metrics
-    const duration = this.startTime > 0 ? Date.now() - this.startTime : 0;
-    const requestsPerSecond =
+    const duration = this.startTime > 0 ? currentTime - this.startTime : 0;
+    const averageRequestsPerSecond =
       duration > 0 ? totalRequests / (duration / 1000) : 0;
 
     // Calculate global latency statistics using weighted averages
@@ -304,6 +339,44 @@ export class MetricsAggregator implements IMetricsAggregator {
           ? (endpointBytesSent + endpointBytesReceived) / (duration / 1000)
           : 0;
 
+      // Calculate instant RPS based on difference from previous counts
+      const currentCounts = currentEndpointCounts[url] || {
+        success: 0,
+        failure: 0,
+      };
+      const previousCounts = this.previousEndpointCounts[url] || {
+        success: 0,
+        failure: 0,
+        timestamp: 0,
+      };
+
+      let peakRequestsPerSecond = 0;
+      if (
+        previousCounts.timestamp > 0 &&
+        currentTime > previousCounts.timestamp
+      ) {
+        const timeDiffMs = currentTime - previousCounts.timestamp;
+        const timeDiffSec = timeDiffMs / 1000;
+        const requestDiff =
+          currentCounts.success +
+          currentCounts.failure -
+          (previousCounts.success + previousCounts.failure);
+        peakRequestsPerSecond = timeDiffSec > 0 ? requestDiff / timeDiffSec : 0;
+      }
+
+      // Track peak instant RPS for this endpoint
+      this.peakEndpointInstantRps[url] = Math.max(
+        this.peakEndpointInstantRps[url] || 0,
+        peakRequestsPerSecond,
+      );
+
+      // Update previous counts for next calculation
+      this.previousEndpointCounts[url] = {
+        success: currentCounts.success,
+        failure: currentCounts.failure,
+        timestamp: currentTime,
+      };
+
       endpointMetrics[url] = {
         totalRequests: endpointTotalRequests,
         successfulRequests: endpointSuccessRequests,
@@ -313,15 +386,39 @@ export class MetricsAggregator implements IMetricsAggregator {
         p50LatencyMs: roundToDecimals(endpointStats.p50Latency),
         p95LatencyMs: roundToDecimals(endpointStats.p95Latency),
         p99LatencyMs: roundToDecimals(endpointStats.p99Latency),
-        requestsPerSecond: roundToDecimals(
+        averageRequestsPerSecond: roundToDecimals(
           duration > 0 ? endpointTotalRequests / (duration / 1000) : 0,
+        ),
+        peakRequestsPerSecond: roundToDecimals(
+          this.endTime > 0 && this.peakEndpointInstantRps[url] > 0
+            ? this.peakEndpointInstantRps[url]
+            : Math.max(
+                peakRequestsPerSecond,
+                this.peakEndpointInstantRps[url] || 0,
+              ),
         ),
         statusCodeDistribution: statusCounts,
         networkBytesSent: endpointBytesSent,
         networkBytesReceived: endpointBytesReceived,
         networkBytesPerSec: roundToDecimals(endpointBytesPerSec),
+        errorRate: endpointFailureRequests / endpointTotalRequests,
       };
     });
+
+    // Calculate global instant RPS as the sum of all endpoint instant RPS values
+    let globalInstantRequestsPerSecond = 0;
+    endpoints.forEach((url) => {
+      const endpointMetric = endpointMetrics[url];
+      if (endpointMetric) {
+        globalInstantRequestsPerSecond += endpointMetric.peakRequestsPerSecond;
+      }
+    });
+
+    // Track peak global instant RPS
+    this.peakGlobalInstantRps = Math.max(
+      this.peakGlobalInstantRps,
+      globalInstantRequestsPerSecond,
+    );
 
     // Calculate CPU usage percentage based on system load average
     const cpuCount = cpus().length;
@@ -351,15 +448,21 @@ export class MetricsAggregator implements IMetricsAggregator {
       p50LatencyMs: roundToDecimals(globalStats.p50Latency),
       p95LatencyMs: roundToDecimals(globalStats.p95Latency),
       p99LatencyMs: roundToDecimals(globalStats.p99Latency),
-      requestsPerSecond: roundToDecimals(requestsPerSecond),
+      averageRequestsPerSecond: roundToDecimals(averageRequestsPerSecond),
+      peakRequestsPerSecond: roundToDecimals(
+        this.endTime > 0 && this.peakGlobalInstantRps > 0
+          ? this.peakGlobalInstantRps
+          : globalInstantRequestsPerSecond,
+      ),
       statusCodeDistribution: globalStatusCodeDistribution,
       networkBytesSent: totalBytesSent,
       networkBytesReceived: totalBytesReceived,
       networkBytesPerSec: roundToDecimals(globalBytesPerSec),
+      errorRate: totalFailure / totalRequests,
     };
 
     return {
-      epoch: Date.now(),
+      epoch: currentTime,
       cpuUsagePercent,
       memoryUsageMB,
 
