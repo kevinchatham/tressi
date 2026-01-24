@@ -75,7 +75,7 @@ describe('Tressi CLI Commands E2E Tests', () => {
       expect(config).toHaveProperty('options');
       expect(config).toHaveProperty('requests');
       expect(config.options).toHaveProperty('durationSec');
-      expect(config.options).toHaveProperty('rampUpTimeSec');
+      expect(config.options).toHaveProperty('rampUpDurationSec');
       expect(config.options).not.toHaveProperty('rps');
       expect(config.requests[0]).toHaveProperty('rps');
 
@@ -176,7 +176,7 @@ describe('Tressi CLI Commands E2E Tests', () => {
           'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json',
         options: {
           durationSec: 2,
-          rampUpTimeSec: 0,
+          rampUpDurationSec: 0,
           useUI: false,
           silent: true,
           earlyExitOnError: false,
@@ -214,7 +214,7 @@ describe('Tressi CLI Commands E2E Tests', () => {
           'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json',
         options: {
           durationSec: 1,
-          rampUpTimeSec: 0,
+          rampUpDurationSec: 0,
           useUI: false,
           silent: true,
           earlyExitOnError: false,

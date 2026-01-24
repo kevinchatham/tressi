@@ -8,7 +8,9 @@ export type Metric = {
   p50LatencyMs: number;
   p95LatencyMs: number;
   p99LatencyMs: number;
-  requestsPerSecond: number;
+  averageRequestsPerSecond: number;
+  peakRequestsPerSecond: number;
+  errorRate: number;
   statusCodeDistribution: Record<number, number>;
   successfulRequests: number;
   totalRequests: number;

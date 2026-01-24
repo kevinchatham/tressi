@@ -79,7 +79,10 @@ export class WorkerThread {
       data.endpointStateBuffer,
     );
 
-    this.rateLimiter = new WorkerRateLimiter(this.assignedEndpoints);
+    this.rateLimiter = new WorkerRateLimiter(
+      this.assignedEndpoints,
+      data.rampUpDurationSec,
+    );
     this.requestExecutor = new RequestExecutor(new ResponseSampler(), 1000);
     this.startTime = Date.now();
     this.durationMs = data.durationSec * 1000;
@@ -115,7 +118,10 @@ export class WorkerThread {
       if (this.allEndpointsStopped()) break;
 
       // Get batch of available requests (NON-BLOCKING)
-      const requests = this.rateLimiter.getAvailableRequests(PIPELINE_DEPTH);
+      const requests = this.rateLimiter.getAvailableRequests(
+        PIPELINE_DEPTH,
+        elapsed,
+      );
 
       if (requests.length > 0) {
         // CRITICAL: Fire requests WITHOUT waiting - TRUE PIPELINING

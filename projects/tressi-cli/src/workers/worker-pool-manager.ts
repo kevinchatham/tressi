@@ -127,6 +127,7 @@ export class WorkerPoolManager {
           memoryLimit: this.config.options.workerMemoryLimit,
           totalWorkers: actualWorkers,
           durationSec: this.config.options.durationSec || 10,
+          rampUpDurationSec: this.config.options.rampUpDurationSec || 0,
         },
         resourceLimits: {
           maxOldGenerationSizeMb: this.config.options.workerMemoryLimit,

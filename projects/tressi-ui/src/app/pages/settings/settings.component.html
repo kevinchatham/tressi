@@ -85,14 +85,21 @@
 <!-- Delete Confirmation Modal -->
 <div class="modal" [class.modal-open]="showDeleteModal()">
   <div
-    class="border-base-content/5 bg-base-200 rounded-xl border-2 p-6 sm:m-4 sm:max-w-[calc(100%-2rem)]"
+    class="border-base-content/5 bg-base-200 sm:max-w-[calc(100%-2rem) rounded-xl border-2 p-6 sm:m-4 md:max-w-lg"
   >
     <h3 class="text-lg font-semibold">Delete Configuration</h3>
     <p class="py-4">
       Are you sure you want to delete
       <strong>{{ getConfigToDeleteName() }}</strong
-      >? This action cannot be undone.
+      >?
     </p>
+    <div class="alert alert-warning mt-4">
+      <app-icon name="warning" />
+      <span
+        >All tests and metrics linked to this configuration will be permanently
+        removed.</span
+      >
+    </div>
     <div class="mt-6 flex justify-end gap-3">
       <button (click)="cancelDelete()" class="btn btn-ghost">Cancel</button>
       <button (click)="deleteConfig()" class="btn btn-error">Delete</button>

@@ -584,4 +584,144 @@ describe('MetricsAggregator', () => {
       expect(stopPollingEndTime).toBeGreaterThan(setEndTime);
     });
   });
+
+  describe('Peak Instant RPS Tracking', () => {
+    it('should track and use peak instant RPS when test has ended', () => {
+      const aggregator = new MetricsAggregator(
+        mockHdrHistogramManagers,
+        mockStatsCounterManagers,
+        {},
+        'test-run-id',
+      );
+
+      // Set up endpoints with a specific start time
+      const startTime = Date.now() - 2000; // 2 seconds ago
+      aggregator.setEndpoints(['http://example.com/api']);
+      aggregator.setStartTime(startTime);
+
+      // First, simulate some initial activity to establish previous counts
+      vi.mocked(
+        mockStatsCounterManagers[0].getAllEndpointCounters,
+      ).mockReturnValue([
+        {
+          successCount: 50, // Simulate 50 requests in first interval
+          failureCount: 0,
+          bytesSent: 5000,
+          bytesReceived: 10000,
+          statusCodeCounts: { 200: 50 },
+          sampledStatusCodes: [],
+          bodySampleIndices: [],
+        },
+      ]);
+
+      vi.mocked(
+        mockHdrHistogramManagers[0].getAllEndpointHistograms,
+      ).mockReturnValue([
+        {
+          totalCount: 50,
+          mean: 100,
+          min: 50,
+          max: 200,
+          percentiles: { 50: 95, 95: 180, 99: 195 },
+          stdDev: 50,
+        },
+      ]);
+
+      // First call to establish previous counts
+      const results0 = aggregator.getResults(1, ['http://example.com/api']);
+
+      // Wait a bit to ensure time difference
+      const waitTime = 100; // 100ms
+      const startTime2 = Date.now();
+      while (Date.now() - startTime2 < waitTime) {
+        // Busy wait to ensure time passes
+      }
+
+      // Now simulate increased activity
+      vi.mocked(
+        mockStatsCounterManagers[0].getAllEndpointCounters,
+      ).mockReturnValue([
+        {
+          successCount: 150, // Simulate 150 requests (100 new requests)
+          failureCount: 0,
+          bytesSent: 15000,
+          bytesReceived: 30000,
+          statusCodeCounts: { 200: 150 },
+          sampledStatusCodes: [],
+          bodySampleIndices: [],
+        },
+      ]);
+
+      // Second call to getResults (during active test) - should calculate current instant RPS
+      const results1 = aggregator.getResults(1, ['http://example.com/api']);
+      const firstInstantRps =
+        results1.endpoints['http://example.com/api'].peakRequestsPerSecond;
+
+      // Verify that we got a positive instant RPS during active test
+      expect(firstInstantRps).toBeGreaterThan(0);
+
+      // Simulate test ending
+      aggregator.stopPolling();
+
+      // Third call to getResults (after test ended) - should use peak instant RPS
+      const results2 = aggregator.getResults(1, ['http://example.com/api']);
+      const secondInstantRps =
+        results2.endpoints['http://example.com/api'].peakRequestsPerSecond;
+
+      // The peak should be preserved and used in the final summary
+      expect(secondInstantRps).toBeGreaterThan(0);
+      expect(secondInstantRps).toBe(firstInstantRps);
+      expect(results2.global.peakRequestsPerSecond).toBeGreaterThan(0);
+    });
+
+    it('should return 0 instant RPS when no requests were made', () => {
+      const aggregator = new MetricsAggregator(
+        mockHdrHistogramManagers,
+        mockStatsCounterManagers,
+        {},
+        'test-run-id',
+      );
+
+      // Set up endpoints
+      aggregator.setEndpoints(['http://example.com/api']);
+      aggregator.setStartTime(Date.now() - 1000);
+      aggregator.stopPolling();
+
+      // Mock no requests
+      vi.mocked(
+        mockStatsCounterManagers[0].getAllEndpointCounters,
+      ).mockReturnValue([
+        {
+          successCount: 0,
+          failureCount: 0,
+          bytesSent: 0,
+          bytesReceived: 0,
+          statusCodeCounts: {},
+          sampledStatusCodes: [],
+          bodySampleIndices: [],
+        },
+      ]);
+
+      vi.mocked(
+        mockHdrHistogramManagers[0].getAllEndpointHistograms,
+      ).mockReturnValue([
+        {
+          totalCount: 0,
+          mean: 0,
+          min: 0,
+          max: 0,
+          percentiles: { 50: 0, 95: 0, 99: 0 },
+          stdDev: 0,
+        },
+      ]);
+
+      const results = aggregator.getResults(1, ['http://example.com/api']);
+
+      // Should be 0 when no requests were made
+      expect(
+        results.endpoints['http://example.com/api'].peakRequestsPerSecond,
+      ).toBe(0);
+      expect(results.global.peakRequestsPerSecond).toBe(0);
+    });
+  });
 });

@@ -26,6 +26,9 @@ export function transformAggregatedMetricToTestSummary(
     totalEndpoints: Object.keys(metrics.endpoints).length,
     totalRequests: global.totalRequests,
     successfulRequests: global.successfulRequests,
+    averageRequestsPerSecond: global.averageRequestsPerSecond,
+    peakRequestsPerSecond: global.peakRequestsPerSecond,
+    errorRate: global.errorRate,
     failedRequests: global.failedRequests,
     minLatencyMs: global.minLatencyMs,
     maxLatencyMs: global.maxLatencyMs,
@@ -49,7 +52,7 @@ export function transformAggregatedMetricToTestSummary(
 
     // Calculate percentage of target RPS achieved
     const targetAchieved = roundToDecimals(
-      (endpoint.requestsPerSecond / requestConfig.rps) * 100,
+      (endpoint.averageRequestsPerSecond / requestConfig.rps) * 100,
     );
 
     const summary: EndpointSummary = {
@@ -63,11 +66,13 @@ export function transformAggregatedMetricToTestSummary(
       p50LatencyMs: endpoint.p50LatencyMs,
       p95LatencyMs: endpoint.p95LatencyMs,
       p99LatencyMs: endpoint.p99LatencyMs,
-      requestsPerSecond: endpoint.requestsPerSecond,
+      averageRequestsPerSecond: endpoint.averageRequestsPerSecond,
+      peakRequestsPerSecond: endpoint.peakRequestsPerSecond,
       theoreticalMaxRps: roundToDecimals(theoreticalMaxRps),
       targetAchieved,
       responseSamples: endpointResponseSamples,
       statusCodeDistribution: endpoint.statusCodeDistribution,
+      errorRate: endpoint.errorRate,
     };
 
     return summary;

@@ -5,31 +5,6 @@
   </h2>
 
   <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-    <!-- Ramp Up Time -->
-    <fieldset class="fieldset">
-      <legend class="fieldset-legend">Ramp Up Time (seconds)</legend>
-      <input
-        type="number"
-        class="input"
-        [field]="form().config.options.rampUpTimeSec"
-        placeholder="Time to reach target RPS"
-      />
-      <p class="label">Time to reach target RPS</p>
-      @if (
-        form().config.options.rampUpTimeSec().touched() &&
-        form().config.options.rampUpTimeSec().invalid()
-      ) {
-        <p class="label text-error">
-          @for (
-            error of form().config.options.rampUpTimeSec().errors();
-            track error
-          ) {
-            {{ error.message }}
-          }
-        </p>
-      }
-    </fieldset>
-
     <!-- Threads -->
     <fieldset class="fieldset">
       <legend class="fieldset-legend">Worker Threads</legend>
