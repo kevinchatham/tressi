@@ -1,13 +1,13 @@
 import { CommonModule } from '@angular/common';
 import { Component, input, output } from '@angular/core';
+import { ButtonComponent } from 'src/app/components/button/button.component';
 
 import { IconComponent } from '../../../components/icon/icon.component';
 import { TestDocument } from '../../../services/rpc.service';
 
 @Component({
   selector: 'app-delete-confirmation-modal',
-  standalone: true,
-  imports: [CommonModule, IconComponent],
+  imports: [CommonModule, IconComponent, ButtonComponent],
   templateUrl: './delete-confirmation-modal.component.html',
 })
 export class DeleteConfirmationModalComponent {

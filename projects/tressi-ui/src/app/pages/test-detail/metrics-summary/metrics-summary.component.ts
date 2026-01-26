@@ -21,7 +21,6 @@ export interface SummaryStats {
 
 @Component({
   selector: 'app-metrics-summary',
-  standalone: true,
   imports: [CommonModule],
   templateUrl: './metrics-summary.component.html',
 })

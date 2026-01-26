@@ -5,11 +5,9 @@
   class="hidden"
   (change)="onFileSelected($event)"
 />
-<button
-  type="button"
-  class="btn btn-circle btn-outline btn-secondary"
-  title="Import Configuration"
+<app-button
   (click)="triggerFileInput(fileInput)"
->
-  <app-icon name="upload_file" />
-</button>
+  [color]="'secondary'"
+  [title]="'Import'"
+  [icon]="'upload_file'"
+/>

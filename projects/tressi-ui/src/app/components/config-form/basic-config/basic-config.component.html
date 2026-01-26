@@ -35,13 +35,12 @@
           <app-icon name="send" class="h-5 w-5" />
           Request Configuration
         </h3>
-        <button
-          type="button"
-          class="btn btn-primary btn-circle btn-outline"
+        <app-button
           (click)="addRequest.emit()"
-        >
-          <app-icon name="add" />
-        </button>
+          [color]="'primary'"
+          [icon]="'add'"
+          [title]="'Add Request'"
+        />
       </div>
 
       @for (request of model().config.requests; track $index) {
@@ -52,30 +51,24 @@
               <span class="truncate">{{ request.url || 'New Request' }}</span>
             </h3>
             <div class="flex items-center">
-              <button
-                type="button"
-                class="btn btn-ghost btn-circle btn-error"
-                [disabled]="model().config.requests.length === 1"
-                [class.btn-disabled]="model().config.requests.length === 1"
+              <app-button
                 (click)="removeRequest.emit($index)"
-              >
-                <app-icon name="delete" />
-              </button>
-              <button
-                type="button"
-                class="btn btn-ghost btn-circle"
+                [color]="'error'"
+                [disabled]="model().config.requests.length === 1"
+                [icon]="'delete'"
+                [title]="'Remove Request'"
+              />
+              <app-button
+                class="ml-2"
                 (click)="toggleRequest($index)"
-                [attr.aria-expanded]="isRequestExpanded($index)"
-                [attr.aria-controls]="'request-details-' + $index"
-              >
-                <app-icon
-                  [name]="
-                    isRequestExpanded($index)
-                      ? 'keyboard_arrow_up'
-                      : 'keyboard_arrow_down'
-                  "
-                />
-              </button>
+                [ghost]="true"
+                [title]="isRequestExpanded($index) ? 'Collapse' : 'Expand'"
+                [icon]="
+                  isRequestExpanded($index)
+                    ? 'keyboard_arrow_up'
+                    : 'keyboard_arrow_down'
+                "
+              />
             </div>
           </div>
 

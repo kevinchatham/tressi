@@ -22,6 +22,7 @@ import type {
   TestSummary,
 } from '../../services/rpc.service';
 import { TestService } from '../../services/test.service';
+import { ButtonComponent } from '../button/button.component';
 import { IconComponent } from '../icon/icon.component';
 import { StartButtonComponent } from '../start-button/start-button.component';
 import { ColumnSelectorComponent } from './column-selector/column-selector.component';
@@ -36,7 +37,6 @@ import { TestTableComponent } from './test-table/test-table.component';
 
 @Component({
   selector: 'app-test-list',
-  standalone: true,
   imports: [
     RouterModule,
     IconComponent,
@@ -44,6 +44,7 @@ import { TestTableComponent } from './test-table/test-table.component';
     ColumnSelectorComponent,
     DeleteConfirmationModalComponent,
     StartButtonComponent,
+    ButtonComponent,
   ],
   templateUrl: './test-list.component.html',
 })

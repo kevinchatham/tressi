@@ -1,8 +1,7 @@
-<button
+<app-button
   (click)="start()"
-  class="btn btn-primary btn-circle btn-outline"
-  title="Start New Test"
+  [title]="'Start Test'"
+  [color]="'primary'"
+  [icon]="'dynamic_form'"
   [disabled]="isDisabled()"
->
-  <app-icon name="dynamic_form" />
-</button>
+/>

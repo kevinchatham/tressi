@@ -7,6 +7,7 @@ import {
   signal,
 } from '@angular/core';
 import { Router } from '@angular/router';
+import { ButtonComponent } from 'src/app/components/button/button.component';
 import { ThemeSwitcherComponent } from 'src/app/components/theme-switcher/theme-switcher.component';
 
 import { ConfigFormComponent } from '../../components/config-form/config-form.component';
@@ -34,6 +35,7 @@ import { ToastService } from '../../services/toast.service';
     ConfigurationCardComponent,
     SearchBarComponent,
     ImportConfigButtonComponent,
+    ButtonComponent,
   ],
   templateUrl: './settings.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

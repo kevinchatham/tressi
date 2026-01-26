@@ -1,7 +1,7 @@
-<button
+<app-button
   (click)="export()"
-  class="btn btn-circle btn-ghost text-info"
-  title="Export"
->
-  <app-icon name="file_save" />
-</button>
+  [color]="'info'"
+  [ghost]="true"
+  [icon]="'file_save'"
+  [title]="'Export'"
+/>

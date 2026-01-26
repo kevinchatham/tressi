@@ -6,7 +6,6 @@ import { IconComponent, IconName } from '../icon/icon.component';
 
 @Component({
   selector: 'app-status-badge',
-  standalone: true,
   imports: [CommonModule, IconComponent],
   templateUrl: './status-badge.component.html',
 })
@@ -18,22 +17,22 @@ export class StatusBadgeComponent {
   getStatusColor(): string {
     switch (this.status()) {
       case 'running':
-        return 'text-blue-600 bg-blue-100';
+        return 'text-info bg-info/20';
       case 'completed':
-        return 'text-green-600 bg-green-100';
+        return 'text-success bg-success/20';
       case 'failed':
-        return 'text-red-600 bg-red-100';
+        return 'text-error bg-error/20';
       default:
-        return 'text-gray-600 bg-gray-100';
+        return 'text-neutral bg-neutral/20';
     }
   }
 
   getStatusIcon(): IconName {
     switch (this.status()) {
       case 'running':
-        return 'rocket';
+        return 'dynamic_form';
       case 'completed':
-        return 'select';
+        return 'check';
       case 'failed':
         return 'warning';
       default:

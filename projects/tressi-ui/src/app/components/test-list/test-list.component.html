@@ -11,14 +11,13 @@
       <!-- Bulk Actions -->
       @if (selectedTestsCount() > 0) {
         <div class="ml-auto flex items-center">
-          <button
-            class="btn btn-ghost btn-circle btn-error"
+          <app-button
             (click)="deleteTest(null, $event)"
             [disabled]="hasRunningTestsSelected()"
-          >
-            {{ selectedTestsCount() }}
-            <app-icon name="delete" />
-          </button>
+            [color]="'error'"
+            [title]="`Delete ${selectedTestsCount()}`"
+            [icon]="'delete'"
+          />
         </div>
       }
 
@@ -57,10 +56,11 @@
           Failed to Load Tests
         </h2>
         <p class="text-base-content/70 mb-4">{{ errorMessage() }}</p>
-        <button class="btn btn-primary gap-2" (click)="refreshTests()">
-          <app-icon name="search" />
-          Try Again
-        </button>
+        <app-button
+          (click)="refreshTests()"
+          [title]="'Try Again'"
+          [icon]="'search'"
+        />
       </div>
     </div>
   }

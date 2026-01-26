@@ -9,9 +9,9 @@ import {
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
+import { ButtonComponent } from 'src/app/components/button/button.component';
 
 import { HeaderComponent } from '../../components/header/header.component';
-import { IconComponent } from '../../components/icon/icon.component';
 import { StartButtonComponent } from '../../components/start-button/start-button.component';
 import { TestListComponent } from '../../components/test-list/test-list.component';
 import { ConfigService } from '../../services/config.service';
@@ -25,9 +25,9 @@ import { ConfigDocument } from '../../services/rpc.service';
   selector: 'app-dashboard',
   imports: [
     HeaderComponent,
-    IconComponent,
     TestListComponent,
     StartButtonComponent,
+    ButtonComponent,
   ],
   templateUrl: './dashboard.component.html',
 })

@@ -1,17 +1,14 @@
 <div class="p-16">
   <app-header>
-    <button
+    <app-button
       (click)="deleteTest()"
-      class="btn btn-error btn-circle btn-outline"
-      title="Delete Test"
+      [color]="'error'"
+      [icon]="'delete'"
       [disabled]="testData()?.status === 'running'"
-    >
-      <app-icon name="delete" />
-    </button>
+      [title]="'Delete'"
+    />
     <div class="dropdown dropdown-center">
-      <button tabindex="0" class="btn btn-outline btn-circle btn-primary">
-        <app-icon name="save_as" />
-      </button>
+      <app-button [color]="'primary'" [tabindex]="0" [icon]="'save_as'" />
       <ul
         tabindex="0"
         class="dropdown-content bg-base-100 rounded-box ring-base-content/10 z-50 mt-4 w-36 p-2 shadow-lg ring-1"
@@ -42,13 +39,12 @@
         </li>
       </ul>
     </div>
-    <button
+    <app-button
       (click)="goBack()"
-      class="btn btn-outline btn-circle btn-info"
-      title="Dashboard"
-    >
-      <app-icon name="browse_activity" />
-    </button>
+      [color]="'info'"
+      [title]="'Dashboard'"
+      [icon]="'browse_activity'"
+    />
   </app-header>
 
   <!-- Error State -->
@@ -60,13 +56,12 @@
           Failed to Load Test Details
         </h2>
         <p class="text-base-content/70 mb-4">{{ errorMessage() }}</p>
-        <button
-          class="btn btn-primary gap-2"
-          (click)="loadTestDetails(testId()!)"
-        >
-          <app-icon name="search" />
-          Try Again
-        </button>
+        <app-button
+          (click)="loadTestDetails(testId())"
+          [title]="'Try Again'"
+          [color]="'primary'"
+          [icon]="'search'"
+        />
       </div>
     </div>
   }

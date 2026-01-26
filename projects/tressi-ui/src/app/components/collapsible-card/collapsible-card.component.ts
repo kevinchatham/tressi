@@ -7,12 +7,11 @@ import {
   TemplateRef,
 } from '@angular/core';
 
-import { IconComponent } from '../icon/icon.component';
+import { ButtonComponent } from '../button/button.component';
 
 @Component({
   selector: 'app-collapsible-card',
-  standalone: true,
-  imports: [CommonModule, IconComponent],
+  imports: [CommonModule, ButtonComponent],
   templateUrl: './collapsible-card.component.html',
 })
 export class CollapsibleCardComponent {

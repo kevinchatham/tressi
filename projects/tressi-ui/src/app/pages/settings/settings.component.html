@@ -8,20 +8,18 @@
       />
     }
     @if (!hasNoConfigs() && !showForm()) {
-      <button
+      <app-button
         (click)="startCreate()"
-        class="btn btn-primary btn-circle btn-outline"
-        title="New Config"
-      >
-        <app-icon name="post_add" />
-      </button>
-      <button
+        [color]="'primary'"
+        [title]="'New Config'"
+        [icon]="'post_add'"
+      />
+      <app-button
         (click)="navigateToDashboard()"
-        class="btn btn-outline btn-circle btn-info"
-        title="Dashboard"
-      >
-        <app-icon name="browse_activity" />
-      </button>
+        [color]="'info'"
+        [title]="'Dashboard'"
+        [icon]="'browse_activity'"
+      />
     }
   </app-header>
 
@@ -54,10 +52,12 @@
           <p class="text-base-content/70 mb-4 text-lg">
             No configurations found
           </p>
-          <button (click)="startCreate()" class="btn btn-primary">
-            <app-icon name="add" />
-            Create your first configuration
-          </button>
+          <app-button
+            (click)="startCreate()"
+            [color]="'primary'"
+            [icon]="'add'"
+            [title]="'Create'"
+          />
         </div>
       </div>
     }
@@ -90,19 +90,31 @@
     <h3 class="text-lg font-semibold">Delete Configuration</h3>
     <p class="py-4">
       Are you sure you want to delete
-      <strong>{{ getConfigToDeleteName() }}</strong
-      >?
+      <strong>
+        {{ getConfigToDeleteName() }}
+      </strong>
+      ?
     </p>
     <div class="alert alert-warning mt-4">
       <app-icon name="warning" />
-      <span
-        >All tests and metrics linked to this configuration will be permanently
-        removed.</span
-      >
+      <span>
+        All tests and metrics linked to this configuration will be permanently
+        removed.
+      </span>
     </div>
     <div class="mt-6 flex justify-end gap-3">
-      <button (click)="cancelDelete()" class="btn btn-ghost">Cancel</button>
-      <button (click)="deleteConfig()" class="btn btn-error">Delete</button>
+      <app-button
+        (click)="cancelDelete()"
+        [icon]="'close'"
+        [title]="'Cancel'"
+        [ghost]="true"
+      />
+      <app-button
+        (click)="deleteConfig()"
+        [icon]="'delete'"
+        [color]="'error'"
+        [title]="'Delete'"
+      />
     </div>
   </div>
 </div>

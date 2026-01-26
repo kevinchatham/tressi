@@ -6,15 +6,12 @@
       @for (content of headerContent(); track content) {
         <ng-container [ngTemplateOutlet]="content" />
       }
-      <button
-        class="btn btn-ghost btn-circle"
+      <app-button
         (click)="toggleCollapsed()"
         [title]="collapsed() ? 'Expand' : 'Collapse'"
-      >
-        <app-icon
-          [name]="collapsed() ? 'keyboard_arrow_down' : 'keyboard_arrow_up'"
-        />
-      </button>
+        [icon]="collapsed() ? 'keyboard_arrow_down' : 'keyboard_arrow_up'"
+        [ghost]="true"
+      />
     </div>
   </div>
 

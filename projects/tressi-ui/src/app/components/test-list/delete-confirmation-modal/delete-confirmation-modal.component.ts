@@ -1,11 +1,11 @@
 import { Component, input, output } from '@angular/core';
 
 import type { TestDocument } from '../../../services/rpc.service';
+import { ButtonComponent } from '../../button/button.component';
 
 @Component({
   selector: 'app-delete-confirmation-modal',
-  standalone: true,
-  imports: [],
+  imports: [ButtonComponent],
   templateUrl: './delete-confirmation-modal.component.html',
 })
 export class DeleteConfirmationModalComponent {

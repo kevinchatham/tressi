@@ -1,24 +1,27 @@
-<div class="dropdown dropdown-end" [class.dropdown-open]="showColumnSelector()">
-  <button
-    class="btn btn-ghost btn-circle gap-1"
+<div
+  class="dropdown dropdown-end"
+  [class.dropdown-open]="showColumnSelector()"
+  (outsideClick)="onCloseSelector()"
+  appOutsideClick
+>
+  <app-button
     (click)="onToggleSelector()"
-    (blur)="onCloseSelector()"
-    tabindex="0"
-  >
-    <app-icon name="view_column" />
-  </button>
+    [ghost]="true"
+    [title]="'Customize Columns'"
+    [tabindex]="0"
+    [icon]="'view_column'"
+  />
   <div
     class="dropdown-content bg-base-100 rounded-box ring-base-content/10 z-50 w-lg p-6 shadow-lg ring-1"
   >
     <div class="mb-4 flex items-center justify-between">
       <h3 class="text-base-content font-semibold">Customize Columns</h3>
-      <button
-        class="btn btn-xs btn-ghost"
+      <app-button
         (click)="onResetColumns()"
-        title="Reset to defaults"
-      >
-        Reset
-      </button>
+        [title]="'Reset'"
+        [icon]="'reset_focus'"
+        [ghost]="true"
+      />
     </div>
 
     <!-- Three Column Groups -->

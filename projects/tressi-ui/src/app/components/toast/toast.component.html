@@ -3,13 +3,12 @@
     <div [class]="alertClass() + ' toast-animation'" role="alert">
       <app-icon [name]="iconName()" />
       <span>{{ toastService.toastMessage() }}</span>
-      <button
-        class="btn btn-sm btn-ghost"
+      <app-button
         (click)="onDismiss()"
-        aria-label="Dismiss notification"
-      >
-        <app-icon name="close" />
-      </button>
+        [ghost]="true"
+        [title]="'Close'"
+        [icon]="'close'"
+      />
     </div>
   </div>
 }

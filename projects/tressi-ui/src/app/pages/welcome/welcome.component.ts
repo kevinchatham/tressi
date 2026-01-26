@@ -1,11 +1,10 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
-
-import { IconComponent } from '../../components/icon/icon.component';
+import { ButtonComponent } from 'src/app/components/button/button.component';
 
 @Component({
   selector: 'app-welcome',
-  imports: [RouterModule, IconComponent],
+  imports: [RouterModule, ButtonComponent],
   templateUrl: './welcome.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

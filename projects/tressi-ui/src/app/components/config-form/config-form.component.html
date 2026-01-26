@@ -101,18 +101,21 @@
   <!-- Form Actions -->
   <div class="bg-base-200 p-4">
     <div class="flex justify-end gap-3">
-      <button type="button" class="btn btn-ghost" (click)="onCancel($event)">
-        Cancel
-      </button>
+      <app-button
+        (click)="onCancel($event)"
+        [color]="'error'"
+        [ghost]="true"
+        [title]="'Cancel'"
+        [icon]="'close'"
+      />
       <div class="flex items-center gap-2">
-        <!-- Save Button -->
-        <button
-          type="submit"
-          class="btn btn-primary"
+        <app-button
+          [color]="'success'"
+          [title]="'Save'"
+          [icon]="'check'"
+          [type]="'submit'"
           [disabled]="!isFormValid()"
-        >
-          Save
-        </button>
+        />
       </div>
     </div>
   </div>

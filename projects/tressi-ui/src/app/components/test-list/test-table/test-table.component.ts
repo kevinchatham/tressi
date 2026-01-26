@@ -14,7 +14,6 @@ type ValueExtractor = (test: TestDocument) => string;
 
 @Component({
   selector: 'app-test-table',
-  standalone: true,
   imports: [IconComponent, DragDropModule, StatusBadgeComponent],
   templateUrl: './test-table.component.html',
 })

@@ -25,6 +25,7 @@ import {
   ConfigDocument,
   ModifyConfigRequest,
 } from '../../services/rpc.service';
+import { ButtonComponent } from '../button/button.component';
 import { IconComponent } from '../icon/icon.component';
 import { AdvancedConfigComponent } from './advanced-config/advanced-config.component';
 import { BasicConfigComponent } from './basic-config/basic-config.component';
@@ -47,6 +48,7 @@ export type ModifyConfigRequestFormType = ReturnType<
     BasicConfigComponent,
     GlobalConfigComponent,
     Field,
+    ButtonComponent,
   ],
   templateUrl: './config-form.component.html',
 })

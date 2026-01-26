@@ -1,12 +1,12 @@
 import { Component, computed, inject, output } from '@angular/core';
 
 import { ToastService } from '../../services/toast.service';
+import { ButtonComponent } from '../button/button.component';
 import { IconComponent, IconName } from '../icon/icon.component';
 
 @Component({
   selector: 'app-toast',
-  standalone: true,
-  imports: [IconComponent],
+  imports: [IconComponent, ButtonComponent],
   templateUrl: './toast.component.html',
   styleUrls: ['./toast.component.css'],
 })
@@ -21,7 +21,7 @@ export class ToastComponent {
       case 'warning':
         return 'warning';
       case 'success':
-        return 'check_circle';
+        return 'check';
       case 'info':
       default:
         return 'info';

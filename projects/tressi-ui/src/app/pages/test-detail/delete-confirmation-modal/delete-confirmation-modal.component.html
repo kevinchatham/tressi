@@ -32,8 +32,18 @@
     </div>
 
     <div class="modal-action">
-      <button class="btn btn-ghost" (click)="onCancel()">Cancel</button>
-      <button class="btn btn-error" (click)="onConfirm()">Delete Test</button>
+      <app-button
+        (click)="onCancel()"
+        [ghost]="true"
+        [title]="'Cancel'"
+        [icon]="'close'"
+      />
+      <app-button
+        (click)="onConfirm()"
+        [title]="'Delete'"
+        [color]="'error'"
+        [icon]="'delete'"
+      />
     </div>
   </div>
 </div>

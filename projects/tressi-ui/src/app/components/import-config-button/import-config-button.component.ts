@@ -3,12 +3,11 @@ import { validateConfig } from '@tressi-cli/common/config';
 
 import { NameService } from '../../services/name.service';
 import { ModifyConfigRequest } from '../../services/rpc.service';
-import { IconComponent } from '../icon/icon.component';
+import { ButtonComponent } from '../button/button.component';
 
 @Component({
   selector: 'app-import-config-button',
-  standalone: true,
-  imports: [IconComponent],
+  imports: [ButtonComponent],
   templateUrl: './import-config-button.component.html',
 })
 export class ImportConfigButtonComponent {

@@ -9,13 +9,12 @@ import {
 
 import { ConfigDocument } from '../../services/rpc.service';
 import { TimeService } from '../../services/time.service';
+import { ButtonComponent } from '../button/button.component';
 import { ExportConfigButtonComponent } from '../export-config-button/export-config-button.component';
-import { IconComponent } from '../icon/icon.component';
 
 @Component({
   selector: 'app-configuration-card',
-  standalone: true,
-  imports: [IconComponent, ExportConfigButtonComponent],
+  imports: [ExportConfigButtonComponent, ButtonComponent],
   templateUrl: './configuration-card.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

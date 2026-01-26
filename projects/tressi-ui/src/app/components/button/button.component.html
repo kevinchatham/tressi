@@ -1,0 +1,19 @@
+<button
+  (click)="onClick($event)"
+  (mouseenter)="isHovered.set(true)"
+  (mouseleave)="isHovered.set(false)"
+  [attr.aria-label]="buttonTitle()"
+  [attr.aria-disabled]="disabled()"
+  [disabled]="disabled()"
+  [title]="buttonTitle()"
+  [class]="buttonClasses()"
+  [attr.type]="type()"
+  [attr.tabindex]="tabindex()"
+>
+  @if (title()) {
+    <span [class]="titleClasses()">{{ title() }}</span>
+  }
+  @if (icon()) {
+    <app-icon [name]="icon()" />
+  }
+</button>

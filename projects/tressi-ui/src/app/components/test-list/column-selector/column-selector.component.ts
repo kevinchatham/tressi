@@ -1,12 +1,12 @@
 import { Component, input, output } from '@angular/core';
 
+import { OutsideClickDirective } from '../../../directives/outside-click.directive';
 import { ColumnConfig } from '../../../services/local-storage.service';
-import { IconComponent } from '../../icon/icon.component';
+import { ButtonComponent } from '../../button/button.component';
 
 @Component({
   selector: 'app-column-selector',
-  standalone: true,
-  imports: [IconComponent],
+  imports: [ButtonComponent, OutsideClickDirective],
   templateUrl: './column-selector.component.html',
 })
 export class ColumnSelectorComponent {

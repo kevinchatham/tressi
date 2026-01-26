@@ -2,14 +2,12 @@
   <app-header>
     <!-- Configuration Selector -->
     <div class="dropdown dropdown-center">
-      <div
-        title="Select Configuration"
-        tabindex="0"
-        role="button"
-        class="btn btn-outline btn-circle btn-secondary"
-      >
-        <app-icon name="text_snippet" />
-      </div>
+      <app-button
+        [title]="'Select Configuration'"
+        [tabindex]="0"
+        [color]="'secondary'"
+        [icon]="'text_snippet'"
+      />
       <ul
         tabindex="0"
         class="dropdown-content bg-base-300 rounded-box z-1 max-h-96 w-52 overflow-y-auto p-2 shadow-2xl"
@@ -38,13 +36,13 @@
         (testStartFailed)="onTestStartFailed($event)"
       />
     }
-    <button
+
+    <app-button
       (click)="navigateToSettings()"
-      class="btn btn-outline btn-circle btn-info"
-      title="Settings"
-    >
-      <app-icon name="sdk" />
-    </button>
+      [title]="'Settings'"
+      [color]="'info'"
+      [icon]="'sdk'"
+    />
   </app-header>
 
   <!-- Test List Component -->

@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { ButtonComponent } from 'src/app/components/button/button.component';
 
 import { CollapsibleCardComponent } from '../../components/collapsible-card/collapsible-card.component';
 import { HeaderComponent } from '../../components/header/header.component';
@@ -25,7 +26,6 @@ import { TestDetailExportService } from './test-detail-export.service';
 
 @Component({
   selector: 'app-test-detail',
-  standalone: true,
   imports: [
     CommonModule,
     LineChartComponent,
@@ -36,6 +36,7 @@ import { TestDetailExportService } from './test-detail-export.service';
     DeleteConfirmationModalComponent,
     MetricsSummaryComponent,
     JsonTextareaComponent,
+    ButtonComponent,
   ],
   templateUrl: './test-detail.component.html',
 })

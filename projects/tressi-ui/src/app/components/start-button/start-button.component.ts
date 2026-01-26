@@ -12,12 +12,11 @@ import { Subject, takeUntil } from 'rxjs';
 import { EventService } from '../../services/event.service';
 import { LogService } from '../../services/log.service';
 import { ConfigDocument, RPCService } from '../../services/rpc.service';
-import { IconComponent } from '../icon/icon.component';
+import { ButtonComponent } from '../button/button.component';
 
 @Component({
   selector: 'app-start-button',
-  standalone: true,
-  imports: [IconComponent],
+  imports: [ButtonComponent],
   templateUrl: './start-button.component.html',
 })
 export class StartButtonComponent implements OnDestroy {

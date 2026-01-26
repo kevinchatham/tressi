@@ -2,15 +2,12 @@
   <div class="flex justify-between">
     <span class="text-lg font-semibold">{{ input().name }}</span>
     <div class="-mt-1.5 ml-2 flex gap-1">
-      <button
+      <app-button
         (click)="toggleCollapsed()"
-        class="btn btn-ghost btn-circle"
+        [ghost]="true"
         [title]="collapsed() ? 'Expand' : 'Collapse'"
-      >
-        <app-icon
-          [name]="collapsed() ? 'keyboard_arrow_down' : 'keyboard_arrow_up'"
-        />
-      </button>
+        [icon]="collapsed() ? 'keyboard_arrow_down' : 'keyboard_arrow_up'"
+      />
     </div>
   </div>
   <div class="mt-2 space-y-1 text-sm">
@@ -139,28 +136,27 @@
 
     <!-- Action Buttons -->
     <div class="border-base-300 mt-4 flex justify-end gap-2 border-t pt-4">
-      <button
+      <app-button
         (click)="delete.emit(input())"
-        class="btn btn-ghost text-error btn-circle"
-        title="Delete"
-      >
-        <app-icon name="delete" />
-      </button>
+        [color]="'error'"
+        [ghost]="true"
+        [title]="'Delete'"
+        [icon]="'delete'"
+      />
       <app-export-config-button [config]="input()" />
-      <button
+      <app-button
         (click)="edit.emit(input())"
-        class="btn btn-ghost text-success btn-circle"
-        title="Edit"
-      >
-        <app-icon name="edit_square" />
-      </button>
-      <button
+        [color]="'success'"
+        [ghost]="true"
+        [icon]="'edit_square'"
+        [title]="'Edit'"
+      />
+      <app-button
         (click)="duplicate.emit(input())"
-        class="btn btn-ghost btn-circle"
-        title="Duplicate"
-      >
-        <app-icon name="copy_all" />
-      </button>
+        [ghost]="true"
+        [icon]="'copy_all'"
+        [title]="'Copy'"
+      />
     </div>
   }
 </div>

@@ -8,7 +8,6 @@ import {
 
 @Component({
   selector: 'app-loading',
-  standalone: true,
   imports: [],
   templateUrl: './loading.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

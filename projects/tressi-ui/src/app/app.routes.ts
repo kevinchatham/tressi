@@ -9,6 +9,7 @@ import {
 import { DashboardComponent } from './pages/dashboard/dashboard.component';
 import { ServerUnavailableComponent } from './pages/server-unavailable/server-unavailable.component';
 import { SettingsComponent } from './pages/settings/settings.component';
+import { ShowcaseComponent } from './pages/showcase/showcase.component';
 import { TestDetailComponent } from './pages/test-detail/test-detail.component';
 import { WelcomeComponent } from './pages/welcome/welcome.component';
 import { ConfigService } from './services/config.service';
@@ -99,6 +100,11 @@ export const routes: Routes = [
     component: DashboardComponent,
     canActivate: [healthCheckGuard, configGuard],
     data: { title: 'Tressi - Dashboard' },
+  },
+  {
+    path: 'showcase',
+    component: ShowcaseComponent,
+    data: { title: 'Tressi - Showcase' },
   },
   {
     path: 'tests/:testId',

@@ -28,8 +28,18 @@
       undone.
     </p>
     <div class="mt-6 flex justify-end gap-3">
-      <button (click)="onCancelDelete()" class="btn btn-ghost">Cancel</button>
-      <button (click)="onConfirmDelete()" class="btn btn-error">Delete</button>
+      <app-button
+        (click)="onCancelDelete()"
+        [ghost]="true"
+        [title]="'Cancel'"
+        [icon]="'close'"
+      />
+      <app-button
+        (click)="onConfirmDelete()"
+        [color]="'error'"
+        [title]="'Delete'"
+        [icon]="'delete'"
+      />
     </div>
   </div>
 </div>

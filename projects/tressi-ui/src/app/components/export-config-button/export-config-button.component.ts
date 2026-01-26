@@ -1,12 +1,11 @@
 import { Component, input } from '@angular/core';
 
 import { ConfigDocument } from '../../services/rpc.service';
-import { IconComponent } from '../icon/icon.component';
+import { ButtonComponent } from '../button/button.component';
 
 @Component({
   selector: 'app-export-config-button',
-  standalone: true,
-  imports: [IconComponent],
+  imports: [ButtonComponent],
   templateUrl: './export-config-button.component.html',
 })
 export class ExportConfigButtonComponent {

@@ -1,12 +1,10 @@
 <div class="dropdown dropdown-center">
-  <div
-    title="Theme"
-    tabindex="0"
-    role="button"
-    class="btn btn-circle btn-rainbow-outline"
-  >
-    <app-icon name="palette" />
-  </div>
+  <app-button
+    [color]="'rainbow'"
+    [title]="'Theme'"
+    [tabindex]="0"
+    [icon]="'palette'"
+  />
   <ul
     tabindex="0"
     class="dropdown-content bg-base-300 rounded-box z-1 max-h-96 w-52 overflow-y-auto p-2 shadow-2xl"
