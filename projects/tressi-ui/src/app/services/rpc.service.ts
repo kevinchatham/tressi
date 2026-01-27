@@ -11,6 +11,31 @@ export class RPCService {
       credentials: 'include',
     },
   }).api;
+
+  /**
+   * Retrieves the current test status from the backend
+   * @returns Promise resolving to test status information
+   */
+  async getTestStatus(): Promise<{ isRunning: boolean; jobId?: string }> {
+    try {
+      const response = await this.client.test.status.$get();
+      if (!response.ok) {
+        throw new Error(`Failed to get test status: ${response.statusText}`);
+      }
+      const data = await response.json();
+
+      if (data.isRunning && 'jobId' in data) {
+        return {
+          isRunning: true,
+          jobId: data.jobId as string,
+        };
+      }
+
+      return { isRunning: false };
+    } catch {
+      return { isRunning: false }; // Safe default
+    }
+  }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -109,4 +134,9 @@ export type DeleteTestResponseSuccess = Extract<
 export type DeleteTestResponseError = Extract<
   DeleteTestResponse,
   { error: object }
+>;
+
+// ! Test Status
+export type GetTestStatusResponse = InferResponseType<
+  typeof client.test.status.$get
 >;

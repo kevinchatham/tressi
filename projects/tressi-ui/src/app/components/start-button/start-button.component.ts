@@ -28,37 +28,48 @@ export class StartButtonComponent implements OnDestroy {
   /** Input configuration */
   config = input<ConfigDocument | null>(null);
 
-  /** Optional input to override test running state */
-  testRunning = input<boolean | undefined>(undefined);
-
   /** Output events */
   testStarted = output<void>();
   testStartFailed = output<Error>();
 
   /** Internal state signals */
-  isTestRunning = signal<boolean>(false);
+  isTestRunning = signal<boolean>(true);
 
   /** Computed disabled state */
   isDisabled = computed(() => {
     const config = this.config();
-    const externalTestRunning = this.testRunning();
-    const isRunning =
-      externalTestRunning !== undefined
-        ? externalTestRunning
-        : this.isTestRunning();
-    return !config || 'error' in config || !config.id || isRunning;
+    return !config || 'error' in config || !config.id || this.isTestRunning();
   });
 
   /** Subject for managing subscription cleanup */
   private readonly destroy$ = new Subject<void>();
 
   constructor() {
+    this.initializeTestState(); // Initialize state from backend before setting up listeners
     this.setupTestEventsListener();
   }
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  /**
+   * Initializes the test state by checking the backend for any running tests
+   * This ensures the button state is correct after page refresh
+   */
+  private async initializeTestState(): Promise<void> {
+    try {
+      const status = await this.rpc.getTestStatus();
+      this.isTestRunning.set(status.isRunning);
+      this.logService.info('Test state initialized:', {
+        isRunning: status.isRunning,
+        jobId: status.jobId,
+      });
+    } catch (error) {
+      this.logService.error('Failed to initialize test state:', error);
+      this.isTestRunning.set(false); // Safe default
+    }
   }
 
   /**
