@@ -116,6 +116,12 @@ export type GlobalSummary = {
   averageRequestsPerSecond: number;
   /** Last one sec requests per second achieved for this endpoint. */
   peakRequestsPerSecond: number;
+  /** Total number of bytes sent across all requests. */
+  networkBytesSent: number;
+  /** Total number of bytes received across all responses. */
+  networkBytesReceived: number;
+  /** Network throughput in bytes per second. */
+  networkBytesPerSec: number;
 };
 
 /**

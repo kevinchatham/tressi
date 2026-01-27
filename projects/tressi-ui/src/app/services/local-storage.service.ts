@@ -12,10 +12,26 @@ export const ColumnConfigSchema = z.object({
   label: z.string(),
   field: z.custom<FieldPath>(),
   format: z
-    .enum(['number', 'percentage', 'milliseconds', 'datetime', 'duration'])
+    .enum([
+      'number',
+      'percentage',
+      'milliseconds',
+      'datetime',
+      'duration',
+      'bytes',
+      'bytesPerSec',
+    ])
     .optional(),
   visible: z.boolean(),
-  group: z.enum(['basic', 'latency', 'request']),
+  group: z.enum([
+    'basic',
+    'latency',
+    'request',
+    'network',
+    'configuration',
+    'metadata',
+    'performance',
+  ]),
   sortable: z.boolean().optional(),
   order: z.number(),
   draggable: z.boolean().optional(),

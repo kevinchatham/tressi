@@ -62,6 +62,9 @@ export class TestListColumnsService {
         basic: [],
         latency: [],
         request: [],
+        network: [],
+        configuration: [],
+        performance: [],
       };
       columns.forEach((col) => {
         if (

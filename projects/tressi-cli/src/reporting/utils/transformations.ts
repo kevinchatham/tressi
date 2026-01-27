@@ -38,6 +38,9 @@ export function transformAggregatedMetricToTestSummary(
     finalDurationSec: roundToDecimals(finalDurationSec),
     epochStartedAt: epochStartedAt, // ← Use required param
     epochEndedAt: epochEndedAt, // ← Use required param
+    networkBytesSent: global.networkBytesSent || 0,
+    networkBytesReceived: global.networkBytesReceived || 0,
+    networkBytesPerSec: global.networkBytesPerSec || 0,
   };
 
   const endpointSummaries: EndpointSummary[] = Object.entries(

@@ -86,6 +86,58 @@ export class TestTableComponent {
       if (!test.summary) return '—';
       return this.formatDate(test.summary.global.epochEndedAt);
     },
+    'summary.global.networkBytesSent': (test) => {
+      if (!test.summary) return '—';
+      return this.formatBytes(test.summary.global.networkBytesSent);
+    },
+    'summary.global.networkBytesReceived': (test) => {
+      if (!test.summary) return '—';
+      return this.formatBytes(test.summary.global.networkBytesReceived);
+    },
+    'summary.global.networkBytesPerSec': (test) => {
+      if (!test.summary) return '—';
+      return this.formatBytesPerSec(test.summary.global.networkBytesPerSec);
+    },
+    'summary.global.errorRate': (test) => {
+      if (!test.summary) return '—';
+      return this.formatPercentage(test.summary.global.errorRate);
+    },
+    'summary.global.averageRequestsPerSecond': (test) => {
+      if (!test.summary) return '—';
+      return test.summary.global.averageRequestsPerSecond.toLocaleString();
+    },
+    'summary.global.peakRequestsPerSecond': (test) => {
+      if (!test.summary) return '—';
+      return test.summary.global.peakRequestsPerSecond.toLocaleString();
+    },
+    'summary.global.finalDurationSec': (test) => {
+      if (!test.summary) return '—';
+      return this.testService.formatDuration(
+        test.summary.global.finalDurationSec * 1000,
+      );
+    },
+    'summary.configSnapshot.options.durationSec': (test) => {
+      if (!test.summary?.configSnapshot?.options) return '—';
+      return this.testService.formatDuration(
+        test.summary.configSnapshot.options.durationSec * 1000,
+      );
+    },
+    'summary.configSnapshot.options.threads': (test) => {
+      if (!test.summary?.configSnapshot?.options) return '—';
+      return test.summary.configSnapshot.options.threads.toLocaleString();
+    },
+    'summary.configSnapshot.options.workerMemoryLimit': (test) => {
+      if (!test.summary?.configSnapshot?.options) return '—';
+      return this.formatBytes(
+        test.summary.configSnapshot.options.workerMemoryLimit,
+      );
+    },
+    'summary.configSnapshot.options.rampUpDurationSec': (test) => {
+      if (!test.summary?.configSnapshot?.options) return '—';
+      return this.testService.formatDuration(
+        test.summary.configSnapshot.options.rampUpDurationSec * 1000,
+      );
+    },
   };
 
   getColumnValue(test: TestDocument, column: ColumnConfig): string {
@@ -127,6 +179,31 @@ export class TestTableComponent {
 
   formatDate(timestamp: number): string {
     return new Date(timestamp).toLocaleString();
+  }
+
+  formatBytes(bytes: number): string {
+    if (bytes === 0) return '0 B';
+
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+
+    return `${(bytes / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`;
+  }
+
+  formatBytesPerSec(bytesPerSec: number): string {
+    if (bytesPerSec === 0) return '0 B/s';
+
+    const k = 1024;
+    const sizes = ['B/s', 'KB/s', 'MB/s', 'GB/s', 'TB/s'];
+    const i = Math.floor(Math.log(bytesPerSec) / Math.log(k));
+
+    return `${(bytesPerSec / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`;
+  }
+
+  formatPercentage(value: number): string {
+    if (value === null || value === undefined) return '0.0%';
+    return `${(value * 100).toFixed(1)}%`;
   }
 
   calculateErrorRate(test: TestDocument): string {
