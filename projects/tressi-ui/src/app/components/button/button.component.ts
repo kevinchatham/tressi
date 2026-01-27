@@ -39,7 +39,7 @@ export class ButtonComponent {
   buttonTitle = computed(() => this.tooltip() || this.title() || '');
 
   baseButtonClasses = computed<string[]>(() => {
-    const classes = ['btn', 'transition-all', 'duration-300', 'ease-in-out'];
+    const classes = ['btn', 'transition-all', 'duration-500', 'ease-in-out'];
 
     if (this.ghost()) {
       classes.push('btn-ghost');

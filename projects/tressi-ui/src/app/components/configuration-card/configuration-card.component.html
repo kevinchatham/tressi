@@ -19,7 +19,7 @@
 
   <!-- Expanded Configuration Details -->
   @if (!collapsed()) {
-    <div class="border-base-300 mt-4 space-y-3 border-t pt-4">
+    <div class="border-neutral mt-4 space-y-3 border-t pt-4">
       <!-- Requests Section -->
       <div>
         <h4 class="text-base-content/70 mb-2 text-sm font-semibold">
@@ -50,9 +50,11 @@
                   {{ request.url }}
                 </span>
               </div>
-              <span class="text-base-content/60 text-xs">
-                {{ request.rps }} RPS
-              </span>
+              <div class="flex items-center gap-1">
+                <span class="text-base-content/60 text-xs">
+                  {{ request.rps }} RPS
+                </span>
+              </div>
             </div>
           }
           @if (input().config.requests.length > 3) {
@@ -64,7 +66,7 @@
       </div>
 
       <!-- Configuration Options -->
-      <div class="grid grid-cols-2 gap-4">
+      <div class="grid grid-cols-3 place-items-center gap-4">
         <div>
           <h4 class="text-base-content/70 mb-1 text-sm font-semibold">
             Duration
@@ -83,16 +85,34 @@
             }}
           </p>
         </div>
-        @if (input().config.options.rampUpDurationSec > 0) {
-          <div>
-            <h4 class="text-base-content/70 mb-1 text-sm font-semibold">
-              Ramp-up
-            </h4>
-            <p class="text-sm">
-              {{ input().config.options.rampUpDurationSec }} seconds
-            </p>
-          </div>
-        }
+        <div>
+          <h4 class="text-base-content/70 mb-1 text-sm font-semibold">
+            Ramp Up
+          </h4>
+          <p class="text-sm">{{ getEffectiveRampUpDuration() }} seconds</p>
+        </div>
+        <div>
+          <h4 class="text-base-content/70 mb-1 text-sm font-semibold">
+            Early Exit
+          </h4>
+          <p class="text-sm">
+            {{ getEffectiveEarlyExitStatus() ? 'Enabled' : 'Disabled' }}
+          </p>
+        </div>
+        <div>
+          <h4 class="text-base-content/70 mb-1 text-sm font-semibold">
+            Endpoints
+          </h4>
+          <p class="text-sm">
+            {{ getTotalEndpoints() }}
+          </p>
+        </div>
+        <div>
+          <h4 class="text-base-content/70 mb-1 text-sm font-semibold">
+            Total RPS
+          </h4>
+          <p class="text-sm">{{ getTotalRPS() }} RPS</p>
+        </div>
         @if (input().config.options.exportPath) {
           <div>
             <h4 class="text-base-content/70 mb-1 text-sm font-semibold">
@@ -107,35 +127,10 @@
           </div>
         }
       </div>
-
-      <!-- Global Headers -->
-      @if (getHeadersCount() > 0) {
-        <div>
-          <h4 class="text-base-content/70 mb-2 text-sm font-semibold">
-            Global Headers
-          </h4>
-          <div class="space-y-1">
-            @for (header of getHeadersEntries().slice(0, 3); track header[0]) {
-              <div class="bg-base-200/50 flex justify-between rounded-xl p-2">
-                <span class="font-mono text-sm">{{ header[0] }}:</span>
-                <span class="truncate text-sm" [title]="header[1]">{{
-                  header[1]
-                }}</span>
-              </div>
-            }
-            @if (getHeadersCount() > 3) {
-              <div class="text-base-content/60 text-center text-sm">
-                +{{ getHeadersCount() - 3 }}
-                more
-              </div>
-            }
-          </div>
-        </div>
-      }
     </div>
 
     <!-- Action Buttons -->
-    <div class="border-base-300 mt-4 flex justify-end gap-2 border-t pt-4">
+    <div class="border-neutral mt-4 flex justify-end gap-2 border-t pt-4">
       <app-button
         (click)="delete.emit(input())"
         [color]="'error'"

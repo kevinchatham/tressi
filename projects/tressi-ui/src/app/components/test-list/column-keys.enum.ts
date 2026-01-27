@@ -3,7 +3,6 @@ export enum ColumnKey {
   STATUS = 'status',
   START_TIME = 'startTime',
   END_TIME = 'endTime',
-  ID = 'id',
   DURATION = 'duration',
   TOTAL_REQUESTS = 'totalRequests',
   ERROR_RATE = 'errorRate',
