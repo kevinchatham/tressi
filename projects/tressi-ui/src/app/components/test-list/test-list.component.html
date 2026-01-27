@@ -10,7 +10,7 @@
 
       <!-- Bulk Actions -->
       @if (selectedTestsCount() > 0) {
-        <div class="ml-auto flex items-center">
+        <div class="mr-2 ml-auto flex items-center">
           <app-button
             (click)="deleteTest(null, $event)"
             [disabled]="hasRunningTestsSelected()"
