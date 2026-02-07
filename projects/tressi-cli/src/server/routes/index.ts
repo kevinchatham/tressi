@@ -1,14 +1,13 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
-import { logger } from 'hono/logger';
 
+import { ServerEventMessage, ServerEvents } from '../../events/event-types';
 import { globalEventEmitter } from '../../events/global-event-emitter';
-import { ISSEClientManager } from '../../types/workers/interfaces';
-import createBrowserApp from './browser';
-import configs from './configs';
-import createHealthApp from './health';
-import loadTest from './load-test';
-import createMetricsApp from './metrics';
+import { ISSEClientManager } from '../../workers/interfaces';
+import createBrowserApp from './browser-routes';
+import configs from './config-routes';
+import createMetricsApp from './metrics-routes';
+import tests from './test-routes';
 
 /**
  * Creates the main Hono application with all routes and middleware configured.
@@ -22,7 +21,6 @@ import createMetricsApp from './metrics';
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export function createApp(sseManager: ISSEClientManager, port: number) {
   const app = new Hono()
-    .use(logger())
     .use('*', async (c, next) => {
       const middleware = cors({
         origin: [`http://localhost:${port}`, 'http://localhost:4200'],
@@ -34,13 +32,41 @@ export function createApp(sseManager: ISSEClientManager, port: number) {
       return middleware(c, next);
     })
     .route('/api/config', configs)
-    .route('/api/health', createHealthApp(sseManager))
-    .route('/api/test', loadTest)
+    .route('/api/test', tests)
+    .route('/api/tests', tests)
     .route('/api/metrics', createMetricsApp(sseManager))
     .route('/', createBrowserApp());
 
-  globalEventEmitter.on('metrics', (metrics) => {
-    sseManager.broadcast(metrics);
+  globalEventEmitter.on(ServerEvents.METRICS, (testSummary) => {
+    const message: ServerEventMessage = {
+      event: ServerEvents.METRICS,
+      data: testSummary,
+    };
+    sseManager.broadcast(message);
+  });
+
+  globalEventEmitter.on(ServerEvents.TEST.STARTED, (data) => {
+    const message: ServerEventMessage = {
+      event: ServerEvents.TEST.STARTED,
+      data,
+    };
+    sseManager.broadcast(message);
+  });
+
+  globalEventEmitter.on(ServerEvents.TEST.COMPLETED, (data) => {
+    const message: ServerEventMessage = {
+      event: ServerEvents.TEST.COMPLETED,
+      data,
+    };
+    sseManager.broadcast(message);
+  });
+
+  globalEventEmitter.on(ServerEvents.TEST.FAILED, (data) => {
+    const message: ServerEventMessage = {
+      event: ServerEvents.TEST.FAILED,
+      data,
+    };
+    sseManager.broadcast(message);
   });
 
   return app;

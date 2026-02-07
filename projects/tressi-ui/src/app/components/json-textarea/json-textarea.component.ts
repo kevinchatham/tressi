@@ -26,6 +26,7 @@ export class JsonTextareaComponent<T> implements FormValueControl<T> {
   value = model<T>(null as T);
   rows = model<number>(3);
   placeholder = model<string>('');
+  disabled = model<boolean>(false);
   valueChange = output<T>();
 
   error = signal<string | null>(null);
@@ -50,7 +51,7 @@ export class JsonTextareaComponent<T> implements FormValueControl<T> {
     EditorView.theme(
       {
         '&.cm-editor': {
-          backgroundColor: this.themeService.base200(),
+          backgroundColor: this.themeService.base300(),
           color: this.themeService.baseContent(),
           height: 'auto',
           borderRadius: '8px',
@@ -58,7 +59,7 @@ export class JsonTextareaComponent<T> implements FormValueControl<T> {
         },
         '.cm-content': {},
         '.cm-gutters': {
-          backgroundColor: this.themeService.base100(),
+          backgroundColor: this.themeService.base300(),
           color: this.themeService.neutral(),
           border: 'none',
         },
@@ -96,6 +97,11 @@ export class JsonTextareaComponent<T> implements FormValueControl<T> {
   ]);
 
   handleValueChange(newValue: string): void {
+    // Don't process changes when disabled
+    if (this.disabled()) {
+      return;
+    }
+
     if (!newValue.trim()) {
       this.value.set(null as T);
       this.error.set(null);

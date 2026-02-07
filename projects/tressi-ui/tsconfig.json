@@ -15,14 +15,9 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "baseUrl": "./",
+    // using 'tressi-cli' imports directly causes issues with vite dev server, this fixes it
     "paths": {
-      "tressi-common": [
-        "../tressi-common/src/config/index.ts",
-        "../tressi-common/src/metrics/index.ts"
-      ],
-      "tressi-cli/src/server/routes/types": [
-        "../tressi-cli/src/server/routes/types.ts"
-      ]
+      "@tressi-cli/*": ["../tressi-cli/src/*"]
     }
   },
   "angularCompilerOptions": {

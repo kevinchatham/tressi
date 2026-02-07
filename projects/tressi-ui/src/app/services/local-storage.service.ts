@@ -1,13 +1,49 @@
 import { inject, Injectable, signal } from '@angular/core';
 import { z } from 'zod';
 
+import { DEFAULT_COLUMN_CONFIGS } from '../components/test-list/column-config.constants';
+import { FieldPath } from '../components/test-list/column-keys.enum';
 import { LogService } from './log.service';
 import { ConfigDocument } from './rpc.service';
 import { Theme } from './theme.service';
 
+export const ColumnConfigSchema = z.object({
+  key: z.string(),
+  label: z.string(),
+  field: z.custom<FieldPath>(),
+  format: z
+    .enum([
+      'number',
+      'percentage',
+      'milliseconds',
+      'datetime',
+      'duration',
+      'bytes',
+      'bytesPerSec',
+    ])
+    .optional(),
+  visible: z.boolean(),
+  group: z.enum([
+    'basic',
+    'latency',
+    'request',
+    'network',
+    'configuration',
+    'metadata',
+    'performance',
+  ]),
+  sortable: z.boolean().optional(),
+  order: z.number(),
+  draggable: z.boolean().optional(),
+  width: z.number().optional(),
+});
+
+export type ColumnConfig = z.infer<typeof ColumnConfigSchema>;
+
 export const UserPreferencesSchema = z.object({
   selectedTheme: z.custom<Theme>(),
   lastSelectedConfig: z.custom<ConfigDocument | null>(),
+  columnPreferences: z.array(ColumnConfigSchema).nullable(),
 });
 
 export type UserPreferences = z.infer<typeof UserPreferencesSchema>;
@@ -74,6 +110,7 @@ export class LocalStorageService {
     return {
       selectedTheme: 'dark',
       lastSelectedConfig: null,
+      columnPreferences: DEFAULT_COLUMN_CONFIGS,
     };
   }
 

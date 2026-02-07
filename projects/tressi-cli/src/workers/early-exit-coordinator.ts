@@ -1,11 +1,10 @@
-import type { TressiConfig } from 'tressi-common/config';
-
+import { TressiConfig } from '../common/config/types';
 import {
   IEarlyExitCoordinator,
   IEndpointStateManager,
   IStatsCounterManager,
-} from '../types/workers/interfaces';
-import { EarlyExitThresholds } from '../types/workers/types';
+} from './interfaces';
+import { EarlyExitThresholds } from './types';
 
 /**
  * EarlyExitCoordinator - Monitors test execution and triggers early termination based on configurable thresholds.
@@ -72,9 +71,7 @@ export class EarlyExitCoordinator implements IEarlyExitCoordinator {
         // Use request-level configuration
         perEndpointMap.set(request.url, {
           errorRate: requestConfig.errorRateThreshold,
-          exitStatusCodes: new Set(
-            requestConfig.exitStatusCodes || [500, 502, 503, 504],
-          ),
+          exitStatusCodes: new Set(requestConfig.exitStatusCodes),
           monitoringWindowMs:
             requestConfig.monitoringWindowMs || globalMonitoringWindow,
         });

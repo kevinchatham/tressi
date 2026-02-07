@@ -1,128 +1,50 @@
-import { SlicePipe } from '@angular/common';
 import {
-  ChangeDetectionStrategy,
   Component,
   computed,
   inject,
+  OnDestroy,
   OnInit,
   signal,
+  viewChild,
 } from '@angular/core';
 import { Router } from '@angular/router';
-import { AggregatedMetric } from 'tressi-common/metrics';
+import { Subject, takeUntil } from 'rxjs';
+import { ButtonComponent } from 'src/app/components/button/button.component';
 
 import { HeaderComponent } from '../../components/header/header.component';
-import { IconComponent } from '../../components/icon/icon.component';
-import { LineChartComponent } from '../../components/line-chart/line-chart.component';
-import { ChartSyncService } from '../../services/chart-sync.service';
+import { StartButtonComponent } from '../../components/start-button/start-button.component';
+import { TestListComponent } from '../../components/test-list/test-list.component';
 import { ConfigService } from '../../services/config.service';
+import { EventService } from '../../services/event.service';
+import { LoadingService } from '../../services/loading.service';
 import { LocalStorageService } from '../../services/local-storage.service';
 import { LogService } from '../../services/log.service';
-import { SSEService } from '../../services/metrics.service';
-import { ConfigDocument, RPCService } from '../../services/rpc.service';
+import { ConfigDocument } from '../../services/rpc.service';
 
 @Component({
   selector: 'app-dashboard',
-  imports: [LineChartComponent, HeaderComponent, IconComponent, SlicePipe],
+  imports: [
+    HeaderComponent,
+    TestListComponent,
+    StartButtonComponent,
+    ButtonComponent,
+  ],
   templateUrl: './dashboard.component.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [ChartSyncService],
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent implements OnInit, OnDestroy {
   /** Service injection */
-  private readonly sseService = inject(SSEService);
   private readonly configService = inject(ConfigService);
   private readonly logService = inject(LogService);
   private readonly router = inject(Router);
-  private readonly rpc = inject(RPCService);
   private readonly localStorageService = inject(LocalStorageService);
-
-  /** Reactive signal holding the history of aggregated metrics. */
-  private readonly metricsHistory = signal<AggregatedMetric[]>([]);
+  private readonly loadingService = inject(LoadingService);
+  private readonly eventService = inject(EventService);
 
   /** Reactive signal holding available configurations. */
   readonly configs = signal<ConfigDocument[]>([]);
 
   /** Reactive signal holding the selected configuration. */
   readonly selectedConfig = signal<ConfigDocument | null>(null);
-
-  /** Reactive signal for loading state. */
-  readonly isLoading = signal<boolean>(true);
-
-  /** Reactive signal holding the current view mode ('global' or endpoint URL). */
-  readonly currentViewMode = signal<string>('global');
-
-  /** Computed signal that returns available endpoints from latest metrics. */
-  readonly availableEndpoints = computed<string[]>(() => {
-    const latestMetrics =
-      this.metricsHistory()[this.metricsHistory().length - 1];
-    if (!latestMetrics) return [];
-    return Object.keys(latestMetrics.endpoints || {});
-  });
-
-  /**
-   * Computed array of requests per second values extracted from the metric history.
-   *
-   * The returned array is used by LineChartComponent to render the throughput chart.
-   */
-  public readonly throughputData = computed<number[]>(() => {
-    const viewMode = this.currentViewMode();
-    return this.metricsHistory().map((m) => {
-      if (viewMode === 'global') {
-        return m.global.requestsPerSecond;
-      }
-      return m.endpoints[viewMode]?.requestsPerSecond ?? 0;
-    });
-  });
-
-  /**
-   * Computed array of error rate percentages extracted from the metric history.
-   *
-   * The returned array is used by LineChartComponent to render the error‑rate chart.
-   */
-  public readonly errorRateData = computed<number[]>(() => {
-    const viewMode = this.currentViewMode();
-    return this.metricsHistory().map((m) => {
-      if (viewMode === 'global') {
-        return m.global.errorRate;
-      }
-      return m.endpoints[viewMode]?.errorRate ?? 0;
-    });
-  });
-
-  /**
-   * Computed array of average latency values extracted from the metric history.
-   *
-   * The returned array is used by LineChartComponent to render the latency chart.
-   */
-  public readonly latencyData = computed<number[]>(() => {
-    const viewMode = this.currentViewMode();
-    return this.metricsHistory().map((m) => {
-      if (viewMode === 'global') {
-        return m.global.averageLatency;
-      }
-      return m.endpoints[viewMode]?.averageLatency ?? 0;
-    });
-  });
-
-  /**
-   * Computed timestamps (in milliseconds) for each metric entry, relative to now.
-   *
-   * The array is used as X‑axis labels in the charts and represents one second intervals
-   * between successive metrics samples.
-   */
-  public readonly timeLabels = computed<number[]>(() => {
-    const now = Date.now();
-    return this.metricsHistory().map(
-      (_, i) => now - (this.metricsHistory.length - 1 - i) * 1000,
-    );
-  });
-
-  /** Computed signal that returns only the array of configs (or empty array) */
-  readonly safeConfigs = computed(() => {
-    const cfg = this.configs();
-    if (!cfg || 'error' in cfg) return [];
-    return cfg;
-  });
 
   /** Computed signal that returns the ID of the selected config, or empty string if none */
   readonly selectedConfigId = computed(() => {
@@ -131,21 +53,34 @@ export class DashboardComponent implements OnInit {
     return config.id;
   });
 
-  /** Computed signal that returns true when there are metrics to display */
-  readonly hasMetrics = computed(() => this.metricsHistory().length > 0);
+  /** Reference to the test list component for refreshing tests */
+  readonly testListComponent = viewChild<TestListComponent>(TestListComponent);
+
+  /** Signal to track if there are tests available for the selected config */
+  readonly hasTestHistory = signal<boolean>(false);
+
+  /** Signal to track if a test is currently running */
+  readonly isTestRunning = signal<boolean>(false);
+
+  /** Subject for managing subscription cleanup */
+  private readonly destroy$ = new Subject<void>();
 
   ngOnInit(): void {
+    this.loadingService.registerPage('dashboard');
     this.loadConfigurations();
-    this.sseService
-      .getMetricsStream()
-      .subscribe((metrics) => this.updateCharts(metrics));
+    this.subscribeToTestEvents();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   /**
    * Loads all available configurations from the server.
    */
   private async loadConfigurations(): Promise<void> {
-    this.isLoading.set(true);
+    this.loadingService.setPageLoading('dashboard', true);
 
     const configs = await this.configService.getAll();
 
@@ -153,6 +88,7 @@ export class DashboardComponent implements OnInit {
 
     if (configs.length === 0) {
       this.router.navigate(['welcome']);
+      this.loadingService.setPageLoading('dashboard', false);
       return;
     }
 
@@ -177,7 +113,7 @@ export class DashboardComponent implements OnInit {
       this.onConfigSelect(firstConfig.id);
     }
 
-    this.isLoading.set(false);
+    this.loadingService.setPageLoading('dashboard', false);
   }
 
   /**
@@ -208,14 +144,6 @@ export class DashboardComponent implements OnInit {
   }
 
   /**
-   * Handles view mode selection change.
-   */
-  onViewModeChange(event: Event): void {
-    const target = event.target as HTMLSelectElement;
-    this.currentViewMode.set(target.value);
-  }
-
-  /**
    * Navigates to the settings page.
    */
   navigateToSettings(): void {
@@ -223,60 +151,50 @@ export class DashboardComponent implements OnInit {
   }
 
   /**
-   * Initiates a fresh load test using the default Tressi configuration.
-   *
-   * @remarks
-   * - Clears any previously collected metrics by resetting {@link DashboardComponent.metricsHistory}.
-   * - Calls {@link HttpService.startLoadTest} with {@link defaultTressiConfig} and subscribes to its observable to start execution.
-   *
-   * This method is intended for UI triggers such as button clicks. It performs no return value.
+   * Handles test started event from StartButtonComponent
    */
-  start(): void {
-    this.metricsHistory.set([]);
-
-    const selected = this.selectedConfig();
-
-    if (!selected || 'error' in selected) {
-      this.logService.error('No valid configuration selected');
-      return;
+  onTestStarted(): void {
+    const testList = this.testListComponent();
+    if (testList) {
+      testList.refreshTests();
     }
-
-    if (!selected.config) {
-      this.logService.error('Configuration data is missing');
-      return;
-    }
-
-    this.rpc.client.test
-      .$post({ json: selected.config })
-      .then(async (response) => {
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-      })
-      .then((data) => {
-        this.logService.info('Load test started successfully:', data);
-        // You could also update UI state here
-      })
-      .catch((error) => {
-        this.logService.error('Failed to start load test:', error);
-        // Show user-friendly error message
-      });
   }
 
   /**
-   * Processes a new set of aggregated metrics and updates the chart data streams.
-   *
-   * @param metrics - The latest {@link AggregatedMetric} received from the load test.
-   *
-   * @remarks
-   * 1. Validates that `metrics` is defined (runtime guard).
-   * 2. Appends it to the rolling history stored in {@link DashboardComponent.metricsHistory}.
-   * 3. Signals Angular's computed properties (`throughputData`, `errorRateData`, etc.) to re‑render charts.
-   *
-   * The method does not return a value; its side effects are reflected through reactive signals.
+   * Handles test start failed event from StartButtonComponent
    */
-  private updateCharts(metrics: AggregatedMetric): void {
-    this.metricsHistory.update((history) => [...history, metrics]);
+  onTestStartFailed(error: Error): void {
+    this.logService.error('Failed to start test:', error);
+  }
+
+  /**
+   * Updates the test history state based on whether tests exist
+   */
+  onTestHistoryUpdate(hasTests: boolean): void {
+    this.hasTestHistory.set(hasTests);
+  }
+
+  /**
+   * Sets up test event listeners to track test execution state
+   */
+  private subscribeToTestEvents(): void {
+    this.eventService
+      .getTestEventsStream()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (event) => {
+          if (event.status === 'running') {
+            this.isTestRunning.set(true);
+          } else if (
+            event.status === 'completed' ||
+            event.status === 'failed'
+          ) {
+            this.isTestRunning.set(false);
+          }
+        },
+        error: (error) => {
+          this.logService.error('Failed to handle test event:', error);
+        },
+      });
   }
 }

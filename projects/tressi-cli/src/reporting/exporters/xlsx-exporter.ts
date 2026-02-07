@@ -1,76 +1,113 @@
 import * as xlsx from 'xlsx';
 
-import {
-  EndpointSummary,
-  RequestResult,
-  TestSummary,
-} from '../../types/reporting/types';
-
-interface LatencyDistribution {
-  getTotalCount(): number;
-  getLatencyDistribution(options: {
-    count: number;
-    chartWidth: number;
-  }): Array<{
-    latency: string;
-    count: string;
-    percent: string;
-    cumulative: string;
-    chart: string;
-  }>;
-}
-
-interface RunnerInterface {
-  getDistribution(): LatencyDistribution;
-  getStatusCodeMap(): Record<number, number>;
-  getSampledResults(): RequestResult[];
-}
+import { EndpointSummary, StatusCodeMap, TestSummary } from '../types';
+import { validatePath } from '../utils/validation';
 
 /**
- * Exports test results to Excel format
+ * Exports test results to Excel format with unified interface
  */
 export class XlsxExporter {
   /**
-   * Exports test results to an Excel file
+   * Exports test results to an Excel file with unified interface
+   * @param summary - The test summary containing global and endpoint statistics
+   * @param path - Optional file path to write the Excel to (returns buffer if undefined)
+   * @returns Buffer when path is undefined, void when path is provided
    */
-  async export(
-    path: string,
-    results: RequestResult[],
-    summary: TestSummary,
-    runner: RunnerInterface,
-  ): Promise<void> {
-    const wb = xlsx.utils.book_new();
+  async export(summary: TestSummary, path?: string): Promise<void | Buffer> {
+    try {
+      const { summary: processedSummary, statusCodeMap } =
+        this.processData(summary);
 
-    // Global Summary Sheet
-    this.addGlobalSummarySheet(wb, summary);
+      const wb = xlsx.utils.book_new();
 
-    // Endpoint Summary Sheet
-    this.addEndpointSummarySheet(wb, summary.endpoints);
+      // Test Summary Sheet
+      this.addTestSummarySheet(wb, processedSummary);
 
-    // Status Code Distribution Sheet
-    this.addStatusCodeDistributionSheet(wb, runner);
+      // Endpoint Summary Sheet
+      if (processedSummary.endpoints.length > 0) {
+        this.addEndpointSummarySheet(wb, processedSummary.endpoints);
+      }
 
-    // Raw Results Sheet
-    this.addRawResultsSheet(wb, results);
+      // Status Code Distribution Sheet
+      this.addStatusCodeDistributionSheet(wb, statusCodeMap);
 
-    // Sampled Responses Sheet
-    this.addSampledResponsesSheet(wb, runner);
+      // Configuration Sheet
+      this.addConfigurationSheet(wb, processedSummary.configSnapshot);
 
-    xlsx.writeFile(wb, path);
+      // Latency Distribution Sheet
+      this.addLatencyDistributionSheet(wb, processedSummary);
+
+      // Sampled Responses Sheet
+      this.addSampledResponsesSheet(wb, processedSummary.endpoints);
+
+      if (path) {
+        validatePath(path);
+        xlsx.writeFile(wb, path);
+        return;
+      } else {
+        // Return buffer for in-memory use
+        return xlsx.write(wb, { type: 'buffer' });
+      }
+    } catch (error) {
+      throw new Error(
+        `Failed to export test results to Excel: ${(error as Error).message}`,
+      );
+    }
   }
 
-  private addGlobalSummarySheet(wb: xlsx.WorkBook, summary: TestSummary): void {
-    const globalArray = Object.entries(summary.global).map(([key, value]) => ({
-      Stat: key,
-      Value: typeof value === 'number' ? Math.round(value) : String(value),
-    }));
-    globalArray.unshift({
-      Stat: 'Tressi Version',
-      Value: summary.tressiVersion,
-    });
+  /**
+   * Process data to extract status code map from summary
+   */
+  private processData(summary: TestSummary): {
+    summary: TestSummary;
+    statusCodeMap: StatusCodeMap;
+  } {
+    const statusCodeMap: StatusCodeMap = {};
 
-    const wsGlobal = xlsx.utils.json_to_sheet(globalArray);
-    xlsx.utils.book_append_sheet(wb, wsGlobal, 'Global Summary');
+    // Aggregate status codes from all endpoints
+    for (const endpoint of summary.endpoints) {
+      for (const [statusCode, count] of Object.entries(
+        endpoint.statusCodeDistribution,
+      )) {
+        const code = parseInt(statusCode, 10);
+        statusCodeMap[code] = (statusCodeMap[code] || 0) + count;
+      }
+    }
+
+    return { summary, statusCodeMap };
+  }
+
+  private addTestSummarySheet(wb: xlsx.WorkBook, summary: TestSummary): void {
+    const { global: g } = summary;
+
+    const summaryData = [
+      { Metric: 'Duration (s)', Value: g.finalDurationSec },
+      { Metric: 'Total Requests', Value: g.totalRequests },
+      { Metric: 'Successful', Value: g.successfulRequests },
+      { Metric: 'Failed', Value: g.failedRequests },
+      { Metric: 'Error Rate', Value: g.errorRate },
+      { Metric: 'Min Latency (ms)', Value: g.minLatencyMs },
+      { Metric: 'P50 Latency (ms)', Value: g.p50LatencyMs },
+      { Metric: 'P95 Latency (ms)', Value: g.p95LatencyMs },
+      { Metric: 'P99 Latency (ms)', Value: g.p99LatencyMs },
+      {
+        Metric: 'P99.9 Latency (ms)',
+        Value: g.histogram?.percentiles[99.9] || 0,
+      },
+      { Metric: 'Max Latency (ms)', Value: g.maxLatencyMs },
+      { Metric: 'Avg RPS', Value: g.averageRequestsPerSecond },
+      { Metric: 'Peak RPS', Value: g.peakRequestsPerSecond },
+      { Metric: 'Network Bytes Sent', Value: g.networkBytesSent },
+      { Metric: 'Network Bytes Received', Value: g.networkBytesReceived },
+      { Metric: 'Network Throughput (B/s)', Value: g.networkBytesPerSec },
+      { Metric: 'CPU Usage (%)', Value: g.avgSystemCpuUsagePercent },
+      { Metric: 'Memory Usage (MB)', Value: g.avgProcessMemoryUsageMB },
+      { Metric: 'Test Started (epoch)', Value: g.epochStartedAt },
+      { Metric: 'Test Ended (epoch)', Value: g.epochEndedAt },
+    ];
+
+    const wsSummary = xlsx.utils.json_to_sheet(summaryData);
+    xlsx.utils.book_append_sheet(wb, wsSummary, 'Test Summary');
   }
 
   private addEndpointSummarySheet(
@@ -78,12 +115,28 @@ export class XlsxExporter {
     endpoints: EndpointSummary[],
   ): void {
     const formattedEndpoints = endpoints.map((endpoint) => ({
-      ...endpoint,
-      avgLatencyMs: Math.round(endpoint.avgLatencyMs),
-      minLatencyMs: Math.round(endpoint.minLatencyMs),
-      maxLatencyMs: Math.round(endpoint.maxLatencyMs),
-      p95LatencyMs: Math.round(endpoint.p95LatencyMs),
-      p99LatencyMs: Math.round(endpoint.p99LatencyMs),
+      URL: endpoint.url,
+      Method: endpoint.method,
+      'Total Requests': endpoint.totalRequests,
+      Successful: endpoint.successfulRequests,
+      Failed: endpoint.failedRequests,
+      'Error Rate': endpoint.errorRate,
+      'Avg RPS': endpoint.averageRequestsPerSecond,
+      'Peak RPS': endpoint.peakRequestsPerSecond,
+      'P1 Latency (ms)': endpoint.histogram?.percentiles[1] || 0,
+      'P5 Latency (ms)': endpoint.histogram?.percentiles[5] || 0,
+      'P10 Latency (ms)': endpoint.histogram?.percentiles[10] || 0,
+      'P25 Latency (ms)': endpoint.histogram?.percentiles[25] || 0,
+      'P50 Latency (ms)': endpoint.p50LatencyMs,
+      'P75 Latency (ms)': endpoint.histogram?.percentiles[75] || 0,
+      'P90 Latency (ms)': endpoint.histogram?.percentiles[90] || 0,
+      'P95 Latency (ms)': endpoint.p95LatencyMs,
+      'P99 Latency (ms)': endpoint.p99LatencyMs,
+      'P99.9 Latency (ms)': endpoint.histogram?.percentiles[99.9] || 0,
+      'Min Latency (ms)': endpoint.minLatencyMs,
+      'Max Latency (ms)': endpoint.maxLatencyMs,
+      'Theoretical Max RPS': endpoint.theoreticalMaxRps,
+      'Target Achieved (%)': endpoint.targetAchieved,
     }));
 
     const wsEndpoints = xlsx.utils.json_to_sheet(formattedEndpoints);
@@ -92,9 +145,8 @@ export class XlsxExporter {
 
   private addStatusCodeDistributionSheet(
     wb: xlsx.WorkBook,
-    runner: RunnerInterface,
+    statusCodeMap: Record<number, number>,
   ): void {
-    const statusCodeMap = runner.getStatusCodeMap();
     const statusCodeDistribution =
       this.getStatusCodeDistribution(statusCodeMap);
 
@@ -111,52 +163,143 @@ export class XlsxExporter {
     xlsx.utils.book_append_sheet(wb, wsStatusCode, 'Status Code Distribution');
   }
 
-  private addRawResultsSheet(
+  private addLatencyDistributionSheet(
     wb: xlsx.WorkBook,
-    results: RequestResult[],
+    summary: TestSummary,
   ): void {
-    const formattedResults = results.map((result) => ({
-      Timestamp: result.timestamp,
-      Method: result.method,
-      URL: result.url,
-      Status: result.status,
-      'Latency (ms)': result.latencyMs,
-      Success: result.success,
-      Error: result.error || '',
-    }));
+    const { global: g } = summary;
 
-    const wsResults = xlsx.utils.json_to_sheet(formattedResults);
-    xlsx.utils.book_append_sheet(wb, wsResults, 'Raw Results');
+    if (!g.histogram || g.histogram.totalCount === 0) {
+      return;
+    }
+
+    const latencyData = [
+      {
+        Percentile: 'Min',
+        'Latency (ms)': g.histogram.min,
+        'Total Requests': g.histogram.totalCount,
+      },
+      {
+        Percentile: '1st',
+        'Latency (ms)': g.histogram.percentiles[1],
+        'Total Requests': g.histogram.totalCount,
+      },
+      {
+        Percentile: '5th',
+        'Latency (ms)': g.histogram.percentiles[5],
+        'Total Requests': g.histogram.totalCount,
+      },
+      {
+        Percentile: '10th',
+        'Latency (ms)': g.histogram.percentiles[10],
+        'Total Requests': g.histogram.totalCount,
+      },
+      {
+        Percentile: '25th',
+        'Latency (ms)': g.histogram.percentiles[25],
+        'Total Requests': g.histogram.totalCount,
+      },
+      {
+        Percentile: '50th',
+        'Latency (ms)': g.histogram.percentiles[50],
+        'Total Requests': g.histogram.totalCount,
+      },
+      {
+        Percentile: '75th',
+        'Latency (ms)': g.histogram.percentiles[75],
+        'Total Requests': g.histogram.totalCount,
+      },
+      {
+        Percentile: '90th',
+        'Latency (ms)': g.histogram.percentiles[90],
+        'Total Requests': g.histogram.totalCount,
+      },
+      {
+        Percentile: '95th',
+        'Latency (ms)': g.histogram.percentiles[95],
+        'Total Requests': g.histogram.totalCount,
+      },
+      {
+        Percentile: '99th',
+        'Latency (ms)': g.histogram.percentiles[99],
+        'Total Requests': g.histogram.totalCount,
+      },
+      {
+        Percentile: '99.9th',
+        'Latency (ms)': g.histogram.percentiles[99.9],
+        'Total Requests': g.histogram.totalCount,
+      },
+      {
+        Percentile: 'Max',
+        'Latency (ms)': g.histogram.max,
+        'Total Requests': g.histogram.totalCount,
+      },
+    ];
+
+    const wsLatency = xlsx.utils.json_to_sheet(latencyData);
+    xlsx.utils.book_append_sheet(wb, wsLatency, 'Latency Distribution');
   }
 
   private addSampledResponsesSheet(
     wb: xlsx.WorkBook,
-    runner: RunnerInterface,
+    endpoints: EndpointSummary[],
   ): void {
-    const sampledResponses = runner.getSampledResults().filter((r) => r.body);
-    if (sampledResponses.length === 0) return;
+    const samplesForSheet: Array<{
+      URL: string;
+      Method: string;
+      'Status Code': number;
+      'Response Headers': string;
+      'Response Body': string;
+    }> = [];
 
-    const uniqueSamples = new Map<string, RequestResult>();
-    for (const r of sampledResponses) {
-      const key = `${r.method} ${r.url} ${r.status}`;
-      if (!uniqueSamples.has(key)) {
-        uniqueSamples.set(key, r);
+    // Flatten response samples into individual rows
+    for (const endpoint of endpoints) {
+      if (!endpoint.responseSamples || endpoint.responseSamples.length === 0) {
+        continue;
+      }
+
+      // Use a Set to track unique status codes per endpoint
+      const seenStatusCodes = new Set<number>();
+
+      for (const sample of endpoint.responseSamples) {
+        if (!seenStatusCodes.has(sample.statusCode)) {
+          seenStatusCodes.add(sample.statusCode);
+          samplesForSheet.push({
+            URL: endpoint.url,
+            Method: endpoint.method,
+            'Status Code': sample.statusCode,
+            'Response Headers': JSON.stringify(sample.headers || {}),
+            'Response Body': sample.body || '(No body captured)',
+          });
+        }
       }
     }
 
-    const samplesForSheet = Array.from(uniqueSamples.values())
-      .sort((a, b) => a.status - b.status)
-      .map((r) => ({
-        Method: r.method,
-        URL: r.url,
-        'Status Code': r.status,
-        'Response Body': r.body,
-      }));
+    // Sort by URL and then by status code
+    samplesForSheet.sort((a, b) => {
+      if (a.URL !== b.URL) {
+        return a.URL.localeCompare(b.URL);
+      }
+      return a['Status Code'] - b['Status Code'];
+    });
 
     if (samplesForSheet.length > 0) {
       const wsSamples = xlsx.utils.json_to_sheet(samplesForSheet);
       xlsx.utils.book_append_sheet(wb, wsSamples, 'Sampled Responses');
     }
+  }
+
+  private addConfigurationSheet(
+    wb: xlsx.WorkBook,
+    config: TestSummary['configSnapshot'],
+  ): void {
+    const configData = Object.entries(config).map(([key, value]) => ({
+      'Config Option': key,
+      Value: typeof value === 'object' ? JSON.stringify(value) : String(value),
+    }));
+
+    const wsConfig = xlsx.utils.json_to_sheet(configData);
+    xlsx.utils.book_append_sheet(wb, wsConfig, 'Configuration');
   }
 
   private getStatusCodeDistribution(

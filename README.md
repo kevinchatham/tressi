@@ -15,7 +15,7 @@
 - 📝 **Declarative JSON Config** — Define tests in a simple JSON file with version-aligned JSON schema for validation.
 - ⚡️ **Target-based Load Testing** - Always uses dynamic worker scaling to meet your target load.
 - 📊 **Interactive Terminal UI** — View live requests per second, latency stats, and status codes.
-- 📁 **Comprehensive Reporting** — Export results to Markdown, XLSX, and CSV for analysis.
+- 📁 **Comprehensive Reporting** — Export results to Markdown and XLSX for analysis.
 
 ## 📦 Installation
 
@@ -32,7 +32,7 @@ npm install tressi
 Run directly using `npx`:
 
 ```bash
-npx tressi init
+npx tressi
 ```
 
 ### 3. Global Installation (for CLI use everywhere)
@@ -45,29 +45,25 @@ npm install -g tressi
 
 ## 🛠️ Quick Start
 
-1. **Generate a config file**
+1. **Create a configuration file**
 
-```bash
-npx tressi init
+Create a `tressi.config.json` file in your project directory:
+
+```json
+{
+  "$schema": "https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json",
+  "requests": [
+    {
+      "url": "https://api.example.com/endpoint",
+      "method": "GET"
+    }
+  ]
+}
 ```
 
-For a full configuration with all options:
+2. **Run the test**
 
-```bash
-npx tressi init --full
-```
-
-2. **View your configuration**
-
-Before running tests, you can verify your configuration:
-
-```bash
-npx tressi config
-```
-
-3. **Run the test**
-
-If you have a `tressi.config.json` file in your current directory, you can simply run:
+With your configuration file in place, simply run:
 
 ```bash
 npx tressi
@@ -266,7 +262,7 @@ Gradually increases the load to your target requests per second over a specified
     "workers": 20,
     "durationSec": 60,
     "rps": 500,
-    "rampUpTimeSec": 30
+    "rampUpDurationSec": 30
   },
   "requests": [
     {
@@ -454,11 +450,11 @@ Stop tests automatically when error thresholds are exceeded to save time and res
 
 ### Configuration Reference
 
-The `tressi init` command will generate a `tressi.config.json` file with a `$schema` property. This property points to a JSON Schema file that provides autocompletion and validation in supported editors (like VS Code), making it easier to write valid configurations.
+Create a `tressi.config.json` file with a `$schema` property. This property points to a JSON Schema file that provides autocompletion and validation in supported editors (like VS Code), making it easier to write valid configurations.
 
 #### Example Configurations
 
-**Minimal Configuration** (created by `tressi init`):
+**Minimal Configuration**:
 
 ```json
 {
@@ -477,7 +473,7 @@ The `tressi init` command will generate a `tressi.config.json` file with a `$sch
 }
 ```
 
-**Full Configuration** (created by `tressi init --full`):
+**Full Configuration**:
 
 ```json
 {
@@ -485,7 +481,7 @@ The `tressi init` command will generate a `tressi.config.json` file with a `$sch
   "options": {
     "workers": 10,
     "durationSec": 30,
-    "rampUpTimeSec": 0,
+    "rampUpDurationSec": 0,
     "rps": 200,
     "exportPath": null,
     "useUI": true,
@@ -520,23 +516,23 @@ The `tressi init` command will generate a `tressi.config.json` file with a `$sch
 
 All test configuration is now done through the JSON configuration file. The `options` object supports the following properties:
 
-| Property              | Type                  | Description                                                                          | Default |
-| --------------------- | --------------------- | ------------------------------------------------------------------------------------ | ------- |
-| `workers`             | `integer`             | Maximum number of concurrent workers to use for dynamic scaling                      | `10`    |
-| `durationSec`         | `integer`             | Total test duration in seconds                                                       | `10`    |
-| `rampUpTimeSec`       | `integer`             | Time in seconds to ramp up to the target load                                        | `0`     |
-| `rps`                 | `number`              | Target requests per second (ramps up to this value)                                  | `1`     |
-| `threads`             | `integer`             | Number of worker threads to use (defaults to CPU count, max: CPU cores)              |         |
-| `workerMemoryLimit`   | `integer`             | Memory limit per worker in MB (16-512)                                               | `128`   |
-| `workerEarlyExit`     | `object`              | Coordinated early exit configuration for worker threads                              | `{}`    |
-| `exportPath`          | `string` or `boolean` | Export results to Markdown, XLSX, and CSVs. Use `true` for default or specify a path |         |
-| `useUI`               | `boolean`             | Enable the interactive terminal UI                                                   | `true`  |
-| `silent`              | `boolean`             | Suppress all console output                                                          | `false` |
-| `earlyExitOnError`    | `boolean`             | Enable early exit when error thresholds are exceeded                                 | `false` |
-| `errorRateThreshold`  | `number`              | Exit when error rate exceeds this value (0.0-1.0)                                    |         |
-| `errorCountThreshold` | `integer`             | Exit when total error count reaches this number                                      |         |
-| `errorStatusCodes`    | `array`               | Array of status codes that trigger early exit                                        | `[]`    |
-| `headers`             | `object`              | Global headers to be sent with every request                                         | `{}`    |
+| Property              | Type                  | Description                                                                   | Default |
+| --------------------- | --------------------- | ----------------------------------------------------------------------------- | ------- |
+| `workers`             | `integer`             | Maximum number of concurrent workers to use for dynamic scaling               | `10`    |
+| `durationSec`         | `integer`             | Total test duration in seconds                                                | `10`    |
+| `rampUpDurationSec`   | `integer`             | Time in seconds to ramp up to the target load                                 | `0`     |
+| `rps`                 | `number`              | Target requests per second (ramps up to this value)                           | `1`     |
+| `threads`             | `integer`             | Number of worker threads to use (defaults to CPU count, max: CPU cores)       |         |
+| `workerMemoryLimit`   | `integer`             | Memory limit per worker in MB (16-512)                                        | `128`   |
+| `workerEarlyExit`     | `object`              | Coordinated early exit configuration for worker threads                       | `{}`    |
+| `exportPath`          | `string` or `boolean` | Export results to Markdown and XLSX. Use `true` for default or specify a path |         |
+| `useUI`               | `boolean`             | Enable the interactive terminal UI                                            | `true`  |
+| `silent`              | `boolean`             | Suppress all console output                                                   | `false` |
+| `earlyExitOnError`    | `boolean`             | Enable early exit when error thresholds are exceeded                          | `false` |
+| `errorRateThreshold`  | `number`              | Exit when error rate exceeds this value (0.0-1.0)                             |         |
+| `errorCountThreshold` | `integer`             | Exit when total error count reaches this number                               |         |
+| `errorStatusCodes`    | `array`               | Array of status codes that trigger early exit                                 | `[]`    |
+| `headers`             | `object`              | Global headers to be sent with every request                                  | `{}`    |
 
 #### Root Properties
 
@@ -583,7 +579,6 @@ When `exportPath` is set to `true` or a string value, tressi will generate a uni
 
 - **📝 `report.md`**: A clean, readable Markdown summary of the test results. It includes a "Sampled Responses" section that provides a response body for each unique status code received _per endpoint_, making it easy to debug different outcomes for the same URL.
 - **📊 `report.xlsx`**: A multi-sheet Excel file with the global summary, per-endpoint summary, a raw request log, and a dedicated "Sampled Responses" sheet that lists one sample for each status code received per endpoint.
-- **📈 `results.csv`**: A raw log of all requests made during the test.
 
 The directory will be named with a timestamp, such as `my-test-results-2025-07-06T10:00:00.000Z`.
 
@@ -593,68 +588,7 @@ The directory will be named with a timestamp, such as `my-test-results-2025-07-0
 | ----------------- | ----- | -------------------------------------------------------------------------------------------------------- | ------- |
 | `--config <path>` | `-c`  | Path or URL to JSON configuration file (local file path or remote URL). Defaults to ./tressi.config.json |         |
 
-#### Init Command Options
-
-| Option   | Description                                    |
-| -------- | ---------------------------------------------- |
-| `--full` | Generate a full configuration with all options |
-
-#### Config Command Options
-
-| Option   | Description                                    |
-| -------- | ---------------------------------------------- |
-| `--json` | Output configuration as JSON                   |
-| `--raw`  | Show raw configuration without defaults filled |
-
-### Configuration Commands
-
-#### Display Current Configuration
-
-View your current configuration including all resolved values and defaults:
-
-```bash
-# Show current configuration
-tressi config
-
-# Show configuration from specific file
-tressi --config ./my-config.json config
-
-# Show as JSON for programmatic use
-tressi config --json
-
-# Show raw configuration without defaults
-tressi config --raw
-```
-
-The `config` command displays:
-
-- Configuration source (file path or URL)
-- All options with their current values
-- Which values are defaults vs explicitly set
-- Request configurations
-- Schema version being used
-
-#### Example Output
-
-```
-📋 Current Tressi Configuration
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-🔧 Configuration Source: ./tressi.config.json
-📄 Schema: https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json
-
-🎯 Options:
-  • workers: 10 (default)
-  • durationSec: 30 (explicit)
-  • rps: 100 (explicit)
-  • autoscale: false (default)
-
-🌐 Requests (2 total):
-  1. GET https://api.example.com/users
-  2. POST https://api.example.com/users
-```
-
-Starting in `0.0.13`, `tressi` now uses a simplified CLI interface. All configuration options have been moved to the JSON configuration file for better maintainability and validation. Use `tressi init` to create a minimal configuration file, or `tressi init --full` for a complete configuration with all options.
+Starting in `0.0.13`, `tressi` now uses a simplified CLI interface. All configuration options have been moved to the JSON configuration file for better maintainability and validation.
 
 ## 🧬 Programmatic Usage
 
@@ -684,9 +618,7 @@ async function myCustomScript() {
 
   // Now you can use the summary object for custom logic
   if (summary.global.avgLatencyMs > 500) {
-    console.error(
-      `High latency detected: ${summary.global.avgLatencyMs.toFixed(0)}ms!`,
-    );
+    console.error(`High latency detected: ${summary.global.avgLatencyMs}ms!`);
     // You could trigger an alert or fail a CI/CD pipeline here
   }
 
@@ -739,7 +671,7 @@ async function earlyExitTest() {
     console.log('Test completed successfully!');
     console.log(`Total requests: ${summary.global.totalRequests}`);
     console.log(`Failed requests: ${summary.global.failedRequests}`);
-    console.log(`Average latency: ${summary.global.avgLatencyMs.toFixed(2)}ms`);
+    console.log(`Average latency: ${summary.global.avgLatencyMs}ms`);
 
     // Check if test exited early
     if (summary.global.failedRequests > 0) {

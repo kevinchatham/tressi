@@ -1,8 +1,9 @@
 import ora from 'ora';
 import { performance } from 'perf_hooks';
-import type { TressiConfig } from 'tressi-common/config';
 
+import { TressiConfig } from '../common/config/types';
 import type { Runner } from '../core/runner';
+import { roundToDecimals } from '../utils/math-utils';
 
 /**
  * Enhanced minimal UI for Tressi load testing
@@ -12,8 +13,11 @@ export class MinimalTUI {
   private interval: NodeJS.Timeout | undefined;
   private config: TressiConfig;
 
-  constructor(config: TressiConfig) {
+  private silent: boolean;
+
+  constructor(config: TressiConfig, silent?: boolean) {
     this.config = config;
+    this.silent = silent ?? false;
     this.spinner = ora({ text: 'Test starting...' });
   }
 
@@ -24,7 +28,7 @@ export class MinimalTUI {
    *
    * @remarks
    * Initializes a spinner-based UI that updates every 500ms with current test metrics.
-   * Respects the silent configuration option - if silent mode is enabled, no UI is displayed.
+   * Respects the silent parameter - if silent mode is enabled, no UI is displayed.
    *
    * The UI displays:
    * - Elapsed time and total duration
@@ -36,7 +40,7 @@ export class MinimalTUI {
    * Uses a non-blocking approach with setInterval to avoid impacting test performance.
    */
   start(runner: Runner): void {
-    if (this.config.options.silent) return;
+    if (this.silent) return;
 
     this.spinner.start();
 
@@ -50,11 +54,11 @@ export class MinimalTUI {
    *
    * @remarks
    * Clears the update interval and displays a success message indicating test completion.
-   * Respects silent mode configuration. The completion message serves as a visual
+   * Respects silent mode parameter. The completion message serves as a visual
    * confirmation that the test has finished and summary generation is beginning.
    */
   stop(): void {
-    if (this.config.options.silent) return;
+    if (this.silent) return;
 
     if (this.interval) {
       clearInterval(this.interval);
@@ -79,7 +83,7 @@ export class MinimalTUI {
    * The display format is optimized for readability: "rps | avg_latency | memory | cpu%".
    */
   private updateDisplay(runner: Runner): void {
-    if (this.config.options.silent) return;
+    if (this.silent) return;
 
     const startTime = runner.getStartTime();
     const durationSec = this.config.options.durationSec || 10;
@@ -94,18 +98,18 @@ export class MinimalTUI {
     try {
       // Use aggregated metrics directly as requested in comments
       const aggregatedMetrics = runner.getAggregatedMetrics();
-      if (aggregatedMetrics) {
-        const { memoryUsageMB, cpuUsagePercent } = aggregatedMetrics;
+      const { memoryUsageMB, cpuUsagePercent } = aggregatedMetrics;
+      const {
+        averageRequestsPerSecond: averageRequestsPerSecond,
+        p50LatencyMs,
+      } = aggregatedMetrics.global;
 
-        const { requestsPerSecond, averageLatency } = aggregatedMetrics.global;
-
-        metricsText = `${Math.round(requestsPerSecond)} rps | ${Math.round(averageLatency)}ms avg | ${memoryUsageMB}MB | ${cpuUsagePercent}% CPU`;
-      }
+      metricsText = `${averageRequestsPerSecond} rps | ${p50LatencyMs}ms p50 | ${memoryUsageMB}MB | ${cpuUsagePercent}% CPU`;
     } catch {
       // Fallback to basic display if metrics unavailable
     }
 
-    const timeText = `[${elapsedSec.toFixed(0)}s/${durationSec}s]`;
+    const timeText = `[${roundToDecimals(elapsedSec)}s/${durationSec}s]`;
     const spinnerText = metricsText
       ? `${timeText} ${metricsText}`
       : `${timeText} Test running...`;

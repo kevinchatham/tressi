@@ -45,10 +45,17 @@ export class ServerManager {
       );
 
       this.process?.stdout?.on('data', (data: Buffer) => {
-        if (data.toString().includes('running at')) {
+        const output = data.toString();
+        if (output.includes('starting at')) {
           clearTimeout(timeout);
           resolve();
         }
+      });
+
+      // Also listen for stderr in case there are startup issues
+      this.process?.stderr?.on('data', (data: Buffer) => {
+        // eslint-disable-next-line no-console
+        console.error('Server stderr:', data.toString());
       });
     });
   }

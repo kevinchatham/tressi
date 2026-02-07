@@ -1,5 +1,6 @@
 import type { MiddlewareHandler } from 'hono';
-import { ErrorApiResponse } from 'tressi-common/config';
+
+import { ErrorApiResponse } from '../../common/config';
 
 /**
  * Create error handling middleware

@@ -10,9 +10,10 @@ import {
   viewChildren,
 } from '@angular/core';
 import { Field } from '@angular/forms/signals';
-import { httpMethodDefaults } from 'tressi-common/config';
+import { httpMethodDefaults } from '@tressi-cli/common/config/schemas';
 
 import { ModifyConfigRequest } from '../../../services/rpc.service';
+import { ButtonComponent } from '../../button/button.component';
 import { IconComponent } from '../../icon/icon.component';
 import { JsonTextareaComponent } from '../../json-textarea/json-textarea.component';
 import { ModifyConfigRequestFormType } from '../config-form.component';
@@ -25,6 +26,7 @@ import { EarlyExitConfigComponent } from '../early-exit-config/early-exit-config
     IconComponent,
     JsonTextareaComponent,
     EarlyExitConfigComponent,
+    ButtonComponent,
   ],
   templateUrl: './basic-config.component.html',
 })

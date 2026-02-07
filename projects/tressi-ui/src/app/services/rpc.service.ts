@@ -6,16 +6,42 @@ import type { AppType } from 'tressi-cli/src/server/routes/types';
   providedIn: 'root',
 })
 export class RPCService {
-  public client = hc<AppType>('http://localhost:3108', {
+  public readonly client = hc<AppType>('http://localhost:3108', {
     init: {
       credentials: 'include',
     },
   }).api;
+
+  /**
+   * Retrieves the current test status from the backend
+   * @returns Promise resolving to test status information
+   */
+  async getTestStatus(): Promise<{ isRunning: boolean; jobId?: string }> {
+    try {
+      const response = await this.client.test.status.$get();
+      if (!response.ok) {
+        throw new Error(`Failed to get test status: ${response.statusText}`);
+      }
+      const data = await response.json();
+
+      if (data.isRunning && 'jobId' in data) {
+        return {
+          isRunning: true,
+          jobId: data.jobId as string,
+        };
+      }
+
+      return { isRunning: false };
+    } catch {
+      return { isRunning: false }; // Safe default
+    }
+  }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const { client } = new RPCService();
 
+// ! Config
 export type ModifyConfigRequest = InferRequestType<
   typeof client.config.$post
 >['json'];
@@ -31,8 +57,95 @@ export type GetConfigResponseError = Extract<
 
 export type ConfigDocument = GetConfigResponseSuccess[number];
 
-export type GetHealthResponse = InferResponseType<typeof client.health.$get>;
-
+// ! Metrics SSI
 export type GetSystemMetricsResponse = InferResponseType<
   typeof client.metrics.system.$get
+>;
+
+// ! Metrics
+export type GetEndpointsMetricsResponse = InferResponseType<
+  (typeof client.metrics.endpoints)[':testId']['$get']
+>;
+
+export type GetEndpointsMetricsResponseSuccess = Extract<
+  GetEndpointsMetricsResponse,
+  unknown[]
+>;
+
+export type GetEndpointsMetricsResponseError = Extract<
+  GetEndpointsMetricsResponse,
+  { error: object }
+>;
+
+export type EndpointMetricDocument = GetEndpointsMetricsResponseSuccess[number];
+
+export type EndpointMetric = EndpointMetricDocument['metric'];
+
+export type GetGlobalMetricsResponse = InferResponseType<
+  (typeof client.metrics.global)[':testId']['$get']
+>;
+
+export type GetGlobalMetricsResponseSuccess = Extract<
+  GetGlobalMetricsResponse,
+  unknown[]
+>;
+
+export type GetGlobalMetricsResponseError = Extract<
+  GetGlobalMetricsResponse,
+  { error: object }
+>;
+
+export type GlobalMetricDocument = GetGlobalMetricsResponseSuccess[number];
+
+export type TestMetrics = {
+  global: GlobalMetricDocument[];
+  endpoints: EndpointMetricDocument[];
+};
+
+// ! Test Management
+export type StartTestRequest = InferRequestType<
+  typeof client.test.$post
+>['json'];
+
+export type GetTestsResponse = InferResponseType<typeof client.tests.$get>;
+
+export type GetTestsResponseSuccess = Extract<GetTestsResponse, unknown[]>;
+
+export type GetTestsResponseError = Extract<
+  GetTestsResponse,
+  { error: object }
+>;
+
+export type TestDocument = GetTestsResponseSuccess[number];
+
+export type TestSummary = TestDocument['summary'];
+
+export type TestStatus = TestDocument['status'];
+
+export type DeleteTestResponse = InferResponseType<
+  (typeof client.tests)[':id']['$delete']
+>;
+
+export type DeleteTestResponseSuccess = Extract<
+  DeleteTestResponse,
+  { metricsDeleted: object }
+>;
+
+export type DeleteTestResponseError = Extract<
+  DeleteTestResponse,
+  { error: object }
+>;
+
+// ! Test Export
+export type ExportTestResponse = InferResponseType<
+  (typeof client.tests)[':id']['export']['$get']
+>;
+
+export type ExportTestRequest = InferRequestType<
+  (typeof client.tests)[':id']['export']['$get']
+>;
+
+// ! Test Status
+export type GetTestStatusResponse = InferResponseType<
+  typeof client.test.status.$get
 >;

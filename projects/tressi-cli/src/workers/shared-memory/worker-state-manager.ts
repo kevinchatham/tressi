@@ -3,8 +3,8 @@
  * Provides atomic state transitions for worker coordination
  */
 
-import { IWorkerStateManager } from '../../types/workers/interfaces';
-import { WorkerState } from '../../types/workers/types';
+import { IWorkerStateManager } from '../interfaces';
+import { WorkerState } from '../types';
 
 export class WorkerStateManager implements IWorkerStateManager {
   private readonly sab: SharedArrayBuffer;

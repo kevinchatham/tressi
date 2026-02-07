@@ -1,26 +1,153 @@
 import { cpus, loadavg } from 'os';
-import type { AggregatedMetric, EndpointMetric } from 'tressi-common/metrics';
 
+import { endpointMetricStorage } from '../collections/endpoint-metrics-collection';
+import { globalMetricStorage } from '../collections/global-metrics-collection';
+import type { TressiConfig } from '../common/config/types';
+import type { AggregatedMetrics, Metric } from '../common/metrics';
+import { ServerEvents } from '../events/event-types';
 import { globalEventEmitter } from '../events/global-event-emitter';
-import { terminal } from '../tui/terminal';
+import type { TestSummary } from '../reporting/types';
+import { transformAggregatedMetricToTestSummary } from '../reporting/utils/transformations';
+import { roundToDecimals } from '../utils/math-utils';
 import {
-  IBodySampleManager,
   IHdrHistogramManager,
   IMetricsAggregator,
   IStatsCounterManager,
-} from '../types/workers/interfaces';
-import { LatencyHistogram } from '../types/workers/types';
+} from './interfaces';
+import { LatencyHistogram } from './types';
+
+// Store for body samples collected during test
+const responseSamplesStore = new Map<
+  string,
+  Map<
+    string,
+    Array<{
+      statusCode: number;
+      headers: Record<string, string>;
+      body: string;
+    }>
+  >
+>();
 
 export class MetricsAggregator implements IMetricsAggregator {
   private pollingInterval: NodeJS.Timeout | null = null;
   private startTime: number = 0;
+  private endTime: number = 0;
   private endpoints: string[] = [];
+  private config: TressiConfig | null = null;
+  private testId?: string; // Optional for server persistence
+  private previousEndpointCounts: Record<
+    string,
+    { success: number; failure: number; timestamp: number }
+  > = {};
+  private peakGlobalInstantRps: number = 0;
+  private peakEndpointInstantRps: Record<string, number> = {};
+  private cpuUsageSamples: Array<{
+    timestamp: number;
+    cpuUsagePercent: number;
+  }> = [];
+  private memoryUsageSamples: Array<{
+    timestamp: number;
+    memoryUsageMB: number;
+  }> = [];
+  private metricsSamplingInterval: NodeJS.Timeout | null = null;
 
   constructor(
     private hdrHistogramManagers: IHdrHistogramManager[],
     private statsCounterManagers: IStatsCounterManager[],
-    private bodySampleManagers: IBodySampleManager[],
+    private endpointMethodMap: Record<string, string> = {},
+    private runId: string,
   ) {}
+
+  /**
+   * Set the testId for server mode persistence
+   * @param testId The test ID from database
+   */
+  setTestId(testId: string): void {
+    this.testId = testId;
+  }
+
+  /**
+   * Set the start time for duration calculations
+   * @param startTime Unix timestamp in milliseconds
+   */
+  public setStartTime(startTime: number): void {
+    this.startTime = startTime;
+    this.startMetricsSampling();
+  }
+
+  /**
+   * Set the end time for duration calculations
+   * @param endTime Unix timestamp in milliseconds
+   */
+  public setEndTime(endTime: number): void {
+    this.endTime = endTime;
+    this.stopMetricsSampling();
+  }
+
+  /**
+   * Start collecting resource usage samples at regular intervals
+   */
+  private startMetricsSampling(): void {
+    if (this.metricsSamplingInterval) {
+      clearInterval(this.metricsSamplingInterval);
+    }
+
+    // Sample every 2 seconds during the test
+    this.metricsSamplingInterval = setInterval(() => {
+      this.collectResourceUsageSample();
+    }, 2000);
+  }
+
+  /**
+   * Stop collecting resource usage samples
+   */
+  private stopMetricsSampling(): void {
+    if (this.metricsSamplingInterval) {
+      clearInterval(this.metricsSamplingInterval);
+      this.metricsSamplingInterval = null;
+    }
+  }
+
+  /**
+   * Collect a single resource usage sample
+   */
+  private collectResourceUsageSample(): void {
+    const timestamp = Date.now();
+
+    // Calculate CPU usage percentage based on system load average
+    const cpuCount = cpus().length;
+    const loadAvg = loadavg()[0];
+    const cpuUsagePercent = Math.min(
+      Math.round((loadAvg / cpuCount) * 100),
+      100,
+    );
+
+    // Calculate memory usage in MB
+    const memoryUsageMB = Math.round(
+      process.memoryUsage().heapUsed / 1024 / 1024,
+    );
+
+    this.cpuUsageSamples.push({ timestamp, cpuUsagePercent });
+    this.memoryUsageSamples.push({ timestamp, memoryUsageMB });
+  }
+
+  /**
+   * Calculate average from samples
+   */
+  private calculateAverage(values: number[]): number {
+    if (values.length === 0) return 0;
+    const sum = values.reduce((acc, value) => acc + value, 0);
+    return Math.round(sum / values.length);
+  }
+
+  /**
+   * Set the configuration for metrics aggregation
+   * @param config The Tressi configuration
+   */
+  setConfig(config: TressiConfig): void {
+    this.config = config;
+  }
 
   /**
    * Set the endpoints for metrics collection
@@ -28,6 +155,18 @@ export class MetricsAggregator implements IMetricsAggregator {
    */
   setEndpoints(endpoints: string[]): void {
     this.endpoints = endpoints;
+    // Initialize previous endpoint counts
+    const startTime = this.startTime || Date.now();
+    this.previousEndpointCounts = {};
+    this.peakEndpointInstantRps = {};
+    endpoints.forEach((url) => {
+      this.previousEndpointCounts[url] = {
+        success: 0,
+        failure: 0,
+        timestamp: startTime,
+      };
+      this.peakEndpointInstantRps[url] = 0;
+    });
   }
 
   /**
@@ -41,8 +180,8 @@ export class MetricsAggregator implements IMetricsAggregator {
     }
 
     this.startTime = Date.now();
-    this.pollingInterval = setInterval(() => {
-      this.pollMetrics();
+    this.pollingInterval = setInterval(async () => {
+      await this.pollMetrics();
     }, intervalMs);
   }
 
@@ -54,6 +193,7 @@ export class MetricsAggregator implements IMetricsAggregator {
       clearInterval(this.pollingInterval);
       this.pollingInterval = null;
     }
+    this.endTime = Date.now(); // ← Capture end time
   }
 
   /**
@@ -67,25 +207,48 @@ export class MetricsAggregator implements IMetricsAggregator {
    * The polling approach ensures that metrics are updated frequently enough for real-time
    * monitoring while being efficient enough to not impact test performance.
    */
-  private pollMetrics(): void {
-    const metrics = this.getResults(
-      this.hdrHistogramManagers.length,
-      this.endpoints,
-    );
+  private async pollMetrics(): Promise<void> {
+    try {
+      const metrics = this.getResults(
+        this.hdrHistogramManagers.length,
+        this.endpoints,
+      );
 
-    terminal.clearAndPrint(metrics);
+      const testSummary = this.getTestSummary(
+        this.hdrHistogramManagers.length,
+        this.endpoints,
+      );
 
-    // Emit metrics event for SSE
-    globalEventEmitter.emit('metrics', metrics);
-  }
+      // ! terminal.clearAndPrint(metrics);
 
-  /**
-   * Round a number to 4 decimal places
-   * @param value Number to round
-   * @returns Rounded number
-   */
-  private roundTo4Decimals(value: number): number {
-    return Math.round(value * 10000) / 10000;
+      globalEventEmitter.emit(ServerEvents.METRICS, {
+        testId: this.testId,
+        testSummary,
+      });
+
+      // Store metrics if testId is provided (server mode)
+      if (this.testId) {
+        // Store global metrics
+        await globalMetricStorage.create({
+          testId: this.testId,
+          metric: metrics.global,
+          epoch: metrics.epoch,
+        });
+
+        // Store per-endpoint metrics
+        for (const [url, endpointMetric] of Object.entries(metrics.endpoints)) {
+          await endpointMetricStorage.create({
+            testId: this.testId,
+            url,
+            metric: endpointMetric,
+            epoch: metrics.epoch,
+          });
+        }
+      }
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error('Failed to persist metrics to database:', error);
+    }
   }
 
   /**
@@ -94,7 +257,7 @@ export class MetricsAggregator implements IMetricsAggregator {
    * @param endpoints Array of endpoint URLs
    * @returns Aggregated metrics
    */
-  getResults(workersCount: number, endpoints: string[]): AggregatedMetric {
+  getResults(workersCount: number, endpoints: string[]): AggregatedMetrics {
     let totalSuccess = 0;
     let totalFailure = 0;
     let totalRequests = 0;
@@ -112,6 +275,12 @@ export class MetricsAggregator implements IMetricsAggregator {
     // Aggregate data from all workers
     let totalBytesSent = 0;
     let totalBytesReceived = 0;
+
+    // Track current endpoint counts for instant RPS calculation
+    const currentEndpointCounts: Record<
+      string,
+      { success: number; failure: number }
+    > = {};
 
     for (let workerId = 0; workerId < workersCount; workerId++) {
       const statsManager = this.statsCounterManagers[workerId];
@@ -135,10 +304,19 @@ export class MetricsAggregator implements IMetricsAggregator {
 
         const endpointUrl = endpoints[globalEndpointIndex];
 
+        // Initialize current counts for this endpoint if not exists
+        if (!currentEndpointCounts[endpointUrl]) {
+          currentEndpointCounts[endpointUrl] = { success: 0, failure: 0 };
+        }
+
         // Aggregate success/failure counts
         totalSuccess += counters.successCount;
         totalFailure += counters.failureCount;
         totalRequests += counters.successCount + counters.failureCount;
+
+        // Track current counts for instant RPS calculation
+        currentEndpointCounts[endpointUrl].success += counters.successCount;
+        currentEndpointCounts[endpointUrl].failure += counters.failureCount;
 
         // Aggregate network metrics
         totalBytesSent += counters.bytesSent;
@@ -162,10 +340,11 @@ export class MetricsAggregator implements IMetricsAggregator {
       });
     }
 
+    const currentTime = Date.now();
+
     // Calculate global metrics
-    const duration = this.startTime > 0 ? Date.now() - this.startTime : 0;
-    const errorRate = totalRequests > 0 ? totalFailure / totalRequests : 0;
-    const requestsPerSecond =
+    const duration = this.startTime > 0 ? currentTime - this.startTime : 0;
+    const averageRequestsPerSecond =
       duration > 0 ? totalRequests / (duration / 1000) : 0;
 
     // Calculate global latency statistics using weighted averages
@@ -182,7 +361,7 @@ export class MetricsAggregator implements IMetricsAggregator {
     });
 
     // Build per-endpoint metrics
-    const endpointMetrics: AggregatedMetric['endpoints'] = {};
+    const endpointMetrics: AggregatedMetrics['endpoints'] = {};
     endpoints.forEach((url) => {
       const histograms = endpointHistograms[url];
       const statusCounts = endpointStatusCounts[url];
@@ -222,124 +401,316 @@ export class MetricsAggregator implements IMetricsAggregator {
         });
       }
 
-      const endpointThroughputMBps =
+      const endpointBytesPerSec =
         duration > 0
-          ? (endpointBytesSent + endpointBytesReceived) /
-            (duration / 1000) /
-            (1024 * 1024)
+          ? (endpointBytesSent + endpointBytesReceived) / (duration / 1000)
           : 0;
+
+      // Calculate instant RPS based on difference from previous counts
+      const currentCounts = currentEndpointCounts[url] || {
+        success: 0,
+        failure: 0,
+      };
+      const previousCounts = this.previousEndpointCounts[url] || {
+        success: 0,
+        failure: 0,
+        timestamp: 0,
+      };
+
+      let peakRequestsPerSecond = 0;
+      if (
+        previousCounts.timestamp > 0 &&
+        currentTime > previousCounts.timestamp
+      ) {
+        const timeDiffMs = currentTime - previousCounts.timestamp;
+        const timeDiffSec = timeDiffMs / 1000;
+        const requestDiff =
+          currentCounts.success +
+          currentCounts.failure -
+          (previousCounts.success + previousCounts.failure);
+        peakRequestsPerSecond = timeDiffSec > 0 ? requestDiff / timeDiffSec : 0;
+      }
+
+      // Track peak instant RPS for this endpoint
+      this.peakEndpointInstantRps[url] = Math.max(
+        this.peakEndpointInstantRps[url] || 0,
+        peakRequestsPerSecond,
+      );
+
+      // Update previous counts for next calculation
+      this.previousEndpointCounts[url] = {
+        success: currentCounts.success,
+        failure: currentCounts.failure,
+        timestamp: currentTime,
+      };
 
       endpointMetrics[url] = {
         totalRequests: endpointTotalRequests,
         successfulRequests: endpointSuccessRequests,
         failedRequests: endpointFailureRequests,
-        errorRate: this.roundTo4Decimals(
-          endpointTotalRequests > 0
-            ? endpointFailureRequests / endpointTotalRequests
-            : 0,
-        ),
-        averageLatency: this.roundTo4Decimals(endpointStats.averageLatency),
-        minLatency: this.roundTo4Decimals(endpointStats.minLatency),
-        maxLatency: this.roundTo4Decimals(endpointStats.maxLatency),
-        p50Latency: this.roundTo4Decimals(endpointStats.p50Latency),
-        p95Latency: this.roundTo4Decimals(endpointStats.p95Latency),
-        p99Latency: this.roundTo4Decimals(endpointStats.p99Latency),
-        requestsPerSecond: this.roundTo4Decimals(
+        minLatencyMs: roundToDecimals(endpointStats.minLatency),
+        maxLatencyMs: roundToDecimals(endpointStats.maxLatency),
+        p50LatencyMs: roundToDecimals(endpointStats.p50Latency),
+        p95LatencyMs: roundToDecimals(endpointStats.p95Latency),
+        p99LatencyMs: roundToDecimals(endpointStats.p99Latency),
+        averageRequestsPerSecond: roundToDecimals(
           duration > 0 ? endpointTotalRequests / (duration / 1000) : 0,
+        ),
+        peakRequestsPerSecond: roundToDecimals(
+          this.endTime > 0 && this.peakEndpointInstantRps[url] > 0
+            ? this.peakEndpointInstantRps[url]
+            : Math.max(
+                peakRequestsPerSecond,
+                this.peakEndpointInstantRps[url] || 0,
+              ),
         ),
         statusCodeDistribution: statusCounts,
         networkBytesSent: endpointBytesSent,
         networkBytesReceived: endpointBytesReceived,
-        networkThroughputMBps: this.roundTo4Decimals(endpointThroughputMBps),
+        networkBytesPerSec: roundToDecimals(endpointBytesPerSec),
+        errorRate: endpointFailureRequests / endpointTotalRequests,
       };
     });
+
+    // Calculate global instant RPS as the sum of all endpoint instant RPS values
+    let globalInstantRequestsPerSecond = 0;
+    endpoints.forEach((url) => {
+      const endpointMetric = endpointMetrics[url];
+      if (endpointMetric) {
+        globalInstantRequestsPerSecond += endpointMetric.peakRequestsPerSecond;
+      }
+    });
+
+    // Track peak global instant RPS
+    this.peakGlobalInstantRps = Math.max(
+      this.peakGlobalInstantRps,
+      globalInstantRequestsPerSecond,
+    );
 
     // Calculate CPU usage percentage based on system load average
     const cpuCount = cpus().length;
     const loadAvg = loadavg()[0];
-    const cpuUsagePercent = Math.min(
+    const currentCpuUsagePercent = Math.min(
       Math.round((loadAvg / cpuCount) * 100),
       100,
     );
 
     // Calculate memory usage in MB
-    const memoryUsageMB = Math.round(
+    const currentMemoryUsageMB = Math.round(
       process.memoryUsage().heapUsed / 1024 / 1024,
     );
 
+    // Add final sample if test is still running
+    if (this.endTime === 0) {
+      this.cpuUsageSamples.push({
+        timestamp: currentTime,
+        cpuUsagePercent: currentCpuUsagePercent,
+      });
+      this.memoryUsageSamples.push({
+        timestamp: currentTime,
+        memoryUsageMB: currentMemoryUsageMB,
+      });
+    }
+
+    // Calculate averages from samples
+    const cpuUsagePercent = this.calculateAverage(
+      this.cpuUsageSamples.map((s) => s.cpuUsagePercent),
+    );
+    const memoryUsageMB = this.calculateAverage(
+      this.memoryUsageSamples.map((s) => s.memoryUsageMB),
+    );
+
     // Calculate global network throughput
-    const globalThroughputMBps =
+    const globalBytesPerSec =
       duration > 0
-        ? (totalBytesSent + totalBytesReceived) /
-          (duration / 1000) /
-          (1024 * 1024)
+        ? (totalBytesSent + totalBytesReceived) / (duration / 1000)
         : 0;
 
-    const globalMetrics: EndpointMetric = {
+    const globalMetrics: Metric = {
       totalRequests,
       successfulRequests: totalSuccess,
       failedRequests: totalFailure,
-      errorRate: this.roundTo4Decimals(errorRate),
-      averageLatency: this.roundTo4Decimals(globalStats.averageLatency),
-      minLatency: this.roundTo4Decimals(globalStats.minLatency),
-      maxLatency: this.roundTo4Decimals(globalStats.maxLatency),
-      p50Latency: this.roundTo4Decimals(globalStats.p50Latency),
-      p95Latency: this.roundTo4Decimals(globalStats.p95Latency),
-      p99Latency: this.roundTo4Decimals(globalStats.p99Latency),
-      requestsPerSecond: this.roundTo4Decimals(requestsPerSecond),
+      minLatencyMs: roundToDecimals(globalStats.minLatency),
+      maxLatencyMs: roundToDecimals(globalStats.maxLatency),
+      p50LatencyMs: roundToDecimals(globalStats.p50Latency),
+      p95LatencyMs: roundToDecimals(globalStats.p95Latency),
+      p99LatencyMs: roundToDecimals(globalStats.p99Latency),
+      averageRequestsPerSecond: roundToDecimals(averageRequestsPerSecond),
+      peakRequestsPerSecond: roundToDecimals(
+        this.endTime > 0 && this.peakGlobalInstantRps > 0
+          ? this.peakGlobalInstantRps
+          : globalInstantRequestsPerSecond,
+      ),
       statusCodeDistribution: globalStatusCodeDistribution,
       networkBytesSent: totalBytesSent,
       networkBytesReceived: totalBytesReceived,
-      networkThroughputMBps: this.roundTo4Decimals(globalThroughputMBps),
+      networkBytesPerSec: roundToDecimals(globalBytesPerSec),
+      errorRate: totalFailure / totalRequests,
     };
 
     return {
-      epoch: Date.now(),
+      epoch: currentTime,
       cpuUsagePercent,
       memoryUsageMB,
-
+      cpuUsageSamples: this.cpuUsageSamples,
+      memoryUsageSamples: this.memoryUsageSamples,
       global: globalMetrics,
       endpoints: endpointMetrics,
     };
   }
 
   /**
-   * Get body samples for a specific endpoint
-   * @param endpointIndex Global endpoint index
-   * @returns Array of body samples
+   * Get TestSummary for real-time UI updates
+   * @param workersCount Number of workers
+   * @param endpoints Array of endpoint URLs
+   * @returns TestSummary object for UI consumption
    */
-  getBodySamplesForEndpoint(endpointIndex: number): Array<{
-    sampleIndex: number;
-    statusCode: number;
-  }> {
-    if (endpointIndex < 0 || endpointIndex >= this.bodySampleManagers.length) {
-      return [];
+  public getTestSummary(
+    workersCount: number,
+    endpoints: string[],
+  ): TestSummary {
+    const metrics = this.getResults(workersCount, endpoints);
+    const duration =
+      this.startTime > 0 ? (Date.now() - this.startTime) / 1000 : 0;
+
+    if (!this.config) {
+      throw new Error('Config not set in MetricsAggregator');
     }
 
-    return this.bodySampleManagers[endpointIndex].getBodySampleIndices(0);
+    const responseSamplesMap = this.getCollectedResponseSamples(this.runId);
+
+    // Convert Map to Record for TestSummary
+    const responseSamples: Record<
+      string,
+      Array<{
+        statusCode: number;
+        headers: Record<string, string>;
+        body: string;
+      }>
+    > = {};
+
+    Array.from(responseSamplesMap.entries()).forEach(([url, samples]) => {
+      responseSamples[url] = samples;
+    });
+
+    // Collect histogram data from all workers
+    const globalHistograms: LatencyHistogram[] = [];
+    const endpointHistograms: Record<string, LatencyHistogram[]> = {};
+
+    // Initialize endpoint histograms
+    endpoints.forEach((url) => {
+      endpointHistograms[url] = [];
+    });
+
+    // Aggregate histogram data from all workers
+    for (let workerId = 0; workerId < workersCount; workerId++) {
+      const histogramManager = this.hdrHistogramManagers[workerId];
+      if (!histogramManager) continue;
+
+      const allHistograms = histogramManager.getAllEndpointHistograms();
+
+      // Process each endpoint
+      allHistograms.forEach((histogram, localEndpointIndex) => {
+        const globalEndpointIndex = this.getGlobalEndpointIndex(
+          workerId,
+          localEndpointIndex,
+        );
+        if (globalEndpointIndex >= endpoints.length) return;
+
+        const endpointUrl = endpoints[globalEndpointIndex];
+
+        if (histogram && histogram.totalCount > 0) {
+          // Add to endpoint histograms
+          endpointHistograms[endpointUrl].push(histogram);
+
+          // Add to global histograms
+          globalHistograms.push(histogram);
+        }
+      });
+    }
+
+    // Use stored times (endTime captured in stopPolling)
+    const epochStartedAt = this.startTime;
+    const epochEndedAt = this.endTime > 0 ? this.endTime : Date.now();
+
+    return transformAggregatedMetricToTestSummary(
+      metrics,
+      duration,
+      this.endpointMethodMap,
+      this.config,
+      epochStartedAt,
+      epochEndedAt,
+      responseSamples,
+      {
+        global: globalHistograms,
+        endpoints: endpointHistograms,
+      },
+    );
   }
 
   /**
-   * Clear all metrics (reset to zero)
+   * Get collected body samples for a run
+   * @param runId The run ID
+   * @returns Map of endpoint URL to body samples
    */
-  reset(): void {
-    this.startTime = Date.now();
+  getCollectedResponseSamples(runId: string): Map<
+    string,
+    Array<{
+      statusCode: number;
+      headers: Record<string, string>;
+      body: string;
+    }>
+  > {
+    const samples = responseSamplesStore.get(runId) || new Map();
+    return samples;
+  }
 
-    // Reset all managers
-    this.statsCounterManagers.forEach((manager) => {
-      const endpoints = manager.getEndpointsCount();
-      for (let i = 0; i < endpoints; i++) {
-        // Note: Individual counters can't be reset due to atomic safety
-        // This is intentional - counters should only increment
-      }
-    });
+  /**
+   * Record a body sample from a worker thread
+   * @param statusCode HTTP status code
+   * @param body Response body content
+   * @param url Endpoint URL
+   * @param runId The run ID to associate samples with
+   */
+  recordResponseSample(
+    runId: string,
+    url: string,
+    statusCode: number,
+    headers: Record<string, string>,
+    body: string,
+  ): void {
+    // Store directly under runId (no more 'current' key pattern)
+    if (!responseSamplesStore.has(runId)) {
+      responseSamplesStore.set(runId, new Map());
+    }
+    const samples = responseSamplesStore.get(runId)!;
 
-    // Reset body sample managers
-    this.bodySampleManagers.forEach((manager) => {
-      for (let i = 0; i < manager.getEndpointsCount(); i++) {
-        manager.clearBodySamples(i);
-      }
-    });
+    if (!samples.has(url)) {
+      samples.set(url, []);
+    }
+
+    const endpointSamples = samples.get(url)!;
+
+    // Only store one sample per status code (as per the original design)
+    const existingSampleIndex = endpointSamples.findIndex(
+      (s) => s.statusCode === statusCode,
+    );
+
+    if (existingSampleIndex === -1) {
+      endpointSamples.push({
+        statusCode,
+        headers,
+        body,
+      });
+    }
+  }
+
+  /**
+   * Clean up body samples for a run
+   * @param runId The run ID to clean up
+   */
+  cleanupResponseSamples(runId: string): void {
+    responseSamplesStore.delete(runId);
   }
 
   /**
@@ -509,14 +880,12 @@ export class MetricsAggregator implements IMetricsAggregator {
     });
 
     return {
-      averageLatency: this.roundTo4Decimals(averageLatency),
-      minLatency: this.roundTo4Decimals(
-        minLatency === Infinity ? 0 : minLatency,
-      ),
-      maxLatency: this.roundTo4Decimals(maxLatency),
-      p50Latency: this.roundTo4Decimals(weightedP50),
-      p95Latency: this.roundTo4Decimals(weightedP95),
-      p99Latency: this.roundTo4Decimals(weightedP99),
+      averageLatency: roundToDecimals(averageLatency),
+      minLatency: roundToDecimals(minLatency === Infinity ? 0 : minLatency),
+      maxLatency: roundToDecimals(maxLatency),
+      p50Latency: roundToDecimals(weightedP50),
+      p95Latency: roundToDecimals(weightedP95),
+      p99Latency: roundToDecimals(weightedP99),
       totalCount,
     };
   }

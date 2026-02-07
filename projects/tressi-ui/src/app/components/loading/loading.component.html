@@ -1,0 +1,10 @@
+@if (isVisible()) {
+  <div
+    class="bg-base-100 fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm transition-opacity duration-300 ease-out"
+    [class.opacity-0]="isFadingOut()"
+    [class.opacity-100]="!isFadingOut()"
+    role="status"
+    aria-live="polite"
+    [attr.aria-busy]="!isFadingOut()"
+  ></div>
+}

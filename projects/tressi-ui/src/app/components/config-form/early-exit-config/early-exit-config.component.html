@@ -70,14 +70,12 @@
       <div>
         <div class="mb-2 flex items-center justify-between">
           <label class="label-text font-medium">Exit Status Codes</label>
-          <button
-            type="button"
-            class="btn btn-primary btn-sm"
+          <app-button
             (click)="addExitStatusCode.emit()"
-          >
-            <app-icon name="add" />
-            Add Code
-          </button>
+            [color]="'primary'"
+            [icon]="'add'"
+            [title]="'Add Code'"
+          />
         </div>
         <div class="space-y-2">
           @for (code of getExitStatusCodes(); track $index) {
@@ -92,13 +90,12 @@
                   [field]="form().exitStatusCodes[$index]"
                   placeholder="HTTP status code"
                 />
-                <button
-                  type="button"
-                  class="btn btn-error btn-sm btn-square"
+                <app-button
                   (click)="removeExitStatusCode.emit($index)"
-                >
-                  <app-icon name="delete" />
-                </button>
+                  [color]="'error'"
+                  [icon]="'delete'"
+                  [title]="'Remove Code'"
+                />
               </div>
               @if (
                 form().exitStatusCodes[$index]().touched() &&

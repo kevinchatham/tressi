@@ -1,8 +1,8 @@
 import { performance } from 'perf_hooks';
-import { type TressiRequestConfig } from 'tressi-common/config';
 import { request } from 'undici';
 
-import { RequestResult } from '../types/reporting/types';
+import { TressiRequestConfig } from '../common/config/types';
+import { RequestResult } from '../reporting/types';
 import { globalAgentManager } from './agent-manager';
 import { ResponseSampler } from './response-sampler';
 
@@ -109,6 +109,7 @@ export class RequestExecutor {
       result.latencyMs = latencyMs;
       result.success = statusCode >= 200 && statusCode < 300;
       result.body = body;
+      result.headers = responseHeaders;
       result.timestamp = performance.now();
       result.bytesSent = bytesSent;
       result.bytesReceived = responseBodySize;

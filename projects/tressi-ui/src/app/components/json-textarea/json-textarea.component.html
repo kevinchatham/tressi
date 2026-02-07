@@ -7,8 +7,9 @@
   [placeholder]="placeholder()"
   setup="minimal"
   (change)="handleValueChange($event)"
-  class="font-mono text-sm"
-></code-editor>
+  class="font-mono"
+  [disabled]="disabled()"
+/>
 @if (error()) {
   <p class="label text-error mt-1">{{ error() }}</p>
 }

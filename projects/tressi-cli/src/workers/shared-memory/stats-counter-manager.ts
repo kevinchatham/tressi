@@ -22,8 +22,8 @@
  *         └───────────────────────────────────────────────┘
  */
 
-import { IStatsCounterManager } from '../../types/workers/interfaces';
-import { EndpointCounters } from '../../types/workers/types';
+import { IStatsCounterManager } from '../interfaces';
+import { EndpointCounters } from '../types';
 
 export class StatsCounterManager implements IStatsCounterManager {
   private readonly sab: SharedArrayBuffer;

@@ -1,0 +1,49 @@
+<div
+  class="modal"
+  [class.modal-open]="isOpen()"
+  (click)="handleBackdropClick($event)"
+>
+  <div class="modal-box">
+    <h3 class="text-lg font-bold">Confirm Test Deletion</h3>
+    <p class="py-4">
+      Are you sure you want to delete this test? This action cannot be undone.
+    </p>
+
+    <div class="space-y-2">
+      <div class="flex items-center gap-2">
+        <span class="text-base-content/70 text-sm">Test ID:</span>
+        <span class="font-mono text-sm">{{ test()?.id }}</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-base-content/70 text-sm">Status:</span>
+        <span class="badge badge-sm" [ngClass]="getStatusBadgeClass()">{{
+          test()?.status
+        }}</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-base-content/70 text-sm">Created:</span>
+        <span class="text-sm">{{ formatDate(test()?.epochCreatedAt) }}</span>
+      </div>
+    </div>
+
+    <div class="alert alert-warning mt-4">
+      <app-icon name="warning" />
+      <span>All test metrics and results will be permanently deleted.</span>
+    </div>
+
+    <div class="modal-action">
+      <app-button
+        (click)="onCancel()"
+        [ghost]="true"
+        [title]="'Cancel'"
+        [icon]="'close'"
+      />
+      <app-button
+        (click)="onConfirm()"
+        [title]="'Delete'"
+        [color]="'error'"
+        [icon]="'delete'"
+      />
+    </div>
+  </div>
+</div>

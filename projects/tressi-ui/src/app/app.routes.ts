@@ -9,6 +9,8 @@ import {
 import { DashboardComponent } from './pages/dashboard/dashboard.component';
 import { ServerUnavailableComponent } from './pages/server-unavailable/server-unavailable.component';
 import { SettingsComponent } from './pages/settings/settings.component';
+import { ShowcaseComponent } from './pages/showcase/showcase.component';
+import { TestDetailComponent } from './pages/test-detail/test-detail.component';
 import { WelcomeComponent } from './pages/welcome/welcome.component';
 import { ConfigService } from './services/config.service';
 import { HealthService } from './services/health.service';
@@ -79,25 +81,36 @@ export const routes: Routes = [
   {
     path: 'server-unavailable',
     component: ServerUnavailableComponent,
-    data: { title: 'Tressi Server Unavailable' },
+    data: { title: 'Tressi - Server Unavailable' },
   },
   {
     path: 'welcome',
     component: WelcomeComponent,
-    canActivate: [configGuard],
-    data: { title: 'Tressi Welcome' },
+    canActivate: [healthCheckGuard, configGuard],
+    data: { title: 'Tressi - Welcome' },
   },
   {
     path: 'settings',
     component: SettingsComponent,
-    canActivate: [configGuard],
-    data: { title: 'Tressi Settings' },
+    canActivate: [healthCheckGuard, configGuard],
+    data: { title: 'Tressi - Settings' },
   },
   {
     path: 'dashboard',
     component: DashboardComponent,
     canActivate: [healthCheckGuard, configGuard],
-    data: { title: 'Tressi Dashboard' },
+    data: { title: 'Tressi - Dashboard' },
+  },
+  {
+    path: 'showcase',
+    component: ShowcaseComponent,
+    data: { title: 'Tressi - Showcase' },
+  },
+  {
+    path: 'tests/:testId',
+    component: TestDetailComponent,
+    canActivate: [healthCheckGuard],
+    data: { title: 'Tressi - Test Details' },
   },
   {
     path: '',

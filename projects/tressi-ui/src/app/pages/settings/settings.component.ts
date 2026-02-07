@@ -7,19 +7,23 @@ import {
   signal,
 } from '@angular/core';
 import { Router } from '@angular/router';
+import { ButtonComponent } from 'src/app/components/button/button.component';
 import { ThemeSwitcherComponent } from 'src/app/components/theme-switcher/theme-switcher.component';
 
 import { ConfigFormComponent } from '../../components/config-form/config-form.component';
 import { ConfigurationCardComponent } from '../../components/configuration-card/configuration-card.component';
 import { HeaderComponent } from '../../components/header/header.component';
 import { IconComponent } from '../../components/icon/icon.component';
+import { ImportConfigButtonComponent } from '../../components/import-config-button/import-config-button.component';
 import { SearchBarComponent } from '../../components/search-bar/search-bar.component';
 import { ConfigService } from '../../services/config.service';
+import { LoadingService } from '../../services/loading.service';
 import {
   ConfigDocument,
   ModifyConfigRequest,
 } from '../../services/rpc.service';
 import { TimeService } from '../../services/time.service';
+import { ToastService } from '../../services/toast.service';
 
 @Component({
   selector: 'app-settings',
@@ -30,6 +34,8 @@ import { TimeService } from '../../services/time.service';
     HeaderComponent,
     ConfigurationCardComponent,
     SearchBarComponent,
+    ImportConfigButtonComponent,
+    ButtonComponent,
   ],
   templateUrl: './settings.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -39,6 +45,8 @@ export class SettingsComponent implements OnInit {
   private readonly configService = inject(ConfigService);
   private readonly router = inject(Router);
   readonly timeService = inject(TimeService);
+  private readonly loadingService = inject(LoadingService);
+  private readonly toastService = inject(ToastService);
 
   /** Reactive signals for state management */
   readonly configs = signal<ConfigDocument[]>([]);
@@ -77,6 +85,7 @@ export class SettingsComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    this.loadingService.registerPage('settings');
     this.loadConfigurations();
   }
 
@@ -84,8 +93,13 @@ export class SettingsComponent implements OnInit {
    * Loads all available configurations from the server.
    */
   private async loadConfigurations(): Promise<void> {
-    const configs = await this.configService.getAll();
-    this.configs.set(configs);
+    this.loadingService.setPageLoading('settings', true);
+    try {
+      const configs = await this.configService.getAll();
+      this.configs.set(configs);
+    } finally {
+      this.loadingService.setPageLoading('settings', false);
+    }
   }
 
   /**
@@ -101,6 +115,26 @@ export class SettingsComponent implements OnInit {
    */
   startEdit(config: ConfigDocument): void {
     this.currentConfig.set(config);
+    this.showForm.set(true);
+  }
+
+  /**
+   * Starts duplicating an existing configuration.
+   */
+  startDuplicate(config: ConfigDocument): void {
+    // Generate new name by appending " - Copy" to original name
+    const newName = `${config.name} - Copy`;
+
+    // Create duplicate config without ID (so it's treated as new)
+    const duplicatedConfig: ConfigDocument = {
+      ...config,
+      id: '', // Empty ID that will be generated on save
+      name: newName,
+      epochCreatedAt: Date.now(),
+      epochUpdatedAt: Date.now(),
+    };
+
+    this.currentConfig.set(duplicatedConfig);
     this.showForm.set(true);
   }
 
@@ -126,35 +160,48 @@ export class SettingsComponent implements OnInit {
   async deleteConfig(): Promise<void> {
     const config = this.configToDelete();
     if (!config) return;
-    await this.configService.deleteConfig(config.id);
-    this.showDeleteModal.set(false);
-    this.configToDelete.set(null);
 
-    // Update configs directly instead of reloading
-    this.configs.update((configs) => configs.filter((c) => c.id !== config.id));
+    this.loadingService.setPageLoading('settings', true);
+    try {
+      await this.configService.deleteConfig(config.id);
+      this.showDeleteModal.set(false);
+      this.configToDelete.set(null);
+
+      // Update configs directly instead of reloading
+      this.configs.update((configs) =>
+        configs.filter((c) => c.id !== config.id),
+      );
+    } finally {
+      this.loadingService.setPageLoading('settings', false);
+    }
   }
 
   /**
    * Handles configuration saved event from config-form component.
    */
   async onConfigSaved(event: ModifyConfigRequest): Promise<void> {
-    const savedConfig = await this.configService.saveConfig(event);
+    this.loadingService.setPageLoading('settings', true);
+    try {
+      const savedConfig = await this.configService.saveConfig(event);
 
-    // Update configs directly instead of reloading
-    this.configs.update((configs) => {
-      const existingIndex = configs.findIndex((c) => c.id === savedConfig.id);
-      if (existingIndex >= 0) {
-        // Update existing config
-        const updatedConfigs = [...configs];
-        updatedConfigs[existingIndex] = savedConfig;
-        return updatedConfigs;
-      } else {
-        // Add new config
-        return [...configs, savedConfig];
-      }
-    });
+      // Update configs directly instead of reloading
+      this.configs.update((configs) => {
+        const existingIndex = configs.findIndex((c) => c.id === savedConfig.id);
+        if (existingIndex >= 0) {
+          // Update existing config
+          const updatedConfigs = [...configs];
+          updatedConfigs[existingIndex] = savedConfig;
+          return updatedConfigs;
+        } else {
+          // Add new config
+          return [...configs, savedConfig];
+        }
+      });
 
-    this.cancelEdit();
+      this.cancelEdit();
+    } finally {
+      this.loadingService.setPageLoading('settings', false);
+    }
   }
 
   /**
@@ -186,5 +233,35 @@ export class SettingsComponent implements OnInit {
    */
   onSearchQueryChange(query: string): void {
     this.searchQuery.set(query);
+  }
+
+  /**
+   * Handles successful config import
+   */
+  onConfigImported(importedConfig: ModifyConfigRequest): void {
+    // Set the imported config to trigger form population
+    this.currentConfig.set({
+      id: '',
+      epochCreatedAt: Date.now(),
+      epochUpdatedAt: Date.now(),
+      name: importedConfig.name,
+      config: importedConfig.config,
+    } as ConfigDocument);
+
+    this.showForm.set(true);
+  }
+
+  /**
+   * Handles import errors with toast notification
+   */
+  onImportError(error: string): void {
+    this.toastService.show(error, 'error');
+  }
+
+  /**
+   * Dismisses the toast notification
+   */
+  dismissToast(): void {
+    this.toastService.dismiss();
   }
 }

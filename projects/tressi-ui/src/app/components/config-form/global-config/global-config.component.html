@@ -1,12 +1,37 @@
 <div class="space-y-6">
   <!-- Global Headers Section -->
-  <div class="bg-base-100 ring-neutral rounded p-6 ring-1">
+  <div class="bg-base-200 border-base-content/5 rounded-xl border-2 p-6">
     <h2 class="mb-4 flex items-center gap-2 text-lg font-semibold">
-      <app-icon name="notes" class="h-5 w-5" />
-      Global Headers
+      <app-icon name="stat_2" />
+      Global Configuration
     </h2>
 
     <div class="space-y-2">
+      <!-- Ramp Up Duration -->
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">Ramp Up Time (seconds)</legend>
+        <input
+          type="number"
+          class="input"
+          [field]="form().config.options.rampUpDurationSec"
+          placeholder="Time to reach target RPS"
+        />
+        <p class="label">Global ramp-up time (0 = no ramp-up)</p>
+        @if (
+          form().config.options.rampUpDurationSec().touched() &&
+          form().config.options.rampUpDurationSec().invalid()
+        ) {
+          <p class="label text-error">
+            @for (
+              error of form().config.options.rampUpDurationSec().errors();
+              track error
+            ) {
+              {{ error.message }}
+            }
+          </p>
+        }
+      </fieldset>
+
       <fieldset class="fieldset">
         <legend class="fieldset-legend">Global Headers (JSON)</legend>
         <app-json-textarea
@@ -37,7 +62,7 @@
   </div>
 
   <!-- Worker Early Exit Section -->
-  <div class="bg-base-100 ring-neutral rounded p-6 ring-1">
+  <div class="bg-base-200 border-base-content/5 rounded-xl border-2 p-6">
     <h2 class="mb-4 flex items-center gap-2 text-lg font-semibold">
       <app-icon name="warning" class="h-5 w-5" />
       Worker Early Exit Configuration

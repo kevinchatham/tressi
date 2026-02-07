@@ -1,8 +1,8 @@
 import { Component, input, output } from '@angular/core';
 import { Field, form } from '@angular/forms/signals';
-import { TressiEarlyExitConfig } from 'tressi-common/config';
+import { TressiEarlyExitConfig } from '@tressi-cli/common/config/types';
 
-import { IconComponent } from '../../icon/icon.component';
+import { ButtonComponent } from '../../button/button.component';
 
 export type EarlyExitConfigRequestFormType = ReturnType<
   typeof form<TressiEarlyExitConfig>
@@ -10,7 +10,7 @@ export type EarlyExitConfigRequestFormType = ReturnType<
 
 @Component({
   selector: 'app-early-exit-config',
-  imports: [Field, IconComponent],
+  imports: [Field, ButtonComponent],
   templateUrl: './early-exit-config.component.html',
 })
 export class EarlyExitConfigComponent {

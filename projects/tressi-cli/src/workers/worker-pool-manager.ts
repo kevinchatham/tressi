@@ -1,18 +1,19 @@
-import { cpus } from 'os';
-import { TressiConfig, TressiRequestConfig } from 'tressi-common/config';
-import type { AggregatedMetric } from 'tressi-common/metrics';
+import { randomUUID } from 'crypto';
+import os from 'os';
 import { Worker } from 'worker_threads';
 
-import { WorkerState } from '../types/workers/types';
+import { TressiConfig, TressiRequestConfig } from '../common/config/types';
+import type { AggregatedMetrics } from '../common/metrics';
+import type { ResponseSamples, TestSummary } from '../reporting/types';
 import { FileUtils } from '../utils/file-utils';
 import { EarlyExitCoordinator } from './early-exit-coordinator';
 import { MetricsAggregator } from './metrics-aggregator';
-import { BodySampleManager } from './shared-memory/body-sample-manager';
 import { EndpointStateManager } from './shared-memory/endpoint-state-manager';
 import { HdrHistogramManager } from './shared-memory/hdr-histogram-manager';
 import { SharedMemoryFactory } from './shared-memory/shared-memory-factory';
 import { StatsCounterManager } from './shared-memory/stats-counter-manager';
 import { WorkerStateManager } from './shared-memory/worker-state-manager';
+import { WorkerState } from './types';
 
 /**
  * WorkerPoolManager - Core orchestration component for managing worker threads in Tressi load testing.
@@ -49,13 +50,14 @@ export class WorkerPoolManager {
   private workerAssignments: TressiRequestConfig[][] = [];
   private hdrHistogramManagers: HdrHistogramManager[] = [];
   private statsCounterManagers: StatsCounterManager[] = [];
-  private bodySampleManagers: BodySampleManager[] = [];
+  private readonly runId = `ephemeral-${randomUUID()}`;
+  constructor(private config: TressiConfig) {
+    const cpuCount = os.cpus().length;
+    const requestedThreads = config.options.threads ?? cpuCount;
+    const maxWorkers =
+      requestedThreads > cpuCount ? cpuCount : requestedThreads;
 
-  constructor(
-    private config: TressiConfig,
-    maxWorkers?: number,
-  ) {
-    this.maxWorkers = maxWorkers || cpus().length;
+    this.maxWorkers = maxWorkers;
     this.endpoints = config.requests;
 
     // Create managers using new SharedMemoryFactory
@@ -72,14 +74,23 @@ export class WorkerPoolManager {
     this.endpointStateManager = managers.endpointState;
     this.hdrHistogramManagers = managers.hdrHistogram;
     this.statsCounterManagers = managers.statsCounter;
-    this.bodySampleManagers = managers.bodySample;
 
-    // Create new metrics aggregator with new managers
+    // Build endpoint method map from config
+    const endpointMethodMap: Record<string, string> = {};
+    for (const request of config.requests) {
+      endpointMethodMap[request.url] = request.method;
+    }
+
+    // Create new metrics aggregator with new managers and method map
     this.metricsAggregator = new MetricsAggregator(
       this.hdrHistogramManagers,
       this.statsCounterManagers,
-      this.bodySampleManagers,
+      endpointMethodMap,
+      this.runId,
     );
+
+    // Set the config for metrics aggregation
+    this.metricsAggregator.setConfig(config);
 
     this.earlyExitCoordinator = new EarlyExitCoordinator(
       config,
@@ -111,12 +122,12 @@ export class WorkerPoolManager {
           endpointOffset,
           statsBuffer: this.statsCounterManagers[i].getSharedBuffer(),
           histogramBuffer: this.hdrHistogramManagers[i].getSharedBuffer(),
-          bodySampleBuffers: this.getBodySampleBuffersForWorker(i),
           workerStateBuffer: this.workerStateManager.getSharedBuffer(),
           endpointStateBuffer: this.endpointStateManager.getSharedBuffer(),
           memoryLimit: this.config.options.workerMemoryLimit,
           totalWorkers: actualWorkers,
           durationSec: this.config.options.durationSec || 10,
+          rampUpDurationSec: this.config.options.rampUpDurationSec || 0,
         },
         resourceLimits: {
           maxOldGenerationSizeMb: this.config.options.workerMemoryLimit,
@@ -164,6 +175,27 @@ export class WorkerPoolManager {
         this.workerStateManager.setWorkerState(workerId, WorkerState.ERROR);
       } else {
         this.workerStateManager.setWorkerState(workerId, WorkerState.FINISHED);
+      }
+    });
+
+    // Listen for body sample messages from worker
+    worker.on('message', (message: unknown) => {
+      if (
+        message &&
+        typeof message === 'object' &&
+        'type' in message &&
+        message.type === 'bodySample' &&
+        'statusCode' in message &&
+        'body' in message &&
+        'url' in message
+      ) {
+        this.metricsAggregator.recordResponseSample(
+          this.runId,
+          message.url as string,
+          message.statusCode as number,
+          (message as { headers?: Record<string, string> }).headers || {},
+          message.body as string,
+        );
       }
     });
   }
@@ -221,28 +253,6 @@ export class WorkerPoolManager {
   }
 
   /**
-   * Retrieves the body sample shared buffers for endpoints assigned to a specific worker.
-   *
-   * @param workerId - The worker identifier
-   * @returns Array of SharedArrayBuffer instances for body sample storage
-   *
-   * @remarks
-   * Each endpoint has its own body sample manager with a shared buffer.
-   * This method maps the worker's assigned endpoints to their corresponding body sample buffers.
-   */
-  private getBodySampleBuffersForWorker(workerId: number): SharedArrayBuffer[] {
-    const buffers: SharedArrayBuffer[] = [];
-    const startIndex = this.getEndpointOffset(workerId);
-    const endIndex = startIndex + this.workerAssignments[workerId].length;
-
-    for (let i = startIndex; i < endIndex; i++) {
-      buffers.push(this.bodySampleManagers[i].getSharedBuffer());
-    }
-
-    return buffers;
-  }
-
-  /**
    * Waits for all workers to reach the RUNNING state.
    *
    * @returns Promise that resolves when all workers are ready or timeout occurs
@@ -280,9 +290,60 @@ export class WorkerPoolManager {
    * It combines histogram data, counters, and network metrics from all workers
    * into a single comprehensive metrics object.
    */
-  getAggregatedResults(): AggregatedMetric {
+  getAggregatedResults(): AggregatedMetrics {
     const endpoints = this.config.requests.map((req) => req.url);
     return this.metricsAggregator.getResults(this.workers.length, endpoints);
+  }
+
+  /**
+   * Get body samples collected during the test
+   * @returns Record of endpoint URL to body samples
+   */
+  getResponseSamples(): ResponseSamples {
+    const responseSamplesMap =
+      this.metricsAggregator.getCollectedResponseSamples(this.runId);
+
+    const result: ResponseSamples = {};
+    responseSamplesMap.forEach((samples, url) => {
+      result[url] = samples;
+    });
+
+    return result;
+  }
+
+  /**
+   * Clean up body samples for this run
+   */
+  cleanupResponseSamples(): void {
+    this.metricsAggregator.cleanupResponseSamples(this.runId);
+  }
+
+  /**
+   * Set the testId for server mode persistence
+   * @param testId The test ID from database
+   */
+  setTestId(testId: string): void {
+    this.metricsAggregator.setTestId(testId);
+  }
+
+  /**
+   * Set the start time for metrics aggregation
+   * @param startTime Unix timestamp in milliseconds
+   */
+  public setStartTime(startTime: number): void {
+    this.metricsAggregator.setStartTime(startTime);
+  }
+
+  /**
+   * Get test summary for final report generation
+   * @returns TestSummary object
+   */
+  public getTestSummary(): TestSummary {
+    const endpoints = this.config.requests.map((req) => req.url);
+    return this.metricsAggregator.getTestSummary(
+      this.workers.length,
+      endpoints,
+    );
   }
 
   /**

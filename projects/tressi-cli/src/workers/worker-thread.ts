@@ -1,15 +1,14 @@
-import { type TressiRequestConfig } from 'tressi-common/config';
 import { parentPort, workerData } from 'worker_threads';
 
+import { TressiRequestConfig } from '../common/config/types';
 import { RequestExecutor } from '../http/request-executor';
 import { ResponseSampler } from '../http/response-sampler';
 import { terminal } from '../tui/terminal';
-import { WorkerData, WorkerState } from '../types/workers/types';
-import { BodySampleManager } from './shared-memory/body-sample-manager';
 import { EndpointStateManager } from './shared-memory/endpoint-state-manager';
 import { HdrHistogramManager } from './shared-memory/hdr-histogram-manager';
 import { StatsCounterManager } from './shared-memory/stats-counter-manager';
 import { WorkerStateManager } from './shared-memory/worker-state-manager';
+import { WorkerData, WorkerState } from './types';
 import { WorkerRateLimiter } from './worker-rate-limiter';
 
 /**
@@ -36,7 +35,6 @@ export class WorkerThread {
   private rateLimiter: WorkerRateLimiter;
   private statsCounterManager: StatsCounterManager;
   private hdrHistogramManager: HdrHistogramManager;
-  private bodySampleManagers: BodySampleManager[];
   private workerStateManager: WorkerStateManager;
   private endpointStateManager: EndpointStateManager;
   private requestExecutor: RequestExecutor;
@@ -70,22 +68,21 @@ export class WorkerThread {
       data.histogramBuffer,
     );
 
-    // Create body sample managers for each endpoint
-    this.bodySampleManagers = data.bodySampleBuffers.map((buffer) => {
-      return new BodySampleManager(1, 1000, buffer);
-    });
-
     this.workerStateManager = new WorkerStateManager(
       this.totalWorkers,
       data.workerStateBuffer,
     );
 
+    const totalEndpoints = data.endpointStateBuffer.byteLength / 4; // 4 bytes per Int32
     this.endpointStateManager = new EndpointStateManager(
-      this.totalWorkers * this.assignedEndpoints.length,
+      totalEndpoints,
       data.endpointStateBuffer,
     );
 
-    this.rateLimiter = new WorkerRateLimiter(this.assignedEndpoints);
+    this.rateLimiter = new WorkerRateLimiter(
+      this.assignedEndpoints,
+      data.rampUpDurationSec,
+    );
     this.requestExecutor = new RequestExecutor(new ResponseSampler(), 1000);
     this.startTime = Date.now();
     this.durationMs = data.durationSec * 1000;
@@ -121,7 +118,10 @@ export class WorkerThread {
       if (this.allEndpointsStopped()) break;
 
       // Get batch of available requests (NON-BLOCKING)
-      const requests = this.rateLimiter.getAvailableRequests(PIPELINE_DEPTH);
+      const requests = this.rateLimiter.getAvailableRequests(
+        PIPELINE_DEPTH,
+        elapsed,
+      );
 
       if (requests.length > 0) {
         // CRITICAL: Fire requests WITHOUT waiting - TRUE PIPELINING
@@ -246,18 +246,17 @@ export class WorkerThread {
       // Record latency
       this.hdrHistogramManager.recordLatency(localEndpointIndex, latency);
 
-      // Record body sample if response body exists
-      if (result.body && result.status) {
-        // Record body sample using the correct body sample manager
-        if (globalEndpointIndex < this.bodySampleManagers.length) {
-          // For now, use a simple index - in real implementation, this would be coordinated
-          const sampleIndex = Math.floor(Math.random() * 1000);
-          this.bodySampleManagers[globalEndpointIndex].recordBodySample(
-            0, // Always 0 for per-endpoint managers
-            sampleIndex,
-            result.status,
-          );
-        }
+      // Send body sample to main thread if response body exists
+      if (result.body && result.status && parentPort) {
+        parentPort.postMessage({
+          type: 'bodySample',
+          endpointIndex: globalEndpointIndex,
+          statusCode: result.status,
+          body: result.body,
+          headers: result.headers,
+          url: request.url,
+          method: request.method || 'GET',
+        });
       }
 
       // Release result object back to pool

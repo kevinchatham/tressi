@@ -1,22 +1,25 @@
 <div class="p-16">
   <app-header>
-    <app-theme-switcher />
-
+    @if (!showForm()) {
+      <app-theme-switcher />
+      <app-import-config-button
+        (configImported)="onConfigImported($event)"
+        (importError)="onImportError($event)"
+      />
+    }
     @if (!hasNoConfigs() && !showForm()) {
-      <button
+      <app-button
         (click)="startCreate()"
-        class="btn btn-sm btn-primary btn-circle btn-outline"
-        title="New Config"
-      >
-        <app-icon name="add" />
-      </button>
-      <button
+        [color]="'primary'"
+        [title]="'New Config'"
+        [icon]="'post_add'"
+      />
+      <app-button
         (click)="navigateToDashboard()"
-        class="btn btn-ghost btn-circle"
-        title="Dashboard"
-      >
-        <app-icon name="home" />
-      </button>
+        [color]="'info'"
+        [title]="'Dashboard'"
+        [icon]="'browse_activity'"
+      />
     }
   </app-header>
 
@@ -35,21 +38,26 @@
         <app-configuration-card
           [input]="config"
           (edit)="startEdit($event)"
+          (duplicate)="startDuplicate($event)"
           (delete)="showDeleteConfirm($event)"
         />
       }
     </div>
 
     @if (hasNoConfigs()) {
-      <div class="ring-neutral mx-auto rounded-lg p-8 ring-1">
+      <div
+        class="border-base-content/5 bg-base-200 mx-auto rounded-xl border-2 p-8"
+      >
         <div class="text-center">
           <p class="text-base-content/70 mb-4 text-lg">
             No configurations found
           </p>
-          <button (click)="startCreate()" class="btn btn-primary">
-            <app-icon name="add" />
-            Create your first configuration
-          </button>
+          <app-button
+            (click)="startCreate()"
+            [color]="'primary'"
+            [icon]="'add'"
+            [title]="'Create'"
+          />
         </div>
       </div>
     }
@@ -58,7 +66,7 @@
   <!-- Edit/Create Form -->
   @if (showForm()) {
     <div class="mx-auto max-w-4xl">
-      <div class="ring-neutral bg-base-100 rounded-lg p-6 ring-1">
+      <div class="border-base-content/5 bg-base-200 rounded-xl border-2 p-6">
         <h2 class="mb-4 text-xl font-semibold">
           {{
             currentConfig()?.id ? 'Edit Configuration' : 'Create Configuration'
@@ -77,17 +85,36 @@
 <!-- Delete Confirmation Modal -->
 <div class="modal" [class.modal-open]="showDeleteModal()">
   <div
-    class="ring-neutral bg-base-100 rounded-lg p-6 ring-1 sm:m-4 sm:max-w-[calc(100%-2rem)]"
+    class="border-base-content/5 bg-base-200 sm:max-w-[calc(100%-2rem) rounded-xl border-2 p-6 sm:m-4 md:max-w-lg"
   >
     <h3 class="text-lg font-semibold">Delete Configuration</h3>
     <p class="py-4">
       Are you sure you want to delete
-      <strong>{{ getConfigToDeleteName() }}</strong
-      >? This action cannot be undone.
+      <strong>
+        {{ getConfigToDeleteName() }}
+      </strong>
+      ?
     </p>
+    <div class="alert alert-warning mt-4">
+      <app-icon name="warning" />
+      <span>
+        All tests and metrics linked to this configuration will be permanently
+        removed.
+      </span>
+    </div>
     <div class="mt-6 flex justify-end gap-3">
-      <button (click)="cancelDelete()" class="btn btn-ghost">Cancel</button>
-      <button (click)="deleteConfig()" class="btn btn-error">Delete</button>
+      <app-button
+        (click)="cancelDelete()"
+        [icon]="'close'"
+        [title]="'Cancel'"
+        [ghost]="true"
+      />
+      <app-button
+        (click)="deleteConfig()"
+        [icon]="'delete'"
+        [color]="'error'"
+        [title]="'Delete'"
+      />
     </div>
   </div>
 </div>

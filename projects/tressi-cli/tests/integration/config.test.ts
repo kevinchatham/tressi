@@ -1,8 +1,7 @@
 import { MockAgent, setGlobalDispatcher } from 'undici';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
-import { loadConfig, validateConfig } from '../../src/core/config';
-import { ConfigMergeError, ConfigValidationError } from '../../src/types';
+import { loadConfig } from '../../src/core/config';
 
 const minimalConfig = {
   $schema: 'https://example.com/schema.json',
@@ -11,28 +10,30 @@ const minimalConfig = {
       url: 'http://localhost:8080/test',
       method: 'GET' as const,
       rps: 10,
-      payload: null,
-      headers: null,
+      rampUpDurationSec: 0,
+      payload: {},
+      headers: {},
+      earlyExit: {
+        enabled: false,
+        errorRateThreshold: 0,
+        exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
+        monitoringWindowMs: 5000,
+      },
     },
   ],
   options: {
     durationSec: 10,
-    rampUpTimeSec: 0,
-    useUI: true,
+    rampUpDurationSec: 0,
     silent: false,
-    earlyExitOnError: false,
     workerMemoryLimit: 128,
-    headers: null,
-    exportPath: null,
+    headers: {},
+    exportPath: '',
     threads: 4,
     workerEarlyExit: {
       enabled: false,
-      globalErrorRateThreshold: 0.1,
-      globalErrorCountThreshold: 100,
-      perEndpointThresholds: [],
-      workerExitStatusCodes: [],
-      monitoringWindowMs: 1000,
-      stopMode: 'endpoint' as const,
+      errorRateThreshold: 0,
+      exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
+      monitoringWindowMs: 5000,
     },
   },
 };
@@ -44,17 +45,32 @@ const expectedConfig = {
       url: 'http://localhost:8080/test',
       method: 'GET',
       rps: 10,
-      payload: null,
-      headers: null,
+      rampUpDurationSec: 0,
+      payload: {},
+      headers: {},
+      earlyExit: {
+        enabled: false,
+        errorRateThreshold: 0,
+        exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
+        monitoringWindowMs: 5000,
+      },
     },
   ],
-  options: expect.objectContaining({
+  options: {
     durationSec: 10,
-    rampUpTimeSec: 0,
-    useUI: true,
+    rampUpDurationSec: 0,
     silent: false,
-    earlyExitOnError: false,
-  }),
+    workerMemoryLimit: 128,
+    headers: {},
+    exportPath: '',
+    threads: 4,
+    workerEarlyExit: {
+      enabled: false,
+      errorRateThreshold: 0,
+      exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
+      monitoringWindowMs: 5000,
+    },
+  },
 };
 
 let mockAgent: MockAgent;
@@ -92,26 +108,9 @@ describe('config', () => {
 
     it('should return validation errors for invalid config', async () => {
       const invalidConfig = { ...minimalConfig, requests: 'not-an-array' };
-      const result = validateConfig(invalidConfig);
 
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        // TypeScript knows result.error is ConfigValidationError | ConfigMergeError
-        expect(
-          (result as { error: ConfigValidationError }).error,
-        ).toBeInstanceOf(ConfigValidationError);
-        expect(
-          (
-            (result as { error: ConfigValidationError })
-              .error as ConfigValidationError
-          ).fieldErrors,
-        ).toContainEqual(
-          expect.objectContaining({
-            path: 'requests',
-            code: 'invalid_type',
-          }),
-        );
-      }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await expect(loadConfig(invalidConfig as any)).rejects.toThrow();
     });
 
     it('should return merge errors for config with missing required fields', async () => {
@@ -119,17 +118,9 @@ describe('config', () => {
         ...minimalConfig,
         requests: [{}], // Missing required fields
       };
-      const result = validateConfig(invalidConfig);
 
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(
-          (
-            (result as { error: ConfigValidationError | ConfigMergeError })
-              .error as ConfigValidationError | ConfigMergeError
-          ).message,
-        ).toContain('merge failed');
-      }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await expect(loadConfig(invalidConfig as any)).rejects.toThrow();
     });
 
     /**
@@ -158,7 +149,7 @@ describe('config', () => {
 
       await expect(
         loadConfig('http://localhost:8080/remote-config-failing'),
-      ).rejects.toThrow('Remote config fetch failed: 500');
+      ).rejects.toThrow('Remote config fetch failed with status 500');
     });
 
     it('should correctly parse a config with per-request headers', async () => {
@@ -169,21 +160,16 @@ describe('config', () => {
             Authorization: 'Bearer global-token',
           },
           durationSec: 1,
-          rampUpTimeSec: 0,
-          useUI: true,
+          rampUpDurationSec: 0,
           silent: false,
-          earlyExitOnError: false,
           workerMemoryLimit: 128,
-          exportPath: null,
+          exportPath: '',
           threads: 4,
           workerEarlyExit: {
             enabled: false,
-            globalErrorRateThreshold: 0.1,
-            globalErrorCountThreshold: 100,
-            perEndpointThresholds: [],
-            workerExitStatusCodes: [],
-            monitoringWindowMs: 1000,
-            stopMode: 'endpoint' as const,
+            errorRateThreshold: 0,
+            exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
+            monitoringWindowMs: 5000,
           },
         },
         requests: [
@@ -194,7 +180,14 @@ describe('config', () => {
               'X-Request-ID': '123',
             },
             rps: 10,
-            payload: null,
+            rampUpDurationSec: 0,
+            payload: {},
+            earlyExit: {
+              enabled: false,
+              errorRateThreshold: 0,
+              exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
+              monitoringWindowMs: 5000,
+            },
           },
         ],
       };

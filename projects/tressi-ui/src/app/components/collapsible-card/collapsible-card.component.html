@@ -1,0 +1,24 @@
+<div class="border-base-content/5 bg-base-200 rounded-xl border-2 p-4">
+  <div class="flex items-center justify-between">
+    <h2 class="text-xl font-semibold">{{ title() }}</h2>
+    <div class="flex items-center justify-end gap-4">
+      <!-- Header content projection -->
+      @for (content of headerContent(); track content) {
+        <ng-container [ngTemplateOutlet]="content" />
+      }
+      <app-button
+        (click)="toggleCollapsed()"
+        [title]="collapsed() ? 'Expand' : 'Collapse'"
+        [icon]="collapsed() ? 'keyboard_arrow_down' : 'keyboard_arrow_up'"
+        [ghost]="true"
+      />
+    </div>
+  </div>
+
+  <!-- Main content projection -->
+  @if (!collapsed()) {
+    <div class="mt-4">
+      <ng-content />
+    </div>
+  }
+</div>

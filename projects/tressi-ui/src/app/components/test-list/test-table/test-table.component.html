@@ -1,0 +1,148 @@
+<div
+  class="rounded-box border-base-content/5 bg-base-100 overflow-x-auto border"
+>
+  <table class="table">
+    <thead>
+      <tr
+        cdkDropList
+        cdkDropListOrientation="horizontal"
+        (cdkDropListDropped)="onHeaderDragDrop($event)"
+        class="text-base-content"
+      >
+        @for (column of columns(); track column.key) {
+          <th
+            class="bg-base-200 group relative text-center"
+            [class.w-12]="column.key === 'select'"
+            cdkDrag
+            [cdkDragDisabled]="!column.draggable"
+            [class.cursor-move]="column.draggable"
+          >
+            <!-- Drag Handle (visible on hover) - Using Unicode dots instead of SVG -->
+            @if (column.draggable) {
+              <div
+                class="absolute top-1/2 left-1 -translate-y-1/2 cursor-grab opacity-0 transition-opacity select-none group-hover:opacity-50 hover:opacity-100 active:cursor-grabbing"
+              >
+                <app-icon name="drag_indicator" />
+              </div>
+            }
+
+            <!-- Column Content -->
+            @if (column.key === 'select') {
+              <input
+                type="checkbox"
+                class="checkbox checkbox-sm mx-auto"
+                [checked]="isAllSelected()"
+                [indeterminate]="isSomeSelected() && !isAllSelected()"
+                (change)="onToggleAllSelection($event)"
+              />
+            } @else {
+              <div
+                class="flex items-center justify-center gap-1"
+                [class.cursor-pointer]="column.sortable"
+                [class.pl-6]="column.draggable"
+                (click)="onColumnHeaderClick(column)"
+              >
+                <span>{{ column.label }}</span>
+                @if (column.sortable && isColumnSorted(column.key)) {
+                  <app-icon
+                    class="hover:text-base-content text-base-content/50 transition-colors"
+                    [name]="getSortIcon(column.key)!"
+                  />
+                }
+              </div>
+            }
+
+            <!-- Drag Preview -->
+            <div
+              *cdkDragPreview
+              class="bg-base-100 text-base-content rounded-xl px-4 py-2 font-medium shadow-lg"
+            >
+              {{ column.label }}
+            </div>
+
+            <!-- Drag Placeholder -->
+            <div
+              *cdkDragPlaceholder
+              class="bg-primary/20 border-primary rounded-xl border-2 border-dashed"
+            ></div>
+          </th>
+        }
+      </tr>
+    </thead>
+    <tbody>
+      @for (test of tests(); track test.id) {
+        <tr
+          class="hover:bg-base-200 cursor-pointer"
+          (click)="onViewTest(test.id)"
+          [class.bg-base-200]="selectedTests().has(test.id)"
+        >
+          @for (column of columns(); track column.key) {
+            @if (column.key === 'select') {
+              <td (click)="$event.stopPropagation()" class="text-center">
+                <input
+                  type="checkbox"
+                  class="checkbox checkbox-sm mx-auto"
+                  [checked]="selectedTests().has(test.id)"
+                  (change)="onToggleSelection(test.id, $event)"
+                />
+              </td>
+            }
+            @if (column.key === 'status') {
+              <td class="text-center">
+                <app-status-badge [status]="test.status" />
+              </td>
+            }
+            @if (column.key === 'startTime') {
+              <td class="text-center">
+                <div class="text-base-content font-medium">
+                  {{ getColumnValue(test, column) }}
+                </div>
+              </td>
+            }
+            @if (column.key === 'id') {
+              <td class="text-center">
+                <div class="text-base-content/70 font-mono text-xs">
+                  {{ test.id }}
+                </div>
+              </td>
+            }
+            @if (column.key === 'duration') {
+              <td class="text-base-content text-center">
+                {{ getColumnValue(test, column) }}
+              </td>
+            }
+            @if (column.key === 'requests') {
+              <td class="text-base-content text-center">
+                {{ getColumnValue(test, column) }}
+              </td>
+            }
+            @if (column.key === 'errorRate') {
+              <td class="text-center">
+                <span
+                  [class.text-error]="test.status === 'failed' || test.error"
+                  class="font-medium"
+                >
+                  {{ getColumnValue(test, column) }}
+                </span>
+              </td>
+            }
+            @if (
+              column.key !== 'select' &&
+              column.key !== 'status' &&
+              column.key !== 'startTime' &&
+              column.key !== 'id' &&
+              column.key !== 'duration' &&
+              column.key !== 'requests' &&
+              column.key !== 'errorRate' &&
+              column.key !== 'actions'
+            ) {
+              <td class="text-base-content text-center">
+                {{ getColumnValue(test, column) }}
+              </td>
+            }
+          }
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

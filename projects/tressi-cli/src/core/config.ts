@@ -1,7 +1,9 @@
 import { promises as fs } from 'fs';
 import * as path from 'path';
-import { type TressiConfig, validateConfig } from 'tressi-common/config';
 import { request } from 'undici';
+
+import { validateConfig } from '../common/config';
+import { TressiConfig } from '../common/config/types';
 
 // CLI USE
 

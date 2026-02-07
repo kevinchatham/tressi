@@ -2,10 +2,9 @@ import chalk from 'chalk';
 import { Command } from 'commander';
 
 import pkg from '../../../package.json';
-import { ConfigCommand } from './commands/config-command';
-import { InitCommand } from './commands/init-command';
 import { RunCommand } from './commands/run-command';
 import { ServeCommand } from './commands/serve-command';
+import { initializeDatabase } from './database/init';
 import { terminal } from './tui/terminal';
 
 /**
@@ -34,39 +33,21 @@ class TressiCLI {
       '-c, --config [path]',
       'Path or URL to JSON configuration file (local file path or remote URL). Defaults to ./tressi.config.json',
     );
+    this.program.option(
+      '-e, --export [path]',
+      'Export test results to specified path (supports .json, .xlsx, .md formats)',
+    );
+    this.program.option(
+      '-s, --silent',
+      'Run in silent mode without TUI or progress output',
+      false,
+    );
   }
 
   /**
    * Sets up all CLI commands.
    */
   private setupCommands(): void {
-    // Init command
-    this.program
-      .command('init')
-      .summary('Create a tressi.config.json file')
-      .description(InitCommand.getDescription())
-      .option(
-        '--full',
-        'Generate a full configuration with all available options and advanced features',
-      )
-      .action(async (options) => {
-        const command = new InitCommand();
-        await command.execute(options);
-      });
-
-    // Config command
-    this.program
-      .command('config')
-      .summary('Display current configuration')
-      .description(ConfigCommand.getDescription())
-      .option('--json', 'Output configuration as JSON')
-      .option('--raw', 'Show raw configuration without defaults filled in')
-      .action(async (options) => {
-        const command = new ConfigCommand();
-        const configPath = this.program.opts().config;
-        await command.execute(options, configPath);
-      });
-
     // Serve command
     this.program
       .command('serve')
@@ -82,7 +63,7 @@ class TressiCLI {
     // Default run command (when no specific command is provided)
     this.program.action(async (opts) => {
       const command = new RunCommand();
-      await command.execute(opts.config);
+      await command.execute(opts.config, opts.export, opts.silent);
     });
   }
 
@@ -94,30 +75,15 @@ class TressiCLI {
       'after',
       `
 Commands:
-  init    Create a tressi.config.json file
-  config  Display current configuration
   serve   Start a Hono server with healthcheck endpoint
 
 Options:
   -c, --config <path>  Path or URL to JSON configuration file (local file path or remote URL)
-                       Defaults to ./tressi.config.json if not specified
+                        Defaults to ./tressi.config.json if not specified
+  -e, --export <path>  Export test results to specified path (supports .json, .xlsx, .md formats)
+  -s, --silent         Run in silent mode without TUI or progress output
 
 Examples:
-  # Create a minimal tressi.config.json file in current directory
-  $ tressi init
-
-  # Create a comprehensive configuration with all available options
-  $ tressi init --full
-
-  # View current configuration with resolved values and defaults
-  $ tressi config
-
-  # View configuration as JSON for programmatic use
-  $ tressi config --json
-
-  # View raw configuration without defaults filled in
-  $ tressi config --raw
-
   # Run a load test using default tressi.config.json in current directory
   $ tressi
 
@@ -127,8 +93,14 @@ Examples:
   # Run a load test with a remote configuration file
   $ tressi --config https://example.com/tressi.config.json
 
-  # View configuration from a specific file
-  $ tressi --config ./my-config.json config
+  # Run a load test and export results to JSON
+  $ tressi --export ./results/test-results.json
+
+  # Run a load test silently and export to XLSX
+  $ tressi --silent --export ./results/test-results.xlsx
+
+  # Run a load test with custom config, silent mode, and export
+  $ tressi --config ./my-config.json --silent --export ./results/report.xlsx
 
   # Start the Tressi server on default port (3108 - the speed of light in m/s)
   $ tressi serve
@@ -146,6 +118,8 @@ Examples:
     terminal.clear();
 
     try {
+      // Initialize database before any commands run
+      await initializeDatabase();
       await this.program.parseAsync(process.argv);
     } catch (error) {
       terminal.print(chalk.red(`CLI Error: ${(error as Error).message}`));

@@ -1,4 +1,4 @@
-import type { TressiRequestConfig } from 'tressi-common/config';
+import { TressiRequestConfig } from '../common/config/types';
 
 /**
  * WorkerRateLimiter - Token bucket rate limiter for controlling request throughput per endpoint.
@@ -23,22 +23,28 @@ import type { TressiRequestConfig } from 'tressi-common/config';
 export class WorkerRateLimiter {
   private tokens: number[];
   private lastRefill: number[];
+  private rampUpDurationsSec: number[];
 
-  constructor(private endpoints: TressiRequestConfig[]) {
+  constructor(
+    private endpoints: TressiRequestConfig[],
+    globalRampUpDurationSec: number = 0,
+  ) {
     this.tokens = new Array(endpoints.length).fill(0);
-    this.lastRefill = new Array(endpoints.length).fill(Date.now());
+    // Initialize to 0 so that elapsed time is calculated from testTimeElapsed
+    this.lastRefill = new Array(endpoints.length).fill(0);
 
-    // Initialize with tokens to allow immediate requests
-    for (let i = 0; i < endpoints.length; i++) {
-      const rps = endpoints[i].rps || 1;
-      this.tokens[i] = Math.min(rps, 10); // Start with up to 10 tokens
-    }
+    // Calculate effective ramp-up duration for each endpoint
+    // If endpoint value is 0, use global value
+    this.rampUpDurationsSec = endpoints.map(
+      (endpoint) => endpoint.rampUpDurationSec || globalRampUpDurationSec,
+    );
   }
 
   /**
    * Gets available requests for immediate execution without blocking.
    *
    * @param batchSize - Maximum number of requests to return (default: 20)
+   * @param testTimeElapsed - Elapsed time in milliseconds since test started
    * @returns Array of endpoint configurations ready for execution
    *
    * @remarks
@@ -60,12 +66,14 @@ export class WorkerRateLimiter {
    * ```typescript
    * // With endpoint RPS = 10 and 1 second elapsed:
    * // Tokens replenished: 10, max tokens: 20
-   * const requests = limiter.getAvailableRequests(15);
+   * const requests = limiter.getAvailableRequests(15, 1000);
    * // Returns up to 15 requests if tokens available
    * ```
    */
-  getAvailableRequests(batchSize: number = 20): TressiRequestConfig[] {
-    const now = Date.now();
+  getAvailableRequests(
+    batchSize: number = 20,
+    testTimeElapsed: number = 0,
+  ): TressiRequestConfig[] {
     const available: TressiRequestConfig[] = [];
 
     for (
@@ -73,13 +81,20 @@ export class WorkerRateLimiter {
       i < this.endpoints.length && available.length < batchSize;
       i++
     ) {
-      const elapsed = now - this.lastRefill[i];
-      const rps = this.endpoints[i].rps || 1;
+      // Use testTimeElapsed for elapsed time calculation to support fake timers
+      const elapsed = testTimeElapsed - this.lastRefill[i];
+
+      const rps = this.calculateRps({
+        targetRps: this.endpoints[i].rps,
+        elapsedMs: testTimeElapsed,
+        rampUpDurationSec: this.rampUpDurationsSec[i],
+      });
+
       const refill = Math.floor((elapsed / 1000) * rps);
 
       if (refill > 0) {
         this.tokens[i] = Math.min(this.tokens[i] + refill, rps * 2); // Allow burst
-        this.lastRefill[i] = now;
+        this.lastRefill[i] = testTimeElapsed;
       }
 
       while (this.tokens[i] >= 1 && available.length < batchSize) {
@@ -89,5 +104,25 @@ export class WorkerRateLimiter {
     }
 
     return available;
+  }
+
+  private calculateRps(options: {
+    targetRps: number;
+    elapsedMs: number;
+    rampUpDurationSec: number;
+  }): number {
+    const { targetRps, elapsedMs, rampUpDurationSec } = options;
+
+    const rampUpDurationMs = rampUpDurationSec * 1000;
+
+    const isWithinRampUp = elapsedMs < rampUpDurationMs;
+
+    if (isWithinRampUp) {
+      // Linear interpolation from 0 → targetRps
+      const progress = elapsedMs / rampUpDurationMs;
+      return targetRps * progress;
+    }
+
+    return targetRps;
   }
 }

@@ -1,6 +1,6 @@
-import type { TressiRequestConfig } from 'tressi-common/config';
 import { describe, expect, it } from 'vitest';
 
+import type { TressiRequestConfig } from '../../../../src/common/config/types';
 import { SharedMemoryFactory } from '../../../../src/workers/shared-memory/shared-memory-factory';
 
 describe('SharedMemoryFactory', () => {
@@ -11,6 +11,13 @@ describe('SharedMemoryFactory', () => {
       payload: {},
       headers: {},
       rps: 10,
+      rampUpDurationSec: 0,
+      earlyExit: {
+        enabled: false,
+        errorRateThreshold: 0,
+        exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
+        monitoringWindowMs: 5000,
+      },
     },
     {
       url: 'http://example.com/api/2',
@@ -18,6 +25,13 @@ describe('SharedMemoryFactory', () => {
       payload: {},
       headers: {},
       rps: 5,
+      rampUpDurationSec: 0,
+      earlyExit: {
+        enabled: false,
+        errorRateThreshold: 0,
+        exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
+        monitoringWindowMs: 5000,
+      },
     },
     {
       url: 'http://example.com/api/3',
@@ -25,6 +39,13 @@ describe('SharedMemoryFactory', () => {
       payload: {},
       headers: {},
       rps: 8,
+      rampUpDurationSec: 0,
+      earlyExit: {
+        enabled: false,
+        errorRateThreshold: 0,
+        exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
+        monitoringWindowMs: 5000,
+      },
     },
     {
       url: 'http://example.com/api/4',
@@ -32,6 +53,13 @@ describe('SharedMemoryFactory', () => {
       payload: {},
       headers: {},
       rps: 12,
+      rampUpDurationSec: 0,
+      earlyExit: {
+        enabled: false,
+        errorRateThreshold: 0,
+        exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
+        monitoringWindowMs: 5000,
+      },
     },
   ];
 
@@ -42,7 +70,6 @@ describe('SharedMemoryFactory', () => {
       expect(result.hdrHistogram).toHaveLength(2);
       expect(result.workerState).toBeDefined();
       expect(result.statsCounter).toHaveLength(2);
-      expect(result.bodySample).toHaveLength(4);
       expect(result.endpointState).toBeDefined();
 
       // Check that all managers are properly initialized
@@ -90,7 +117,6 @@ describe('SharedMemoryFactory', () => {
       const result = SharedMemoryFactory.createManagers(2, []);
 
       expect(result.hdrHistogram).toHaveLength(2);
-      expect(result.bodySample).toHaveLength(0);
       expect(result.endpointState.getTotalEndpoints()).toBe(0);
     });
   });
@@ -193,7 +219,6 @@ describe('SharedMemoryFactory', () => {
 
       expect('error' in result).toBe(false);
       if (!('error' in result)) {
-        expect(result.bodySample).toHaveLength(0);
         expect(result.endpointState.getTotalEndpoints()).toBe(0);
       }
     });
@@ -296,7 +321,6 @@ describe('SharedMemoryFactory', () => {
       // Verify endpoint counts match
       const totalEndpoints = endpoints.length;
       expect(result.endpointState.getTotalEndpoints()).toBe(totalEndpoints);
-      expect(result.bodySample).toHaveLength(totalEndpoints);
     });
 
     it('should handle realistic load testing configuration', () => {
@@ -310,6 +334,13 @@ describe('SharedMemoryFactory', () => {
           payload: {},
           headers: {},
           rps: 10,
+          rampUpDurationSec: 0,
+          earlyExit: {
+            enabled: false,
+            errorRateThreshold: 0,
+            exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
+            monitoringWindowMs: 5000,
+          },
         }));
 
       const result = SharedMemoryFactory.createManagers(
@@ -324,7 +355,6 @@ describe('SharedMemoryFactory', () => {
 
       expect(result.hdrHistogram).toHaveLength(workersCount);
       expect(result.statsCounter).toHaveLength(workersCount);
-      expect(result.bodySample).toHaveLength(endpoints.length);
 
       // Verify memory usage is reasonable
       const memoryUsage = SharedMemoryFactory.calculateMemoryUsage(

@@ -1,110 +1,66 @@
 <div class="p-16">
   <app-header>
     <!-- Configuration Selector -->
-    <div class="form-control">
-      <select
-        class="select select-bordered"
-        [disabled]="isLoading()"
-        (change)="onConfigSelectEvent($event)"
-        [value]="selectedConfigId()"
+    <div class="dropdown dropdown-center">
+      <app-button
+        [title]="'Select Configuration'"
+        [tabindex]="0"
+        [color]="'secondary'"
+        [icon]="'text_snippet'"
+      />
+      <ul
+        tabindex="0"
+        class="dropdown-content bg-base-300 rounded-box z-1 max-h-96 w-52 overflow-y-auto p-2 shadow-2xl"
       >
-        <option disabled>Select Configuration</option>
-        @for (config of safeConfigs(); track config.id) {
-          <option [value]="config.id">{{ config.name }}</option>
+        @for (config of configs(); track config.id) {
+          <li>
+            <input
+              type="radio"
+              name="config-dropdown"
+              class="theme-controller btn btn-sm btn-block btn-ghost w-full justify-start"
+              [attr.aria-label]="config.name"
+              [value]="config.id"
+              [checked]="selectedConfigId() === config.id"
+              (change)="onConfigSelect(config.id)"
+            />
+          </li>
         }
-      </select>
+      </ul>
     </div>
 
-    <button
-      (click)="start()"
-      class="btn btn-sm btn-primary btn-circle btn-outline"
-      title="Start"
-    >
-      <app-icon name="bolt" />
-    </button>
-    <button
+    @if (hasTestHistory() || !selectedConfigId()) {
+      <app-start-button
+        [config]="selectedConfig()"
+        (testStarted)="onTestStarted()"
+        (testStartFailed)="onTestStartFailed($event)"
+      />
+    }
+
+    <app-button
       (click)="navigateToSettings()"
-      class="btn btn-ghost btn-circle"
-      title="Settings"
-    >
-      <app-icon name="settings" />
-    </button>
+      [title]="'Settings'"
+      [color]="'info'"
+      [icon]="'sdk'"
+    />
   </app-header>
-  @if (hasMetrics()) {
-    <!-- View Mode Selector -->
-    <div class="form-control mb-4 w-fit max-w-full">
-      <select
-        class="select select-bordered w-auto min-w-0"
-        [disabled]="isLoading()"
-        (change)="onViewModeChange($event)"
-        [value]="currentViewMode()"
-      >
-        <option value="global">Global View</option>
-        @for (endpoint of availableEndpoints(); track endpoint) {
-          <option [value]="endpoint">{{ endpoint | slice: 0 : 50 }}</option>
-        }
-      </select>
-    </div>
-    <div class="ring-neutral mx-auto mb-8 rounded p-4 ring-1">
-      <app-line-chart
-        [title]="
-          currentViewMode() === 'global'
-            ? 'Global Throughput'
-            : 'Throughput - ' + (currentViewMode() | slice: 0 : 50)
-        "
-        [yAxisLabel]="'Rate'"
-        [seriesName]="'Requests/Second'"
-        [data]="throughputData()"
-        [labels]="timeLabels()"
-        [height]="350"
-        [smoothCurve]="true"
-        [chartId]="'throughput-chart'"
-        [syncGroup]="'dashboard-main'"
+
+  <!-- Test List Component -->
+  @if (selectedConfigId()) {
+    <div class="mt-8">
+      <app-test-list
+        [config]="selectedConfig()!"
+        (testHistoryUpdate)="onTestHistoryUpdate($event)"
       />
     </div>
-    <div class="ring-neutral mx-auto mb-8 rounded p-4 ring-1">
-      <app-line-chart
-        [title]="
-          currentViewMode() === 'global'
-            ? 'Latency (ms)'
-            : 'Latency - ' + (currentViewMode() | slice: 0 : 50)
-        "
-        [yAxisLabel]="'Milliseconds'"
-        [seriesName]="'Avg Latency'"
-        [data]="latencyData()"
-        [labels]="timeLabels()"
-        [height]="350"
-        [smoothCurve]="false"
-        [chartId]="'latency-chart'"
-        [syncGroup]="'dashboard-main'"
-      />
-    </div>
-    <!--
-    <div class="ring-neutral mx-auto rounded p-4 ring-1">
-      <app-line-chart
-        [title]="
-          currentViewMode() === 'global'
-            ? 'Error Rate'
-            : 'Error Rate - ' + (currentViewMode() | slice: 0 : 50)
-        "
-        [yAxisLabel]="'%'"
-        [seriesName]="'Errors/Second'"
-        [data]="errorRateData()"
-        [labels]="timeLabels()"
-        [height]="350"
-        [smoothCurve]="true"
-        [chartId]="'error-rate-chart'"
-        [syncGroup]="'dashboard-main'"
-      />
-    </div> 
-    -->
   } @else {
     <!-- Empty State -->
-    <div class="hero bg-base-200 min-h-125 rounded-lg">
+    <div class="hero bg-base-200 mt-8 min-h-125 rounded-xl">
       <div class="hero-content text-center">
         <div class="max-w-md">
-          <h1 class="text-2xl font-bold">No Metrics Available</h1>
-          <p class="py-6 text-neutral-600">You haven't run a load test yet.</p>
+          <h1 class="text-2xl font-bold">Select a Configuration</h1>
+          <p class="py-6 text-neutral-600">
+            Choose a configuration from the dropdown to view test history
+          </p>
         </div>
       </div>
     </div>

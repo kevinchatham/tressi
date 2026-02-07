@@ -1,6 +1,6 @@
-<div class="bg-base-100 ring-neutral rounded p-6 ring-1">
+<div class="bg-base-200 border-base-content/5 rounded-xl border-2 p-6">
   <h2 class="mb-4 flex items-center gap-2 text-lg font-semibold">
-    <app-icon name="settings" class="h-5 w-5" />
+    <app-icon name="stat_1" />
     Basic Configuration
   </h2>
 
@@ -12,9 +12,7 @@
         type="number"
         class="input"
         [field]="form().config.options.durationSec"
-        placeholder="Total test duration"
       />
-      <p class="label">Total test duration</p>
       @if (
         form().config.options.durationSec().touched() &&
         form().config.options.durationSec().invalid()
@@ -37,47 +35,40 @@
           <app-icon name="send" class="h-5 w-5" />
           Request Configuration
         </h3>
-        <button
-          type="button"
-          class="btn btn-primary btn-circle btn-outline btn-sm"
+        <app-button
           (click)="addRequest.emit()"
-        >
-          <app-icon name="add" />
-        </button>
+          [color]="'primary'"
+          [icon]="'add'"
+          [title]="'Add Request'"
+        />
       </div>
 
       @for (request of model().config.requests; track $index) {
-        <div class="bg-base-100 ring-neutral mb-4 rounded ring-1">
+        <div class="bg-base-200 border-base-content/5 mb-4 rounded-xl border-2">
           <div class="flex items-center justify-between p-4">
             <h3 class="truncate text-lg font-medium">
               Request {{ $index + 1 }}:
               <span class="truncate">{{ request.url || 'New Request' }}</span>
             </h3>
             <div class="flex items-center">
-              <button
-                type="button"
-                class="btn btn-ghost btn-circle btn-error"
-                [disabled]="model().config.requests.length === 1"
-                [class.btn-disabled]="model().config.requests.length === 1"
+              <app-button
                 (click)="removeRequest.emit($index)"
-              >
-                <app-icon name="delete" />
-              </button>
-              <button
-                type="button"
-                class="btn btn-ghost btn-circle"
+                [color]="'error'"
+                [disabled]="model().config.requests.length === 1"
+                [icon]="'delete'"
+                [title]="'Remove Request'"
+              />
+              <app-button
+                class="ml-2"
                 (click)="toggleRequest($index)"
-                [attr.aria-expanded]="isRequestExpanded($index)"
-                [attr.aria-controls]="'request-details-' + $index"
-              >
-                <app-icon
-                  [name]="
-                    isRequestExpanded($index)
-                      ? 'keyboard_arrow_up'
-                      : 'keyboard_arrow_down'
-                  "
-                />
-              </button>
+                [ghost]="true"
+                [title]="isRequestExpanded($index) ? 'Collapse' : 'Expand'"
+                [icon]="
+                  isRequestExpanded($index)
+                    ? 'keyboard_arrow_up'
+                    : 'keyboard_arrow_down'
+                "
+              />
             </div>
           </div>
 
@@ -139,6 +130,37 @@
                   <p class="label text-error">
                     @for (
                       error of form().config.requests[$index].rps().errors();
+                      track error
+                    ) {
+                      {{ error.message }}
+                    }
+                  </p>
+                }
+              </fieldset>
+
+              <!-- Ramp Up Duration -->
+              <fieldset class="fieldset">
+                <legend class="fieldset-legend">Ramp Up Time (seconds)</legend>
+                <input
+                  type="number"
+                  class="input"
+                  [field]="form().config.requests[$index].rampUpDurationSec"
+                  placeholder="Time to reach target RPS"
+                />
+                <p class="label">
+                  Endpoint ramp-up time (0 = use global rampUpDurationSec)
+                </p>
+                @if (
+                  form()
+                    .config.requests[$index].rampUpDurationSec()
+                    .touched() &&
+                  form().config.requests[$index].rampUpDurationSec().invalid()
+                ) {
+                  <p class="label text-error">
+                    @for (
+                      error of form()
+                        .config.requests[$index].rampUpDurationSec()
+                        .errors();
                       track error
                     ) {
                       {{ error.message }}
