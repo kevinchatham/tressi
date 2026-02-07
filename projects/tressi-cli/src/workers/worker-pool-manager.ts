@@ -4,7 +4,7 @@ import { Worker } from 'worker_threads';
 
 import { TressiConfig, TressiRequestConfig } from '../common/config/types';
 import type { AggregatedMetrics } from '../common/metrics';
-import type { TestSummary } from '../reporting/types';
+import type { ResponseSamples, TestSummary } from '../reporting/types';
 import { FileUtils } from '../utils/file-utils';
 import { EarlyExitCoordinator } from './early-exit-coordinator';
 import { MetricsAggregator } from './metrics-aggregator';
@@ -299,27 +299,11 @@ export class WorkerPoolManager {
    * Get body samples collected during the test
    * @returns Record of endpoint URL to body samples
    */
-  getResponseSamples(): Record<
-    string,
-    Array<{
-      statusCode: number;
-      headers: Record<string, unknown>;
-      body: string;
-    }>
-  > {
+  getResponseSamples(): ResponseSamples {
     const responseSamplesMap =
       this.metricsAggregator.getCollectedResponseSamples(this.runId);
 
-    // Convert Map to Record
-    const result: Record<
-      string,
-      Array<{
-        statusCode: number;
-        headers: Record<string, unknown>;
-        body: string;
-      }>
-    > = {};
-
+    const result: ResponseSamples = {};
     responseSamplesMap.forEach((samples, url) => {
       result[url] = samples;
     });

@@ -1,13 +1,23 @@
+import chalk from 'chalk';
+import { promises as fs } from 'fs';
+import ora from 'ora';
+import path from 'path';
+
 import { TressiConfig } from '../common/config/types';
-import { handleExport } from '../reporting/export-handler';
+import { JsonExporter } from '../reporting/exporters/json-exporter';
+import { MarkdownExporter } from '../reporting/exporters/markdown-exporter';
+import { XlsxExporter } from '../reporting/exporters/xlsx-exporter';
 import { TestSummary } from '../reporting/types';
 import { printSummary } from '../tui/cli-output';
 import { MinimalTUI } from '../tui/minimal-tui';
+import { FileUtils } from '../utils/file-utils';
 import { Runner } from './runner';
 
 export interface LoadTestOptions {
   enableTUI: boolean;
   setupSignalHandlers: boolean;
+  exportPath?: string;
+  silent?: boolean;
   testId?: string; // Only for server persistence
 }
 
@@ -35,8 +45,8 @@ async function executeLoadTest(
 
   // Setup TUI only for CLI use
   let minimalUI: MinimalTUI | undefined;
-  if (options.enableTUI && !config.options.silent) {
-    minimalUI = new MinimalTUI(config);
+  if (options.enableTUI && !options.silent) {
+    minimalUI = new MinimalTUI(config, options.silent);
     minimalUI.start(runner);
   }
 
@@ -54,27 +64,92 @@ async function executeLoadTest(
   // Generate summary
   const summary = runner.getTestSummary();
 
-  // Always clean up body samples (they're ephemeral)
-  runner.cleanupResponseSamples();
+  // const samples = runner.getResponseSamples();
 
   // Handle export and printing only for CLI
   if (options.enableTUI) {
-    await handleExport(summary, config);
-    if (!config.options.silent) {
-      printSummary(summary, config.options, config);
+    // await handleCLIExport(summary, samples, options.exportPath, options.silent);
+    await handleCLIExport(summary, options.exportPath, options.silent);
+    if (!options.silent) {
+      printSummary(summary, config.options, config, options.silent);
     }
   }
+
+  runner.cleanupResponseSamples();
 
   return summary;
 }
 
 /**
+ * Handles export functionality for CLI mode
+ */
+async function handleCLIExport(
+  summary: TestSummary,
+  // samples: ResponseSamples,
+  exportPath?: string,
+  silent = false,
+): Promise<void> {
+  if (!exportPath) return;
+
+  const exportSpinner = silent
+    ? undefined
+    : ora({
+        text: 'Exporting results...',
+      }).start();
+
+  try {
+    const baseExportName =
+      typeof exportPath === 'string' ? exportPath : 'tressi-report';
+    const runDate = new Date();
+
+    const reportDir = path.join(
+      process.cwd(),
+      FileUtils.getSafeDirectoryName(
+        `${baseExportName}-${runDate.toISOString()}`,
+      ),
+    );
+    await FileUtils.ensureDirectoryExists(reportDir);
+
+    const jsonExporter = new JsonExporter();
+    const xlsxExporter = new XlsxExporter();
+    const markdownExporter = new MarkdownExporter();
+
+    // Export JSON files
+    await jsonExporter.export(summary, path.join(reportDir, 'summary.json'));
+
+    // Export XLSX
+    await xlsxExporter.export(summary, path.join(reportDir, 'results.xlsx'));
+
+    // Export Markdown report
+    const markdownReport = markdownExporter.export(
+      summary,
+      path.join(reportDir, 'report.md'),
+    );
+    if (typeof markdownReport === 'string') {
+      await fs.writeFile(path.join(reportDir, 'report.md'), markdownReport);
+    }
+
+    exportSpinner?.succeed(`Successfully exported results to ${reportDir}`);
+  } catch (err) {
+    exportSpinner?.fail(
+      chalk.red(`Failed to export results: ${(err as Error).message}`),
+    );
+  }
+}
+
+/**
  * Execute a load test from CLI or programmatically
  */
-export async function runLoadTest(config: TressiConfig): Promise<TestSummary> {
+export async function runLoadTest(
+  config: TressiConfig,
+  exportPath?: string,
+  silent?: boolean,
+): Promise<TestSummary> {
   return executeLoadTest(config, {
     enableTUI: true,
     setupSignalHandlers: true,
+    exportPath,
+    silent,
   });
 }
 

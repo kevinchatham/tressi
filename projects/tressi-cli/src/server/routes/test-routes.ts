@@ -9,6 +9,9 @@ import { testStorage } from '../../collections/test-collection';
 import { runLoadTestForServer } from '../../core/test-executor';
 import { ServerEvents, TestEventData } from '../../events/event-types';
 import { globalEventEmitter } from '../../events/global-event-emitter';
+import { JsonExporter } from '../../reporting/exporters/json-exporter';
+import { MarkdownExporter } from '../../reporting/exporters/markdown-exporter';
+import { XlsxExporter } from '../../reporting/exporters/xlsx-exporter';
 import { createApiErrorResponse } from '../utils/error-response-generator';
 
 /**
@@ -285,6 +288,97 @@ const app = new Hono()
             'Failed to delete test',
             'INTERNAL_ERROR',
             error instanceof Error ? [error.message] : undefined,
+          ),
+          500,
+        );
+      }
+    },
+  )
+
+  /**
+   * GET /tests/:id/export - Exports test results in various formats
+   * @param {string} id - The test ID from URL parameter
+   * @param {string} format - Export format (xlsx, json, markdown)
+   * @returns {Promise<Response>} File download response
+   */
+  .get(
+    '/:id/export',
+    sValidator('param', z.object({ id: z.string() })),
+    sValidator('query', z.object({ format: z.enum(['xlsx', 'json', 'md']) })),
+    async (c) => {
+      const { id } = c.req.valid('param');
+      const { format } = c.req.valid('query');
+
+      // Validate test exists
+      const test = await testStorage.getById(id);
+      if (!test) {
+        return c.json(
+          createApiErrorResponse('Test not found', 'NOT_FOUND'),
+          404,
+        );
+      }
+
+      const summary = test.summary;
+      if (!summary) {
+        return c.json(
+          createApiErrorResponse('No test summary available', 'NO_CONTENT'),
+          400,
+        );
+      }
+
+      // Fetch time-series metrics
+      // const globalMetrics = await globalMetricStorage.getByTestId(id);
+      // const endpointMetrics = await endpointMetricStorage.getByTestId(id);
+
+      // Handle JSON format
+
+      try {
+        switch (format) {
+          case 'json':
+            const exporter = new JsonExporter();
+            const jsonContent = await exporter.export(summary);
+            const jsonBuffer = Buffer.from(jsonContent!, 'utf-8');
+            return new Response(jsonBuffer, {
+              status: 200,
+              headers: {
+                'Content-Type': 'application/json',
+                'Content-Disposition': `attachment; filename="test-${id}.json"`,
+              },
+            });
+          case 'md':
+            const markdownExporter = new MarkdownExporter();
+            const markdownContent = await markdownExporter.export(summary);
+            const markdownBuffer = Buffer.from(markdownContent!, 'utf-8');
+            return new Response(markdownBuffer, {
+              status: 200,
+              headers: {
+                'Content-Type': 'text/markdown',
+                'Content-Disposition': `attachment; filename="test-${id}.md"; filename*=UTF-8''test-${id}.md`,
+              },
+            });
+          case 'xlsx':
+            const xlsxExporter = new XlsxExporter();
+            const xlsxContent = await xlsxExporter.export(summary);
+            const buffer = Buffer.from(xlsxContent!);
+            return new Response(buffer, {
+              status: 200,
+              headers: {
+                'Content-Type':
+                  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'Content-Disposition': `attachment; filename="test-${id}.xlsx"`,
+              },
+            });
+          default:
+            return c.json(
+              createApiErrorResponse('Invalid export format', 'INVALID_FORMAT'),
+              400,
+            );
+        }
+      } catch (error) {
+        return c.json(
+          createApiErrorResponse(
+            error instanceof Error ? error.message : 'Export failed',
+            'EXPORT_FAILED',
           ),
           500,
         );

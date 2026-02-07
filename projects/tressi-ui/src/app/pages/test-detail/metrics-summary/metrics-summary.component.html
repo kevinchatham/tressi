@@ -2,73 +2,85 @@
   <!-- First Row: Latency metrics (always visible) -->
   <div class="bg-base-200 rounded-lg p-4">
     <div class="text-base-content/70 mb-1 text-sm">Min Latency</div>
-    <div class="text-2xl font-bold">{{ stats?.minLatencyMs }} ms</div>
+    <div class="text-2xl font-bold">
+      {{ formatNumber(summary?.minLatencyMs) }} ms
+    </div>
     <div class="text-base-content/60 mt-1 text-xs">fastest</div>
   </div>
 
   <div class="bg-base-200 rounded-lg p-4">
     <div class="text-base-content/70 mb-1 text-sm">P50 Latency</div>
-    <div class="text-2xl font-bold">{{ stats?.p50LatencyMs }} ms</div>
+    <div class="text-2xl font-bold">
+      {{ formatNumber(summary?.p50LatencyMs) }} ms
+    </div>
     <div class="text-base-content/60 mt-1 text-xs">median</div>
   </div>
 
   <div class="bg-base-200 rounded-lg p-4">
     <div class="text-base-content/70 mb-1 text-sm">P95 Latency</div>
-    <div class="text-2xl font-bold">{{ stats?.p95LatencyMs }} ms</div>
+    <div class="text-2xl font-bold">
+      {{ formatNumber(summary?.p95LatencyMs) }} ms
+    </div>
     <div class="text-base-content/60 mt-1 text-xs">slow</div>
   </div>
 
   <div class="bg-base-200 rounded-lg p-4">
     <div class="text-base-content/70 mb-1 text-sm">P99 Latency</div>
-    <div class="text-2xl font-bold">{{ stats?.p99LatencyMs }} ms</div>
+    <div class="text-2xl font-bold">
+      {{ formatNumber(summary?.p99LatencyMs) }} ms
+    </div>
     <div class="text-base-content/60 mt-1 text-xs">slower</div>
   </div>
 
   <div class="bg-base-200 rounded-lg p-4">
     <div class="text-base-content/70 mb-1 text-sm">Max Latency</div>
-    <div class="text-2xl font-bold">{{ stats?.maxLatencyMs }} ms</div>
+    <div class="text-2xl font-bold">
+      {{ formatNumber(summary?.maxLatencyMs) }} ms
+    </div>
     <div class="text-base-content/60 mt-1 text-xs">slowest</div>
   </div>
 
   <!-- Second Row: View-specific metrics -->
 
   <!-- Global view: Test Duration -->
-  @if (endpointType === 'global' && stats?.finalDurationSec !== undefined) {
+  @if (isGlobalSummary(summary) && summary?.finalDurationSec !== undefined) {
     <div class="bg-base-200 rounded-lg p-4">
       <div class="text-base-content/70 mb-1 text-sm">Duration</div>
       <div class="text-2xl font-bold">
-        {{ formatDuration(stats?.finalDurationSec) }}
+        {{ formatDuration(summary?.finalDurationSec) }}
       </div>
       <div class="text-base-content/60 mt-1 text-xs">total time</div>
     </div>
   }
 
   <!-- Global view: Endpoints Tested -->
-  @if (endpointType === 'global' && stats?.totalEndpoints !== undefined) {
+  @if (isGlobalSummary(summary) && summary?.totalEndpoints !== undefined) {
     <div class="bg-base-200 rounded-lg p-4">
       <div class="text-base-content/70 mb-1 text-sm">Endpoints</div>
-      <div class="text-2xl font-bold">{{ stats?.totalEndpoints | number }}</div>
+      <div class="text-2xl font-bold">
+        {{ formatNumber(summary?.totalEndpoints) }}
+      </div>
       <div class="text-base-content/60 mt-1 text-xs">tested</div>
     </div>
   }
 
   <!-- Endpoint view: Target Achieved -->
-  @if (endpointType === 'endpoint' && stats?.targetAchieved !== undefined) {
+  @if (isEndpointSummary(summary) && summary?.targetAchieved !== undefined) {
     <div class="bg-base-200 rounded-lg p-4">
       <div class="text-base-content/70 mb-1 text-sm">Target Achieved</div>
       <div class="text-2xl font-bold">
-        {{ formatPercentage(stats?.targetAchieved) }}
+        {{ formatPercentage(summary?.targetAchieved) }}
       </div>
       <div class="text-base-content/60 mt-1 text-xs">of target RPS</div>
     </div>
   }
 
   <!-- Endpoint view: Theoretical Max RPS -->
-  @if (endpointType === 'endpoint' && stats?.theoreticalMaxRps !== undefined) {
+  @if (isEndpointSummary(summary) && summary?.theoreticalMaxRps !== undefined) {
     <div class="bg-base-200 rounded-lg p-4">
       <div class="text-base-content/70 mb-1 text-sm">Max Throughput</div>
       <div class="text-2xl font-bold">
-        {{ formatRps(stats?.theoreticalMaxRps) }}
+        {{ formatRps(summary?.theoreticalMaxRps) }}
       </div>
       <div class="text-base-content/60 mt-1 text-xs">theoretical limit</div>
     </div>
@@ -77,7 +89,7 @@
   <div class="bg-base-200 rounded-lg p-4">
     <div class="text-base-content/70 mb-1 text-sm">Throughput</div>
     <div class="text-2xl font-bold">
-      {{ stats?.averageRequestsPerSecond }}/s
+      {{ formatRps(summary?.averageRequestsPerSecond) }}
     </div>
     <div class="text-base-content/60 mt-1 text-xs">requests per sec</div>
   </div>
@@ -85,27 +97,29 @@
   <!-- Common metrics for both views -->
   <div class="bg-base-200 rounded-lg p-4">
     <div class="text-base-content/70 mb-1 text-sm">Total Requests</div>
-    <div class="text-2xl font-bold">{{ stats?.totalRequests | number }}</div>
+    <div class="text-2xl font-bold">
+      {{ formatNumber(summary?.totalRequests) }}
+    </div>
     <div class="text-success mt-1 text-xs">
-      {{ stats?.successfulRequests }} success
+      {{ formatNumber(summary?.successfulRequests) }} success
     </div>
   </div>
 
   <!-- Error Rate (spans full width when needed) -->
   <div
     class="rounded-lg p-4"
-    [class.bg-error/20]="stats && stats.errorRate > 5"
-    [class.bg-base-200]="!stats || stats.errorRate <= 5"
+    [class.bg-error/20]="summary && summary.errorRate > 5"
+    [class.bg-base-200]="!summary || summary.errorRate <= 5"
   >
     <div class="text-base-content/70 mb-1 text-sm">Error Rate</div>
     <div
       class="text-2xl font-bold"
-      [class.text-error]="stats && stats.errorRate > 5"
+      [class.text-error]="summary && summary.errorRate > 5"
     >
-      {{ stats?.errorRate }}%
+      {{ formatPercentage(summary?.errorRate) }}
     </div>
     <div class="text-error mt-1 text-xs">
-      {{ stats?.failedRequests }} failed
+      {{ formatNumber(summary?.failedRequests) }} failed
     </div>
   </div>
 </div>

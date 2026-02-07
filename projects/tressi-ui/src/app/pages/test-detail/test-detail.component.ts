@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, OnDestroy, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { ButtonComponent } from 'src/app/components/button/button.component';
 
 import { CollapsibleCardComponent } from '../../components/collapsible-card/collapsible-card.component';
@@ -10,19 +11,26 @@ import { JsonTextareaComponent } from '../../components/json-textarea/json-texta
 import { LineChartComponent } from '../../components/line-chart/line-chart.component';
 import { StatusBadgeComponent } from '../../components/status-badge/status-badge.component';
 import { ConfigService } from '../../services/config.service';
+import { EventService, TestEventData } from '../../services/event.service';
 import { LoadingService } from '../../services/loading.service';
 import { LogService } from '../../services/log.service';
 import {
   type ConfigDocument,
-  type TestDocument,
+  TestDocument,
+  TestMetrics,
+  TestSummary,
 } from '../../services/rpc.service';
 import { TestService } from '../../services/test.service';
-import { CHART_OPTIONS, ChartData, ChartType } from '../../types/chart.types';
+import { TestExportService } from '../../services/test-export.service';
+import {
+  CHART_OPTIONS,
+  ChartData,
+  ChartType,
+  DEFAULT_CHART_TYPE,
+} from '../../types/chart.types';
 import { DeleteConfirmationModalComponent } from './delete-confirmation-modal/delete-confirmation-modal.component';
 import { MetricsSummaryComponent } from './metrics-summary/metrics-summary.component';
-import { TestDetailService } from './test-detail.service';
 import { EndpointChartDataCache } from './test-detail.types';
-import { TestDetailExportService } from './test-detail-export.service';
 
 @Component({
   selector: 'app-test-detail',
@@ -40,24 +48,42 @@ import { TestDetailExportService } from './test-detail-export.service';
   ],
   templateUrl: './test-detail.component.html',
 })
-export class TestDetailComponent {
+export class TestDetailComponent implements OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly testService = inject(TestService);
   private readonly loadingService = inject(LoadingService);
   private readonly logService = inject(LogService);
-  private readonly testDetailService = inject(TestDetailService);
-  private readonly exportService = inject(TestDetailExportService);
   private readonly configService = inject(ConfigService);
+  private readonly eventService = inject(EventService);
+  private readonly testExportService = inject(TestExportService);
 
-  // Signals
-  readonly testId = signal<string | null>(null);
+  // Signals - moved from TestDetailService
+  readonly test = signal<TestDocument | null>(null);
+  readonly metrics = signal<TestMetrics | null>(null);
   readonly selectedEndpoint = signal<string>('global');
+
+  // Computed signals - moved from TestDetailService
+  readonly selectedSummary = computed(() => {
+    const test = this.test();
+    if (!test?.summary) return null;
+
+    const isGlobal = this.selectedEndpoint() === 'global';
+    if (isGlobal) {
+      return test.summary.global;
+    } else {
+      const endpointUrl = this.selectedEndpoint();
+      return test.summary.endpoints?.find((e) => e.url === endpointUrl) || null;
+    }
+  });
+
+  // Component signals
+  readonly testId = signal<string | null>(null);
   readonly hasError = signal(false);
   readonly errorMessage = signal('');
   readonly isDeleting = signal(false);
   readonly showDeleteModal = signal(false);
-  readonly selectedChartType = signal<ChartType>('throughput');
+  readonly selectedChartType = signal<ChartType>(DEFAULT_CHART_TYPE);
   readonly chartOptions = CHART_OPTIONS;
 
   // Config signals
@@ -71,11 +97,10 @@ export class TestDetailComponent {
   readonly performanceSummaryCollapsed = signal(false);
   readonly performanceOverTimeCollapsed = signal(false);
 
-  // Computed signals
-  readonly testData = computed(() => this.testDetailService.test());
-  readonly metricsData = computed(() => this.testDetailService.metrics());
+  // Computed signals for component
+  readonly testData = computed(() => this.test());
+  readonly metricsData = computed(() => this.metrics());
   readonly isRealTime = computed(() => this.testData()?.status === 'running');
-  readonly summaryStats = computed(() => this.testDetailService.summaryStats());
 
   // Global test time range for all charts
   readonly testTimeRange = computed(() => {
@@ -86,53 +111,9 @@ export class TestDetailComponent {
 
     const range = {
       min: test.summary.global.epochStartedAt,
-      max: test.summary.global.epochEndedAt || Date.now(),
+      max: test.summary.global.epochEndedAt,
     };
     return range;
-  });
-
-  readonly endpointSummaries = computed(() => {
-    const test = this.testData();
-    return (
-      test?.summary?.endpoints?.map((endpoint) => ({
-        url: endpoint.url,
-        method: endpoint.method,
-        averageRequestsPerSecond: endpoint.averageRequestsPerSecond,
-        p50LatencyMs: endpoint.p50LatencyMs,
-        totalRequests: endpoint.totalRequests,
-        successfulRequests: endpoint.successfulRequests,
-        failedRequests: endpoint.failedRequests,
-      })) ?? []
-    );
-  });
-
-  readonly endpointSummary = computed<TestDocument['summary']>(() => {
-    return this.testData()?.summary ?? null;
-  });
-
-  readonly endpointUrls = computed(() => {
-    return this.endpointSummaries().map((endpoint) => endpoint.url);
-  });
-
-  readonly throughputChartData = computed<ChartData>(() => {
-    const metrics = this.metricsData();
-    if (!metrics?.global?.length) return { data: [], labels: [] };
-
-    const data = metrics.global.map(
-      (m) => m.metric?.averageRequestsPerSecond || 0,
-    );
-    const labels = metrics.global.map((m) => m.epoch);
-
-    return { data, labels };
-  });
-
-  readonly latencyChartData = computed<ChartData>(() => {
-    const metrics = this.metricsData();
-    if (!metrics?.global?.length) return { data: [], labels: [] };
-
-    const data = metrics.global.map((m) => m.metric?.p50LatencyMs || 0);
-    const labels = metrics.global.map((m) => m.epoch);
-    return { data, labels };
   });
 
   readonly displayConfigName = computed(() => {
@@ -140,13 +121,12 @@ export class TestDetailComponent {
     return config?.name || 'Unknown Configuration';
   });
 
-  readonly displayConfigId = computed(() => {
-    const config = this.testData()?.configId;
-    return config || 'Unknown Configuration';
-  });
-
   // Cache for endpoint chart data
   private readonly cachedEndpointChartData: EndpointChartDataCache = new Map();
+
+  // Private state for subscriptions - moved from TestDetailService
+  private metricsStreamSubscription: Subscription | null = null;
+  private testEventsSubscription: Subscription | null = null;
 
   constructor() {
     // Subscribe to route params to ensure we get the testId
@@ -168,10 +148,16 @@ export class TestDetailComponent {
     this.errorMessage.set('');
 
     try {
-      await this.testDetailService.loadTestDetails(testId);
+      // Moved from TestDetailService - direct data loading
+      const [testResult, metricsResult] = await Promise.all([
+        this.testService.getTestById(testId),
+        this.testService.getTestMetrics(testId),
+      ]);
+
+      this.test.set(testResult);
+      this.metrics.set(metricsResult);
 
       // Load config after test data is loaded
-      const testResult = this.testData();
       if (testResult?.configId) {
         await this.loadConfig(testResult.configId);
       }
@@ -217,8 +203,87 @@ export class TestDetailComponent {
     // Start real-time updates when test ID is available
     const testId = this.testId();
     if (testId) {
-      this.testDetailService.startRealTimeUpdates(testId);
+      this.startRealTimeUpdates(testId);
     }
+  }
+
+  // Moved from TestDetailService - real-time subscription management
+  startRealTimeUpdates(testId: string | null): void {
+    if (!testId) return;
+
+    // Clean up existing subscriptions
+    this.cleanupSubscriptions();
+
+    // Subscribe to metrics stream for real-time updates
+    this.metricsStreamSubscription = this.eventService
+      .getMetricsStream()
+      .subscribe({
+        next: (data) => {
+          if (data.testId === testId) {
+            this.mergeRealTimeMetrics(data.testSummary);
+          }
+        },
+        error: (error: unknown) => {
+          this.logService.error('Real-time metrics error:', error);
+        },
+      });
+
+    // Subscribe to test events for completion/failure notifications
+    this.testEventsSubscription = this.eventService
+      .getTestEventsStream()
+      .subscribe({
+        next: (event: TestEventData) => {
+          if (event.testId === testId) {
+            this.handleTestEvent(event);
+          }
+        },
+        error: (error: unknown) => {
+          this.logService.error('Test events error:', error);
+        },
+      });
+  }
+
+  private mergeRealTimeMetrics(testSummary: TestSummary): void {
+    const currentTest = this.test();
+    if (!currentTest) return;
+
+    // Update the test summary with real-time data
+    this.test.set({
+      ...currentTest,
+      summary: testSummary,
+    });
+  }
+
+  private handleTestEvent(event: TestEventData): void {
+    const currentTest = this.test();
+    if (!currentTest || currentTest.id !== event.testId) return;
+
+    // Update test status
+    this.test.set({
+      ...currentTest,
+      status: event.status,
+    });
+
+    // Stop real-time updates when test completes
+    if (event.status === 'completed' || event.status === 'failed') {
+      this.cleanupSubscriptions();
+    }
+  }
+
+  private cleanupSubscriptions(): void {
+    if (this.metricsStreamSubscription) {
+      this.metricsStreamSubscription.unsubscribe();
+      this.metricsStreamSubscription = null;
+    }
+
+    if (this.testEventsSubscription) {
+      this.testEventsSubscription.unsubscribe();
+      this.testEventsSubscription = null;
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.cleanupSubscriptions();
   }
 
   getCachedEndpointChartData(url: string, metricType: ChartType): ChartData {
@@ -244,20 +309,22 @@ export class TestDetailComponent {
     const endpointMetrics = metrics.endpoints.filter((m) => m.url === url);
 
     let data: number[] = [];
-    let labels: number[] = [];
 
     switch (metricType) {
-      case 'throughput':
+      case 'peak_throughput':
+        data = endpointMetrics.map((m) => m.metric?.peakRequestsPerSecond);
+        break;
+      case 'average_throughput':
         data = endpointMetrics.map(
           (m) => m.metric?.averageRequestsPerSecond || 0,
         );
-        labels = endpointMetrics.map((m) => m.epoch);
         break;
       case 'latency':
         data = endpointMetrics.map((m) => m.metric?.p50LatencyMs || 0);
-        labels = endpointMetrics.map((m) => m.epoch);
         break;
     }
+
+    const labels = endpointMetrics.map((m) => m.epoch);
 
     const chartData = { data, labels };
     urlCache.set(cacheKey, chartData);
@@ -306,66 +373,10 @@ export class TestDetailComponent {
     this.router.navigate(['/']);
   }
 
-  // Helper methods for template type checking
-  isThroughputChart(): boolean {
-    return this.selectedChartType() === 'throughput';
-  }
-
-  isLatencyChart(): boolean {
-    return this.selectedChartType() === 'latency';
-  }
-
   onEndpointChange(event: Event): void {
     const target = event.target as HTMLSelectElement;
     const value = target.value;
     this.selectedEndpoint.set(value);
-    this.testDetailService.selectedEndpoint.set(value);
-  }
-
-  getCurrentEndpointSummary():
-    | {
-        url: string;
-        method: string;
-        averageRequestsPerSecond: number;
-        p50LatencyMs: number;
-        totalRequests: number;
-        successfulRequests: number;
-        failedRequests: number;
-      }
-    | null
-    | undefined {
-    const endpointUrl = this.selectedEndpoint();
-    if (endpointUrl === 'global') return null;
-    return this.endpointSummaries().find((e) => e.url === endpointUrl);
-  }
-
-  getCurrentSummaryStats():
-    | {
-        url: string;
-        method: string;
-        averageRequestsPerSecond: number;
-        p50LatencyMs: number;
-        totalRequests: number;
-        successfulRequests: number;
-        failedRequests: number;
-      }
-    | {
-        p50LatencyMs: number;
-        totalRequests: number;
-      }
-    | null
-    | undefined {
-    const endpoint = this.selectedEndpoint();
-    if (endpoint === 'global') {
-      const test = this.testData();
-      if (!test?.summary) return null;
-      return {
-        p50LatencyMs: test.summary.global.p50LatencyMs,
-        totalRequests: test.summary.global.totalRequests,
-      };
-    } else {
-      return this.getCurrentEndpointSummary();
-    }
   }
 
   // Get current chart data based on selected endpoint
@@ -386,7 +397,12 @@ export class TestDetailComponent {
     if (!metrics?.global?.length) return { data: [], labels: [] };
 
     switch (metricType) {
-      case 'throughput':
+      case 'peak_throughput':
+        return {
+          data: metrics.global.map((m) => m.metric?.peakRequestsPerSecond || 0),
+          labels: metrics.global.map((m) => m.epoch),
+        };
+      case 'average_throughput':
         return {
           data: metrics.global.map(
             (m) => m.metric?.averageRequestsPerSecond || 0,
@@ -401,26 +417,24 @@ export class TestDetailComponent {
     }
   }
 
-  async exportResults(format: 'json' | 'csv' | 'xlsx'): Promise<void> {
-    const test = this.testData();
-    const metrics = this.metricsData();
-
-    if (!test || !metrics) return;
+  async exportResults(format: 'json' | 'xlsx' | 'md'): Promise<void> {
+    const testId = this.testId();
+    if (!testId) {
+      this.logService.warn('No test ID available for export');
+      return;
+    }
 
     try {
-      await this.exportService.export(test, metrics, format);
-      this.logService.info('Test results exported', {
-        testId: test.id,
-        format,
-      });
+      await this.testExportService.exportTest(testId, format);
     } catch (error) {
-      this.logService.error('Failed to export results', error);
+      this.logService.error('Export failed', error);
     }
   }
 
   // New helper methods for enhanced UI
   getYAxisLabel(): string {
-    return this.selectedChartType() === 'throughput' ? 'Req/sec' : 'ms';
+    const selected = this.selectedChartType();
+    return selected.includes('throughput') ? 'Req/sec' : 'ms';
   }
 
   getChartId(): string {

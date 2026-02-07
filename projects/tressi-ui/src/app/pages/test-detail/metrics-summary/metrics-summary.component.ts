@@ -1,32 +1,22 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
 
-export interface SummaryStats {
-  totalRequests: number;
-  averageRequestsPerSecond: number;
-  minLatencyMs: number;
-  maxLatencyMs: number;
-  p50LatencyMs: number;
-  p95LatencyMs: number;
-  p99LatencyMs: number;
-  errorRate: number;
-  successfulRequests: number;
-  failedRequests: number;
-  // View-specific optional fields
-  finalDurationSec?: number;
-  totalEndpoints?: number;
-  targetAchieved?: number;
-  theoreticalMaxRps?: number;
-}
-
 @Component({
   selector: 'app-metrics-summary',
   imports: [CommonModule],
   templateUrl: './metrics-summary.component.html',
 })
 export class MetricsSummaryComponent {
-  @Input() stats!: SummaryStats | null;
+  @Input() summary: any = null;
   @Input() endpointType: 'global' | 'endpoint' = 'global';
+
+  isGlobalSummary(summary: any): summary is any {
+    return this.endpointType === 'global' && summary !== null;
+  }
+
+  isEndpointSummary(summary: any): summary is any {
+    return this.endpointType === 'endpoint' && summary !== null;
+  }
 
   formatDuration(seconds: number | undefined): string {
     if (!seconds) return '0s';
@@ -51,5 +41,10 @@ export class MetricsSummaryComponent {
   formatRps(value: number | undefined): string {
     if (!value) return '0/s';
     return `${Math.round(value)}/s`;
+  }
+
+  formatNumber(value: number | undefined): string {
+    if (value === undefined || value === null) return '0';
+    return value.toLocaleString();
   }
 }

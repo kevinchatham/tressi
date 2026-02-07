@@ -113,19 +113,6 @@
           </h4>
           <p class="text-sm">{{ getTotalRPS() }} RPS</p>
         </div>
-        @if (input().config.options.exportPath) {
-          <div>
-            <h4 class="text-base-content/70 mb-1 text-sm font-semibold">
-              Export
-            </h4>
-            <p
-              class="truncate text-sm"
-              [title]="input().config.options.exportPath"
-            >
-              {{ input().config.options.exportPath }}
-            </p>
-          </div>
-        }
       </div>
     </div>
 

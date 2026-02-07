@@ -37,8 +37,6 @@ export const requestDefaults = {
 export const optionsDefaults = {
   durationSec: 10,
   rampUpDurationSec: 0,
-  exportPath: '',
-  silent: false,
   headers: headerDefaults,
   threads: 1,
   workerMemoryLimit: 128,
@@ -134,14 +132,6 @@ export const TressiOptionsConfigSchema = z
       .describe(
         'The time in seconds to ramp up to the target RPS. Defaults to 0.',
       ),
-    exportPath: z
-      .string()
-      .describe(
-        'The base path for the exported report. If not provided, no report will be generated.',
-      ),
-    silent: z
-      .boolean()
-      .describe('Suppress all console output. Defaults to false.'),
     headers: z
       .record(z.string(), z.string())
       .describe('Global headers to be sent with every request.'),

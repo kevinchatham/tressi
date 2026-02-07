@@ -55,42 +55,6 @@
       }
     </fieldset>
 
-    <!-- Export Path -->
-    <fieldset class="fieldset md:col-span-2">
-      <legend class="fieldset-legend">Export Path</legend>
-      <input
-        type="text"
-        class="input"
-        [field]="form().config.options.exportPath"
-        placeholder="./tressi-report"
-      />
-      <p class="label">Directory for test reports</p>
-      @if (
-        form().config.options.exportPath().touched() &&
-        form().config.options.exportPath().invalid()
-      ) {
-        <p class="label text-error">
-          @for (
-            error of form().config.options.exportPath().errors();
-            track error
-          ) {
-            {{ error.message }}
-          }
-        </p>
-      }
-    </fieldset>
-
-    <!-- Silent Mode -->
-    <fieldset class="fieldset">
-      <legend class="fieldset-legend">Silent Mode</legend>
-      <label class="label cursor-pointer">
-        <span class="label-text">Suppress console output</span>
-        <input
-          type="checkbox"
-          class="checkbox checkbox-primary"
-          [field]="form().config.options.silent"
-        />
-      </label>
-    </fieldset>
+    <!-- Note: Export Path and Silent Mode have been moved to CLI flags only -->
   </div>
 </div>

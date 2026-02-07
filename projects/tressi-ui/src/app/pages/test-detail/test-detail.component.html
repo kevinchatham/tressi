@@ -8,25 +8,22 @@
       [title]="'Delete'"
     />
     <div class="dropdown dropdown-center">
-      <app-button [color]="'primary'" [tabindex]="0" [icon]="'save_as'" />
+      <app-button
+        [title]="'Export'"
+        [color]="'primary'"
+        [tabindex]="0"
+        [icon]="'save_as'"
+      />
       <ul
         tabindex="0"
-        class="dropdown-content bg-base-100 rounded-box ring-base-content/10 z-50 mt-4 w-36 p-2 shadow-lg ring-1"
+        class="dropdown-content bg-base-100 rounded-box ring-base-content/10 z-50 mt-4 w-34 p-2 shadow-lg ring-1"
       >
         <li>
           <button
             class="btn btn-ghost w-full justify-center"
             (click)="exportResults('json')"
           >
-            Save as JSON
-          </button>
-        </li>
-        <li>
-          <button
-            class="btn btn-ghost w-full justify-center"
-            (click)="exportResults('csv')"
-          >
-            Save as CSV
+            JSON
           </button>
         </li>
         <li>
@@ -34,7 +31,15 @@
             class="btn btn-ghost w-full justify-center"
             (click)="exportResults('xlsx')"
           >
-            Save as XLSX
+            XLSX
+          </button>
+        </li>
+        <li>
+          <button
+            class="btn btn-ghost w-full justify-center"
+            (click)="exportResults('md')"
+          >
+            Markdown
           </button>
         </li>
       </ul>
@@ -142,7 +147,7 @@
             <!-- No Metrics Available Messages -->
             @if (
               !metricsData()?.global?.length &&
-              !endpointSummary()?.endpoints?.length
+              !testData()?.summary?.endpoints?.length
             ) {
               <div
                 class="text-base-content/50 flex items-center justify-center py-4"
@@ -199,7 +204,10 @@
               (change)="onEndpointChange($event)"
             >
               <option value="global">Global Metrics</option>
-              @for (endpoint of endpointSummaries(); track endpoint.url) {
+              @for (
+                endpoint of testData()?.summary?.endpoints || [];
+                track endpoint.url
+              ) {
                 <option [value]="endpoint.url">{{ endpoint.url }}</option>
               }
             </select>
@@ -207,7 +215,7 @@
 
           <!-- Main content projection -->
           <app-metrics-summary
-            [stats]="summaryStats()"
+            [summary]="selectedSummary()"
             [endpointType]="
               selectedEndpoint() === 'global' ? 'global' : 'endpoint'
             "

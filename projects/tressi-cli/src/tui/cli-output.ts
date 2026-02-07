@@ -10,12 +10,16 @@ import { terminal } from './terminal';
  * @param summary The calculated TestSummary object for the run.
  * @param options The original RunOptions used for the test.
  * @param config The Tressi configuration.
+ * @param silent Whether to suppress console output
  */
 export function printSummary(
   summary: TestSummary,
   options: TressiOptionsConfig,
   config: TressiConfig,
+  silent?: boolean,
 ): void {
+  if (silent) return;
+
   printReportInfo(summary, options);
   printRunConfiguration(options, config);
   printGlobalSummary(summary);
@@ -27,21 +31,13 @@ export function printSummary(
  */
 function printReportInfo(
   summary: TestSummary,
-  options: TressiOptionsConfig,
+  _options: TressiOptionsConfig,
 ): void {
   const reportInfoTable = new Table({
     head: ['Metric', 'Value'],
     colWidths: [20, 35],
   });
   reportInfoTable.push(['Version', summary.tressiVersion]);
-  if (options.exportPath) {
-    const baseExportName =
-      typeof options.exportPath === 'string'
-        ? options.exportPath
-        : 'tressi-report';
-    reportInfoTable.push(['Export Name', baseExportName]);
-    reportInfoTable.push(['Test Time', new Date().toLocaleString()]);
-  }
   terminal.print('\n' + chalk.bold('Report Information'));
   terminal.print(reportInfoTable.toString());
 }

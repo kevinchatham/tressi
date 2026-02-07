@@ -3,7 +3,7 @@ import { performance } from 'perf_hooks';
 
 import { TressiConfig } from '../common/config/types';
 import type { AggregatedMetrics } from '../common/metrics';
-import type { TestSummary } from '../reporting/types';
+import type { ResponseSamples, TestSummary } from '../reporting/types';
 import { IRunnerEvents } from '../workers/interfaces';
 import { WorkerPoolManager } from '../workers/worker-pool-manager';
 
@@ -100,10 +100,7 @@ export class Runner extends EventEmitter<IRunnerEvents> {
    * Gets body samples collected during the test.
    * @returns Record of endpoint URL to body samples
    */
-  public getResponseSamples(): Record<
-    string,
-    Array<{ statusCode: number; body: string }>
-  > {
+  public getResponseSamples(): ResponseSamples {
     return this.workerPool.getResponseSamples();
   }
 

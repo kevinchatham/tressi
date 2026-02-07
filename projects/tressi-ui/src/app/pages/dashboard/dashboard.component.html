@@ -31,7 +31,6 @@
     @if (hasTestHistory() || !selectedConfigId()) {
       <app-start-button
         [config]="selectedConfig()"
-        [testRunning]="isTestRunning()"
         (testStarted)="onTestStarted()"
         (testStartFailed)="onTestStartFailed($event)"
       />

@@ -98,8 +98,13 @@ export interface IMetricsAggregator {
     headers: Record<string, string>,
     body: string,
   ): void;
-  getCollectedResponseSamples(
-    runId: string,
-  ): Map<string, Array<{ statusCode: number; body: string }>>;
+  getCollectedResponseSamples(runId: string): Map<
+    string,
+    Array<{
+      statusCode: number;
+      headers: Record<string, string>;
+      body: string;
+    }>
+  >;
   cleanupResponseSamples(runId: string): void;
 }

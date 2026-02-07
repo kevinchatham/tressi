@@ -80,6 +80,8 @@ export type EndpointSummary = {
   statusCodeDistribution: Record<number, number>;
   /** error rate as a decimal */
   errorRate: number;
+  /** The aggregated histogram of the test */
+  histogram: LatencyHistogram;
 };
 
 /**
@@ -122,6 +124,37 @@ export type GlobalSummary = {
   networkBytesReceived: number;
   /** Network throughput in bytes per second. */
   networkBytesPerSec: number;
+  /** Average system CPU usage percentage during the test (based on load average) */
+  avgSystemCpuUsagePercent: number;
+  /** Average process heap memory usage in MB during the test */
+  avgProcessMemoryUsageMB: number;
+  /** The aggregated histogram of the test */
+  histogram: LatencyHistogram;
+};
+
+/**
+ * Latency histogram data structure for detailed latency distribution
+ */
+export type LatencyHistogram = {
+  /** Total number of samples in the histogram */
+  totalCount: number;
+  /** Minimum latency value in milliseconds */
+  min: number;
+  /** Maximum latency value in milliseconds */
+  max: number;
+  /** Percentile values (1st, 5th, 10th, 25th, 50th, 75th, 90th, 95th, 99th, 99.9th) */
+  percentiles: {
+    1: number;
+    5: number;
+    10: number;
+    25: number;
+    50: number;
+    75: number;
+    90: number;
+    95: number;
+    99: number;
+    99.9: number;
+  };
 };
 
 /**
@@ -165,3 +198,22 @@ export type RequestResult = {
   /** Number of bytes received in the response body. */
   bytesReceived?: number;
 };
+
+/**
+ * Map of HTTP status codes to their frequency counts
+ */
+export type StatusCodeMap = Record<number, number>;
+
+/**
+ * Response samples collected during load testing
+ * Key: Endpoint URL
+ * Value: Array of response samples with status code, headers, and body
+ */
+export type ResponseSamples = Record<
+  string,
+  Array<{
+    statusCode: number;
+    headers: Record<string, unknown>;
+    body: string;
+  }>
+>;

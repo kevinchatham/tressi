@@ -42,6 +42,15 @@ export class MetricsAggregator implements IMetricsAggregator {
   > = {};
   private peakGlobalInstantRps: number = 0;
   private peakEndpointInstantRps: Record<string, number> = {};
+  private cpuUsageSamples: Array<{
+    timestamp: number;
+    cpuUsagePercent: number;
+  }> = [];
+  private memoryUsageSamples: Array<{
+    timestamp: number;
+    memoryUsageMB: number;
+  }> = [];
+  private metricsSamplingInterval: NodeJS.Timeout | null = null;
 
   constructor(
     private hdrHistogramManagers: IHdrHistogramManager[],
@@ -64,6 +73,7 @@ export class MetricsAggregator implements IMetricsAggregator {
    */
   public setStartTime(startTime: number): void {
     this.startTime = startTime;
+    this.startMetricsSampling();
   }
 
   /**
@@ -72,6 +82,63 @@ export class MetricsAggregator implements IMetricsAggregator {
    */
   public setEndTime(endTime: number): void {
     this.endTime = endTime;
+    this.stopMetricsSampling();
+  }
+
+  /**
+   * Start collecting resource usage samples at regular intervals
+   */
+  private startMetricsSampling(): void {
+    if (this.metricsSamplingInterval) {
+      clearInterval(this.metricsSamplingInterval);
+    }
+
+    // Sample every 2 seconds during the test
+    this.metricsSamplingInterval = setInterval(() => {
+      this.collectResourceUsageSample();
+    }, 2000);
+  }
+
+  /**
+   * Stop collecting resource usage samples
+   */
+  private stopMetricsSampling(): void {
+    if (this.metricsSamplingInterval) {
+      clearInterval(this.metricsSamplingInterval);
+      this.metricsSamplingInterval = null;
+    }
+  }
+
+  /**
+   * Collect a single resource usage sample
+   */
+  private collectResourceUsageSample(): void {
+    const timestamp = Date.now();
+
+    // Calculate CPU usage percentage based on system load average
+    const cpuCount = cpus().length;
+    const loadAvg = loadavg()[0];
+    const cpuUsagePercent = Math.min(
+      Math.round((loadAvg / cpuCount) * 100),
+      100,
+    );
+
+    // Calculate memory usage in MB
+    const memoryUsageMB = Math.round(
+      process.memoryUsage().heapUsed / 1024 / 1024,
+    );
+
+    this.cpuUsageSamples.push({ timestamp, cpuUsagePercent });
+    this.memoryUsageSamples.push({ timestamp, memoryUsageMB });
+  }
+
+  /**
+   * Calculate average from samples
+   */
+  private calculateAverage(values: number[]): number {
+    if (values.length === 0) return 0;
+    const sum = values.reduce((acc, value) => acc + value, 0);
+    return Math.round(sum / values.length);
   }
 
   /**
@@ -423,14 +490,34 @@ export class MetricsAggregator implements IMetricsAggregator {
     // Calculate CPU usage percentage based on system load average
     const cpuCount = cpus().length;
     const loadAvg = loadavg()[0];
-    const cpuUsagePercent = Math.min(
+    const currentCpuUsagePercent = Math.min(
       Math.round((loadAvg / cpuCount) * 100),
       100,
     );
 
     // Calculate memory usage in MB
-    const memoryUsageMB = Math.round(
+    const currentMemoryUsageMB = Math.round(
       process.memoryUsage().heapUsed / 1024 / 1024,
+    );
+
+    // Add final sample if test is still running
+    if (this.endTime === 0) {
+      this.cpuUsageSamples.push({
+        timestamp: currentTime,
+        cpuUsagePercent: currentCpuUsagePercent,
+      });
+      this.memoryUsageSamples.push({
+        timestamp: currentTime,
+        memoryUsageMB: currentMemoryUsageMB,
+      });
+    }
+
+    // Calculate averages from samples
+    const cpuUsagePercent = this.calculateAverage(
+      this.cpuUsageSamples.map((s) => s.cpuUsagePercent),
+    );
+    const memoryUsageMB = this.calculateAverage(
+      this.memoryUsageSamples.map((s) => s.memoryUsageMB),
     );
 
     // Calculate global network throughput
@@ -465,7 +552,8 @@ export class MetricsAggregator implements IMetricsAggregator {
       epoch: currentTime,
       cpuUsagePercent,
       memoryUsageMB,
-
+      cpuUsageSamples: this.cpuUsageSamples,
+      memoryUsageSamples: this.memoryUsageSamples,
       global: globalMetrics,
       endpoints: endpointMetrics,
     };
@@ -505,6 +593,42 @@ export class MetricsAggregator implements IMetricsAggregator {
       responseSamples[url] = samples;
     });
 
+    // Collect histogram data from all workers
+    const globalHistograms: LatencyHistogram[] = [];
+    const endpointHistograms: Record<string, LatencyHistogram[]> = {};
+
+    // Initialize endpoint histograms
+    endpoints.forEach((url) => {
+      endpointHistograms[url] = [];
+    });
+
+    // Aggregate histogram data from all workers
+    for (let workerId = 0; workerId < workersCount; workerId++) {
+      const histogramManager = this.hdrHistogramManagers[workerId];
+      if (!histogramManager) continue;
+
+      const allHistograms = histogramManager.getAllEndpointHistograms();
+
+      // Process each endpoint
+      allHistograms.forEach((histogram, localEndpointIndex) => {
+        const globalEndpointIndex = this.getGlobalEndpointIndex(
+          workerId,
+          localEndpointIndex,
+        );
+        if (globalEndpointIndex >= endpoints.length) return;
+
+        const endpointUrl = endpoints[globalEndpointIndex];
+
+        if (histogram && histogram.totalCount > 0) {
+          // Add to endpoint histograms
+          endpointHistograms[endpointUrl].push(histogram);
+
+          // Add to global histograms
+          globalHistograms.push(histogram);
+        }
+      });
+    }
+
     // Use stored times (endTime captured in stopPolling)
     const epochStartedAt = this.startTime;
     const epochEndedAt = this.endTime > 0 ? this.endTime : Date.now();
@@ -514,9 +638,13 @@ export class MetricsAggregator implements IMetricsAggregator {
       duration,
       this.endpointMethodMap,
       this.config,
-      epochStartedAt, // ← REQUIRED parameter
-      epochEndedAt, // ← REQUIRED parameter
+      epochStartedAt,
+      epochEndedAt,
       responseSamples,
+      {
+        global: globalHistograms,
+        endpoints: endpointHistograms,
+      },
     );
   }
 

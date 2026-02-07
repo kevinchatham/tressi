@@ -136,6 +136,15 @@ export type DeleteTestResponseError = Extract<
   { error: object }
 >;
 
+// ! Test Export
+export type ExportTestResponse = InferResponseType<
+  (typeof client.tests)[':id']['export']['$get']
+>;
+
+export type ExportTestRequest = InferRequestType<
+  (typeof client.tests)[':id']['export']['$get']
+>;
+
 // ! Test Status
 export type GetTestStatusResponse = InferResponseType<
   typeof client.test.status.$get
