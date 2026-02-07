@@ -238,7 +238,7 @@
               [value]="selectedChartType()"
               (change)="onChartTypeChange($event)"
             >
-              @for (option of chartOptions; track option.value) {
+              @for (option of availableChartOptions(); track option.value) {
                 <option [value]="option.value">{{ option.label }}</option>
               }
             </select>
@@ -247,7 +247,7 @@
           <!-- Main content projection -->
           <!-- Unified Chart Container -->
           <div>
-            @if (getCurrentChartData().data.length > 0) {
+            @if (hasChartData()) {
               <div class="mt-6">
                 <app-line-chart
                   [data]="getCurrentChartData().data"

@@ -85,6 +85,9 @@ export class TestDetailComponent implements OnDestroy {
   readonly showDeleteModal = signal(false);
   readonly selectedChartType = signal<ChartType>(DEFAULT_CHART_TYPE);
   readonly chartOptions = CHART_OPTIONS;
+  readonly availableChartOptions = computed(() => {
+    return CHART_OPTIONS;
+  });
 
   // Config signals
   readonly config = signal<ConfigDocument | null>(null);
@@ -308,11 +311,11 @@ export class TestDetailComponent implements OnDestroy {
 
     const endpointMetrics = metrics.endpoints.filter((m) => m.url === url);
 
-    let data: number[] = [];
+    let data: number[] | { [seriesName: string]: number[] } = [];
 
     switch (metricType) {
       case 'peak_throughput':
-        data = endpointMetrics.map((m) => m.metric?.peakRequestsPerSecond);
+        data = endpointMetrics.map((m) => m.metric?.peakRequestsPerSecond || 0);
         break;
       case 'average_throughput':
         data = endpointMetrics.map(
@@ -322,6 +325,36 @@ export class TestDetailComponent implements OnDestroy {
       case 'latency':
         data = endpointMetrics.map((m) => m.metric?.p50LatencyMs || 0);
         break;
+      case 'latency_p95':
+        data = endpointMetrics.map((m) => m.metric?.p95LatencyMs || 0);
+        break;
+      case 'latency_p99':
+        data = endpointMetrics.map((m) => m.metric?.p99LatencyMs || 0);
+        break;
+      case 'error_rate':
+        data = endpointMetrics.map((m) => (m.metric?.errorRate || 0) * 100);
+        break;
+      case 'success_rate':
+        data = endpointMetrics.map(
+          (m) =>
+            ((m.metric?.successfulRequests || 0) /
+              (m.metric?.totalRequests || 1)) *
+            100,
+        );
+        break;
+      case 'failed_requests':
+        data = endpointMetrics.map((m) => m.metric?.failedRequests || 0);
+        break;
+      case 'network_throughput':
+        data = endpointMetrics.map((m) => m.metric?.networkBytesPerSec || 0);
+        break;
+      case 'network_bytes_sent':
+        data = endpointMetrics.map((m) => m.metric?.networkBytesSent || 0);
+        break;
+      case 'network_bytes_received':
+        data = endpointMetrics.map((m) => m.metric?.networkBytesReceived || 0);
+        break;
+      // Note: cpu_usage and memory_usage NOT available per-endpoint
     }
 
     const labels = endpointMetrics.map((m) => m.epoch);
@@ -414,6 +447,53 @@ export class TestDetailComponent implements OnDestroy {
           data: metrics.global.map((m) => m.metric?.p50LatencyMs || 0),
           labels: metrics.global.map((m) => m.epoch),
         };
+      case 'latency_p95':
+        return {
+          data: metrics.global.map((m) => m.metric?.p95LatencyMs || 0),
+          labels: metrics.global.map((m) => m.epoch),
+        };
+      case 'latency_p99':
+        return {
+          data: metrics.global.map((m) => m.metric?.p99LatencyMs || 0),
+          labels: metrics.global.map((m) => m.epoch),
+        };
+      case 'error_rate':
+        return {
+          data: metrics.global.map((m) => (m.metric?.errorRate || 0) * 100),
+          labels: metrics.global.map((m) => m.epoch),
+        };
+      case 'success_rate':
+        return {
+          data: metrics.global.map(
+            (m) =>
+              ((m.metric?.successfulRequests || 0) /
+                (m.metric?.totalRequests || 1)) *
+              100,
+          ),
+          labels: metrics.global.map((m) => m.epoch),
+        };
+      case 'failed_requests':
+        return {
+          data: metrics.global.map((m) => m.metric?.failedRequests || 0),
+          labels: metrics.global.map((m) => m.epoch),
+        };
+      case 'network_throughput':
+        return {
+          data: metrics.global.map((m) => m.metric?.networkBytesPerSec || 0),
+          labels: metrics.global.map((m) => m.epoch),
+        };
+      case 'network_bytes_sent':
+        return {
+          data: metrics.global.map((m) => m.metric?.networkBytesSent || 0),
+          labels: metrics.global.map((m) => m.epoch),
+        };
+      case 'network_bytes_received':
+        return {
+          data: metrics.global.map((m) => m.metric?.networkBytesReceived || 0),
+          labels: metrics.global.map((m) => m.epoch),
+        };
+      default:
+        return { data: [], labels: [] };
     }
   }
 
@@ -434,7 +514,13 @@ export class TestDetailComponent implements OnDestroy {
   // New helper methods for enhanced UI
   getYAxisLabel(): string {
     const selected = this.selectedChartType();
-    return selected.includes('throughput') ? 'Req/sec' : 'ms';
+    if (selected.includes('throughput')) return 'Req/sec';
+    if (selected.includes('latency')) return 'ms';
+    if (selected.includes('rate')) return '%';
+    if (selected.includes('network_throughput')) return 'Bytes/sec';
+    if (selected.includes('network_bytes')) return 'Bytes';
+    if (selected === 'failed_requests') return 'requests';
+    return 'Value';
   }
 
   getChartId(): string {
@@ -448,19 +534,47 @@ export class TestDetailComponent implements OnDestroy {
     }
   }
 
+  hasChartData(): boolean {
+    const data = this.getCurrentChartData().data;
+
+    if (Array.isArray(data)) {
+      return data.length > 0;
+    } else if (typeof data === 'object' && data !== null) {
+      // Multi-series data - check if any series has data
+      return Object.values(data).some(
+        (series) => Array.isArray(series) && series.length > 0,
+      );
+    }
+
+    return false;
+  }
+
   getChartStats(): {
     min: number;
     avg: number;
     max: number;
   } {
     const data = this.getCurrentChartData().data;
-    if (data.length === 0) {
+
+    // Handle both single series and multi-series data
+    let allValues: number[] = [];
+
+    if (Array.isArray(data)) {
+      allValues = data;
+    } else if (typeof data === 'object' && data !== null) {
+      // Multi-series data - flatten all values
+      allValues = Object.values(data).flat();
+    }
+
+    if (allValues.length === 0) {
       return { min: 0, avg: 0, max: 0 };
     }
 
-    const min = Math.min(...data);
-    const max = Math.max(...data);
-    const avg = data.reduce((sum, val) => sum + val, 0) / data.length;
+    const min = Math.min(...allValues);
+    const max = Math.max(...allValues);
+    const avg =
+      allValues.reduce((sum: number, val: number) => sum + val, 0) /
+      allValues.length;
 
     return {
       min: Math.round(min * 100) / 100,

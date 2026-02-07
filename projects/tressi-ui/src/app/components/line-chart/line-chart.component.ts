@@ -57,7 +57,7 @@ export class LineChartComponent {
 
   readonly title = input<string>('');
   readonly yAxisLabel = input<string>('');
-  readonly data = input<number[]>([]);
+  readonly data = input<number[] | { [seriesName: string]: number[] }>([]);
   readonly labels = input<number[]>([]);
   readonly seriesName = input<string>('Series');
   readonly height = input<number>(350);
@@ -149,11 +149,38 @@ export class LineChartComponent {
     const minBoundary = effectiveState?.min;
     const maxBoundary = effectiveState?.max;
 
-    // Convert data and labels to proper format for datetime chart
-    const seriesData = data.map((value, index) => ({
-      x: labels[index] || Date.now() - (data.length - 1 - index) * 1000,
-      y: value,
-    }));
+    // Handle both single series and multi-series data
+    let series: ApexAxisChartSeries;
+    let dataLength = 0;
+
+    if (Array.isArray(data)) {
+      // Single series data
+      const seriesData = data.map((value, index) => ({
+        x: labels[index] || Date.now() - (data.length - 1 - index) * 1000,
+        y: value,
+      }));
+
+      series = [
+        {
+          name: seriesName,
+          data: seriesData,
+        },
+      ];
+      dataLength = data.length;
+    } else {
+      // Multi-series data
+      series = Object.entries(data).map(([name, values]) => {
+        const seriesData = values.map((value, index) => ({
+          x: labels[index] || Date.now() - (values.length - 1 - index) * 1000,
+          y: value,
+        }));
+        dataLength = Math.max(dataLength, values.length);
+        return {
+          name,
+          data: seriesData,
+        };
+      });
+    }
 
     const zoomInSvg = IconComponent.asHtml('zoom_in');
     const zoomOutSvg = IconComponent.asHtml('zoom_out');
@@ -162,12 +189,7 @@ export class LineChartComponent {
     const selectSvg = IconComponent.asHtml('select');
 
     return {
-      series: [
-        {
-          name: seriesName,
-          data: seriesData,
-        },
-      ],
+      series,
       chart: {
         offsetX: 4,
         height: height,
@@ -260,7 +282,10 @@ export class LineChartComponent {
         min: minBoundary, // Prevent zoom before data starts
         max: maxBoundary, // Prevent zoom after data ends
         labels: {
-          show: data.length > 1,
+          show:
+            (Array.isArray(data)
+              ? data.length
+              : Object.values(data)[0]?.length || 0) > 1,
           style: {
             colors: themeColors.text,
             fontFamily: 'Roboto Mono, monospace',
@@ -326,7 +351,12 @@ export class LineChartComponent {
         fillSeriesColor: false,
       },
       markers: {
-        size: 0,
+        size:
+          (Array.isArray(data)
+            ? data.length
+            : Object.values(data)[0]?.length || 0) > 1
+            ? 0
+            : 4,
         colors: [themeColors.primary],
         strokeColors: [themeColors.primary],
         strokeWidth: 2,
@@ -427,81 +457,61 @@ export class LineChartComponent {
   }
 
   private updateChart(): void {
-    const seriesName = this.seriesName();
     const data = this.data();
     const labels = this.labels();
 
     const chart = this.chart();
     if (!chart) return;
 
+    // Get data length for change detection
+    const dataLength = Array.isArray(data)
+      ? data.length
+      : typeof data === 'object' && data !== null
+        ? Math.max(...Object.values(data).map((arr) => arr?.length || 0))
+        : 0;
+
     // Early exit if data hasn't changed
-    if (data.length === this.lastDataLength && data.length > 0) {
+    if (dataLength === this.lastDataLength && dataLength > 0) {
       return;
     }
 
     // Use requestAnimationFrame to avoid blocking UI
     requestAnimationFrame(() => {
-      // Convert data and labels to proper format for datetime chart
-      const seriesData = data.map((value, index) => ({
-        x: labels[index] || Date.now() - (data.length - 1 - index) * 1000,
-        y: value,
-      }));
+      let series: ApexAxisChartSeries = [];
 
-      // Determine if we should use incremental update
-      const shouldUseIncremental = this.shouldUseIncrementalUpdate(data);
+      if (Array.isArray(data)) {
+        // Single series data
+        const seriesData = data.map((value: number, index: number) => ({
+          x: labels[index] || Date.now() - (data.length - 1 - index) * 1000,
+          y: value,
+        }));
 
-      if (shouldUseIncremental && this.lastDataLength > 0) {
-        // Use appendData for incremental updates
-        const newDataPoints = this.getIncrementalDataPoints(seriesData);
-        if (newDataPoints.length > 0) {
-          chart.appendData([
-            {
-              name: seriesName,
-              data: newDataPoints,
-            },
-          ]);
-        }
-      } else {
-        // Use full update for initial load or major data changes
-        chart.updateSeries([
+        series = [
           {
-            name: seriesName,
+            name: this.seriesName(),
             data: seriesData,
           },
-        ]);
+        ];
+      } else if (typeof data === 'object' && data !== null) {
+        // Multi-series data
+        series = Object.entries(data).map(([seriesName, values]) => {
+          const seriesData = values.map((value: number, index: number) => ({
+            x: labels[index] || Date.now() - (values.length - 1 - index) * 1000,
+            y: value,
+          }));
+          return {
+            name: seriesName,
+            data: seriesData,
+          };
+        });
       }
 
+      // Always use full update for simplicity with multi-series
+      chart.updateSeries(series);
+
       // Update tracking state
-      this.lastDataLength = data.length;
+      this.lastDataLength = dataLength;
     });
-  }
-
-  private shouldUseIncrementalUpdate(newData: number[]): boolean {
-    if (this.lastDataLength === 0) {
-      return false; // First load, use full update
-    }
-
-    if (newData.length < this.lastDataLength) {
-      return false; // Data reset, use full update
-    }
-
-    if (newData.length - this.lastDataLength > 20) {
-      return false; // Large batch, use full update
-    }
-
-    return newData.length > this.lastDataLength;
-  }
-
-  private getIncrementalDataPoints(
-    seriesData: { x: number; y: number }[],
-  ): { x: number; y: number }[] {
-    // Return only the new data points since last update
-    const expectedLength = this.lastDataLength;
-    if (seriesData.length <= expectedLength) {
-      return [];
-    }
-
-    return seriesData.slice(expectedLength);
   }
 
   private getYAxisFormatter(): (value: number) => string {
