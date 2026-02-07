@@ -128,7 +128,7 @@ export function transformAggregatedMetricToTestSummary(
 
     // Calculate percentage of target RPS achieved
     const targetAchieved = roundToDecimals(
-      (endpoint.averageRequestsPerSecond / requestConfig.rps) * 100,
+      (endpoint.peakRequestsPerSecond / requestConfig.rps) * 100,
     );
 
     const summary: EndpointSummary = {
