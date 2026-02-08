@@ -52,12 +52,19 @@
   transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   transform: translateZ(0);
 
+  /* Define intermediate colors using color-mix in oklch for smooth transitions */
+  --rainbow-mid-primary-secondary: color-mix(in oklch, var(--color-primary) 50%, var(--color-secondary));
+  --rainbow-mid-primary-accent: color-mix(in oklch, var(--color-primary) 50%, var(--color-accent));
+  --rainbow-mid-accent-secondary: color-mix(in oklch, var(--color-accent) 50%, var(--color-secondary));
+
   /* Text gradient */
   background-image: linear-gradient(
     90deg,
     var(--color-primary) 0%,
+    var(--rainbow-mid-primary-secondary) 25%,
     var(--color-secondary) 49%,
     var(--color-secondary) 80%,
+    var(--rainbow-mid-primary-secondary) 90%,
     var(--color-primary) 100%
   );
   background-size: 200% 100%;
@@ -76,8 +83,11 @@
   background: linear-gradient(
     90deg,
     var(--color-primary) 0%,
+    var(--rainbow-mid-primary-accent) 25%,
     var(--color-accent) 49%,
+    var(--rainbow-mid-accent-secondary) 65%,
     var(--color-secondary) 80%,
+    var(--rainbow-mid-primary-secondary) 90%,
     var(--color-primary) 100%
   );
   background-size: 200% 100%;
@@ -97,8 +107,11 @@
   background: linear-gradient(
     90deg,
     var(--color-primary) 0%,
+    var(--rainbow-mid-primary-accent) 25%,
     var(--color-accent) 49%,
+    var(--rainbow-mid-accent-secondary) 65%,
     var(--color-secondary) 80%,
+    var(--rainbow-mid-primary-secondary) 90%,
     var(--color-primary) 100%
   );
   background-size: 200% 100%;
@@ -129,12 +142,19 @@
   transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   transform: translateZ(0);
 
+  /* Define intermediate colors using color-mix in oklch for smooth transitions */
+  --rainbow-mid-primary-secondary: color-mix(in oklch, var(--color-primary) 50%, var(--color-secondary));
+  --rainbow-mid-primary-accent: color-mix(in oklch, var(--color-primary) 50%, var(--color-accent));
+  --rainbow-mid-accent-secondary: color-mix(in oklch, var(--color-accent) 50%, var(--color-secondary));
+
   /* Text gradient */
   background-image: linear-gradient(
     90deg,
     var(--color-primary) 0%,
+    var(--rainbow-mid-primary-secondary) 25%,
     var(--color-secondary) 49%,
     var(--color-secondary) 80%,
+    var(--rainbow-mid-primary-secondary) 90%,
     var(--color-primary) 100%
   );
   background-size: 200% 100%;
@@ -153,8 +173,11 @@
   background: linear-gradient(
     90deg,
     var(--color-primary) 0%,
+    var(--rainbow-mid-primary-accent) 25%,
     var(--color-accent) 49%,
+    var(--rainbow-mid-accent-secondary) 65%,
     var(--color-secondary) 80%,
+    var(--rainbow-mid-primary-secondary) 90%,
     var(--color-primary) 100%
   );
   background-size: 200% 100%;
@@ -174,8 +197,11 @@
   background: linear-gradient(
     90deg,
     var(--color-primary) 0%,
+    var(--rainbow-mid-primary-accent) 25%,
     var(--color-accent) 49%,
+    var(--rainbow-mid-accent-secondary) 65%,
     var(--color-secondary) 80%,
+    var(--rainbow-mid-primary-secondary) 90%,
     var(--color-primary) 100%
   );
   background-size: 200% 100%;
