@@ -1,0 +1,95 @@
+@if (histogram() && histogram()!.totalCount > 0) {
+  <!-- NEW: Proper Histogram Visualization -->
+  <div class="bg-base-200 rounded-lg p-4">
+    <h4 class="text-base-content/80 mb-4 text-sm font-semibold">
+      Distribution
+    </h4>
+    <!-- Horizontal Bar Chart -->
+    <div class="max-h-80 space-y-1 overflow-y-auto pr-2">
+      @for (bucket of getHistogramBuckets(); track bucket.lowerBound) {
+        <div class="group flex items-center gap-3">
+          <!-- Latency Range Label -->
+          <div
+            class="text-base-content/70 w-28 shrink-0 text-right text-xs font-medium"
+          >
+            {{ formatLatency(bucket.lowerBound) }} -
+            {{ formatLatency(bucket.upperBound) }}
+          </div>
+          <!-- Bar Container -->
+          <div class="flex-1">
+            <div
+              class="bg-primary group-hover:bg-primary-focus flex items-center rounded transition-all duration-200"
+              [style.width]="getHorizontalBarWidth(bucket.count)"
+              [style.min-width]="bucket.count > 0 ? '4px' : '0'"
+            >
+              @if (bucket.count > 0) {
+                <span
+                  class="text-primary-content ml-2 px-1 py-1 text-xs font-medium whitespace-nowrap"
+                >
+                  {{ bucket.count.toLocaleString() }}
+                </span>
+              }
+            </div>
+          </div>
+          <!-- Percentage -->
+          <div class="text-base-content/60 w-14 shrink-0 text-right text-xs">
+            {{ ((bucket.count / histogram()!.totalCount) * 100).toFixed(1) }}%
+          </div>
+        </div>
+      }
+    </div>
+    <!-- Min / Total Samples / Max -->
+    <div
+      class="text-base-content/60 mt-3 flex items-center justify-center gap-4 text-xs"
+    >
+      <span class="flex items-center gap-1">
+        <span class="text-base-content/40">Min:</span>
+        <span class="font-medium">{{ formatLatency(histogram()!.min) }}</span>
+      </span>
+      <span class="text-base-content/30">&lt;</span>
+      <span class="flex items-center gap-1">
+        <span class="text-base-content/40">Total Samples:</span>
+        <span class="font-medium">{{
+          histogram()!.totalCount.toLocaleString()
+        }}</span>
+      </span>
+      <span class="text-base-content/30">&gt;</span>
+      <span class="flex items-center gap-1">
+        <span class="text-base-content/40">Max:</span>
+        <span class="font-medium">{{ formatLatency(histogram()!.max) }}</span>
+      </span>
+    </div>
+  </div>
+
+  <!-- Enhanced Percentile Table -->
+  <div class="bg-base-200 rounded-lg p-4">
+    <h4 class="text-base-content/80 mb-3 text-sm font-semibold">Percentiles</h4>
+    <div class="space-y-2">
+      @for (item of getPercentileData(); track item.percentile) {
+        <div
+          class="group hover:bg-base-300/30 flex items-center gap-3 rounded-lg px-2 py-1 transition-colors"
+        >
+          <div class="text-base-content/70 w-24 text-right text-sm font-medium">
+            {{ item.label }}
+          </div>
+          <div class="flex-1">
+            <div class="bg-base-300 h-1.5 overflow-hidden rounded-full">
+              <div
+                class="bg-primary h-full rounded-full transition-all duration-300"
+                [style.width]="getPercentileBarWidth(item.value)"
+              ></div>
+            </div>
+          </div>
+          <div class="w-24 text-left font-mono text-sm font-bold">
+            {{ formatLatency(item.value) }}
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+} @else {
+  <div class="text-base-content/50 py-8 text-center">
+    <app-icon name="stat_3" class="mx-auto mb-2 block text-2xl" />
+    <p class="text-sm">No latency histogram data available</p>
+  </div>
+}

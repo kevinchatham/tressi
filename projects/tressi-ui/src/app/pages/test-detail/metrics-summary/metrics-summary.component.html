@@ -1,4 +1,178 @@
-<div class="space-y-6">
+<div class="mt-6 space-y-6">
+  <!-- Throughput Section -->
+  <section>
+    <h3
+      class="text-base-content/80 mb-3 flex items-center gap-2 text-sm font-semibold tracking-wide uppercase"
+      [attr.title]="'Request throughput metrics'"
+    >
+      <span class="bg-secondary/10 rounded-full p-1">
+        <app-icon name="speed" class="text-secondary text-base"></app-icon>
+      </span>
+      Throughput
+    </h3>
+    <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-5">
+      <!-- Average RPS -->
+      <div class="bg-base-200 rounded-lg p-4">
+        <div
+          class="text-base-content/70 mb-1 text-sm"
+          [attr.title]="tooltips['avgRps']"
+        >
+          Average RPS
+        </div>
+        <div class="text-2xl font-bold">
+          {{ formatRps(summary()?.averageRequestsPerSecond) }}
+        </div>
+        <div class="text-base-content/60 mt-1 text-xs">requests per sec</div>
+      </div>
+
+      <!-- Peak RPS -->
+      <div
+        class="rounded-lg p-4"
+        [class.bg-base-200]="!summary()?.peakRequestsPerSecond"
+      >
+        <div
+          class="text-base-content/70 mb-1 text-sm"
+          [attr.title]="tooltips['peakRps']"
+        >
+          Peak RPS
+        </div>
+        <div class="text-2xl font-bold">
+          {{ formatRps(summary()?.peakRequestsPerSecond) }}
+        </div>
+        <div class="text-base-content/60 mt-1 text-xs">highest 1s window</div>
+      </div>
+
+      <!-- Global view: Test Duration -->
+      @if (globalSummary()?.finalDurationSec) {
+        <div class="bg-base-200 rounded-lg p-4">
+          <div
+            class="text-base-content/70 mb-1 text-sm"
+            [attr.title]="tooltips['duration']"
+          >
+            Duration
+          </div>
+          <div class="text-2xl font-bold">
+            {{ formatDuration(globalSummary()?.finalDurationSec) }}
+          </div>
+          <div class="text-base-content/60 mt-1 text-xs">total time</div>
+        </div>
+      }
+
+      <!-- Global view: Endpoints Tested -->
+      @if (globalSummary()?.totalEndpoints) {
+        <div class="bg-base-200 rounded-lg p-4">
+          <div
+            class="text-base-content/70 mb-1 text-sm"
+            [attr.title]="tooltips['endpoints']"
+          >
+            Endpoints
+          </div>
+          <div class="text-2xl font-bold">
+            {{ formatNumber(globalSummary()?.totalEndpoints) }}
+          </div>
+          <div class="text-base-content/60 mt-1 text-xs">tested</div>
+        </div>
+      }
+
+      <!-- Endpoint view: Target Achieved -->
+      @if (endpointSummary()?.targetAchieved) {
+        <div class="bg-base-200 rounded-lg p-4">
+          <div
+            class="text-base-content/70 mb-1 text-sm"
+            [attr.title]="tooltips['targetAchieved']"
+          >
+            Target Achieved
+          </div>
+          <div class="text-2xl font-bold">
+            {{ formatPercentage(endpointSummary()?.targetAchieved) }}
+          </div>
+          <div class="text-base-content/60 mt-1 text-xs">of target RPS</div>
+        </div>
+      }
+
+      <!-- Endpoint view: Theoretical Max RPS -->
+      @if (endpointSummary()?.theoreticalMaxRps) {
+        <div class="bg-base-200 rounded-lg p-4">
+          <div
+            class="text-base-content/70 mb-1 text-sm"
+            [attr.title]="tooltips['maxThroughput']"
+          >
+            Max Throughput
+          </div>
+          <div class="text-2xl font-bold">
+            {{ formatRps(endpointSummary()?.theoreticalMaxRps) }}
+          </div>
+          <div class="text-base-content/60 mt-1 text-xs">theoretical limit</div>
+        </div>
+      }
+
+      <!-- Total Requests -->
+      <div class="bg-base-200 rounded-lg p-4">
+        <div
+          class="text-base-content/70 mb-1 text-sm"
+          [attr.title]="tooltips['totalRequests']"
+        >
+          Total Requests
+        </div>
+        <div class="text-2xl font-bold">
+          {{ formatNumber(summary()?.totalRequests) }}
+        </div>
+        <div class="text-base-content/60 mt-1 text-xs">all requests</div>
+      </div>
+
+      <!-- Successful Requests -->
+      <div class="bg-base-200 rounded-lg p-4">
+        <div class="text-base-content/70 mb-1 text-sm">Successful Requests</div>
+        <div class="text-success text-2xl font-bold">
+          {{ formatNumber(summary()?.successfulRequests) }}
+        </div>
+        <div class="text-success mt-1 text-xs">
+          {{ formatPercentage(100 - (summary()?.errorRate || 0) * 100) }}
+          success rate
+        </div>
+      </div>
+
+      <!-- Failed Requests -->
+      <div
+        class="rounded-lg p-4"
+        [class.bg-error/20]="(summary()?.failedRequests ?? 0) > 0"
+        [class.bg-base-200]="(summary()?.failedRequests ?? 0) === 0"
+      >
+        <div class="text-base-content/70 mb-1 text-sm">Failed Requests</div>
+        <div
+          class="text-2xl font-bold"
+          [class.text-error]="(summary()?.failedRequests ?? 0) > 0"
+        >
+          {{ formatNumber(summary()?.failedRequests) }}
+        </div>
+        <div
+          class="mt-1 text-xs"
+          [class.text-error]="(summary()?.failedRequests ?? 0) > 0"
+          [class.text-success]="(summary()?.failedRequests ?? 0) === 0"
+        >
+          non-2xx / errors
+        </div>
+      </div>
+
+      <!-- Error Rate -->
+      <div
+        class="rounded-lg p-4"
+        [class.bg-error/20]="(summary()?.errorRate ?? 0) > 0.05"
+        [class.bg-base-200]="(summary()?.errorRate ?? 0) <= 0.05"
+        [attr.title]="tooltips['errorRate']"
+      >
+        <div class="text-base-content/70 mb-1 text-sm">Error Rate</div>
+        <div
+          class="text-2xl font-bold"
+          [class.text-error]="(summary()?.errorRate ?? 0) > 0.05"
+        >
+          {{ formatPercentage(summary()?.errorRate) }}
+        </div>
+        <div class="text-base-content/60 mt-1 text-xs">of total requests</div>
+      </div>
+    </div>
+  </section>
+
   <!-- Latency Section -->
   <section>
     <h3
@@ -19,7 +193,7 @@
           Min Latency
         </div>
         <div class="text-2xl font-bold">
-          {{ formatNumber(summary?.minLatencyMs) }} ms
+          {{ formatNumber(summary()?.minLatencyMs) }} ms
         </div>
         <div class="text-base-content/60 mt-1 text-xs">fastest</div>
       </div>
@@ -32,7 +206,7 @@
           P50 Latency
         </div>
         <div class="text-2xl font-bold">
-          {{ formatNumber(summary?.p50LatencyMs) }} ms
+          {{ formatNumber(summary()?.p50LatencyMs) }} ms
         </div>
         <div class="text-base-content/60 mt-1 text-xs">median</div>
       </div>
@@ -45,7 +219,7 @@
           P95 Latency
         </div>
         <div class="text-2xl font-bold">
-          {{ formatNumber(summary?.p95LatencyMs) }} ms
+          {{ formatNumber(summary()?.p95LatencyMs) }} ms
         </div>
         <div class="text-base-content/60 mt-1 text-xs">slow</div>
       </div>
@@ -58,7 +232,7 @@
           P99 Latency
         </div>
         <div class="text-2xl font-bold">
-          {{ formatNumber(summary?.p99LatencyMs) }} ms
+          {{ formatNumber(summary()?.p99LatencyMs) }} ms
         </div>
         <div class="text-base-content/60 mt-1 text-xs">slower</div>
       </div>
@@ -71,216 +245,34 @@
           Max Latency
         </div>
         <div class="text-2xl font-bold">
-          {{ formatNumber(summary?.maxLatencyMs) }} ms
+          {{ formatNumber(summary()?.maxLatencyMs) }} ms
         </div>
         <div class="text-base-content/60 mt-1 text-xs">slowest</div>
       </div>
     </div>
   </section>
 
-  <!-- Throughput Section -->
-  <section>
-    <h3
-      class="text-base-content/80 mb-3 flex items-center gap-2 text-sm font-semibold tracking-wide uppercase"
-      [attr.title]="'Request throughput metrics'"
-    >
-      <span class="bg-secondary/10 rounded-full p-1">
-        <app-icon name="speed" class="text-secondary text-base"></app-icon>
-      </span>
-      Throughput
-    </h3>
-    <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
-      <!-- Average RPS -->
-      <div class="bg-base-200 rounded-lg p-4">
-        <div
-          class="text-base-content/70 mb-1 text-sm"
-          [attr.title]="tooltips['avgRps']"
-        >
-          Average RPS
-        </div>
-        <div class="text-2xl font-bold">
-          {{ formatRps(summary?.averageRequestsPerSecond) }}
-        </div>
-        <div class="text-base-content/60 mt-1 text-xs">requests per sec</div>
-      </div>
-
-      <!-- Peak RPS -->
-      <div
-        class="rounded-lg p-4"
-        [class.bg-base-200]="!summary?.peakRequestsPerSecond"
-      >
-        <div
-          class="text-base-content/70 mb-1 text-sm"
-          [attr.title]="tooltips['peakRps']"
-        >
-          Peak RPS
-        </div>
-        <div class="text-2xl font-bold">
-          {{ formatRps(summary?.peakRequestsPerSecond) }}
-        </div>
-        <div class="text-base-content/60 mt-1 text-xs">highest 1s window</div>
-      </div>
-
-      <!-- Global view: Test Duration -->
-      @if (
-        isGlobalSummary(summary) && summary?.finalDurationSec !== undefined
-      ) {
-        <div class="bg-base-200 rounded-lg p-4">
-          <div
-            class="text-base-content/70 mb-1 text-sm"
-            [attr.title]="tooltips['duration']"
-          >
-            Duration
-          </div>
-          <div class="text-2xl font-bold">
-            {{ formatDuration(summary?.finalDurationSec) }}
-          </div>
-          <div class="text-base-content/60 mt-1 text-xs">total time</div>
-        </div>
-      }
-
-      <!-- Global view: Endpoints Tested -->
-      @if (isGlobalSummary(summary) && summary?.totalEndpoints !== undefined) {
-        <div class="bg-base-200 rounded-lg p-4">
-          <div
-            class="text-base-content/70 mb-1 text-sm"
-            [attr.title]="tooltips['endpoints']"
-          >
-            Endpoints
-          </div>
-          <div class="text-2xl font-bold">
-            {{ formatNumber(summary?.totalEndpoints) }}
-          </div>
-          <div class="text-base-content/60 mt-1 text-xs">tested</div>
-        </div>
-      }
-
-      <!-- Endpoint view: Target Achieved -->
-      @if (
-        isEndpointSummary(summary) && summary?.targetAchieved !== undefined
-      ) {
-        <div class="bg-base-200 rounded-lg p-4">
-          <div
-            class="text-base-content/70 mb-1 text-sm"
-            [attr.title]="tooltips['targetAchieved']"
-          >
-            Target Achieved
-          </div>
-          <div class="text-2xl font-bold">
-            {{ formatPercentage(summary?.targetAchieved) }}
-          </div>
-          <div class="text-base-content/60 mt-1 text-xs">of target RPS</div>
-        </div>
-      }
-
-      <!-- Endpoint view: Theoretical Max RPS -->
-      @if (
-        isEndpointSummary(summary) && summary?.theoreticalMaxRps !== undefined
-      ) {
-        <div class="bg-base-200 rounded-lg p-4">
-          <div
-            class="text-base-content/70 mb-1 text-sm"
-            [attr.title]="tooltips['maxThroughput']"
-          >
-            Max Throughput
-          </div>
-          <div class="text-2xl font-bold">
-            {{ formatRps(summary?.theoreticalMaxRps) }}
-          </div>
-          <div class="text-base-content/60 mt-1 text-xs">theoretical limit</div>
-        </div>
-      }
-
-      <!-- Total Requests -->
-      <div class="bg-base-200 rounded-lg p-4">
-        <div
-          class="text-base-content/70 mb-1 text-sm"
-          [attr.title]="tooltips['totalRequests']"
-        >
-          Total Requests
-        </div>
-        <div class="text-2xl font-bold">
-          {{ formatNumber(summary?.totalRequests) }}
-        </div>
-        <div class="text-base-content/60 mt-1 text-xs">all requests</div>
-      </div>
-
-      <!-- Successful Requests -->
-      <div class="bg-base-200 rounded-lg p-4">
-        <div class="text-base-content/70 mb-1 text-sm">Successful Requests</div>
-        <div class="text-success text-2xl font-bold">
-          {{ formatNumber(summary?.successfulRequests) }}
-        </div>
-        <div class="text-success mt-1 text-xs">
-          {{ formatPercentage(100 - (summary?.errorRate || 0) * 100) }} success
-          rate
-        </div>
-      </div>
-
-      <!-- Failed Requests -->
-      <div
-        class="rounded-lg p-4"
-        [class.bg-error/20]="summary && summary.failedRequests > 0"
-        [class.bg-base-200]="!summary || summary.failedRequests === 0"
-      >
-        <div class="text-base-content/70 mb-1 text-sm">Failed Requests</div>
-        <div
-          class="text-2xl font-bold"
-          [class.text-error]="summary && summary.failedRequests > 0"
-        >
-          {{ formatNumber(summary?.failedRequests) }}
-        </div>
-        <div
-          class="mt-1 text-xs"
-          [class.text-error]="summary && summary.failedRequests > 0"
-          [class.text-success]="!summary || summary.failedRequests === 0"
-        >
-          non-2xx / errors
-        </div>
-      </div>
-
-      <!-- Error Rate -->
-      <div
-        class="rounded-lg p-4"
-        [class.bg-error/20]="summary && summary.errorRate > 5"
-        [class.bg-base-200]="!summary || summary.errorRate <= 5"
-        [attr.title]="tooltips['errorRate']"
-      >
-        <div class="text-base-content/70 mb-1 text-sm">Error Rate</div>
-        <div
-          class="text-2xl font-bold"
-          [class.text-error]="summary && summary.errorRate > 5"
-        >
-          {{ formatPercentage(summary?.errorRate) }}
-        </div>
-        <div class="text-base-content/60 mt-1 text-xs">of total requests</div>
-      </div>
-    </div>
-  </section>
-
   <!-- Network Section -->
-  @if (
-    isGlobalSummary(summary) &&
-    (summary?.networkBytesSent !== undefined ||
-      summary?.networkBytesReceived !== undefined ||
-      summary?.networkBytesPerSec !== undefined)
-  ) {
+  @if (globalSummary()) {
     <section>
       <h3
         class="text-base-content/80 mb-3 flex items-center gap-2 text-sm font-semibold tracking-wide uppercase"
         [attr.title]="'Network traffic metrics'"
       >
         <span class="bg-accent/10 rounded-full p-1">
-          <app-icon name="network_check" class="text-accent text-base"></app-icon>
+          <app-icon
+            name="network_check"
+            class="text-accent text-base"
+          ></app-icon>
         </span>
         Network
       </h3>
-      <div class="grid grid-cols-2 gap-4 sm:grid-cols-3">
+      <div class="inline-grid grid-cols-3 gap-18">
         <!-- Network Throughput -->
-        @if (summary?.networkBytesPerSec !== undefined) {
+        @if (globalSummary()?.networkBytesPerSec) {
           <div
             class="rounded-lg p-4"
-            [class.bg-base-200]="!summary?.networkBytesPerSec"
+            [class.bg-base-200]="!globalSummary()?.networkBytesPerSec"
           >
             <div
               class="text-base-content/70 mb-1 text-sm"
@@ -289,14 +281,14 @@
               Throughput
             </div>
             <div class="text-2xl font-bold">
-              {{ formatNetworkThroughput(summary?.networkBytesPerSec) }}
+              {{ formatNetworkThroughput(globalSummary()?.networkBytesPerSec) }}
             </div>
             <div class="text-base-content/60 mt-1 text-xs">avg data rate</div>
           </div>
         }
 
         <!-- Bytes Sent -->
-        @if (summary?.networkBytesSent !== undefined) {
+        @if (globalSummary()?.networkBytesSent) {
           <div class="bg-base-200 rounded-lg p-4">
             <div
               class="text-base-content/70 mb-1 text-sm"
@@ -305,14 +297,14 @@
               Bytes Sent
             </div>
             <div class="text-2xl font-bold">
-              {{ formatBytes(summary?.networkBytesSent) }}
+              {{ formatBytes(globalSummary()?.networkBytesSent) }}
             </div>
             <div class="text-base-content/60 mt-1 text-xs">total uploaded</div>
           </div>
         }
 
         <!-- Bytes Received -->
-        @if (summary?.networkBytesReceived !== undefined) {
+        @if (globalSummary()?.networkBytesReceived) {
           <div class="bg-base-200 rounded-lg p-4">
             <div
               class="text-base-content/70 mb-1 text-sm"
@@ -321,7 +313,7 @@
               Bytes Received
             </div>
             <div class="text-2xl font-bold">
-              {{ formatBytes(summary?.networkBytesReceived) }}
+              {{ formatBytes(globalSummary()?.networkBytesReceived) }}
             </div>
             <div class="text-base-content/60 mt-1 text-xs">
               total downloaded
@@ -333,11 +325,7 @@
   }
 
   <!-- System Resources Section (Global View Only) -->
-  @if (
-    isGlobalSummary(summary) &&
-    (summary?.avgSystemCpuUsagePercent !== undefined ||
-      summary?.avgProcessMemoryUsageMB !== undefined)
-  ) {
+  @if (globalSummary()) {
     <section>
       <h3
         class="text-base-content/80 mb-3 flex items-center gap-2 text-sm font-semibold tracking-wide uppercase"
@@ -348,9 +336,9 @@
         </span>
         System Resources
       </h3>
-      <div class="grid grid-cols-2 gap-4">
+      <div class="inline-grid grid-cols-2 gap-18">
         <!-- CPU Usage -->
-        @if (summary?.avgSystemCpuUsagePercent !== undefined) {
+        @if (globalSummary()?.avgSystemCpuUsagePercent) {
           <div class="rounded-lg p-4">
             <div
               class="text-base-content/70 mb-1 text-sm"
@@ -359,10 +347,10 @@
               CPU Usage
             </div>
             <div class="text-2xl font-bold">
-              {{ formatCpuUsage(summary?.avgSystemCpuUsagePercent) }}
+              {{ formatCpuUsage(globalSummary()?.avgSystemCpuUsagePercent) }}
             </div>
             <div class="text-base-content/70 mt-1 text-xs">
-              @switch (getCpuState(summary?.avgSystemCpuUsagePercent)) {
+              @switch (getCpuState(globalSummary()?.avgSystemCpuUsagePercent)) {
                 @case ('good') {
                   Normal usage
                 }
@@ -378,7 +366,7 @@
         }
 
         <!-- Memory Usage -->
-        @if (summary?.avgProcessMemoryUsageMB !== undefined) {
+        @if (globalSummary()?.avgProcessMemoryUsageMB) {
           <div class="rounded-lg p-4">
             <div
               class="text-base-content/70 mb-1 text-sm"
@@ -387,10 +375,12 @@
               Memory Usage
             </div>
             <div class="text-2xl font-bold">
-              {{ formatMemoryMB(summary?.avgProcessMemoryUsageMB) }}
+              {{ formatMemoryMB(globalSummary()?.avgProcessMemoryUsageMB) }}
             </div>
             <div class="text-base-content/70 mt-1 text-xs">
-              @switch (getMemoryState(summary?.avgProcessMemoryUsageMB)) {
+              @switch (
+                getMemoryState(globalSummary()?.avgProcessMemoryUsageMB)
+              ) {
                 @case ('good') {
                   Normal usage
                 }

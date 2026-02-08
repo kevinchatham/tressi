@@ -1,7 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input } from '@angular/core';
+import { Component, computed, input } from '@angular/core';
 
 import { IconComponent } from '../../../components/icon/icon.component';
+import { EndpointSummary, GlobalSummary } from '../../../services/rpc.service';
 
 /**
  * Color state for performance metrics
@@ -42,19 +43,24 @@ export const METRIC_TOOLTIPS: Record<string, string> = {
   templateUrl: './metrics-summary.component.html',
 })
 export class MetricsSummaryComponent {
-  @Input() summary: any = null;
-  @Input() endpointType: 'global' | 'endpoint' = 'global';
+  summary = input<GlobalSummary | EndpointSummary | null>();
 
   /** Tooltip content mapping */
   tooltips = METRIC_TOOLTIPS;
 
-  isGlobalSummary(summary: any): summary is any {
-    return this.endpointType === 'global' && summary !== null;
-  }
+  endpointSummary = computed<EndpointSummary | null>(() => {
+    const s = this.summary();
+    if (s && 'statusCodeDistribution' in s)
+      return s as unknown as EndpointSummary;
+    else return null;
+  });
 
-  isEndpointSummary(summary: any): summary is any {
-    return this.endpointType === 'endpoint' && summary !== null;
-  }
+  globalSummary = computed<GlobalSummary | null>(() => {
+    const s = this.summary();
+    if (s && !('statusCodeDistribution' in s))
+      return s as unknown as GlobalSummary;
+    else return null;
+  });
 
   formatDuration(seconds: number | undefined): string {
     if (!seconds) return '0s';

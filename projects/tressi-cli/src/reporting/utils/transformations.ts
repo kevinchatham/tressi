@@ -24,8 +24,10 @@ function convertWorkerHistogramToTestSummaryHistogram(
   let totalCount = 0;
   let min = Infinity;
   let max = 0;
+  let weightedMeanSum = 0;
+  let weightedStdDevSum = 0;
 
-  const percentiles = {
+  const percentiles: Record<number, number> = {
     1: 0,
     5: 0,
     10: 0,
@@ -35,10 +37,9 @@ function convertWorkerHistogramToTestSummaryHistogram(
     90: 0,
     95: 0,
     99: 0,
-    99.9: 0,
   };
 
-  // Calculate weighted percentiles
+  // Calculate weighted percentiles and aggregate stats
   histograms.forEach((histogram) => {
     totalCount += histogram.totalCount;
     min = Math.min(min, histogram.min);
@@ -49,7 +50,7 @@ function convertWorkerHistogramToTestSummaryHistogram(
     return undefined;
   }
 
-  // Calculate weighted percentiles
+  // Calculate weighted percentiles, mean, and stdDev
   Object.keys(percentiles).forEach((p) => {
     const percentile = parseFloat(p);
     let weightedValue = 0;
@@ -59,14 +60,67 @@ function convertWorkerHistogramToTestSummaryHistogram(
       weightedValue += (histogram.percentiles[percentile] || 0) * weight;
     });
 
-    percentiles[percentile as keyof typeof percentiles] = weightedValue;
+    percentiles[percentile] = weightedValue;
   });
+
+  // Calculate weighted mean and stdDev
+  histograms.forEach((histogram) => {
+    const weight = histogram.totalCount / totalCount;
+    weightedMeanSum += histogram.mean * weight;
+    weightedStdDevSum += histogram.stdDev * weight;
+  });
+
+  // Merge buckets from all histograms (if single histogram, use its buckets)
+  let buckets: LatencyHistogram['buckets'] = [];
+  if (histograms.length === 1) {
+    buckets = histograms[0].buckets;
+  } else {
+    // For multiple histograms, we need to merge buckets intelligently
+    // This is a simplified approach - merge by combining all and re-binning
+    const allBuckets: Array<{
+      lowerBound: number;
+      upperBound: number;
+      count: number;
+    }> = [];
+    histograms.forEach((h) => {
+      allBuckets.push(...h.buckets);
+    });
+
+    // Group by similar ranges and sum counts
+    const bucketMap = new Map<
+      string,
+      { lowerBound: number; upperBound: number; count: number }
+    >();
+    allBuckets.forEach((b) => {
+      const key = `${b.lowerBound.toFixed(2)}-${b.upperBound.toFixed(2)}`;
+      if (bucketMap.has(key)) {
+        const existing = bucketMap.get(key)!;
+        existing.count += b.count;
+      } else {
+        bucketMap.set(key, { ...b });
+      }
+    });
+
+    buckets = Array.from(bucketMap.values())
+      .sort((a, b) => a.lowerBound - b.lowerBound)
+      .slice(0, 15); // Limit to 15 buckets
+
+    // Add cumulative counts
+    let cumulative = 0;
+    for (const bucket of buckets) {
+      cumulative += bucket.count;
+      bucket.cumulativeCount = cumulative;
+    }
+  }
 
   return {
     totalCount,
     min,
     max,
+    mean: weightedMeanSum,
+    stdDev: weightedStdDevSum,
     percentiles,
+    buckets,
   };
 }
 

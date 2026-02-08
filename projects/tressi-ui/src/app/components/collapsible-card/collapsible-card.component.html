@@ -15,10 +15,11 @@
     </div>
   </div>
 
-  <!-- Main content projection -->
-  @if (!collapsed()) {
-    <div class="mt-4">
-      <ng-content />
-    </div>
-  }
+  <div
+    class="collapse-transition"
+    [class.collapse-collapsed]="collapsed()"
+    [class.collapse-expanded]="!collapsed()"
+  >
+    <ng-content />
+  </div>
 </div>

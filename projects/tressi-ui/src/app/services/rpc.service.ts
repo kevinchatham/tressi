@@ -122,6 +122,16 @@ export type TestSummary = TestDocument['summary'];
 
 export type TestStatus = TestDocument['status'];
 
+export type LatencyHistogram = NonNullable<
+  NonNullable<TestSummary>['global']['histogram']
+>;
+
+export type GlobalSummary = NonNullable<NonNullable<TestSummary>['global']>;
+
+export type EndpointSummary = NonNullable<
+  NonNullable<TestSummary>['endpoints']
+>[number];
+
 export type DeleteTestResponse = InferResponseType<
   (typeof client.tests)[':id']['$delete']
 >;

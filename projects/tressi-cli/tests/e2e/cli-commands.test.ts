@@ -1,16 +1,8 @@
 import { exec } from 'child_process';
-import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'fs';
+import { existsSync, unlinkSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { promisify } from 'util';
-import {
-  afterAll,
-  afterEach,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-} from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { ServerManager } from '../setup/server-manager';
 
@@ -50,9 +42,6 @@ describe('Tressi CLI Commands E2E Tests', () => {
         options: {
           durationSec: 2,
           rampUpDurationSec: 0,
-          useUI: false,
-          silent: true,
-          earlyExitOnError: false,
         },
         requests: [
           {
@@ -88,9 +77,6 @@ describe('Tressi CLI Commands E2E Tests', () => {
         options: {
           durationSec: 1,
           rampUpDurationSec: 0,
-          useUI: false,
-          silent: true,
-          earlyExitOnError: false,
         },
         requests: [
           {

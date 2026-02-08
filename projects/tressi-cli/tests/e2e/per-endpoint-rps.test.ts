@@ -69,9 +69,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
         options: {
           durationSec: 5, // Reduced duration for faster tests
           rampUpDurationSec: 0,
-          silent: true,
           headers: {},
-          exportPath: '',
           threads: 4,
           workerMemoryLimit: 128,
           workerEarlyExit: {
@@ -158,9 +156,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
         options: {
           durationSec: 5,
           rampUpDurationSec: 0,
-          silent: true,
           headers: {},
-          exportPath: '',
           threads: 4,
           workerMemoryLimit: 128,
           workerEarlyExit: {
@@ -227,9 +223,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
         options: {
           durationSec: 3,
           rampUpDurationSec: 0,
-          silent: true,
           headers: {},
-          exportPath: '',
           threads: 4,
           workerMemoryLimit: 128,
           workerEarlyExit: {
@@ -287,9 +281,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
         options: {
           durationSec: 10,
           rampUpDurationSec: 0,
-          silent: true,
           headers: {},
-          exportPath: '',
           threads: 4,
           workerMemoryLimit: 128,
           workerEarlyExit: {
@@ -363,9 +355,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
         options: {
           durationSec: 5,
           rampUpDurationSec: 0,
-          silent: true,
           headers: {},
-          exportPath: '',
           threads: 4,
           workerMemoryLimit: 128,
           workerEarlyExit: {
@@ -437,9 +427,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
         options: {
           durationSec: 5,
           rampUpDurationSec: 0,
-          silent: true,
           headers: {},
-          exportPath: '',
           threads: 4,
           workerMemoryLimit: 128,
           workerEarlyExit: {
@@ -485,9 +473,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
         options: {
           durationSec: 3,
           rampUpDurationSec: 0,
-          silent: true,
           headers: {},
-          exportPath: '',
           threads: 4,
           workerMemoryLimit: 128,
           workerEarlyExit: {
@@ -530,9 +516,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
         options: {
           durationSec: 10,
           rampUpDurationSec: 0,
-          silent: true,
           headers: {},
-          exportPath: '',
           threads: 4,
           workerMemoryLimit: 128,
           workerEarlyExit: {
@@ -580,9 +564,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
         options: {
           durationSec: 5,
           rampUpDurationSec: 0,
-          silent: true,
           headers: {},
-          exportPath: '',
           threads: 4,
           workerMemoryLimit: 128,
           workerEarlyExit: {
@@ -656,9 +638,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
         options: {
           durationSec: 5,
           rampUpDurationSec: 0,
-          silent: true,
           headers: {},
-          exportPath: '',
           threads: 4,
           workerMemoryLimit: 128,
           workerEarlyExit: {

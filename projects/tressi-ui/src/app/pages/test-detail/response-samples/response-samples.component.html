@@ -1,0 +1,89 @@
+<div class="space-y-4">
+  @if (responseSamples && responseSamples.length > 0) {
+    <!-- Status Code Distribution & Filter -->
+    <div class="mb-4 flex flex-wrap gap-2">
+      @for (code of getAvailableStatusCodes(); track code) {
+        <button
+          class="btn btn-sm flex items-center gap-2"
+          [class.btn-primary]="selectedStatusCode() === code"
+          [class.btn-ghost]="selectedStatusCode() !== code"
+          (click)="selectedStatusCode.set(code)"
+        >
+          <app-icon [name]="getCategoryIcon(code)" class="text-sm"></app-icon>
+          <span class="font-mono font-bold">{{
+            code === 'all' ? 'All' : code
+          }}</span>
+          @if (code !== 'all') {
+            <span class="text-xs">({{ getCount(code).toLocaleString() }})</span>
+            <span class="text-xs opacity-70">
+              {{ getPercentage(code).toFixed(1) }}%
+            </span>
+          }
+        </button>
+      }
+    </div>
+
+    <!-- Samples List -->
+    <div class="max-h-96 space-y-4 overflow-y-auto">
+      @for (sample of getFilteredSamples(); track sample) {
+        <div class="bg-base-200 rounded-lg p-4">
+          <!-- Sample Header -->
+          <div class="mb-3 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span
+                class="badge"
+                [class]="getStatusCodeClasses(sample.statusCode)"
+              >
+                {{ sample.statusCode }}
+              </span>
+              <span class="text-base-content/70 text-sm"> Status Code </span>
+            </div>
+          </div>
+
+          <!-- Response Headers -->
+          @if (hasHeaders(sample.headers)) {
+            <div class="mb-3">
+              <h4 class="text-base-content/80 mb-2 text-sm font-semibold">
+                Response Headers
+              </h4>
+              <app-json-textarea
+                [value]="formatHeaders(sample.headers)"
+                [rows]="6"
+                [disabled]="true"
+                class="text-xs"
+              />
+            </div>
+          }
+
+          <!-- Response Body -->
+          @if (sample.body) {
+            <div>
+              <h4 class="text-base-content/80 mb-2 text-sm font-semibold">
+                Response Body
+              </h4>
+              <app-json-textarea
+                [value]="formatBody(sample.body)"
+                [rows]="10"
+                [disabled]="true"
+                class="text-xs"
+              />
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Show more indicator -->
+    @if (responseSamples.length > maxSamplesPerCode * 5) {
+      <div class="text-base-content/60 mt-2 text-center text-sm">
+        Showing {{ maxSamplesPerCode * 5 }} of
+        {{ responseSamples.length }} samples
+      </div>
+    }
+  } @else {
+    <div class="text-base-content/50 py-8 text-center">
+      <app-icon name="text_snippet" class="mx-auto mb-2 block text-2xl" />
+      <p class="text-sm">No response samples available</p>
+    </div>
+  }
+</div>

@@ -1,0 +1,128 @@
+<section class="bg-base-100 mt-2 rounded-xl px-6">
+  <app-collapsible-card
+    [title]="'Test Summary'"
+    [collapsed]="collapsed()"
+    (collapsedChange)="onCollapsedChange($event)"
+  >
+    <!-- Header controls projection -->
+    <ng-template>
+      <app-status-badge
+        [status]="testData()!.status"
+        [showPulse]="isRealTime()"
+      />
+    </ng-template>
+
+    <!-- Main content projection -->
+    <div class="mt-2 space-y-6">
+      <!-- Identity & Status Section -->
+      <div class="flex items-center justify-between">
+        <!-- Status with integrated real-time indicator -->
+        <div class="flex items-center gap-4">
+          @if (isRealTime()) {
+            <div class="text-info flex items-center gap-2 text-sm">
+              <app-icon name="dynamic_form" class="animate-pulse"></app-icon>
+              <span class="hidden sm:inline">Live Updates</span>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Timing Section -->
+      <h4
+        class="text-base-content/80 mb-4 flex items-center gap-2 text-sm font-semibold"
+      >
+        <app-icon name="schedule" class="text-base"></app-icon>
+        Timing Information
+      </h4>
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div class="bg-base-200 rounded-lg p-4 transition-all">
+          <div
+            class="text-base-content/70 mb-1 text-xs tracking-wide uppercase"
+          >
+            Created
+          </div>
+          <div class="text-sm font-medium">
+            {{ formatDate(testData()!.epochCreatedAt) }}
+          </div>
+        </div>
+        <div class="bg-base-200 rounded-lg p-4 transition-all">
+          <div
+            class="text-base-content/70 mb-1 text-xs tracking-wide uppercase"
+          >
+            Started
+          </div>
+          <div class="text-sm font-medium">
+            {{ formatDate(testData()!.summary?.global?.epochStartedAt) }}
+          </div>
+        </div>
+        <div class="bg-base-200 rounded-lg p-4 transition-all">
+          <div
+            class="text-base-content/70 mb-1 text-xs tracking-wide uppercase"
+          >
+            Ended
+          </div>
+          <div class="text-sm font-medium">
+            {{ formatDate(testData()!.summary?.global?.epochEndedAt) }}
+          </div>
+        </div>
+        <div class="rounded-lg p-4 transition-all">
+          <div
+            class="text-base-content/70 mb-1 text-xs tracking-wide uppercase"
+          >
+            Duration
+          </div>
+          <div class="font-bold">
+            {{ formatDuration() }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Analysis Section (Visualizations) -->
+      @if (hasAnalysisData()) {
+        <div class="space-y-6">
+          <!-- Response Samples (includes Status Code Distribution) -->
+          @if (endpointSummary()?.responseSamples) {
+            <h5
+              class="text-base-content/80 mb-0 flex items-center gap-2 text-sm font-semibold"
+            >
+              <app-icon name="list_alt" class="text-sm"></app-icon>
+              Response Samples
+            </h5>
+            <app-response-samples
+              [responseSamples]="endpointSummary()!.responseSamples"
+              [statusCodeDistribution]="
+                endpointSummary()!.statusCodeDistribution
+              "
+              [totalRequests]="endpointSummary()?.totalRequests"
+            />
+          }
+          <!-- Latency Histogram -->
+          @if (getHistogram()) {
+            <h5
+              class="text-base-content/80 mb-0 flex items-center gap-2 text-sm font-semibold"
+            >
+              <app-icon name="bar_chart" class="text-base"></app-icon>
+              Latency Information
+            </h5>
+            <div class="bg-base-200 rounded-lg p-4">
+              <app-latency-histogram [histogram]="getHistogram()" />
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Empty State -->
+      @if (!hasAnalysisData() && !testData()?.summary?.endpoints?.length) {
+        <div
+          class="text-base-content/50 flex flex-col items-center justify-center py-8"
+        >
+          <app-icon name="inbox" class="mb-3 text-3xl"></app-icon>
+          <p class="italic">No metrics data available yet</p>
+          <p class="mt-2 text-xs">
+            Performance data will appear here once the test generates results
+          </p>
+        </div>
+      }
+    </div>
+  </app-collapsible-card>
+</section>

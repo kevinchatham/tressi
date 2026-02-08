@@ -4,18 +4,16 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { ButtonComponent } from 'src/app/components/button/button.component';
 
-import { CollapsibleCardComponent } from '../../components/collapsible-card/collapsible-card.component';
 import { HeaderComponent } from '../../components/header/header.component';
 import { IconComponent } from '../../components/icon/icon.component';
-import { JsonTextareaComponent } from '../../components/json-textarea/json-textarea.component';
-import { LineChartComponent } from '../../components/line-chart/line-chart.component';
-import { StatusBadgeComponent } from '../../components/status-badge/status-badge.component';
 import { ConfigService } from '../../services/config.service';
 import { EventService, TestEventData } from '../../services/event.service';
 import { LoadingService } from '../../services/loading.service';
 import { LogService } from '../../services/log.service';
 import {
   type ConfigDocument,
+  EndpointSummary,
+  GlobalSummary,
   TestDocument,
   TestMetrics,
   TestSummary,
@@ -28,23 +26,26 @@ import {
   ChartType,
   DEFAULT_CHART_TYPE,
 } from '../../types/chart.types';
+import { ConfigDetailsComponent } from './config-details/config-details.component';
 import { DeleteConfirmationModalComponent } from './delete-confirmation-modal/delete-confirmation-modal.component';
-import { MetricsSummaryComponent } from './metrics-summary/metrics-summary.component';
+import { PerformanceOverTimeComponent } from './performance-over-time/performance-over-time.component';
+import { PerformanceSummaryComponent } from './performance-summary/performance-summary.component';
 import { EndpointChartDataCache } from './test-detail.types';
+import { isEndpointSummary } from './test-detail-shared.types';
+import { TestSummaryComponent } from './test-summary/test-summary.component';
 
 @Component({
   selector: 'app-test-detail',
   imports: [
     CommonModule,
-    LineChartComponent,
     HeaderComponent,
     IconComponent,
-    CollapsibleCardComponent,
-    StatusBadgeComponent,
     DeleteConfirmationModalComponent,
-    MetricsSummaryComponent,
-    JsonTextareaComponent,
     ButtonComponent,
+    ConfigDetailsComponent,
+    TestSummaryComponent,
+    PerformanceSummaryComponent,
+    PerformanceOverTimeComponent,
   ],
   templateUrl: './test-detail.component.html',
 })
@@ -64,17 +65,31 @@ export class TestDetailComponent implements OnDestroy {
   readonly selectedEndpoint = signal<string>('global');
 
   // Computed signals - moved from TestDetailService
-  readonly selectedSummary = computed(() => {
-    const test = this.test();
-    if (!test?.summary) return null;
+  readonly selectedSummary = computed(
+    (): GlobalSummary | EndpointSummary | null => {
+      const test = this.test();
+      if (!test?.summary) return null;
 
-    const isGlobal = this.selectedEndpoint() === 'global';
-    if (isGlobal) {
-      return test.summary.global;
-    } else {
-      const endpointUrl = this.selectedEndpoint();
-      return test.summary.endpoints?.find((e) => e.url === endpointUrl) || null;
+      const isGlobal = this.selectedEndpoint() === 'global';
+      if (isGlobal) {
+        return test.summary.global;
+      } else {
+        const endpointUrl = this.selectedEndpoint();
+        return (
+          test.summary.endpoints?.find((e) => e.url === endpointUrl) || null
+        );
+      }
+    },
+  );
+
+  // Computed signal that returns the endpoint summary with proper typing
+  // Only returns a value if the selected summary is an EndpointSummary
+  readonly endpointSummary = computed((): EndpointSummary | null => {
+    const summary = this.selectedSummary();
+    if (isEndpointSummary(summary)) {
+      return summary;
     }
+    return null;
   });
 
   // Component signals
@@ -396,20 +411,8 @@ export class TestDetailComponent implements OnDestroy {
     this.showDeleteModal.set(false);
   }
 
-  onChartTypeChange(event: Event): void {
-    const target = event.target as HTMLSelectElement;
-    const value = target.value as ChartType;
-    this.selectedChartType.set(value);
-  }
-
   goBack(): void {
     this.router.navigate(['/']);
-  }
-
-  onEndpointChange(event: Event): void {
-    const target = event.target as HTMLSelectElement;
-    const value = target.value;
-    this.selectedEndpoint.set(value);
   }
 
   // Get current chart data based on selected endpoint
@@ -547,65 +550,5 @@ export class TestDetailComponent implements OnDestroy {
     }
 
     return false;
-  }
-
-  getChartStats(): {
-    min: number;
-    avg: number;
-    max: number;
-  } {
-    const data = this.getCurrentChartData().data;
-
-    // Handle both single series and multi-series data
-    let allValues: number[] = [];
-
-    if (Array.isArray(data)) {
-      allValues = data;
-    } else if (typeof data === 'object' && data !== null) {
-      // Multi-series data - flatten all values
-      allValues = Object.values(data).flat();
-    }
-
-    if (allValues.length === 0) {
-      return { min: 0, avg: 0, max: 0 };
-    }
-
-    const min = Math.min(...allValues);
-    const max = Math.max(...allValues);
-    const avg =
-      allValues.reduce((sum: number, val: number) => sum + val, 0) /
-      allValues.length;
-
-    return {
-      min: Math.round(min * 100) / 100,
-      avg: Math.round(avg * 100) / 100,
-      max: Math.round(max * 100) / 100,
-    };
-  }
-
-  // Helper methods from test-info-card component
-  formatDate(epoch: number | null | undefined): string {
-    if (!epoch) return 'N/A';
-    return new Date(epoch).toLocaleString();
-  }
-
-  formatDuration(): string {
-    const test = this.testData();
-    if (!test) return 'N/A';
-    if (test.status === 'running') {
-      return 'Running...';
-    }
-    // Use embedded summary fields first
-    if (
-      test.summary?.global.epochEndedAt &&
-      test.summary?.global.epochStartedAt
-    ) {
-      const duration =
-        test.summary.global.epochEndedAt - test.summary.global.epochStartedAt;
-      return `${Math.round(duration / 1000)}s`;
-    }
-    return test.summary?.global?.finalDurationSec
-      ? `${test.summary.global.finalDurationSec}s`
-      : 'N/A';
   }
 }

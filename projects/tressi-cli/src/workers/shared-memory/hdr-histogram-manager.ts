@@ -133,11 +133,12 @@ export class HdrHistogramManager implements IHdrHistogramManager {
         stdDev: 0,
         percentiles: {},
         totalCount: 0,
+        buckets: [],
       };
     }
 
-    // percentiles to compute
-    const targetPercentiles = [50, 75, 90, 95, 99, 99.9];
+    // percentiles to compute (expanded to include more granular percentiles)
+    const targetPercentiles = [1, 5, 10, 25, 50, 75, 90, 95, 99, 99.9];
     const percentiles: Record<number, number> = {};
 
     let running = 0;
@@ -183,6 +184,9 @@ export class HdrHistogramManager implements IHdrHistogramManager {
     const variance = sumSq / totalCount - mean * mean;
     const stdDev = Math.sqrt(Math.max(0, variance));
 
+    // Extract bucket data with intelligent grouping (max 15 buckets)
+    const buckets = this.extractBuckets(counts);
+
     return {
       min: min / 1000,
       max: max / 1000,
@@ -190,7 +194,78 @@ export class HdrHistogramManager implements IHdrHistogramManager {
       stdDev: stdDev / 1000,
       percentiles,
       totalCount,
+      buckets,
     };
+  }
+
+  /**
+   * Extract bucket data from histogram counts, merging to max 15 buckets
+   */
+  private extractBuckets(counts: Int32Array): Array<{
+    lowerBound: number;
+    upperBound: number;
+    count: number;
+    cumulativeCount?: number;
+  }> {
+    const maxBuckets = 15;
+
+    // First, collect all non-zero buckets
+    const rawBuckets: Array<{
+      lowerBound: number;
+      upperBound: number;
+      count: number;
+    }> = [];
+
+    for (let i = 0; i < counts.length; i++) {
+      const count = counts[i];
+      if (count > 0) {
+        const lowerBound = this.getValueFromIndex(i) / 1000; // Convert to ms
+        const upperBound = this.getValueFromIndex(i + 1) / 1000; // Upper bound
+        rawBuckets.push({ lowerBound, upperBound, count });
+      }
+    }
+
+    // If no buckets, return empty
+    if (rawBuckets.length === 0) {
+      return [];
+    }
+
+    // If too many buckets, merge adjacent ones intelligently
+    const buckets: Array<{
+      lowerBound: number;
+      upperBound: number;
+      count: number;
+      cumulativeCount?: number;
+    }> = [];
+
+    if (rawBuckets.length > maxBuckets) {
+      const mergeFactor = Math.ceil(rawBuckets.length / maxBuckets);
+
+      for (let i = 0; i < rawBuckets.length; i += mergeFactor) {
+        const group = rawBuckets.slice(i, i + mergeFactor);
+        const groupCount = group.reduce((sum, b) => sum + b.count, 0);
+        const minLower = Math.min(...group.map((b) => b.lowerBound));
+        const maxUpper = Math.max(...group.map((b) => b.upperBound));
+
+        buckets.push({
+          lowerBound: minLower,
+          upperBound: maxUpper,
+          count: groupCount,
+        });
+      }
+    } else {
+      // Use raw buckets as-is
+      buckets.push(...rawBuckets);
+    }
+
+    // Add cumulative counts for easier analysis
+    let cumulative = 0;
+    for (const bucket of buckets) {
+      cumulative += bucket.count;
+      bucket.cumulativeCount = cumulative;
+    }
+
+    return buckets;
   }
 
   getAllEndpointHistograms(): LatencyHistogram[] {

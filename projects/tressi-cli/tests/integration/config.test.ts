@@ -24,10 +24,8 @@ const minimalConfig = {
   options: {
     durationSec: 10,
     rampUpDurationSec: 0,
-    silent: false,
     workerMemoryLimit: 128,
     headers: {},
-    exportPath: '',
     threads: 4,
     workerEarlyExit: {
       enabled: false,
@@ -59,10 +57,8 @@ const expectedConfig = {
   options: {
     durationSec: 10,
     rampUpDurationSec: 0,
-    silent: false,
     workerMemoryLimit: 128,
     headers: {},
-    exportPath: '',
     threads: 4,
     workerEarlyExit: {
       enabled: false,
@@ -161,9 +157,7 @@ describe('config', () => {
           },
           durationSec: 1,
           rampUpDurationSec: 0,
-          silent: false,
           workerMemoryLimit: 128,
-          exportPath: '',
           threads: 4,
           workerEarlyExit: {
             enabled: false,

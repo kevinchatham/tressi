@@ -108,26 +108,47 @@ export class MarkdownExporter {
       '> *This table shows how request latencies were distributed based on actual test data.*\n\n';
 
     if (g.histogram && g.histogram.totalCount > 0) {
-      const globalHistogram = g.histogram;
+      const h = g.histogram;
+
+      // NEW: ASCII histogram chart
+      md += '### Latency Histogram\n\n';
+      md += '```\n';
+      md += this.generateAsciiHistogram(h.buckets);
+      md += '```\n\n';
 
       // Add real percentile summary
       md += '### Global Latency Percentiles\n\n';
       md += '| Percentile | Latency (ms) |\n';
       md += '|---|---|\n';
-      md += `| Min | ${globalHistogram.min.toFixed(2)}ms |\n`;
-      md += `| 1st | ${globalHistogram.percentiles[1].toFixed(2)}ms |\n`;
-      md += `| 5th | ${globalHistogram.percentiles[5].toFixed(2)}ms |\n`;
-      md += `| 10th | ${globalHistogram.percentiles[10].toFixed(2)}ms |\n`;
-      md += `| 25th | ${globalHistogram.percentiles[25].toFixed(2)}ms |\n`;
-      md += `| 50th | ${globalHistogram.percentiles[50].toFixed(2)}ms |\n`;
-      md += `| 75th | ${globalHistogram.percentiles[75].toFixed(2)}ms |\n`;
-      md += `| 90th | ${globalHistogram.percentiles[90].toFixed(2)}ms |\n`;
-      md += `| 95th | ${globalHistogram.percentiles[95].toFixed(2)}ms |\n`;
-      md += `| 99th | ${globalHistogram.percentiles[99].toFixed(2)}ms |\n`;
-      md += `| 99.9th | ${globalHistogram.percentiles[99.9].toFixed(2)}ms |\n`;
-      md += `| Max | ${globalHistogram.max.toFixed(2)}ms |\n`;
-      md += `| Total Requests | ${globalHistogram.totalCount} |\n`;
+      md += `| Min | ${h.min.toFixed(2)}ms |\n`;
+      md += `| 1st | ${(h.percentiles[1] || 0).toFixed(2)}ms |\n`;
+      md += `| 5th | ${(h.percentiles[5] || 0).toFixed(2)}ms |\n`;
+      md += `| 10th | ${(h.percentiles[10] || 0).toFixed(2)}ms |\n`;
+      md += `| 25th | ${(h.percentiles[25] || 0).toFixed(2)}ms |\n`;
+      md += `| 50th | ${(h.percentiles[50] || 0).toFixed(2)}ms |\n`;
+      md += `| 75th | ${(h.percentiles[75] || 0).toFixed(2)}ms |\n`;
+      md += `| 90th | ${(h.percentiles[90] || 0).toFixed(2)}ms |\n`;
+      md += `| 95th | ${(h.percentiles[95] || 0).toFixed(2)}ms |\n`;
+      md += `| 99th | ${(h.percentiles[99] || 0).toFixed(2)}ms |\n`;
+      md += `| Max | ${h.max.toFixed(2)}ms |\n`;
+      md += `| Total Requests | ${h.totalCount.toLocaleString()} |\n`;
       md += '\n';
+
+      // NEW: Bucket distribution table
+      if (h.buckets.length > 0) {
+        md += '### Latency Bucket Distribution\n\n';
+        md += '| Range (ms) | Count | Percentage | Cumulative % |\n';
+        md += '|---|---|---|---|\n';
+        for (const bucket of h.buckets) {
+          const percentage = ((bucket.count / h.totalCount) * 100).toFixed(1);
+          const cumulativePercentage = (
+            ((bucket.cumulativeCount || 0) / h.totalCount) *
+            100
+          ).toFixed(1);
+          md += `| ${bucket.lowerBound.toFixed(1)} - ${bucket.upperBound.toFixed(1)} | ${bucket.count.toLocaleString()} | ${percentage}% | ${cumulativePercentage}% |\n`;
+        }
+        md += '\n';
+      }
     } else {
       // Fallback to basic percentiles if no histogram data
       md += '### Key Percentiles\n\n';
@@ -140,6 +161,36 @@ export class MarkdownExporter {
     }
 
     return md;
+  }
+
+  /**
+   * Generate ASCII histogram for markdown output
+   */
+  private generateAsciiHistogram(
+    buckets: Array<{
+      lowerBound: number;
+      upperBound: number;
+      count: number;
+    }>,
+  ): string {
+    if (buckets.length === 0) {
+      return 'No histogram data available\n';
+    }
+
+    const maxCount = Math.max(...buckets.map((b) => b.count));
+    const maxBarWidth = 40;
+    const totalCount = buckets.reduce((sum, b) => sum + b.count, 0);
+
+    let chart = 'Latency Distribution:\n\n';
+    for (const bucket of buckets) {
+      const barWidth = Math.round((bucket.count / maxCount) * maxBarWidth);
+      const bar = '█'.repeat(barWidth);
+      const empty = '░'.repeat(maxBarWidth - barWidth);
+      const label = `${bucket.lowerBound.toFixed(0)}-${bucket.upperBound.toFixed(0)}ms`;
+      const percentage = ((bucket.count / totalCount) * 100).toFixed(1);
+      chart += `${label.padEnd(15)} ${bar}${empty} ${bucket.count.toLocaleString().padStart(6)} (${percentage}%)\n`;
+    }
+    return chart;
   }
 
   private generateWarnings(endpoints: EndpointSummary[]): string[] {

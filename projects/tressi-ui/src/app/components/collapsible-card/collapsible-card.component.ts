@@ -13,6 +13,7 @@ import { ButtonComponent } from '../button/button.component';
   selector: 'app-collapsible-card',
   imports: [CommonModule, ButtonComponent],
   templateUrl: './collapsible-card.component.html',
+  styleUrl: './collapsible-card.component.css',
 })
 export class CollapsibleCardComponent {
   readonly title = input.required<string>();

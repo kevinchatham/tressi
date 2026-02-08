@@ -31,6 +31,7 @@ export function printSummary(
  */
 function printReportInfo(
   summary: TestSummary,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _options: TressiOptionsConfig,
 ): void {
   const reportInfoTable = new Table({

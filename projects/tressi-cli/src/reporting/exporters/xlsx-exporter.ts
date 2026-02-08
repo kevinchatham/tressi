@@ -173,71 +173,87 @@ export class XlsxExporter {
       return;
     }
 
-    const latencyData = [
+    const h = g.histogram;
+
+    // Sheet 1: Percentile Distribution
+    const percentileData = [
       {
         Percentile: 'Min',
-        'Latency (ms)': g.histogram.min,
-        'Total Requests': g.histogram.totalCount,
+        'Latency (ms)': h.min,
+        'Total Requests': h.totalCount,
       },
       {
         Percentile: '1st',
-        'Latency (ms)': g.histogram.percentiles[1],
-        'Total Requests': g.histogram.totalCount,
+        'Latency (ms)': h.percentiles[1] || 0,
+        'Total Requests': h.totalCount,
       },
       {
         Percentile: '5th',
-        'Latency (ms)': g.histogram.percentiles[5],
-        'Total Requests': g.histogram.totalCount,
+        'Latency (ms)': h.percentiles[5] || 0,
+        'Total Requests': h.totalCount,
       },
       {
         Percentile: '10th',
-        'Latency (ms)': g.histogram.percentiles[10],
-        'Total Requests': g.histogram.totalCount,
+        'Latency (ms)': h.percentiles[10] || 0,
+        'Total Requests': h.totalCount,
       },
       {
         Percentile: '25th',
-        'Latency (ms)': g.histogram.percentiles[25],
-        'Total Requests': g.histogram.totalCount,
+        'Latency (ms)': h.percentiles[25] || 0,
+        'Total Requests': h.totalCount,
       },
       {
         Percentile: '50th',
-        'Latency (ms)': g.histogram.percentiles[50],
-        'Total Requests': g.histogram.totalCount,
+        'Latency (ms)': h.percentiles[50] || 0,
+        'Total Requests': h.totalCount,
       },
       {
         Percentile: '75th',
-        'Latency (ms)': g.histogram.percentiles[75],
-        'Total Requests': g.histogram.totalCount,
+        'Latency (ms)': h.percentiles[75] || 0,
+        'Total Requests': h.totalCount,
       },
       {
         Percentile: '90th',
-        'Latency (ms)': g.histogram.percentiles[90],
-        'Total Requests': g.histogram.totalCount,
+        'Latency (ms)': h.percentiles[90] || 0,
+        'Total Requests': h.totalCount,
       },
       {
         Percentile: '95th',
-        'Latency (ms)': g.histogram.percentiles[95],
-        'Total Requests': g.histogram.totalCount,
+        'Latency (ms)': h.percentiles[95] || 0,
+        'Total Requests': h.totalCount,
       },
       {
         Percentile: '99th',
-        'Latency (ms)': g.histogram.percentiles[99],
-        'Total Requests': g.histogram.totalCount,
-      },
-      {
-        Percentile: '99.9th',
-        'Latency (ms)': g.histogram.percentiles[99.9],
-        'Total Requests': g.histogram.totalCount,
+        'Latency (ms)': h.percentiles[99] || 0,
+        'Total Requests': h.totalCount,
       },
       {
         Percentile: 'Max',
-        'Latency (ms)': g.histogram.max,
-        'Total Requests': g.histogram.totalCount,
+        'Latency (ms)': h.max,
+        'Total Requests': h.totalCount,
       },
     ];
 
-    const wsLatency = xlsx.utils.json_to_sheet(latencyData);
-    xlsx.utils.book_append_sheet(wb, wsLatency, 'Latency Distribution');
+    const wsPercentiles = xlsx.utils.json_to_sheet(percentileData);
+    xlsx.utils.book_append_sheet(wb, wsPercentiles, 'Latency Percentiles');
+
+    // NEW: Sheet 2: Bucket Distribution
+    if (h.buckets.length > 0) {
+      const bucketData = h.buckets.map((bucket, index) => ({
+        'Bucket #': index + 1,
+        'Lower Bound (ms)': bucket.lowerBound,
+        'Upper Bound (ms)': bucket.upperBound,
+        Count: bucket.count,
+        Percentage: ((bucket.count / h.totalCount) * 100).toFixed(1) + '%',
+        'Cumulative Count': bucket.cumulativeCount,
+        'Cumulative Percentage':
+          (((bucket.cumulativeCount || 0) / h.totalCount) * 100).toFixed(1) +
+          '%',
+      }));
+
+      const wsBuckets = xlsx.utils.json_to_sheet(bucketData);
+      xlsx.utils.book_append_sheet(wb, wsBuckets, 'Latency Buckets');
+    }
   }
 
   private addSampledResponsesSheet(

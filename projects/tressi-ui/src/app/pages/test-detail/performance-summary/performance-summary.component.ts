@@ -1,0 +1,54 @@
+import { CommonModule } from '@angular/common';
+import { Component, input, output } from '@angular/core';
+
+import { CollapsibleCardComponent } from '../../../components/collapsible-card/collapsible-card.component';
+import { EndpointSummary, GlobalSummary } from '../../../services/rpc.service';
+import { TestDocument } from '../../../services/rpc.service';
+import { MetricsSummaryComponent } from '../metrics-summary/metrics-summary.component';
+
+/**
+ * Component for displaying performance summary with endpoint selector
+ * Extracted from test-detail.component.html lines 272-299
+ */
+@Component({
+  selector: 'app-performance-summary',
+  imports: [CommonModule, CollapsibleCardComponent, MetricsSummaryComponent],
+  templateUrl: './performance-summary.component.html',
+})
+export class PerformanceSummaryComponent {
+  /** Selected summary (global or endpoint) */
+  readonly selectedSummary = input<
+    GlobalSummary | EndpointSummary | null | undefined
+  >(null);
+
+  /** Test data document */
+  readonly testData = input<TestDocument | null>(null);
+
+  /** Currently selected endpoint */
+  readonly selectedEndpoint = input<string>('global');
+
+  /** Whether the card is collapsed */
+  readonly collapsed = input<boolean>(false);
+
+  /** Emits when endpoint selection changes */
+  readonly endpointChange = output<string>();
+
+  /** Emits when collapsed state changes */
+  readonly collapsedChange = output<boolean>();
+
+  /**
+   * Handle endpoint selection change
+   */
+  onEndpointChange(event: Event): void {
+    const target = event.target as HTMLSelectElement;
+    const value = target.value;
+    this.endpointChange.emit(value);
+  }
+
+  /**
+   * Handle collapsed state change from collapsible card
+   */
+  onCollapsedChange(collapsed: boolean): void {
+    this.collapsedChange.emit(collapsed);
+  }
+}

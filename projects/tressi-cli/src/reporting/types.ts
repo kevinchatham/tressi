@@ -133,6 +133,20 @@ export type GlobalSummary = {
 };
 
 /**
+ * HDR histogram bucket for latency distribution
+ */
+export type LatencyHistogramBucket = {
+  /** Lower bound of the bucket in milliseconds */
+  lowerBound: number;
+  /** Upper bound of the bucket in milliseconds */
+  upperBound: number;
+  /** Number of requests in this bucket */
+  count: number;
+  /** Running total for percentile calculations */
+  cumulativeCount?: number;
+};
+
+/**
  * Latency histogram data structure for detailed latency distribution
  */
 export type LatencyHistogram = {
@@ -142,19 +156,14 @@ export type LatencyHistogram = {
   min: number;
   /** Maximum latency value in milliseconds */
   max: number;
-  /** Percentile values (1st, 5th, 10th, 25th, 50th, 75th, 90th, 95th, 99th, 99.9th) */
-  percentiles: {
-    1: number;
-    5: number;
-    10: number;
-    25: number;
-    50: number;
-    75: number;
-    90: number;
-    95: number;
-    99: number;
-    99.9: number;
-  };
+  /** Mean latency value in milliseconds */
+  mean: number;
+  /** Standard deviation of latency values in milliseconds */
+  stdDev: number;
+  /** Percentile values (1st, 5th, 10th, 25th, 50th, 75th, 90th, 95th, 99th) */
+  percentiles: Record<number, number>;
+  /** Bucket distribution for histogram visualization */
+  buckets: LatencyHistogramBucket[];
 };
 
 /**

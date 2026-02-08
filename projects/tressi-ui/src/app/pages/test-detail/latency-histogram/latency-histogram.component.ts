@@ -1,0 +1,159 @@
+import { CommonModule } from '@angular/common';
+import { Component, input } from '@angular/core';
+
+import { IconComponent } from '../../../components/icon/icon.component';
+import { LatencyHistogram } from '../../../services/rpc.service';
+
+interface HistogramPercentile {
+  percentile: number;
+  value: number;
+  label: string;
+}
+
+/**
+ * Component for displaying latency histogram data
+ * Shows percentile distribution and summary statistics
+ */
+@Component({
+  selector: 'app-latency-histogram',
+  imports: [CommonModule, IconComponent],
+  templateUrl: './latency-histogram.component.html',
+})
+export class LatencyHistogramComponent {
+  histogram = input<LatencyHistogram>();
+
+  /**
+   * Get bucket data for histogram visualization
+   */
+  getHistogramBuckets(): Array<{
+    lowerBound: number;
+    upperBound: number;
+    count: number;
+    cumulativeCount?: number;
+  }> {
+    const histogram = this.histogram();
+    if (!histogram?.buckets?.length) return [];
+    return histogram.buckets;
+  }
+
+  /**
+   * Calculate horizontal bar width as percentage
+   */
+  getHorizontalBarWidth(count: number): string {
+    const histogram = this.histogram();
+    if (!histogram?.buckets?.length) return '0%';
+
+    const maxCount = Math.max(...histogram.buckets.map((b) => b.count));
+    if (maxCount === 0) return '0%';
+
+    // Use linear scale for horizontal bars (height uses sqrt for vertical)
+    const percentage = (count / maxCount) * 100;
+    return `${Math.max(percentage, 0)}%`;
+  }
+
+  /**
+   * Calculate bucket height using sqrt scale for better visual distribution
+   */
+  getBucketHeight(count: number): string {
+    const histogram = this.histogram();
+    if (!histogram?.buckets?.length) return '0%';
+
+    const maxCount = Math.max(...histogram.buckets.map((b) => b.count));
+    if (maxCount === 0) return '0%';
+
+    // Use sqrt scale to prevent tall bars from dominating
+    return `${Math.sqrt(count / maxCount) * 100}%`;
+  }
+
+  /**
+   * Generate tooltip text for a bucket
+   */
+  getBucketTooltip(bucket: {
+    lowerBound: number;
+    upperBound: number;
+    count: number;
+    cumulativeCount?: number;
+  }): string {
+    const histogram = this.histogram();
+    if (!histogram) return '';
+
+    const percentage = ((bucket.count / histogram.totalCount) * 100).toFixed(1);
+    const cumulativePercentage = (
+      ((bucket.cumulativeCount || 0) / histogram.totalCount) *
+      100
+    ).toFixed(1);
+
+    return `${this.formatLatency(bucket.lowerBound)} - ${this.formatLatency(bucket.upperBound)}: ${bucket.count.toLocaleString()} requests (${percentage}%)\nCumulative: ${cumulativePercentage}%`;
+  }
+
+  /**
+   * Transforms histogram percentile data for display
+   */
+  getPercentileData(): HistogramPercentile[] {
+    const histogram = this.histogram();
+    if (!histogram) return [];
+
+    const percentiles = [
+      { key: 1, label: '1st (Fastest)' },
+      { key: 5, label: '5th' },
+      { key: 10, label: '10th' },
+      { key: 25, label: '25th' },
+      { key: 50, label: '50th (Median)' },
+      { key: 75, label: '75th' },
+      { key: 90, label: '90th' },
+      { key: 95, label: '95th' },
+      { key: 99, label: '99th (Slowest)' },
+    ];
+
+    return percentiles.map(({ key, label }) => ({
+      percentile: key,
+      value: (histogram.percentiles[key] || 0) as number,
+      label,
+    }));
+  }
+
+  /**
+   * Gets min/max values from histogram
+   */
+  getMinMax(): { min: number; max: number } | null {
+    const histogram = this.histogram();
+    if (!histogram) return null;
+    return {
+      min: histogram.min,
+      max: histogram.max,
+    };
+  }
+
+  /**
+   * Formats latency value with appropriate units
+   */
+  formatLatency(ms: number): string {
+    if (ms < 1) return `${(ms * 1000).toFixed(0)}μs`;
+    if (ms < 1000) return `${ms.toFixed(1)}ms`;
+    return `${(ms / 1000).toFixed(2)}s`;
+  }
+
+  /**
+   * Calculates bar width as percentage for visualization
+   */
+  getBarWidth(value: number, min: number, max: number): string {
+    if (max === min) return '100%';
+    const percentage = ((value - min) / (max - min)) * 100;
+    return `${Math.max(5, percentage)}%`; // Minimum 5% width for visibility
+  }
+
+  /**
+   * Calculate percentile bar width as percentage of max latency value
+   * Used to show relative latency magnitude across percentiles
+   */
+  getPercentileBarWidth(value: number): string {
+    const percentileData = this.getPercentileData();
+    if (percentileData.length === 0) return '0%';
+
+    const maxValue = Math.max(...percentileData.map((p) => p.value));
+    if (maxValue === 0) return '0%';
+
+    const percentage = (value / maxValue) * 100;
+    return `${Math.max(percentage, 0)}%`;
+  }
+}

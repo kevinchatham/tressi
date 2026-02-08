@@ -170,13 +170,37 @@ describe('MetricsAggregator', () => {
       vi.mocked(
         mockHdrHistogramManagers[0].getAllEndpointHistograms,
       ).mockReturnValue([
-        { totalCount: 0, mean: 0, min: 0, max: 0, percentiles: {}, stdDev: 0 },
-        { totalCount: 0, mean: 0, min: 0, max: 0, percentiles: {}, stdDev: 0 },
+        {
+          totalCount: 0,
+          mean: 0,
+          min: 0,
+          max: 0,
+          percentiles: {},
+          stdDev: 0,
+          buckets: [],
+        },
+        {
+          totalCount: 0,
+          mean: 0,
+          min: 0,
+          max: 0,
+          percentiles: {},
+          stdDev: 0,
+          buckets: [],
+        },
       ]);
       vi.mocked(
         mockHdrHistogramManagers[1].getAllEndpointHistograms,
       ).mockReturnValue([
-        { totalCount: 0, mean: 0, min: 0, max: 0, percentiles: {}, stdDev: 0 },
+        {
+          totalCount: 0,
+          mean: 0,
+          min: 0,
+          max: 0,
+          percentiles: {},
+          stdDev: 0,
+          buckets: [],
+        },
       ]);
 
       const results = aggregator.getResults(2, [
@@ -240,6 +264,11 @@ describe('MetricsAggregator', () => {
           max: 200,
           percentiles: { 50: 95, 95: 180, 99: 195 },
           stdDev: 50,
+          buckets: [
+            { lowerBound: 0, upperBound: 50, count: 2, cumulativeCount: 2 },
+            { lowerBound: 50, upperBound: 100, count: 6, cumulativeCount: 8 },
+            { lowerBound: 100, upperBound: 200, count: 4, cumulativeCount: 12 },
+          ],
         },
         {
           totalCount: 6,
@@ -248,6 +277,11 @@ describe('MetricsAggregator', () => {
           max: 300,
           percentiles: { 50: 140, 95: 280, 99: 295 },
           stdDev: 75,
+          buckets: [
+            { lowerBound: 0, upperBound: 100, count: 2, cumulativeCount: 2 },
+            { lowerBound: 100, upperBound: 200, count: 3, cumulativeCount: 5 },
+            { lowerBound: 200, upperBound: 300, count: 1, cumulativeCount: 6 },
+          ],
         },
       ]);
       vi.mocked(
@@ -260,6 +294,11 @@ describe('MetricsAggregator', () => {
           max: 250,
           percentiles: { 50: 115, 95: 220, 99: 240 },
           stdDev: 60,
+          buckets: [
+            { lowerBound: 0, upperBound: 60, count: 3, cumulativeCount: 3 },
+            { lowerBound: 60, upperBound: 120, count: 9, cumulativeCount: 12 },
+            { lowerBound: 120, upperBound: 250, count: 6, cumulativeCount: 18 },
+          ],
         },
       ]);
 
@@ -306,6 +345,11 @@ describe('MetricsAggregator', () => {
           max: 200,
           percentiles: { 50: 95, 95: 180, 99: 195 },
           stdDev: 50,
+          buckets: [
+            { lowerBound: 0, upperBound: 50, count: 2, cumulativeCount: 2 },
+            { lowerBound: 50, upperBound: 100, count: 6, cumulativeCount: 8 },
+            { lowerBound: 100, upperBound: 200, count: 4, cumulativeCount: 12 },
+          ],
         },
       ]);
       vi.mocked(
@@ -425,6 +469,7 @@ describe('MetricsAggregator', () => {
   });
 
   describe('Timestamp Management', () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let mockConfig: any;
 
     beforeEach(() => {
@@ -454,6 +499,7 @@ describe('MetricsAggregator', () => {
       const afterStop = Date.now();
 
       // Access private endTime for testing
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const endTime = (aggregator as any).endTime;
       expect(endTime).toBeGreaterThanOrEqual(beforeStop);
       expect(endTime).toBeLessThanOrEqual(afterStop);
@@ -562,6 +608,7 @@ describe('MetricsAggregator', () => {
       aggregator.setEndTime(testEndTime);
 
       // Access private endTime for testing
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const endTime = (aggregator as any).endTime;
       expect(endTime).toBe(testEndTime);
     });
@@ -580,6 +627,7 @@ describe('MetricsAggregator', () => {
       aggregator.startPolling();
       aggregator.stopPolling(); // This should override the previous endTime
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const stopPollingEndTime = (aggregator as any).endTime;
       expect(stopPollingEndTime).toBeGreaterThan(setEndTime);
     });
@@ -624,11 +672,21 @@ describe('MetricsAggregator', () => {
           max: 200,
           percentiles: { 50: 95, 95: 180, 99: 195 },
           stdDev: 50,
+          buckets: [
+            { lowerBound: 0, upperBound: 50, count: 10, cumulativeCount: 10 },
+            { lowerBound: 50, upperBound: 100, count: 25, cumulativeCount: 35 },
+            {
+              lowerBound: 100,
+              upperBound: 200,
+              count: 15,
+              cumulativeCount: 50,
+            },
+          ],
         },
       ]);
 
       // First call to establish previous counts
-      const results0 = aggregator.getResults(1, ['http://example.com/api']);
+      aggregator.getResults(1, ['http://example.com/api']);
 
       // Wait a bit to ensure time difference
       const waitTime = 100; // 100ms
@@ -712,6 +770,7 @@ describe('MetricsAggregator', () => {
           max: 0,
           percentiles: { 50: 0, 95: 0, 99: 0 },
           stdDev: 0,
+          buckets: [],
         },
       ]);
 
