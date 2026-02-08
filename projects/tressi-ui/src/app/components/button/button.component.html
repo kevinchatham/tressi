@@ -1,7 +1,5 @@
 <button
   (click)="onClick($event)"
-  (mouseenter)="isHovered.set(true)"
-  (mouseleave)="isHovered.set(false)"
   [attr.aria-label]="buttonTitle()"
   [attr.aria-disabled]="disabled()"
   [disabled]="disabled()"
@@ -9,9 +7,13 @@
   [class]="buttonClasses()"
   [attr.type]="type()"
   [attr.tabindex]="tabindex()"
+  class="group"
 >
   @if (title()) {
-    <span [class]="titleClasses()">{{ title() }}</span>
+    <span
+      class="-mr-1.5 w-0 overflow-hidden whitespace-nowrap opacity-0 transition-all duration-300 ease-in-out group-hover:mr-0 group-hover:w-auto group-hover:opacity-100"
+      >{{ title() }}</span
+    >
   }
   @if (icon()) {
     <app-icon [name]="icon()" />
