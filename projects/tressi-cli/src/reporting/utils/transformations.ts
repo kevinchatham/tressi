@@ -1,7 +1,7 @@
 import pkg from '../../../../../package.json';
 import type { TressiConfig } from '../../common/config/types';
 import type { AggregatedMetrics } from '../../common/metrics';
-import { roundToDecimals } from '../../utils/math-utils';
+import { truncateToDecimals } from '../../utils/math-utils';
 import type { LatencyHistogram as WorkerLatencyHistogram } from '../../workers/types';
 import {
   EndpointSummary,
@@ -159,7 +159,7 @@ export function transformAggregatedMetricToTestSummary(
     p95LatencyMs: global.p95LatencyMs,
     p99LatencyMs: global.p99LatencyMs,
     p50LatencyMs: global.p50LatencyMs,
-    finalDurationSec: roundToDecimals(finalDurationSec),
+    finalDurationSec: truncateToDecimals(finalDurationSec),
     epochStartedAt: epochStartedAt,
     epochEndedAt: epochEndedAt,
     networkBytesSent: global.networkBytesSent || 0,
@@ -181,7 +181,7 @@ export function transformAggregatedMetricToTestSummary(
     const requestConfig = config.requests.find((req) => req.url === url)!;
 
     // Calculate percentage of target RPS achieved
-    const targetAchieved = roundToDecimals(
+    const targetAchieved = truncateToDecimals(
       (endpoint.peakRequestsPerSecond / requestConfig.rps) * 100,
     );
 
@@ -198,7 +198,7 @@ export function transformAggregatedMetricToTestSummary(
       p99LatencyMs: endpoint.p99LatencyMs,
       averageRequestsPerSecond: endpoint.averageRequestsPerSecond,
       peakRequestsPerSecond: endpoint.peakRequestsPerSecond,
-      theoreticalMaxRps: roundToDecimals(theoreticalMaxRps),
+      theoreticalMaxRps: truncateToDecimals(theoreticalMaxRps),
       targetAchieved,
       responseSamples: endpointResponseSamples,
       statusCodeDistribution: endpoint.statusCodeDistribution,

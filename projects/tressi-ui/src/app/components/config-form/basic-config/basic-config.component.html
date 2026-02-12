@@ -147,9 +147,7 @@
                   [field]="form().config.requests[$index].rampUpDurationSec"
                   placeholder="Time to reach target RPS"
                 />
-                <p class="label">
-                  Endpoint ramp-up time (0 = use global rampUpDurationSec)
-                </p>
+                <p class="label">Endpoint ramp-up time</p>
                 @if (
                   form()
                     .config.requests[$index].rampUpDurationSec()

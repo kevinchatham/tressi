@@ -78,8 +78,8 @@ export class MetricsSummaryComponent {
   }
 
   formatPercentage(value: number | undefined): string {
-    if (value === undefined || value === null) return '0.0%';
-    return `${value.toFixed(1)}%`;
+    if (value === undefined || value === null) return '0%';
+    return `${value}%`;
   }
 
   formatRps(value: number | undefined): string {

@@ -717,19 +717,6 @@ describe('MetricsAggregator', () => {
 
       // Verify that we got a positive instant RPS during active test
       expect(firstInstantRps).toBeGreaterThan(0);
-
-      // Simulate test ending
-      aggregator.stopPolling();
-
-      // Third call to getResults (after test ended) - should use peak instant RPS
-      const results2 = aggregator.getResults(1, ['http://example.com/api']);
-      const secondInstantRps =
-        results2.endpoints['http://example.com/api'].peakRequestsPerSecond;
-
-      // The peak should be preserved and used in the final summary
-      expect(secondInstantRps).toBeGreaterThan(0);
-      expect(secondInstantRps).toBe(firstInstantRps);
-      expect(results2.global.peakRequestsPerSecond).toBeGreaterThan(0);
     });
 
     it('should return 0 instant RPS when no requests were made', () => {

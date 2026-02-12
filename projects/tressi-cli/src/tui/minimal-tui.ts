@@ -3,7 +3,7 @@ import { performance } from 'perf_hooks';
 
 import { TressiConfig } from '../common/config/types';
 import type { Runner } from '../core/runner';
-import { roundToDecimals } from '../utils/math-utils';
+import { truncateToDecimals } from '../utils/math-utils';
 
 /**
  * Enhanced minimal UI for Tressi load testing
@@ -109,7 +109,7 @@ export class MinimalTUI {
       // Fallback to basic display if metrics unavailable
     }
 
-    const timeText = `[${roundToDecimals(elapsedSec)}s/${durationSec}s]`;
+    const timeText = `[${truncateToDecimals(elapsedSec)}s/${durationSec}s]`;
     const spinnerText = metricsText
       ? `${timeText} ${metricsText}`
       : `${timeText} Test running...`;

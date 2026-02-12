@@ -1,9 +1,7 @@
 /**
- * Round a number to X decimal places
- * @param value Number to round
- * @returns Rounded number
+ * Truncates to X decimal places
  */
-export function roundToDecimals(value: number, places: number = 0): number {
-  const multiplier = Math.pow(10, places);
-  return Math.round(value * multiplier) / multiplier;
+export function truncateToDecimals(value: number, places: number = 0): number {
+  const multiplier = 10 ** places;
+  return Math.trunc(value * multiplier) / multiplier;
 }
