@@ -190,18 +190,18 @@ export const TressiConfigSchema = z
   })
   .refine(
     (data) => {
-      // Validate that global rampUpDurationSec is not more than half of durationSec
-      if (data.options.rampUpDurationSec > data.options.durationSec / 2) {
+      // Validate that global rampUpDurationSec is not more than a quarter of durationSec
+      if (data.options.rampUpDurationSec > data.options.durationSec / 4) {
         return false;
       }
 
-      // Validate that each endpoint's rampUpDurationSec is not more than half of durationSec
+      // Validate that each endpoint's rampUpDurationSec is not more than a quarter of durationSec
       return data.requests.every(
-        (request) => request.rampUpDurationSec <= data.options.durationSec / 2,
+        (request) => request.rampUpDurationSec <= data.options.durationSec / 4,
       );
     },
     {
-      message: 'rampUpDurationSec cannot exceed half of durationSec',
+      message: 'rampUpDurationSec cannot exceed a quarter of durationSec',
       path: ['rampUpDurationSec'],
     },
   )
@@ -235,6 +235,28 @@ export const TressiConfigSchema = z
       message:
         'All endpoints must have rps greater than or equal to 5 when global rampUpDurationSec is greater than 0',
       path: ['options', 'rampUpDurationSec'],
+    },
+  )
+  .refine(
+    (data) => {
+      // If global or endpoint ramp up duration is greater than 0, the test must be at least 60 seconds long
+      const hasGlobalRampUp = data.options.rampUpDurationSec > 0;
+      const hasEndpointRampUp = data.requests.some(
+        (request) => request.rampUpDurationSec > 0,
+      );
+
+      if (
+        (hasGlobalRampUp || hasEndpointRampUp) &&
+        data.options.durationSec < 60
+      ) {
+        return false;
+      }
+      return true;
+    },
+    {
+      message:
+        'durationSec must be at least 60 seconds when rampUpDurationSec is greater than 0',
+      path: ['options', 'durationSec'],
     },
   )
   .default({

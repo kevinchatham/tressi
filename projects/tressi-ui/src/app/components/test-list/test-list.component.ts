@@ -386,7 +386,7 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
                 1000
               : 0);
           break;
-        case 'requests':
+        case 'totalRequests':
           valueA = a.summary?.global.totalRequests || 0;
           valueB = b.summary?.global.totalRequests || 0;
           break;

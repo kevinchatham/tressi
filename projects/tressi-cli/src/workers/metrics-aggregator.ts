@@ -162,12 +162,12 @@ export class MetricsAggregator implements IMetricsAggregator {
 
   /**
    * Calculate the peak RPS window size based on test duration
-   * Uses 10% of test duration with a minimum of 1 second and maximum of 10 seconds
+   * Uses test duration minus one second with a maximum of 5 seconds
    * @param testDurationMs - Test duration in milliseconds
    * @returns Window size in milliseconds
    */
   private calculatePeakRpsWindowMs(testDurationMs: number): number {
-    return Math.min(Math.max(testDurationMs * 0.1, 1000), 10_000);
+    return Math.min(testDurationMs - 1_000, 5_000);
   }
 
   /**
@@ -189,7 +189,8 @@ export class MetricsAggregator implements IMetricsAggregator {
 
     // Prevent unbounded growth - remove samples older than window
     this.rpsWindowSamples[key] = this.rpsWindowSamples[key].filter(
-      (sample) => currentTime - sample.timestamp <= windowMs,
+      (sample) =>
+        currentTime - sample.timestamp <= windowMs && sample.rps !== 0,
     );
 
     // Extract RPS values
@@ -203,9 +204,10 @@ export class MetricsAggregator implements IMetricsAggregator {
     // Sort RPS values
     const sortedRps = rpsValues.sort((a, b) => a - b);
 
-    // Calculate median percentile index with bounds checking
+    const percentile = 0.5;
+
     const index = Math.min(
-      Math.floor(sortedRps.length * 0.5),
+      Math.floor(sortedRps.length * percentile),
       sortedRps.length - 1,
     );
 
@@ -419,9 +421,13 @@ export class MetricsAggregator implements IMetricsAggregator {
     const windowMs = this.calculatePeakRpsWindowMs(testDurationMs);
 
     // Calculate global metrics
+    // Minimum 1 prevents truncation from hiding actual request activity
+    // (e.g., 59 requests in 60s was displaying as 0 due to decimal truncation)
     const duration = this.startTime > 0 ? currentTime - this.startTime : 0;
-    const averageRequestsPerSecond =
-      duration > 0 ? totalRequests / (duration / 1000) : 0;
+    const averageRequestsPerSecond = Math.max(
+      duration > 0 ? totalRequests / (duration / 1000) : 0,
+      1,
+    );
 
     // Calculate global latency statistics using weighted averages
     const globalStats = this.calculateGlobalLatencyStats(endpointHistograms);
@@ -529,6 +535,11 @@ export class MetricsAggregator implements IMetricsAggregator {
         timestamp: currentTime,
       };
 
+      const endpointAverageRequestsPerSecond = Math.max(
+        duration > 0 ? endpointTotalRequests / (duration / 1000) : 0,
+        1,
+      );
+
       endpointMetrics[url] = {
         totalRequests: endpointTotalRequests,
         successfulRequests: endpointSuccessRequests,
@@ -539,7 +550,7 @@ export class MetricsAggregator implements IMetricsAggregator {
         p95LatencyMs: truncateToDecimals(endpointStats.p95Latency),
         p99LatencyMs: truncateToDecimals(endpointStats.p99Latency),
         averageRequestsPerSecond: truncateToDecimals(
-          duration > 0 ? endpointTotalRequests / (duration / 1000) : 0,
+          endpointAverageRequestsPerSecond,
         ),
         peakRequestsPerSecond: truncateToDecimals(endpointPeakRps),
         statusCodeDistribution: statusCounts,
