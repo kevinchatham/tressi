@@ -124,6 +124,8 @@ export const TressiOptionsConfigSchema = z
       .number()
       .int()
       .positive()
+      .min(10)
+      .default(10)
       .describe('The total duration of the test in seconds. Defaults to 10.'),
     rampUpDurationSec: z
       .number()
