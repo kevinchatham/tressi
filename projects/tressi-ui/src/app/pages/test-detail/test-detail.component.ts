@@ -13,6 +13,7 @@ import { ButtonComponent } from 'src/app/components/button/button.component';
 
 import { HeaderComponent } from '../../components/header/header.component';
 import { IconComponent } from '../../components/icon/icon.component';
+import { StatusBadgeComponent } from '../../components/status-badge/status-badge.component';
 import { ConfigService } from '../../services/config.service';
 import { EventService, TestEventData } from '../../services/event.service';
 import { LoadingService } from '../../services/loading.service';
@@ -35,13 +36,15 @@ import {
   POLLING_OPTIONS,
   PollingInterval,
 } from '../../types/chart.types';
-import { ConfigDetailsComponent } from './config-details/config-details.component';
 import { DeleteConfirmationModalComponent } from './delete-confirmation-modal/delete-confirmation-modal.component';
+import { LatencyDistributionComponent } from './latency-distribution/latency-distribution.component';
 import { PerformanceOverTimeComponent } from './performance-over-time/performance-over-time.component';
 import { PerformanceSummaryComponent } from './performance-summary/performance-summary.component';
+import { ResponseSamplesCardComponent } from './response-samples-card/response-samples-card.component';
 import { EndpointChartDataCache } from './test-detail.types';
 import { isEndpointSummary } from './test-detail-shared.types';
-import { TestSummaryComponent } from './test-summary/test-summary.component';
+import { TestHeroStatsComponent } from './test-hero-stats/test-hero-stats.component';
+import { TestMetadataComponent } from './test-metadata/test-metadata.component';
 
 @Component({
   selector: 'app-test-detail',
@@ -51,10 +54,13 @@ import { TestSummaryComponent } from './test-summary/test-summary.component';
     IconComponent,
     DeleteConfirmationModalComponent,
     ButtonComponent,
-    ConfigDetailsComponent,
-    TestSummaryComponent,
     PerformanceSummaryComponent,
     PerformanceOverTimeComponent,
+    TestHeroStatsComponent,
+    TestMetadataComponent,
+    LatencyDistributionComponent,
+    ResponseSamplesCardComponent,
+    StatusBadgeComponent,
   ],
   templateUrl: './test-detail.component.html',
 })
@@ -101,6 +107,15 @@ export class TestDetailComponent implements OnDestroy {
     return null;
   });
 
+  // Computed signal for histogram
+  readonly histogram = computed(() => {
+    const summary = this.selectedSummary();
+    if (summary && typeof summary === 'object' && 'histogram' in summary) {
+      return summary.histogram;
+    }
+    return undefined;
+  });
+
   // Component signals
   readonly testId = signal<string | null>(null);
   readonly hasError = signal(false);
@@ -122,10 +137,11 @@ export class TestDetailComponent implements OnDestroy {
   readonly configError = signal<string>('');
 
   // Collapsible state
-  readonly testInfoCollapsed = signal(true);
   readonly configCollapsed = signal(true);
   readonly performanceSummaryCollapsed = signal(false);
   readonly performanceOverTimeCollapsed = signal(false);
+  readonly latencyDistributionCollapsed = signal(false);
+  readonly responseSamplesCollapsed = signal(false);
 
   // Computed signals for component
   readonly testData = computed(() => this.test());
@@ -193,6 +209,18 @@ export class TestDetailComponent implements OnDestroy {
     // Effect to handle polling interval changes
     effect(() => {
       const interval = this.selectedPollingInterval();
+      const isRunning = this.isRealTime();
+
+      if (!isRunning && interval !== 0) {
+        this.selectedPollingInterval.set(0);
+        return;
+      }
+
+      if (isRunning && interval === 0) {
+        this.selectedPollingInterval.set(5000);
+        return;
+      }
+
       this.setupPolling(interval);
     });
   }
@@ -452,6 +480,17 @@ export class TestDetailComponent implements OnDestroy {
 
   sanitizeForChartId(url: string): string {
     return url.replace(/[^a-zA-Z0-9]/g, '_');
+  }
+
+  /**
+   * Handle endpoint selection change from direct value
+   */
+  onEndpointChangeValue(value: string): void {
+    this.selectedEndpoint.set(value);
+    // Close dropdown by blurring active element
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
   }
 
   deleteTest(): void {

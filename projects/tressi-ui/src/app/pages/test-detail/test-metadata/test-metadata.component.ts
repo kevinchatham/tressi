@@ -3,25 +3,27 @@ import { Component, inject, input, output } from '@angular/core';
 
 import { ButtonComponent } from '../../../components/button/button.component';
 import { CollapsibleCardComponent } from '../../../components/collapsible-card/collapsible-card.component';
+import { IconComponent } from '../../../components/icon/icon.component';
 import { JsonTextareaComponent } from '../../../components/json-textarea/json-textarea.component';
+import { TestDocument } from '../../../services/rpc.service';
 import { ToastService } from '../../../services/toast.service';
 
-/**
- * Component for displaying test configuration details
- * Extracted from test-detail.component.html lines 78-104
- */
 @Component({
-  selector: 'app-config-details',
+  selector: 'app-test-metadata',
   imports: [
     CommonModule,
     ButtonComponent,
     CollapsibleCardComponent,
+    IconComponent,
     JsonTextareaComponent,
   ],
-  templateUrl: './config-details.component.html',
+  templateUrl: './test-metadata.component.html',
 })
-export class ConfigDetailsComponent {
+export class TestMetadataComponent {
   private readonly toastService = inject(ToastService);
+
+  /** Test data document */
+  readonly testData = input<TestDocument | null>(null);
 
   /** Configuration name to display */
   readonly configName = input<string>('Unknown Configuration');
@@ -30,7 +32,7 @@ export class ConfigDetailsComponent {
   readonly configSnapshot = input<unknown>(null);
 
   /** Whether the card is collapsed */
-  readonly collapsed = input<boolean>(false);
+  readonly collapsed = input<boolean>(true);
 
   /** Emits when collapsed state changes */
   readonly collapsedChange = output<boolean>();
@@ -40,6 +42,14 @@ export class ConfigDetailsComponent {
    */
   onCollapsedChange(collapsed: boolean): void {
     this.collapsedChange.emit(collapsed);
+  }
+
+  /**
+   * Format epoch timestamp to locale string
+   */
+  formatDate(epoch: number | null | undefined): string {
+    if (!epoch) return 'N/A';
+    return new Date(epoch).toLocaleString();
   }
 
   /**

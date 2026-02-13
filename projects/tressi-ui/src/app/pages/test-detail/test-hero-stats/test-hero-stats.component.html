@@ -1,0 +1,46 @@
+<div
+  class="stats stats-vertical md:stats-horizontal bg-base-200 border-base-content/5 flex w-full border shadow-sm"
+>
+  <!-- Success Rate Stat -->
+  <div class="stat place-items-center">
+    <div class="stat-title">Success Rate</div>
+    <div class="stat-value text-success">
+      {{ formatPercentage(successRate()) }}
+    </div>
+  </div>
+
+  <!-- Average RPS Stat -->
+  <div class="stat place-items-center">
+    <div class="stat-title">Average RPS</div>
+    <div class="stat-value text-primary">
+      {{ formatRps(selectedSummary()?.averageRequestsPerSecond) }}
+    </div>
+  </div>
+
+  <!-- Peak RPS Stat -->
+  <div class="stat place-items-center">
+    <div class="stat-title">Peak RPS</div>
+    <div class="stat-value text-secondary">
+      {{ formatRps(selectedSummary()?.peakRequestsPerSecond) }}
+    </div>
+  </div>
+
+  <!-- P50/95/99 Latency Stat -->
+  <div class="stat place-items-center">
+    <div class="stat-title">P50 \ 95 \ 99 Latency</div>
+    <div class="stat-value text-info">
+      {{ formatLatency(selectedSummary()?.p50LatencyMs) }} \
+      {{ formatLatency(selectedSummary()?.p95LatencyMs) }} \
+      {{ formatLatency(selectedSummary()?.p99LatencyMs) }}
+      <span class="text-sm font-normal">ms</span>
+    </div>
+  </div>
+
+  <!-- Duration Stat -->
+  <div class="stat place-items-center">
+    <div class="stat-title">Duration</div>
+    <div class="stat-value">
+      {{ formatDuration() }}
+    </div>
+  </div>
+</div>

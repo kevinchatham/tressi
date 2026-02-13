@@ -1,0 +1,11 @@
+<section class="bg-base-100 rounded-xl px-6">
+  <app-collapsible-card
+    [title]="'Latency Distribution'"
+    [collapsed]="collapsed()"
+    (collapsedChange)="onCollapsedChange($event)"
+  >
+    <div class="bg-base-200 mt-4 rounded-lg p-4">
+      <app-latency-histogram [histogram]="histogram()" />
+    </div>
+  </app-collapsible-card>
+</section>

@@ -28,6 +28,9 @@ import {
   templateUrl: './performance-over-time.component.html',
 })
 export class PerformanceOverTimeComponent {
+  /** Whether the test is currently running */
+  readonly isRunning = input<boolean>(false);
+
   /** Currently selected chart type */
   readonly selectedChartType = input<ChartType>('peak_throughput');
 

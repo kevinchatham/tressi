@@ -4,24 +4,6 @@
     [collapsed]="collapsed()"
     (collapsedChange)="onCollapsedChange($event)"
   >
-    <!-- Header controls projection -->
-    <ng-template>
-      <select
-        id="endpoint-selector"
-        class="select select-neutral w-auto"
-        [value]="selectedEndpoint()"
-        (change)="onEndpointChange($event)"
-      >
-        <option value="global">Global Metrics</option>
-        @for (
-          endpoint of testData()?.summary?.endpoints || [];
-          track endpoint.url
-        ) {
-          <option [value]="endpoint.url">{{ endpoint.url }}</option>
-        }
-      </select>
-    </ng-template>
-
     <!-- Main content projection -->
     <app-metrics-summary [summary]="selectedSummary()" />
   </app-collapsible-card>

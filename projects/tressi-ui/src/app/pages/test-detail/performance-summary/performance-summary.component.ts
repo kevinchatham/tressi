@@ -24,26 +24,11 @@ export class PerformanceSummaryComponent {
   /** Test data document */
   readonly testData = input<TestDocument | null>(null);
 
-  /** Currently selected endpoint */
-  readonly selectedEndpoint = input<string>('global');
-
   /** Whether the card is collapsed */
   readonly collapsed = input<boolean>(false);
 
-  /** Emits when endpoint selection changes */
-  readonly endpointChange = output<string>();
-
   /** Emits when collapsed state changes */
   readonly collapsedChange = output<boolean>();
-
-  /**
-   * Handle endpoint selection change
-   */
-  onEndpointChange(event: Event): void {
-    const target = event.target as HTMLSelectElement;
-    const value = target.value;
-    this.endpointChange.emit(value);
-  }
 
   /**
    * Handle collapsed state change from collapsible card
