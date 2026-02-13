@@ -94,3 +94,19 @@ export function isMultiSeriesData(
 ): data is { [seriesName: string]: number[] } {
   return typeof data === 'object' && data !== null && !Array.isArray(data);
 }
+
+/**
+ * Polling interval options for real-time updates
+ */
+export const POLLING_OPTIONS = [
+  { label: 'Manual', value: 0 },
+  { label: '1 second', value: 1_000 },
+  { label: '5 seconds', value: 5000 },
+  { label: '10 seconds', value: 10000 },
+  { label: '30 seconds', value: 30000 },
+] as const;
+
+/**
+ * Polling interval value type
+ */
+export type PollingInterval = (typeof POLLING_OPTIONS)[number]['value'];

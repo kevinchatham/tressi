@@ -14,37 +14,14 @@
 
     <!-- Main content projection -->
     <div class="mt-2 space-y-6">
-      <!-- Identity & Status Section -->
-      <div class="flex items-center justify-between">
-        <!-- Status with integrated real-time indicator -->
-        <div class="flex items-center gap-4">
-          @if (isRealTime()) {
-            <div class="text-info flex items-center gap-2 text-sm">
-              <app-icon name="dynamic_form" class="animate-pulse"></app-icon>
-              <span class="hidden sm:inline">Live Updates</span>
-            </div>
-          }
-        </div>
-      </div>
-
       <!-- Timing Section -->
       <h4
         class="text-base-content/80 mb-4 flex items-center gap-2 text-sm font-semibold"
       >
         <app-icon name="schedule" class="text-base"></app-icon>
-        Timing Information
+        Timing
       </h4>
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div class="bg-base-200 rounded-lg p-4 transition-all">
-          <div
-            class="text-base-content/70 mb-1 text-xs tracking-wide uppercase"
-          >
-            Created
-          </div>
-          <div class="text-sm font-medium">
-            {{ formatDate(testData()!.epochCreatedAt) }}
-          </div>
-        </div>
         <div class="bg-base-200 rounded-lg p-4 transition-all">
           <div
             class="text-base-content/70 mb-1 text-xs tracking-wide uppercase"

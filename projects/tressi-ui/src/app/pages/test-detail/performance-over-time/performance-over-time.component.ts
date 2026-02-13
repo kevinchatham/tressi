@@ -1,10 +1,16 @@
 import { CommonModule } from '@angular/common';
 import { Component, input, output } from '@angular/core';
 
+import { ButtonComponent } from '../../../components/button/button.component';
 import { CollapsibleCardComponent } from '../../../components/collapsible-card/collapsible-card.component';
 import { IconComponent } from '../../../components/icon/icon.component';
 import { LineChartComponent } from '../../../components/line-chart/line-chart.component';
-import { ChartData, ChartOption, ChartType } from '../../../types/chart.types';
+import {
+  ChartData,
+  ChartOption,
+  ChartType,
+  PollingInterval,
+} from '../../../types/chart.types';
 
 /**
  * Component for displaying performance metrics over time with charts
@@ -17,12 +23,21 @@ import { ChartData, ChartOption, ChartType } from '../../../types/chart.types';
     CollapsibleCardComponent,
     IconComponent,
     LineChartComponent,
+    ButtonComponent,
   ],
   templateUrl: './performance-over-time.component.html',
 })
 export class PerformanceOverTimeComponent {
   /** Currently selected chart type */
   readonly selectedChartType = input<ChartType>('peak_throughput');
+
+  /** Currently selected polling interval */
+  readonly pollingInterval = input<PollingInterval>(5000);
+
+  /** Available polling options */
+  readonly pollingOptions = input<readonly { label: string; value: number }[]>(
+    [],
+  );
 
   /** Currently selected endpoint */
   readonly selectedEndpoint = input<string>('global');
@@ -51,6 +66,12 @@ export class PerformanceOverTimeComponent {
   /** Emits when chart type changes */
   readonly chartTypeChange = output<ChartType>();
 
+  /** Emits when polling interval changes */
+  readonly pollingIntervalChange = output<PollingInterval>();
+
+  /** Emits when manual refresh is requested */
+  readonly refresh = output<void>();
+
   /** Emits when collapsed state changes */
   readonly collapsedChange = output<boolean>();
 
@@ -61,6 +82,22 @@ export class PerformanceOverTimeComponent {
     const target = event.target as HTMLSelectElement;
     const value = target.value as ChartType;
     this.chartTypeChange.emit(value);
+  }
+
+  /**
+   * Handle polling interval selection change
+   */
+  onPollingIntervalChange(event: Event): void {
+    const target = event.target as HTMLSelectElement;
+    const value = parseInt(target.value, 10) as PollingInterval;
+    this.pollingIntervalChange.emit(value);
+  }
+
+  /**
+   * Handle manual refresh click
+   */
+  onRefresh(): void {
+    this.refresh.emit();
   }
 
   /**

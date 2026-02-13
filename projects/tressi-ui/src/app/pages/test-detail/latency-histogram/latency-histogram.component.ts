@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, input } from '@angular/core';
+import { LatencyHistogramBucket } from 'tressi-cli/src/reporting/types';
 
 import { IconComponent } from '../../../components/icon/icon.component';
 import { LatencyHistogram } from '../../../services/rpc.service';
@@ -25,15 +26,12 @@ export class LatencyHistogramComponent {
   /**
    * Get bucket data for histogram visualization
    */
-  getHistogramBuckets(): Array<{
-    lowerBound: number;
-    upperBound: number;
-    count: number;
-    cumulativeCount?: number;
-  }> {
+  getHistogramBuckets(): Array<LatencyHistogramBucket> {
     const histogram = this.histogram();
     if (!histogram?.buckets?.length) return [];
-    return histogram.buckets;
+
+    // Sort by lowerBound to ensure correct display order and avoid UI glitches
+    return [...histogram.buckets].sort((a, b) => a.lowerBound - b.lowerBound);
   }
 
   /**
@@ -68,22 +66,13 @@ export class LatencyHistogramComponent {
   /**
    * Generate tooltip text for a bucket
    */
-  getBucketTooltip(bucket: {
-    lowerBound: number;
-    upperBound: number;
-    count: number;
-    cumulativeCount?: number;
-  }): string {
+  getBucketTooltip(bucket: LatencyHistogramBucket): string {
     const histogram = this.histogram();
     if (!histogram) return '';
 
     const percentage = ((bucket.count / histogram.totalCount) * 100).toFixed(1);
-    const cumulativePercentage = (
-      ((bucket.cumulativeCount || 0) / histogram.totalCount) *
-      100
-    ).toFixed(1);
 
-    return `${this.formatLatency(bucket.lowerBound)} - ${this.formatLatency(bucket.upperBound)}: ${bucket.count.toLocaleString()} requests (${percentage}%)\nCumulative: ${cumulativePercentage}%`;
+    return `${this.formatLatency(bucket.lowerBound)} - ${this.formatLatency(bucket.upperBound)}: ${bucket.count.toLocaleString()} requests (${percentage}%)`;
   }
 
   /**

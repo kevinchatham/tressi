@@ -2,7 +2,7 @@ import { writeFile } from 'fs/promises';
 
 import { TressiConfig } from '../../common/config/types';
 import { ReportingUtils } from '../../utils/reporting-utils';
-import { EndpointSummary, TestSummary } from '../types';
+import { EndpointSummary, LatencyHistogramBucket, TestSummary } from '../types';
 import { aggregateStatusCodesFromEndpoints } from '../utils/status-code-aggregator';
 
 /**
@@ -137,15 +137,11 @@ export class MarkdownExporter {
       // NEW: Bucket distribution table
       if (h.buckets.length > 0) {
         md += '### Latency Bucket Distribution\n\n';
-        md += '| Range (ms) | Count | Percentage | Cumulative % |\n';
-        md += '|---|---|---|---|\n';
+        md += '| Range (ms) | Count | Percentage |\n';
+        md += '|---|---|---|\n';
         for (const bucket of h.buckets) {
           const percentage = ((bucket.count / h.totalCount) * 100).toFixed(1);
-          const cumulativePercentage = (
-            ((bucket.cumulativeCount || 0) / h.totalCount) *
-            100
-          ).toFixed(1);
-          md += `| ${bucket.lowerBound.toFixed(1)} - ${bucket.upperBound.toFixed(1)} | ${bucket.count.toLocaleString()} | ${percentage}% | ${cumulativePercentage}% |\n`;
+          md += `| ${bucket.lowerBound.toFixed(1)} - ${bucket.upperBound.toFixed(1)} | ${bucket.count.toLocaleString()} | ${percentage}% |\n`;
         }
         md += '\n';
       }
@@ -167,11 +163,7 @@ export class MarkdownExporter {
    * Generate ASCII histogram for markdown output
    */
   private generateAsciiHistogram(
-    buckets: Array<{
-      lowerBound: number;
-      upperBound: number;
-      count: number;
-    }>,
+    buckets: Array<LatencyHistogramBucket>,
   ): string {
     if (buckets.length === 0) {
       return 'No histogram data available\n';

@@ -245,10 +245,6 @@ export class XlsxExporter {
         'Upper Bound (ms)': bucket.upperBound,
         Count: bucket.count,
         Percentage: ((bucket.count / h.totalCount) * 100).toFixed(1) + '%',
-        'Cumulative Count': bucket.cumulativeCount,
-        'Cumulative Percentage':
-          (((bucket.cumulativeCount || 0) / h.totalCount) * 100).toFixed(1) +
-          '%',
       }));
 
       const wsBuckets = xlsx.utils.json_to_sheet(bucketData);

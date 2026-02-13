@@ -7,35 +7,37 @@
     <!-- Horizontal Bar Chart -->
     <div class="max-h-80 space-y-1 overflow-y-auto pr-2">
       @for (bucket of getHistogramBuckets(); track bucket.lowerBound) {
-        <div class="group flex items-center gap-3">
-          <!-- Latency Range Label -->
-          <div
-            class="text-base-content/70 w-28 shrink-0 text-right text-xs font-medium"
-          >
-            {{ formatLatency(bucket.lowerBound) }} -
-            {{ formatLatency(bucket.upperBound) }}
-          </div>
-          <!-- Bar Container -->
-          <div class="flex-1">
+        @if (bucket.count > 0) {
+          <div class="group flex items-center gap-3">
+            <!-- Latency Range Label -->
             <div
-              class="bg-primary group-hover:bg-primary-focus flex items-center rounded transition-all duration-200"
-              [style.width]="getHorizontalBarWidth(bucket.count)"
-              [style.min-width]="bucket.count > 0 ? '4px' : '0'"
+              class="text-base-content/70 w-28 shrink-0 text-right text-xs font-medium"
             >
-              @if (bucket.count > 0) {
-                <span
-                  class="text-primary-content ml-2 px-1 py-1 text-xs font-medium whitespace-nowrap"
-                >
-                  {{ bucket.count.toLocaleString() }}
-                </span>
-              }
+              {{ formatLatency(bucket.lowerBound) }} -
+              {{ formatLatency(bucket.upperBound) }}
+            </div>
+            <!-- Bar Container -->
+            <div class="flex-1">
+              <div
+                class="bg-primary group-hover:bg-primary-focus flex items-center rounded transition-all duration-200"
+                [style.width]="getHorizontalBarWidth(bucket.count)"
+                [style.min-width]="bucket.count > 0 ? '4px' : '0'"
+              >
+                @if (bucket.count > 0) {
+                  <span
+                    class="text-base-content ml-2 px-1 py-1 text-xs font-bold whitespace-nowrap"
+                  >
+                    {{ bucket.count.toLocaleString() }}
+                  </span>
+                }
+              </div>
+            </div>
+            <!-- Percentage -->
+            <div class="text-base-content/60 w-14 shrink-0 text-right text-xs">
+              {{ ((bucket.count / histogram()!.totalCount) * 100).toFixed(2) }}%
             </div>
           </div>
-          <!-- Percentage -->
-          <div class="text-base-content/60 w-14 shrink-0 text-right text-xs">
-            {{ ((bucket.count / histogram()!.totalCount) * 100).toFixed(1) }}%
-          </div>
-        </div>
+        }
       }
     </div>
     <!-- Min / Total Samples / Max -->

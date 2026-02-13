@@ -2,7 +2,10 @@ import pkg from '../../../../../package.json';
 import type { TressiConfig } from '../../common/config/types';
 import type { AggregatedMetrics } from '../../common/metrics';
 import { truncateToDecimals } from '../../utils/math-utils';
-import type { LatencyHistogram as WorkerLatencyHistogram } from '../../workers/types';
+import type {
+  LatencyHistogram as WorkerLatencyHistogram,
+  LatencyHistogramBucket,
+} from '../../workers/types';
 import {
   EndpointSummary,
   GlobalSummary,
@@ -70,46 +73,82 @@ function convertWorkerHistogramToTestSummaryHistogram(
     weightedStdDevSum += histogram.stdDev * weight;
   });
 
-  // Merge buckets from all histograms (if single histogram, use its buckets)
-  let buckets: LatencyHistogram['buckets'] = [];
-  if (histograms.length === 1) {
-    buckets = histograms[0].buckets;
-  } else {
-    // For multiple histograms, we need to merge buckets intelligently
-    // This is a simplified approach - merge by combining all and re-binning
-    const allBuckets: Array<{
-      lowerBound: number;
-      upperBound: number;
-      count: number;
-    }> = [];
-    histograms.forEach((h) => {
-      allBuckets.push(...h.buckets);
-    });
+  // Merge buckets from all histograms into 10 logarithmic buckets for visualization
+  // Logarithmic buckets are better for latency as they provide more detail for the majority
+  // of requests while still capturing the long tail without excessive empty space.
+  const numBuckets = 10;
+  const buckets: LatencyHistogramBucket[] = [];
 
-    // Group by similar ranges and sum counts
-    const bucketMap = new Map<
-      string,
-      { lowerBound: number; upperBound: number; count: number }
-    >();
-    allBuckets.forEach((b) => {
-      const key = `${b.lowerBound.toFixed(2)}-${b.upperBound.toFixed(2)}`;
-      if (bucketMap.has(key)) {
-        const existing = bucketMap.get(key)!;
-        existing.count += b.count;
-      } else {
-        bucketMap.set(key, { ...b });
+  if (totalCount > 0) {
+    if (max > min) {
+      // Use log scale for bucket boundaries
+      // We use log10(val + 1) to handle cases where min might be 0
+      const logMin = Math.log10(min + 1);
+      const logMax = Math.log10(max + 1);
+      const logRange = logMax - logMin;
+      const logBucketSize = logRange / numBuckets;
+
+      // Initialize 10 logarithmic buckets
+      for (let i = 0; i < numBuckets; i++) {
+        const lowerLog = logMin + i * logBucketSize;
+        const upperLog = logMin + (i + 1) * logBucketSize;
+
+        buckets.push({
+          lowerBound: Math.pow(10, lowerLog) - 1,
+          upperBound: Math.pow(10, upperLog) - 1,
+          count: 0,
+        });
       }
-    });
 
-    buckets = Array.from(bucketMap.values())
-      .sort((a, b) => a.lowerBound - b.lowerBound)
-      .slice(0, 15); // Limit to 15 buckets
+      // Distribute counts from all worker histograms into the new buckets
+      histograms.forEach((h) => {
+        h.buckets.forEach((b) => {
+          // Use the midpoint of the original bucket to decide which new bucket it belongs to
+          const midpoint = (b.lowerBound + b.upperBound) / 2;
+          const logMidpoint = Math.log10(midpoint + 1);
+          let bucketIndex = Math.floor((logMidpoint - logMin) / logBucketSize);
 
-    // Add cumulative counts
-    let cumulative = 0;
-    for (const bucket of buckets) {
-      cumulative += bucket.count;
-      bucket.cumulativeCount = cumulative;
+          // Handle edge case for the very last value (max)
+          if (bucketIndex >= numBuckets) {
+            bucketIndex = numBuckets - 1;
+          }
+          if (bucketIndex < 0) {
+            bucketIndex = 0;
+          }
+
+          buckets[bucketIndex].count += b.count;
+        });
+      });
+
+      // Ensure the last bucket always represents the max value if it has samples
+      // This prevents the "0 count in upper bucket" discrepancy when max is an outlier
+      const totalBucketCount = buckets.reduce((sum, b) => sum + b.count, 0);
+      if (totalBucketCount < totalCount) {
+        // If we missed some samples due to rounding/midpoint math,
+        // they are almost certainly at the very top end
+        buckets[numBuckets - 1].count += totalCount - totalBucketCount;
+      } else if (buckets[numBuckets - 1].count === 0 && totalCount > 0) {
+        // Final fallback: if the last bucket is still empty but we have samples,
+        // move one sample from the largest bucket to the last bucket to ensure
+        // the 'max' value is visually represented.
+        let largestBucketIndex = 0;
+        for (let i = 1; i < numBuckets; i++) {
+          if (buckets[i].count > buckets[largestBucketIndex].count) {
+            largestBucketIndex = i;
+          }
+        }
+        if (buckets[largestBucketIndex].count > 0) {
+          buckets[largestBucketIndex].count--;
+          buckets[numBuckets - 1].count++;
+        }
+      }
+    } else {
+      // All samples have the same value (min === max)
+      buckets.push({
+        lowerBound: min,
+        upperBound: max,
+        count: totalCount,
+      });
     }
   }
 

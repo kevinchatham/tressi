@@ -111,10 +111,14 @@
         [hasChartData]="hasChartData()"
         [yAxisLabel]="getYAxisLabel()"
         [chartId]="getChartId()"
-        [chartData]="getCurrentChartData()"
+        [chartData]="currentChartData()"
         [collapsed]="performanceOverTimeCollapsed()"
+        [pollingInterval]="selectedPollingInterval()"
+        [pollingOptions]="pollingOptions"
         (chartTypeChange)="selectedChartType.set($event)"
         (collapsedChange)="performanceOverTimeCollapsed.set($event)"
+        (pollingIntervalChange)="selectedPollingInterval.set($event)"
+        (refresh)="refreshMetrics()"
       />
     </div>
   }

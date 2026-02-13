@@ -6,6 +6,7 @@ import { Component, input } from '@angular/core';
 export type IconName =
   | 'add'
   | 'analytics'
+  | 'autorenew'
   | 'bar_chart'
   | 'browse_activity'
   | 'check'

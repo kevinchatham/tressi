@@ -142,8 +142,6 @@ export type LatencyHistogramBucket = {
   upperBound: number;
   /** Number of requests in this bucket */
   count: number;
-  /** Running total for percentile calculations */
-  cumulativeCount?: number;
 };
 
 /**

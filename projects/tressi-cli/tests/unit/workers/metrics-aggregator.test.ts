@@ -265,9 +265,9 @@ describe('MetricsAggregator', () => {
           percentiles: { 50: 95, 95: 180, 99: 195 },
           stdDev: 50,
           buckets: [
-            { lowerBound: 0, upperBound: 50, count: 2, cumulativeCount: 2 },
-            { lowerBound: 50, upperBound: 100, count: 6, cumulativeCount: 8 },
-            { lowerBound: 100, upperBound: 200, count: 4, cumulativeCount: 12 },
+            { lowerBound: 0, upperBound: 50, count: 2 },
+            { lowerBound: 50, upperBound: 100, count: 6 },
+            { lowerBound: 100, upperBound: 200, count: 4 },
           ],
         },
         {
@@ -278,9 +278,9 @@ describe('MetricsAggregator', () => {
           percentiles: { 50: 140, 95: 280, 99: 295 },
           stdDev: 75,
           buckets: [
-            { lowerBound: 0, upperBound: 100, count: 2, cumulativeCount: 2 },
-            { lowerBound: 100, upperBound: 200, count: 3, cumulativeCount: 5 },
-            { lowerBound: 200, upperBound: 300, count: 1, cumulativeCount: 6 },
+            { lowerBound: 0, upperBound: 100, count: 2 },
+            { lowerBound: 100, upperBound: 200, count: 3 },
+            { lowerBound: 200, upperBound: 300, count: 1 },
           ],
         },
       ]);
@@ -295,9 +295,9 @@ describe('MetricsAggregator', () => {
           percentiles: { 50: 115, 95: 220, 99: 240 },
           stdDev: 60,
           buckets: [
-            { lowerBound: 0, upperBound: 60, count: 3, cumulativeCount: 3 },
-            { lowerBound: 60, upperBound: 120, count: 9, cumulativeCount: 12 },
-            { lowerBound: 120, upperBound: 250, count: 6, cumulativeCount: 18 },
+            { lowerBound: 0, upperBound: 60, count: 3 },
+            { lowerBound: 60, upperBound: 120, count: 9 },
+            { lowerBound: 120, upperBound: 250, count: 6 },
           ],
         },
       ]);
@@ -346,9 +346,9 @@ describe('MetricsAggregator', () => {
           percentiles: { 50: 95, 95: 180, 99: 195 },
           stdDev: 50,
           buckets: [
-            { lowerBound: 0, upperBound: 50, count: 2, cumulativeCount: 2 },
-            { lowerBound: 50, upperBound: 100, count: 6, cumulativeCount: 8 },
-            { lowerBound: 100, upperBound: 200, count: 4, cumulativeCount: 12 },
+            { lowerBound: 0, upperBound: 50, count: 2 },
+            { lowerBound: 50, upperBound: 100, count: 6 },
+            { lowerBound: 100, upperBound: 200, count: 4 },
           ],
         },
       ]);
@@ -673,13 +673,12 @@ describe('MetricsAggregator', () => {
           percentiles: { 50: 95, 95: 180, 99: 195 },
           stdDev: 50,
           buckets: [
-            { lowerBound: 0, upperBound: 50, count: 10, cumulativeCount: 10 },
-            { lowerBound: 50, upperBound: 100, count: 25, cumulativeCount: 35 },
+            { lowerBound: 0, upperBound: 50, count: 10 },
+            { lowerBound: 50, upperBound: 100, count: 25 },
             {
               lowerBound: 100,
               upperBound: 200,
               count: 15,
-              cumulativeCount: 50,
             },
           ],
         },

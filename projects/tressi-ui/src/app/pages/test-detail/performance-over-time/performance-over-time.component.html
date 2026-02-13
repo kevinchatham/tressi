@@ -6,16 +6,48 @@
   >
     <!-- Header controls projection -->
     <ng-template>
-      <select
-        id="chart-type-select"
-        class="select select-sm select-neutral w-auto"
-        [value]="selectedChartType()"
-        (change)="onChartTypeChange($event)"
-      >
-        @for (option of chartOptions(); track option.value) {
-          <option [value]="option.value">{{ option.label }}</option>
+      <div class="flex items-center gap-2">
+        @if (!collapsed()) {
+          <app-button
+            class="mr-2"
+            (click)="onRefresh()"
+            title="Refresh Data"
+            [icon]="'autorenew'"
+            [ghost]="true"
+          />
+
+          <select
+            id="polling-interval-select"
+            class="select select-neutral w-auto"
+            [value]="pollingInterval()"
+            (change)="onPollingIntervalChange($event)"
+            title="Polling Interval"
+          >
+            @for (option of pollingOptions(); track option.value) {
+              <option
+                [value]="option.value"
+                [selected]="pollingInterval() === option.value"
+              >
+                {{ option.label }}
+              </option>
+            }
+          </select>
+
+          <div class="divider divider-horizontal mx-0"></div>
+
+          <select
+            id="chart-type-select"
+            class="select select-neutral w-auto"
+            [value]="selectedChartType()"
+            (change)="onChartTypeChange($event)"
+            title="Chart Type"
+          >
+            @for (option of chartOptions(); track option.value) {
+              <option [value]="option.value">{{ option.label }}</option>
+            }
+          </select>
         }
-      </select>
+      </div>
     </ng-template>
 
     <!-- Main content projection -->

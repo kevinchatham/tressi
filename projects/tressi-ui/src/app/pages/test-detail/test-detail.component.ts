@@ -1,5 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, OnDestroy, signal } from '@angular/core';
+import {
+  Component,
+  computed,
+  effect,
+  inject,
+  OnDestroy,
+  signal,
+} from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { ButtonComponent } from 'src/app/components/button/button.component';
@@ -25,6 +32,8 @@ import {
   ChartData,
   ChartType,
   DEFAULT_CHART_TYPE,
+  POLLING_OPTIONS,
+  PollingInterval,
 } from '../../types/chart.types';
 import { ConfigDetailsComponent } from './config-details/config-details.component';
 import { DeleteConfirmationModalComponent } from './delete-confirmation-modal/delete-confirmation-modal.component';
@@ -104,6 +113,9 @@ export class TestDetailComponent implements OnDestroy {
     return CHART_OPTIONS;
   });
 
+  readonly selectedPollingInterval = signal<PollingInterval>(5000);
+  readonly pollingOptions = POLLING_OPTIONS;
+
   // Config signals
   readonly config = signal<ConfigDocument | null>(null);
   readonly configLoading = signal<boolean>(false);
@@ -120,18 +132,37 @@ export class TestDetailComponent implements OnDestroy {
   readonly metricsData = computed(() => this.metrics());
   readonly isRealTime = computed(() => this.testData()?.status === 'running');
 
-  // Global test time range for all charts
-  readonly testTimeRange = computed(() => {
-    const test = this.testData();
-    if (!test?.summary?.global) {
-      return null;
+  // Global test time range for all charts - static snapshot
+  readonly testTimeRange = signal<{ min: number; max: number } | null>(null);
+
+  // Computed chart data - decoupled from real-time test updates
+  readonly currentChartData = computed(() => {
+    const endpoint = this.selectedEndpoint();
+    const chartType = this.selectedChartType();
+    const metrics = this.metrics();
+
+    if (!metrics) return { data: [], labels: [] };
+
+    if (endpoint === 'global') {
+      return this.getGlobalChartData(chartType);
+    } else {
+      return this.getCachedEndpointChartData(endpoint, chartType);
+    }
+  });
+
+  readonly hasChartData = computed(() => {
+    const data = this.currentChartData().data;
+
+    if (Array.isArray(data)) {
+      return data.length > 0;
+    } else if (typeof data === 'object' && data !== null) {
+      // Multi-series data - check if any series has data
+      return Object.values(data).some(
+        (series) => Array.isArray(series) && series.length > 0,
+      );
     }
 
-    const range = {
-      min: test.summary.global.epochStartedAt,
-      max: test.summary.global.epochEndedAt,
-    };
-    return range;
+    return false;
   });
 
   readonly displayConfigName = computed(() => {
@@ -145,6 +176,7 @@ export class TestDetailComponent implements OnDestroy {
   // Private state for subscriptions - moved from TestDetailService
   private metricsStreamSubscription: Subscription | null = null;
   private testEventsSubscription: Subscription | null = null;
+  private pollingTimerId: ReturnType<typeof setInterval> | null = null;
 
   constructor() {
     // Subscribe to route params to ensure we get the testId
@@ -152,10 +184,17 @@ export class TestDetailComponent implements OnDestroy {
       const id = params['testId'] || null;
       this.testId.set(id);
       this.loadTestDetails(id);
+      // Set up real-time updates after we have a test ID
+      if (id) {
+        this.startRealTimeUpdates(id);
+      }
     });
 
-    // Set up real-time updates after we have a test ID
-    this.setupRealTimeUpdates();
+    // Effect to handle polling interval changes
+    effect(() => {
+      const interval = this.selectedPollingInterval();
+      this.setupPolling(interval);
+    });
   }
 
   async loadTestDetails(testId: string | null): Promise<void> {
@@ -174,6 +213,14 @@ export class TestDetailComponent implements OnDestroy {
 
       this.test.set(testResult);
       this.metrics.set(metricsResult);
+
+      // Set static time range for charts from the initial load
+      if (testResult?.summary?.global) {
+        this.testTimeRange.set({
+          min: testResult.summary.global.epochStartedAt,
+          max: testResult.summary.global.epochEndedAt,
+        });
+      }
 
       // Load config after test data is loaded
       if (testResult?.configId) {
@@ -217,11 +264,30 @@ export class TestDetailComponent implements OnDestroy {
     }
   }
 
-  private setupRealTimeUpdates(): void {
-    // Start real-time updates when test ID is available
+  private setupPolling(interval: number): void {
+    // Clear existing timer
+    if (this.pollingTimerId) {
+      clearInterval(this.pollingTimerId);
+      this.pollingTimerId = null;
+    }
+
+    // Set up new timer if interval > 0
+    if (interval > 0) {
+      this.pollingTimerId = setInterval(() => {
+        this.refreshMetrics();
+      }, interval);
+    }
+  }
+
+  async refreshMetrics(): Promise<void> {
     const testId = this.testId();
-    if (testId) {
-      this.startRealTimeUpdates(testId);
+    if (!testId) return;
+
+    try {
+      const metricsResult = await this.testService.getTestMetrics(testId);
+      this.metrics.set(metricsResult);
+    } catch (error) {
+      this.logService.error('Failed to refresh metrics', error);
     }
   }
 
@@ -289,6 +355,11 @@ export class TestDetailComponent implements OnDestroy {
   }
 
   private cleanupSubscriptions(): void {
+    if (this.pollingTimerId) {
+      clearInterval(this.pollingTimerId);
+      this.pollingTimerId = null;
+    }
+
     if (this.metricsStreamSubscription) {
       this.metricsStreamSubscription.unsubscribe();
       this.metricsStreamSubscription = null;
@@ -415,19 +486,6 @@ export class TestDetailComponent implements OnDestroy {
     this.router.navigate(['/']);
   }
 
-  // Get current chart data based on selected endpoint
-  getCurrentChartData(): ChartData {
-    const endpoint = this.selectedEndpoint();
-    if (endpoint === 'global') {
-      return this.getGlobalChartData(this.selectedChartType());
-    } else {
-      return this.getCachedEndpointChartData(
-        endpoint,
-        this.selectedChartType(),
-      );
-    }
-  }
-
   private getGlobalChartData(metricType: ChartType): ChartData {
     const metrics = this.metricsData();
     if (!metrics?.global?.length) return { data: [], labels: [] };
@@ -535,20 +593,5 @@ export class TestDetailComponent implements OnDestroy {
     } else {
       return `endpoint-${this.sanitizeForChartId(endpoint)}-${chartType}`;
     }
-  }
-
-  hasChartData(): boolean {
-    const data = this.getCurrentChartData().data;
-
-    if (Array.isArray(data)) {
-      return data.length > 0;
-    } else if (typeof data === 'object' && data !== null) {
-      // Multi-series data - check if any series has data
-      return Object.values(data).some(
-        (series) => Array.isArray(series) && series.length > 0,
-      );
-    }
-
-    return false;
   }
 }
