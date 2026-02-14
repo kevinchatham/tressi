@@ -252,28 +252,80 @@
     </div>
   </section>
 
-  <!-- Network Section -->
+  <!-- System Resources Section (Global View Only) -->
   @if (globalSummary()) {
     <section>
       <h3
         class="text-base-content/80 mb-3 flex items-center gap-2 text-sm font-semibold tracking-wide uppercase"
-        [attr.title]="'Network traffic metrics'"
+        [attr.title]="'System resource utilization during the test'"
       >
-        <span class="bg-accent/10 rounded-full p-1">
-          <app-icon
-            name="network_check"
-            class="text-accent text-base"
-          ></app-icon>
+        <span class="bg-info/10 rounded-full p-1">
+          <app-icon name="memory" class="text-info text-base"></app-icon>
         </span>
-        Network
+        System Resources
       </h3>
-      <div class="inline-grid grid-cols-3 gap-18">
+      <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-5">
+        <!-- CPU Usage -->
+        @if (globalSummary()?.avgSystemCpuUsagePercent) {
+          <div class="bg-base-200 rounded-lg p-4">
+            <div
+              class="text-base-content/70 mb-1 text-sm"
+              [attr.title]="tooltips['cpuUsage']"
+            >
+              CPU Usage
+            </div>
+            <div class="text-2xl font-bold">
+              {{ formatCpuUsage(globalSummary()?.avgSystemCpuUsagePercent) }}
+            </div>
+            <div class="text-base-content/70 mt-1 text-xs">
+              @switch (getCpuState(globalSummary()?.avgSystemCpuUsagePercent)) {
+                @case ('good') {
+                  Normal usage
+                }
+                @case ('warning') {
+                  Elevated usage
+                }
+                @case ('error') {
+                  High usage
+                }
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Memory Usage -->
+        @if (globalSummary()?.avgProcessMemoryUsageMB) {
+          <div class="bg-base-200 rounded-lg p-4">
+            <div
+              class="text-base-content/70 mb-1 text-sm"
+              [attr.title]="tooltips['memoryUsage']"
+            >
+              Memory Usage
+            </div>
+            <div class="text-2xl font-bold">
+              {{ formatMemoryMB(globalSummary()?.avgProcessMemoryUsageMB) }}
+            </div>
+            <div class="text-base-content/70 mt-1 text-xs">
+              @switch (
+                getMemoryState(globalSummary()?.avgProcessMemoryUsageMB)
+              ) {
+                @case ('good') {
+                  Normal usage
+                }
+                @case ('warning') {
+                  Elevated usage
+                }
+                @case ('error') {
+                  High usage
+                }
+              }
+            </div>
+          </div>
+        }
+
         <!-- Network Throughput -->
         @if (globalSummary()?.networkBytesPerSec) {
-          <div
-            class="rounded-lg p-4"
-            [class.bg-base-200]="!globalSummary()?.networkBytesPerSec"
-          >
+          <div class="bg-base-200 rounded-lg p-4">
             <div
               class="text-base-content/70 mb-1 text-sm"
               [attr.title]="tooltips['networkThroughput']"
@@ -317,80 +369,6 @@
             </div>
             <div class="text-base-content/60 mt-1 text-xs">
               total downloaded
-            </div>
-          </div>
-        }
-      </div>
-    </section>
-  }
-
-  <!-- System Resources Section (Global View Only) -->
-  @if (globalSummary()) {
-    <section>
-      <h3
-        class="text-base-content/80 mb-3 flex items-center gap-2 text-sm font-semibold tracking-wide uppercase"
-        [attr.title]="'System resource utilization during the test'"
-      >
-        <span class="bg-info/10 rounded-full p-1">
-          <app-icon name="memory" class="text-info text-base"></app-icon>
-        </span>
-        System Resources
-      </h3>
-      <div class="inline-grid grid-cols-2 gap-18">
-        <!-- CPU Usage -->
-        @if (globalSummary()?.avgSystemCpuUsagePercent) {
-          <div class="rounded-lg p-4">
-            <div
-              class="text-base-content/70 mb-1 text-sm"
-              [attr.title]="tooltips['cpuUsage']"
-            >
-              CPU Usage
-            </div>
-            <div class="text-2xl font-bold">
-              {{ formatCpuUsage(globalSummary()?.avgSystemCpuUsagePercent) }}
-            </div>
-            <div class="text-base-content/70 mt-1 text-xs">
-              @switch (getCpuState(globalSummary()?.avgSystemCpuUsagePercent)) {
-                @case ('good') {
-                  Normal usage
-                }
-                @case ('warning') {
-                  Elevated usage
-                }
-                @case ('error') {
-                  High usage
-                }
-              }
-            </div>
-          </div>
-        }
-
-        <!-- Memory Usage -->
-        @if (globalSummary()?.avgProcessMemoryUsageMB) {
-          <div class="rounded-lg p-4">
-            <div
-              class="text-base-content/70 mb-1 text-sm"
-              [attr.title]="tooltips['memoryUsage']"
-            >
-              Memory Usage
-            </div>
-            <div class="text-2xl font-bold">
-              {{ formatMemoryMB(globalSummary()?.avgProcessMemoryUsageMB) }}
-            </div>
-            <div class="text-base-content/70 mt-1 text-xs">
-              @switch (
-                getMemoryState(globalSummary()?.avgProcessMemoryUsageMB)
-              ) {
-                @case ('good') {
-                  Normal usage
-                }
-                @case ('warning') {
-                  Elevated usage
-                }
-                @case ('error') {
-                  High usage
-                }
-              }
             </div>
           </div>
         }

@@ -43,10 +43,12 @@
       [icon]="'sdk'"
     />
   </app-header>
-  <div class="mt-8">
-    <app-test-list
-      [config]="selectedConfig()!"
-      (testHistoryUpdate)="onTestHistoryUpdate($event)"
-    />
-  </div>
+  @if (selectedConfig()) {
+    <div class="mt-8">
+      <app-test-list
+        [config]="selectedConfig()!"
+        (testHistoryUpdate)="onTestHistoryUpdate($event)"
+      />
+    </div>
+  }
 </div>
