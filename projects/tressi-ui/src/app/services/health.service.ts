@@ -33,6 +33,9 @@ export class HealthService {
   /** Timeout for heartbeat in milliseconds (5 seconds) */
   private readonly heartbeatTimeout = 5000;
 
+  /** Interval for reconnection attempts in milliseconds (3 seconds) */
+  private readonly retryInterval = 3000;
+
   /** Internal signal holding the current health state */
   private readonly state = signal<{
     isHealthy: boolean;
@@ -55,6 +58,7 @@ export class HealthService {
   );
 
   private heartbeatTimeoutId: ReturnType<typeof setTimeout> | null = null;
+  private retryIntervalId: ReturnType<typeof setInterval> | null = null;
   private subscription: Subscription | null = null;
 
   constructor() {
@@ -81,6 +85,9 @@ export class HealthService {
           this.log.info('Server recovered, redirecting to dashboard');
           this.router.navigate(['/']);
         }
+
+        // Stop retrying if we were in a retry loop
+        this.stopRetryTimer();
 
         // Reset heartbeat timeout
         this.resetHeartbeatTimeout();
@@ -123,6 +130,37 @@ export class HealthService {
       this.log.error('Server unavailable, redirecting to error page');
       this.router.navigate(['/server-unavailable']);
     }
+
+    // Start retrying to connect
+    this.startRetryTimer();
+  }
+
+  /**
+   * Starts the reconnection retry timer
+   * @private
+   */
+  private startRetryTimer(): void {
+    if (this.retryIntervalId) {
+      return;
+    }
+
+    this.log.info('Starting reconnection retry timer');
+    this.retryIntervalId = setInterval(() => {
+      this.log.info('Attempting to reconnect to event stream...');
+      this.eventService.connectToEventStream();
+    }, this.retryInterval);
+  }
+
+  /**
+   * Stops the reconnection retry timer
+   * @private
+   */
+  private stopRetryTimer(): void {
+    if (this.retryIntervalId) {
+      this.log.info('Stopping reconnection retry timer');
+      clearInterval(this.retryIntervalId);
+      this.retryIntervalId = null;
+    }
   }
 
   /**
@@ -159,5 +197,7 @@ export class HealthService {
       clearTimeout(this.heartbeatTimeoutId);
       this.heartbeatTimeoutId = null;
     }
+
+    this.stopRetryTimer();
   }
 }

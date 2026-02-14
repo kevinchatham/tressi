@@ -84,6 +84,8 @@ export class EventService {
     this.eventSource.onerror = (error): void => {
       // eslint-disable-next-line no-console
       console.error('EventSource error:', error);
+      // Close the failed connection to allow for a clean retry
+      this.disconnectFromEventStream();
     };
   }
 

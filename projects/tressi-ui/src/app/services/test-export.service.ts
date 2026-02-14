@@ -1,14 +1,12 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 
 import { LogService } from './log.service';
 import { RPCService } from './rpc.service';
 
 @Injectable({ providedIn: 'root' })
 export class TestExportService {
-  constructor(
-    private rpcService: RPCService,
-    private logService: LogService,
-  ) {}
+  private readonly rpcService = inject(RPCService);
+  private readonly logService = inject(LogService);
 
   async exportTest(
     testId: string,

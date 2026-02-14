@@ -1,6 +1,10 @@
 import { serve } from '@hono/node-server';
+import chalk from 'chalk';
 import { Hono } from 'hono';
+import { homedir } from 'os';
+import { join } from 'path';
 
+import pkg from '../../../../package.json';
 import { testStorage } from '../collections/test-collection';
 import { ServerEvents } from '../events/event-types';
 import { terminal } from '../tui/terminal';
@@ -42,12 +46,22 @@ export class TressiServer {
           port: this.port,
         });
         this.server.on('listening', () => {
+          const url = `http://localhost:${this.port}`;
+          const dbPath = join(homedir(), '.tressi', 'tressi.db');
+
+          terminal.print('');
           terminal.print(
-            `🚀 Tressi server is running on http://localhost:${this.port}`,
+            `  ${chalk.yellow.bold('⚡')} ${chalk.bold(`Tressi ${pkg.version}`)}`,
           );
+          terminal.print('');
+          terminal.print(`  ${chalk.bold('Local:')} ${chalk.cyan(url)}`);
+          terminal.print(`  ${chalk.bold('Store:')} ${chalk.magenta(dbPath)}`);
+          terminal.print('');
           terminal.print(
-            `📊 Health check available at http://localhost:${this.port}/api/health`,
+            `  ${chalk.dim('Press')} ${chalk.bold.dim('Ctrl+C')} ${chalk.dim('to stop the server')}`,
           );
+          terminal.print('');
+
           this.startHeartbeat();
           resolve();
         });

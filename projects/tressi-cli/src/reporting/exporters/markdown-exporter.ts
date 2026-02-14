@@ -61,16 +61,7 @@ export class MarkdownExporter {
         md += this.formatStatusCodeSummary(statusCodeMap);
       }
 
-      // Sampled responses
-      const hasSamples = e.some(
-        (endpoint) =>
-          endpoint.responseSamples && endpoint.responseSamples.length > 0,
-      );
-      if (hasSamples) {
-        md += this.formatSampledResponses(e);
-      }
-
-      // Endpoint summary
+      // Endpoint summary (includes per-endpoint details and samples)
       if (e.length > 0) {
         md += this.formatEndpointSummary(e);
       }
@@ -213,21 +204,37 @@ export class MarkdownExporter {
   }
 
   private formatConfiguration(config: TressiConfig): string {
-    let md = '<details>\n';
-    md += '<summary>View Full Test Configuration</summary>\n\n';
+    let md = '## Test Configuration\n\n';
+
+    md += '### Global Options\n\n';
+    md += '| Option | Value |\n';
+    md += '|---|---|\n';
+    md += `| Duration | ${config.options?.durationSec ?? 'N/A'}s |\n`;
+    md += `| Threads | ${config.options?.threads ?? 'N/A'} |\n`;
+    md += `| Worker Memory Limit | ${config.options?.workerMemoryLimit ?? 'N/A'} MB |\n`;
+    md += `| Ramp Up Duration | ${config.options?.rampUpDurationSec ?? 0}s |\n`;
+
+    if (config.options?.workerEarlyExit?.enabled) {
+      md += `| Early Exit | Enabled (Threshold: ${config.options.workerEarlyExit.errorRateThreshold * 100}%) |\n`;
+    } else {
+      md += '| Early Exit | Disabled |\n';
+    }
+    md += '\n';
+
+    md += '### Configured Endpoints\n\n';
+    md += '| Method | URL | Target RPS | Ramp Up |\n';
+    md += '|---|---|---|---|\n';
+    for (const req of config.requests) {
+      md += `| ${req.method} | \`${req.url}\` | ${req.rps} | ${req.rampUpDurationSec ?? 0}s |\n`;
+    }
+    md += '\n';
+
+    md += '<details>\n';
+    md += '<summary>View Full JSON Configuration</summary>\n\n';
     md += '```json\n';
     md += `${JSON.stringify(config, null, 2)}\n`;
     md += '```\n\n';
     md += '</details>\n\n';
-
-    md += '## Run Configuration\n\n';
-    md +=
-      '> *This table shows the main parameters used for the load test run.*\n\n';
-    md += '| Option | Setting | Argument |\n';
-    md += '|---|---|---|\n';
-    md += `| Concurrency | Adaptive (based on system metrics) | N/A |\n`;
-    md += `| Duration | ${config.options.durationSec}s | \`--duration\` |\n\n`;
-
     return md;
   }
 
@@ -235,22 +242,40 @@ export class MarkdownExporter {
     let md = '## Global Summary\n\n';
     md +=
       '> *A high-level overview of the entire test performance across all endpoints.*\n\n';
+
+    const formatBytes = (bytes: number): string => {
+      if (bytes === 0) return '0 B';
+      const k = 1024;
+      const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
+    };
+
     md += '| Stat | Value |\n| --- | --- |\n';
     md += `| Duration | ${global.finalDurationSec}s |\n`;
-    md += `| Total Requests | ${global.totalRequests} |\n`;
-    md += `| Successful | ${global.successfulRequests} |\n`;
-    md += `| Failed | ${global.failedRequests} |\n`;
+    md += `| Total Requests | ${global.totalRequests.toLocaleString()} |\n`;
+    md += `| Successful | ${global.successfulRequests.toLocaleString()} |\n`;
+    md += `| Failed | ${global.failedRequests.toLocaleString()} |\n`;
     md += `| Error Rate | ${(global.errorRate * 100).toFixed(2)}% |\n`;
-    md += `| Min Latency | ${global.minLatencyMs}ms |\n`;
-    md += `| p50 Latency | ${global.p50LatencyMs}ms |\n`;
-    md += `| p95 Latency | ${global.p95LatencyMs}ms |\n`;
-    md += `| p99 Latency | ${global.p99LatencyMs}ms |\n`;
-    md += `| Max Latency | ${global.maxLatencyMs}ms |\n`;
+    if (global.histogram && global.histogram.totalCount > 0) {
+      const h = global.histogram;
+      md += `| Min Latency | ${h.min.toFixed(2)}ms |\n`;
+      md += `| p50 Latency | ${h.percentiles[50].toFixed(2)}ms |\n`;
+      md += `| p95 Latency | ${h.percentiles[95].toFixed(2)}ms |\n`;
+      md += `| p99 Latency | ${h.percentiles[99].toFixed(2)}ms |\n`;
+      md += `| Max Latency | ${h.max.toFixed(2)}ms |\n`;
+    } else {
+      md += `| Min Latency | ${global.minLatencyMs.toFixed(2)}ms |\n`;
+      md += `| p50 Latency | ${global.p50LatencyMs.toFixed(2)}ms |\n`;
+      md += `| p95 Latency | ${global.p95LatencyMs.toFixed(2)}ms |\n`;
+      md += `| p99 Latency | ${global.p99LatencyMs.toFixed(2)}ms |\n`;
+      md += `| Max Latency | ${global.maxLatencyMs.toFixed(2)}ms |\n`;
+    }
     md += `| Average RPS | ${global.averageRequestsPerSecond.toFixed(2)} |\n`;
     md += `| Peak RPS | ${global.peakRequestsPerSecond.toFixed(2)} |\n`;
-    md += `| Network Bytes Sent | ${(global.networkBytesSent / 1024 / 1024).toFixed(2)} MB |\n`;
-    md += `| Network Bytes Received | ${(global.networkBytesReceived / 1024 / 1024).toFixed(2)} MB |\n`;
-    md += `| Network Throughput | ${(global.networkBytesPerSec / 1024 / 1024).toFixed(2)} MB/s |\n`;
+    md += `| Network Sent | ${formatBytes(global.networkBytesSent)} |\n`;
+    md += `| Network Received | ${formatBytes(global.networkBytesReceived)} |\n`;
+    md += `| Network Throughput | ${formatBytes(global.networkBytesPerSec)}/s |\n`;
     md += `| CPU Usage | ${global.avgSystemCpuUsagePercent.toFixed(1)}% |\n`;
     md += `| Memory Usage | ${global.avgProcessMemoryUsageMB.toFixed(1)} MB |\n`;
     md += `| Test Started | ${new Date(global.epochStartedAt).toLocaleString()} |\n`;
@@ -301,45 +326,6 @@ export class MarkdownExporter {
     return md;
   }
 
-  private formatSampledResponses(endpoints: EndpointSummary[]): string {
-    let md = '## Sampled Responses by Endpoint\n\n';
-    md +=
-      '> *A sample response body for each unique status code received per endpoint. This is useful for debugging unexpected responses.*\n\n';
-
-    for (const endpoint of endpoints) {
-      if (!endpoint.responseSamples || endpoint.responseSamples.length === 0) {
-        continue;
-      }
-
-      md += `#### \`${endpoint.method} ${endpoint.url}\`\n\n`;
-
-      // Group samples by status code to show unique responses
-      const uniqueSamples = new Map<
-        number,
-        (typeof endpoint.responseSamples)[0]
-      >();
-      for (const sample of endpoint.responseSamples) {
-        if (!uniqueSamples.has(sample.statusCode)) {
-          uniqueSamples.set(sample.statusCode, sample);
-        }
-      }
-
-      Array.from(uniqueSamples.values())
-        .sort((a, b) => a.statusCode - b.statusCode)
-        .forEach((sample) => {
-          md += '<details>\n';
-          md += `<summary><strong>${sample.statusCode}</strong></summary>\n\n`;
-          md += '```\n';
-          md += `${sample.body || '(No body captured)'}`;
-          md += '\n```\n\n';
-          md += '</details>\n';
-        });
-      md += '\n';
-    }
-
-    return md;
-  }
-
   private formatEndpointSummary(endpoints: EndpointSummary[]): string {
     let md = '## Endpoint Summary\n\n';
     md +=
@@ -348,28 +334,93 @@ export class MarkdownExporter {
     // First table - Request counts and rates
     md += '### Request Counts and Rates\n\n';
     md +=
-      '| Endpoint | Total | Success | Failed | Error Rate | Avg RPS | Peak RPS |\n';
-    md += '|---|---|---|---|---|---|---|\n';
+      '| Endpoint | Total | Success | Failed | Error Rate | Avg RPS | Peak RPS | Target Achieved |\n';
+    md += '|---|---|---|---|---|---|---|---|\n';
     for (const endpoint of endpoints) {
+      const targetAchieved = endpoint.targetAchieved.toFixed(1);
       const errorRate = (endpoint.errorRate * 100).toFixed(2);
-      md += `| ${endpoint.method} ${endpoint.url} | ${endpoint.totalRequests} | ${endpoint.successfulRequests} | ${endpoint.failedRequests} | ${errorRate}% | ${endpoint.averageRequestsPerSecond.toFixed(2)} | ${endpoint.peakRequestsPerSecond.toFixed(2)} |\n`;
+      md += `| ${endpoint.method} ${endpoint.url} | ${endpoint.totalRequests} | ${endpoint.successfulRequests} | ${endpoint.failedRequests} | ${errorRate}% | ${endpoint.averageRequestsPerSecond.toFixed(2)} | ${endpoint.peakRequestsPerSecond.toFixed(2)} | ${targetAchieved}% |\n`;
     }
     md += '\n';
 
     // Second table - Enhanced latency details with histogram data
     md += '### Endpoint Latency Details\n\n';
     md +=
-      '| Endpoint | Min | P1 | P5 | P10 | P25 | P50 | P75 | P90 | P95 | P99 | P99.9 | Max | Theoretical Max RPS | Target Achieved |\n';
-    md += '|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|\n';
+      '| Endpoint | Min | P1 | P5 | P10 | P25 | P50 | P75 | P90 | P95 | P99 | Max |\n';
+    md += '|---|---|---|---|---|---|---|---|---|---|---|---|\n';
     for (const endpoint of endpoints) {
-      const targetAchieved = endpoint.targetAchieved.toFixed(1);
       if (endpoint.histogram && endpoint.histogram.totalCount > 0) {
         const h = endpoint.histogram;
-        md += `| ${endpoint.method} ${endpoint.url} | ${endpoint.minLatencyMs}ms | ${h.percentiles[1].toFixed(2)}ms | ${h.percentiles[5].toFixed(2)}ms | ${h.percentiles[10].toFixed(2)}ms | ${h.percentiles[25].toFixed(2)}ms | ${endpoint.p50LatencyMs}ms | ${h.percentiles[75].toFixed(2)}ms | ${h.percentiles[90].toFixed(2)}ms | ${endpoint.p95LatencyMs}ms | ${endpoint.p99LatencyMs}ms | ${h.percentiles[99.9].toFixed(2)}ms | ${endpoint.maxLatencyMs}ms | ${endpoint.theoreticalMaxRps.toFixed(2)} | ${targetAchieved}% |\n`;
+        md += `| ${endpoint.method} ${endpoint.url} | ${h.min.toFixed(2)}ms | ${h.percentiles[1].toFixed(2)}ms | ${h.percentiles[5].toFixed(2)}ms | ${h.percentiles[10].toFixed(2)}ms | ${h.percentiles[25].toFixed(2)}ms | ${h.percentiles[50].toFixed(2)}ms | ${h.percentiles[75].toFixed(2)}ms | ${h.percentiles[90].toFixed(2)}ms | ${h.percentiles[95].toFixed(2)}ms | ${h.percentiles[99].toFixed(2)}ms | ${h.max.toFixed(2)}ms |\n`;
       } else {
         // Fallback if no histogram data
-        md += `| ${endpoint.method} ${endpoint.url} | ${endpoint.minLatencyMs}ms | - | - | - | - | ${endpoint.p50LatencyMs}ms | - | - | ${endpoint.p95LatencyMs}ms | ${endpoint.p99LatencyMs}ms | - | ${endpoint.maxLatencyMs}ms | ${endpoint.theoreticalMaxRps.toFixed(2)} | ${targetAchieved}% |\n`;
+        md += `| ${endpoint.method} ${endpoint.url} | ${endpoint.minLatencyMs.toFixed(2)}ms | - | - | - | - | ${endpoint.p50LatencyMs.toFixed(2)}ms | - | - | ${endpoint.p95LatencyMs.toFixed(2)}ms | ${endpoint.p99LatencyMs.toFixed(2)}ms | ${endpoint.maxLatencyMs.toFixed(2)}ms |\n`;
       }
+    }
+
+    // Third section - Per-endpoint status codes and samples
+    md += '\n### Per-Endpoint Details\n\n';
+    for (const endpoint of endpoints) {
+      md += `#### ${endpoint.method} ${endpoint.url}\n\n`;
+
+      // Status code distribution for this endpoint
+      md += '**Status Code Distribution:**\n\n';
+      md += '| Status Code | Count | Percentage |\n';
+      md += '|---|---|---|\n';
+      const codes = Object.entries(endpoint.statusCodeDistribution).sort(
+        ([a], [b]) => parseInt(a) - parseInt(b),
+      );
+      for (const [code, count] of codes) {
+        const percentage = ((count / endpoint.totalRequests) * 100).toFixed(1);
+        md += `| ${code} | ${count.toLocaleString()} | ${percentage}% |\n`;
+      }
+      md += '\n';
+
+      // Histogram for this endpoint
+      if (endpoint.histogram && endpoint.histogram.totalCount > 0) {
+        md += '<details>\n';
+        md += '<summary>View Latency Histogram</summary>\n\n';
+        md += '```\n';
+        md += this.generateAsciiHistogram(endpoint.histogram.buckets);
+        md += '```\n\n';
+        md += '</details>\n\n';
+      }
+
+      // Samples for this endpoint
+      if (endpoint.responseSamples && endpoint.responseSamples.length > 0) {
+        md += '<details>\n';
+        md += '<summary>View Response Samples</summary>\n\n';
+
+        // Group samples by status code
+        const uniqueSamples = new Map<
+          number,
+          (typeof endpoint.responseSamples)[0]
+        >();
+        for (const sample of endpoint.responseSamples) {
+          if (!uniqueSamples.has(sample.statusCode)) {
+            uniqueSamples.set(sample.statusCode, sample);
+          }
+        }
+
+        Array.from(uniqueSamples.values())
+          .sort((a, b) => a.statusCode - b.statusCode)
+          .forEach((sample) => {
+            md += `**Status ${sample.statusCode}**\n\n`;
+            if (Object.keys(sample.headers).length > 0) {
+              md += '<details>\n<summary>Headers</summary>\n\n';
+              md += '```json\n';
+              md += `${JSON.stringify(sample.headers, null, 2)}\n`;
+              md += '```\n\n';
+              md += '</details>\n\n';
+            }
+            md += '```\n';
+            md += `${sample.body || '(No body captured)'}`;
+            md += '\n```\n\n';
+          });
+
+        md += '</details>\n\n';
+      }
+      md += '---\n\n';
     }
 
     return md;
