@@ -2,6 +2,7 @@ import {
   Component,
   computed,
   inject,
+  input,
   OnDestroy,
   OnInit,
   signal,
@@ -39,6 +40,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private readonly localStorageService = inject(LocalStorageService);
   private readonly loadingService = inject(LoadingService);
   private readonly eventService = inject(EventService);
+
+  /** Route parameter for config ID */
+  readonly configId = input<string>();
 
   /** Reactive signal holding available configurations. */
   readonly configs = signal<ConfigDocument[]>([]);
@@ -92,28 +96,44 @@ export class DashboardComponent implements OnInit, OnDestroy {
       return;
     }
 
+    const routeConfigId = this.configId();
     const lastSelectedConfig =
       this.localStorageService.getPreferences().lastSelectedConfig;
 
+    if (routeConfigId) {
+      const configFromRoute = configs.find((c) => c.id === routeConfigId);
+      if (configFromRoute) {
+        this.onConfigSelect(configFromRoute.id);
+      } else {
+        this.selectFallbackConfig(configs, lastSelectedConfig);
+      }
+    } else {
+      this.selectFallbackConfig(configs, lastSelectedConfig);
+    }
+
+    this.loadingService.setPageLoading('dashboard', false);
+  }
+
+  /**
+   * Selects a fallback configuration based on last selected or first available.
+   */
+  private selectFallbackConfig(
+    configs: ConfigDocument[],
+    lastSelectedConfig: ConfigDocument | null | undefined,
+  ): void {
     if (lastSelectedConfig) {
-      // Check if the last selected config still exists
       const existingConfig = configs.find(
         (c) => c.id === lastSelectedConfig.id,
       );
       if (existingConfig) {
         this.onConfigSelect(existingConfig.id);
-      } else {
-        // Config no longer exists, select first available
-        const firstConfig = configs[0];
-        this.onConfigSelect(firstConfig.id);
+        return;
       }
-    } else {
-      // No last selected config, select first available
-      const firstConfig = configs[0];
-      this.onConfigSelect(firstConfig.id);
     }
 
-    this.loadingService.setPageLoading('dashboard', false);
+    // Fallback to first available
+    const firstConfig = configs[0];
+    this.onConfigSelect(firstConfig.id);
   }
 
   /**
@@ -127,6 +147,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.localStorageService.savePreferences({
       ...this.localStorageService.getPreferences(),
       lastSelectedConfig: config,
+    });
+
+    // Update the route to include the config ID
+    this.router.navigate(['/dashboard', configId], {
+      replaceUrl: false,
     });
   }
 
@@ -144,10 +169,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Navigates to the settings page.
+   * Navigates to the configs page.
    */
-  navigateToSettings(): void {
-    this.router.navigate(['/settings']);
+  navigateToConfigs(): void {
+    this.router.navigate(['/configs']);
   }
 
   /**

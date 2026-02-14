@@ -6,9 +6,9 @@ import {
   Routes,
 } from '@angular/router';
 
+import { ConfigurationsComponent } from './pages/configs/configs.component';
 import { DashboardComponent } from './pages/dashboard/dashboard.component';
 import { ServerUnavailableComponent } from './pages/server-unavailable/server-unavailable.component';
-import { SettingsComponent } from './pages/settings/settings.component';
 import { ShowcaseComponent } from './pages/showcase/showcase.component';
 import { TestDetailComponent } from './pages/test-detail/test-detail.component';
 import { WelcomeComponent } from './pages/welcome/welcome.component';
@@ -81,36 +81,42 @@ export const routes: Routes = [
   {
     path: 'server-unavailable',
     component: ServerUnavailableComponent,
-    data: { title: 'Tressi - Server Unavailable' },
+    data: { title: 'Server Unavailable' },
   },
   {
     path: 'welcome',
     component: WelcomeComponent,
     canActivate: [healthCheckGuard, configGuard],
-    data: { title: 'Tressi - Welcome' },
+    data: { title: 'Welcome' },
   },
   {
-    path: 'settings',
-    component: SettingsComponent,
+    path: 'configs',
+    component: ConfigurationsComponent,
     canActivate: [healthCheckGuard, configGuard],
-    data: { title: 'Tressi - Settings' },
+    data: { title: 'Configs' },
   },
   {
     path: 'dashboard',
     component: DashboardComponent,
     canActivate: [healthCheckGuard, configGuard],
-    data: { title: 'Tressi - Dashboard' },
+    data: { title: 'Dashboard' },
+  },
+  {
+    path: 'dashboard/:configId',
+    component: DashboardComponent,
+    canActivate: [healthCheckGuard, configGuard],
+    data: { title: 'Dashboard' },
   },
   {
     path: 'showcase',
     component: ShowcaseComponent,
-    data: { title: 'Tressi - Showcase' },
+    data: { title: 'Showcase' },
   },
   {
     path: 'tests/:testId',
     component: TestDetailComponent,
     canActivate: [healthCheckGuard],
-    data: { title: 'Tressi - Test Details' },
+    data: { title: 'Test Details' },
   },
   {
     path: '',

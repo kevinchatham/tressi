@@ -119,13 +119,19 @@
     <!-- Action Buttons -->
     <div class="border-neutral mt-4 flex justify-end gap-2 border-t pt-4">
       <app-button
+        (click)="duplicate.emit(input())"
+        [ghost]="true"
+        [icon]="'copy_all'"
+        [title]="'Copy'"
+      />
+      <app-export-config-button [config]="input()" />
+      <app-button
         (click)="delete.emit(input())"
         [color]="'error'"
         [ghost]="true"
         [title]="'Delete'"
         [icon]="'delete'"
       />
-      <app-export-config-button [config]="input()" />
       <app-button
         (click)="edit.emit(input())"
         [color]="'success'"
@@ -134,10 +140,11 @@
         [title]="'Edit'"
       />
       <app-button
-        (click)="duplicate.emit(input())"
+        (click)="navigate.emit(input())"
+        [color]="'primary'"
         [ghost]="true"
-        [icon]="'copy_all'"
-        [title]="'Copy'"
+        [title]="'Use'"
+        [icon]="'dynamic_form'"
       />
     </div>
   }

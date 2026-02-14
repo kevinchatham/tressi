@@ -11,7 +11,7 @@
       <app-button
         (click)="startCreate()"
         [color]="'primary'"
-        [title]="'New Config'"
+        [title]="'Create'"
         [icon]="'post_add'"
       />
       <app-button
@@ -40,6 +40,7 @@
           (edit)="startEdit($event)"
           (duplicate)="startDuplicate($event)"
           (delete)="showDeleteConfirm($event)"
+          (navigate)="navigateToDashboard($event)"
         />
       }
     </div>

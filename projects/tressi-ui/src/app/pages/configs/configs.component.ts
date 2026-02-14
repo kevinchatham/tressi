@@ -26,7 +26,7 @@ import { TimeService } from '../../services/time.service';
 import { ToastService } from '../../services/toast.service';
 
 @Component({
-  selector: 'app-settings',
+  selector: 'app-configs',
   imports: [
     IconComponent,
     ThemeSwitcherComponent,
@@ -37,10 +37,10 @@ import { ToastService } from '../../services/toast.service';
     ImportConfigButtonComponent,
     ButtonComponent,
   ],
-  templateUrl: './settings.component.html',
+  templateUrl: './configs.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class SettingsComponent implements OnInit {
+export class ConfigurationsComponent implements OnInit {
   /** Service injection */
   private readonly configService = inject(ConfigService);
   private readonly router = inject(Router);
@@ -224,8 +224,9 @@ export class SettingsComponent implements OnInit {
   /**
    * Navigates back to dashboard.
    */
-  navigateToDashboard(): void {
-    this.router.navigate(['/']);
+  navigateToDashboard(event?: ConfigDocument): void {
+    if (event) this.router.navigate(['/dashboard', event.id]);
+    else this.router.navigate(['/']);
   }
 
   /**
@@ -233,6 +234,13 @@ export class SettingsComponent implements OnInit {
    */
   onSearchQueryChange(query: string): void {
     this.searchQuery.set(query);
+  }
+
+  /**
+   * Handles configuration selection and navigates to dashboard.
+   */
+  onConfigSelect(config: ConfigDocument): void {
+    this.router.navigate(['/dashboard', config.id]);
   }
 
   /**

@@ -1,9 +1,17 @@
 <div class="p-16">
   <app-header>
+    @if (hasTestHistory() || !selectedConfigId()) {
+      <app-start-button
+        [config]="selectedConfig()"
+        (testStarted)="onTestStarted()"
+        (testStartFailed)="onTestStartFailed($event)"
+      />
+    }
+
     <!-- Configuration Selector -->
     <div class="dropdown dropdown-center">
       <app-button
-        [title]="'Select Configuration'"
+        [title]="'Select Config'"
         [tabindex]="0"
         [color]="'secondary'"
         [icon]="'text_snippet'"
@@ -28,41 +36,17 @@
       </ul>
     </div>
 
-    @if (hasTestHistory() || !selectedConfigId()) {
-      <app-start-button
-        [config]="selectedConfig()"
-        (testStarted)="onTestStarted()"
-        (testStartFailed)="onTestStartFailed($event)"
-      />
-    }
-
     <app-button
-      (click)="navigateToSettings()"
-      [title]="'Settings'"
+      (click)="navigateToConfigs()"
+      [title]="'View Configs'"
       [color]="'info'"
       [icon]="'sdk'"
     />
   </app-header>
-
-  <!-- Test List Component -->
-  @if (selectedConfigId()) {
-    <div class="mt-8">
-      <app-test-list
-        [config]="selectedConfig()!"
-        (testHistoryUpdate)="onTestHistoryUpdate($event)"
-      />
-    </div>
-  } @else {
-    <!-- Empty State -->
-    <div class="hero bg-base-200 mt-8 min-h-125 rounded-xl">
-      <div class="hero-content text-center">
-        <div class="max-w-md">
-          <h1 class="text-2xl font-bold">Select a Configuration</h1>
-          <p class="py-6 text-neutral-600">
-            Choose a configuration from the dropdown to view test history
-          </p>
-        </div>
-      </div>
-    </div>
-  }
+  <div class="mt-8">
+    <app-test-list
+      [config]="selectedConfig()!"
+      (testHistoryUpdate)="onTestHistoryUpdate($event)"
+    />
+  </div>
 </div>

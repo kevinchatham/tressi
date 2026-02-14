@@ -26,6 +26,7 @@ export class ConfigurationCardComponent {
   readonly edit = output<ConfigDocument>();
   readonly duplicate = output<ConfigDocument>();
   readonly delete = output<ConfigDocument>();
+  readonly navigate = output<ConfigDocument>();
 
   /** Services */
   readonly timeService = inject(TimeService);

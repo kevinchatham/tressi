@@ -62,10 +62,6 @@ export class StartButtonComponent implements OnDestroy {
     try {
       const status = await this.rpc.getTestStatus();
       this.isTestRunning.set(status.isRunning);
-      this.logService.info('Test state initialized:', {
-        isRunning: status.isRunning,
-        jobId: status.jobId,
-      });
     } catch (error) {
       this.logService.error('Failed to initialize test state:', error);
       this.isTestRunning.set(false); // Safe default
@@ -93,18 +89,12 @@ export class StartButtonComponent implements OnDestroy {
     }
 
     try {
-      this.logService.info('Starting load test with config:', selected.id);
-
       const response = await this.rpc.client.test.$post({
         json: { configId: selected.id },
       });
-
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-
-      const data = await response.json();
-      this.logService.info('Load test started successfully:', data);
       this.testStarted.emit();
     } catch (error) {
       const errorMessage =
