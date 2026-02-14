@@ -6,11 +6,7 @@ import type { AppType } from 'tressi-cli/src/server/routes/types';
   providedIn: 'root',
 })
 export class RPCService {
-  public readonly client = hc<AppType>('http://localhost:3108', {
-    init: {
-      credentials: 'include',
-    },
-  }).api;
+  public readonly client = hc<AppType>('/').api;
 
   /**
    * Retrieves the current test status from the backend

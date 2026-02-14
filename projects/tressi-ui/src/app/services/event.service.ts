@@ -7,7 +7,7 @@ import { TestSummary } from './rpc.service';
   providedIn: 'root',
 })
 export class EventService {
-  private readonly url = 'http://localhost:3108/api/metrics/stream';
+  private readonly url = '/api/metrics/stream';
   private eventSource: EventSource | null = null;
 
   private readonly metricsSubject = new Subject<TestSummaryData>();
