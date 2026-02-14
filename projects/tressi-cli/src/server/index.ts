@@ -1,6 +1,7 @@
 import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
 
+import { testStorage } from '../collections/test-collection';
 import { ServerEvents } from '../events/event-types';
 import { terminal } from '../tui/terminal';
 import createApp from './routes';
@@ -20,6 +21,20 @@ export class TressiServer {
   }
 
   async start(): Promise<void> {
+    // Clean up any tests left in 'running' state from previous session
+    try {
+      const stoppedCount = await testStorage.stopAllRunningTests();
+      if (stoppedCount > 0) {
+        terminal.print(
+          `🧹 Cleaned up ${stoppedCount} test(s) that were left running.`,
+        );
+      }
+    } catch (error) {
+      terminal.print(
+        `⚠️ Warning: Failed to clean up running tests: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
+
     return new Promise((resolve, reject) => {
       try {
         this.server = serve({

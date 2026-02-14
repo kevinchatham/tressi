@@ -92,7 +92,7 @@ export const routes: Routes = [
   {
     path: 'configs',
     component: ConfigurationsComponent,
-    canActivate: [healthCheckGuard, configGuard],
+    canActivate: [healthCheckGuard],
     data: { title: 'Configs' },
   },
   {

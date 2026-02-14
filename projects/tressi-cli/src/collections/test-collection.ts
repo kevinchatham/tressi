@@ -122,6 +122,27 @@ class TestCollection {
       );
     }
   }
+
+  /**
+   * Marks all tests with 'running' status as 'stopped'.
+   * This is typically called when the server starts to clean up any tests
+   * that were left in a 'running' state due to an improper shutdown.
+   */
+  async stopAllRunningTests(): Promise<number> {
+    try {
+      const result = await db
+        .updateTable('tests')
+        .set({ status: 'failed', error: 'Test stopped due to server restart' })
+        .where('status', '=', 'running')
+        .executeTakeFirst();
+
+      return Number(result.numUpdatedRows);
+    } catch (error) {
+      throw new Error(
+        `Failed to stop running tests: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
+  }
 }
 
 export const testStorage = new TestCollection();

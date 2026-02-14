@@ -11,4 +11,8 @@ import {
 })
 export class ShowcaseComponent {
   buttonColors = BUTTON_COLORS;
+  logMessage(): void {
+    // eslint-disable-next-line no-console
+    console.log('hello');
+  }
 }

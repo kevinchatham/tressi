@@ -10,11 +10,7 @@ import { ButtonComponent } from 'src/app/components/button/button.component';
 })
 export class WelcomeComponent {
   private readonly router = inject(Router);
-
-  /**
-   * Navigates to the settings page when the user clicks the CTA button.
-   */
-  navigateToSettings(): void {
-    this.router.navigate(['/settings']);
+  navigateToConfigs(): void {
+    this.router.navigate(['/configs']);
   }
 }
