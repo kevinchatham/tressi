@@ -4,6 +4,12 @@
     <span class="align-middle text-3xl font-bold">{{ title }}</span>
   </div>
   <div class="flex items-center justify-end gap-4">
+    <app-button
+      (click)="navigateToDocs()"
+      [icon]="'help_outline'"
+      [title]="'Docs'"
+      [ghost]="true"
+    />
     <ng-content />
   </div>
 </div>

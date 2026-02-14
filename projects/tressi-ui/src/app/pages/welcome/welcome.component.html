@@ -14,12 +14,20 @@
         and monitor performance in real-time.
       </p>
 
-      <app-button
-        (click)="navigateToConfigs()"
-        [color]="'primary'"
-        [icon]="'rocket'"
-        [title]="'Get Started'"
-      />
+      <div class="flex justify-center gap-4">
+        <app-button
+          (click)="navigateToConfigs()"
+          [color]="'primary'"
+          [icon]="'rocket'"
+          [title]="'Get Started'"
+        />
+        <app-button
+          (click)="navigateToDocs()"
+          [color]="'secondary'"
+          [icon]="'help_outline'"
+          [title]="'Docs'"
+        />
+      </div>
     </div>
   </div>
 </div>

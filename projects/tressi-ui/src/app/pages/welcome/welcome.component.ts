@@ -13,4 +13,8 @@ export class WelcomeComponent {
   navigateToConfigs(): void {
     this.router.navigate(['/configs']);
   }
+
+  navigateToDocs(): void {
+    this.router.navigate(['/docs']);
+  }
 }

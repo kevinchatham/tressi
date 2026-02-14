@@ -1,0 +1,76 @@
+<div class="p-16">
+  <app-header [title]="'Documentation'">
+    <app-button
+      (click)="goBack()"
+      [icon]="'arrow_back'"
+      [title]="'Back'"
+      [ghost]="true"
+    />
+  </app-header>
+
+  <div class="mx-auto flex max-w-6xl gap-8">
+    <!-- Sidebar -->
+    <div class="w-64 shrink-0">
+      <div
+        class="bg-base-200 border-base-content/5 flex flex-col gap-6 rounded-xl border-2 p-4"
+      >
+        @for (
+          section of availableDocs() | keyvalue: preserveOrder;
+          track section.key
+        ) {
+          <div>
+            <h3
+              class="mb-2 text-xs font-bold tracking-wider uppercase opacity-50"
+            >
+              {{ section.key }}
+            </h3>
+            <ul class="menu menu-sm p-0">
+              @for (doc of section.value; track doc) {
+                <li>
+                  <a
+                    [routerLink]="
+                      doc.includes('/')
+                        ? ['/docs', doc.split('/')[0], doc.split('/')[1]]
+                        : ['/docs', doc]
+                    "
+                    routerLinkActive="active"
+                    class="capitalize"
+                  >
+                    {{ doc.split('/').pop()?.replace('-', ' ') }}
+                  </a>
+                </li>
+              }
+            </ul>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Content -->
+    <div class="flex-1">
+      @if (isLoading()) {
+        <div class="flex justify-center p-12">
+          <span class="loading loading-spinner loading-lg"></span>
+        </div>
+      }
+
+      @if (error()) {
+        <div class="alert alert-error">
+          <app-icon [name]="'error'" />
+          <span>{{ error() }}</span>
+        </div>
+      }
+
+      <div
+        [class.hidden]="isLoading() || error()"
+        class="markdown-body bg-base-200 border-base-content/5 max-w-none rounded-xl border-2 p-8"
+      >
+        <markdown
+          [src]="markdownSrc()"
+          (load)="onLoad()"
+          (error)="onError()"
+        ></markdown>
+      </div>
+    </div>
+  </div>
+</div>

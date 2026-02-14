@@ -8,6 +8,7 @@ import {
 
 import { ConfigurationsComponent } from './pages/configs/configs.component';
 import { DashboardComponent } from './pages/dashboard/dashboard.component';
+import { DocsComponent } from './pages/docs/docs.component';
 import { ServerUnavailableComponent } from './pages/server-unavailable/server-unavailable.component';
 import { ShowcaseComponent } from './pages/showcase/showcase.component';
 import { TestDetailComponent } from './pages/test-detail/test-detail.component';
@@ -117,6 +118,24 @@ export const routes: Routes = [
     component: TestDetailComponent,
     canActivate: [healthCheckGuard],
     data: { title: 'Test Details' },
+  },
+  {
+    path: 'docs',
+    component: DocsComponent,
+    canActivate: [healthCheckGuard],
+    data: { title: 'Documentation' },
+  },
+  {
+    path: 'docs/:filename',
+    component: DocsComponent,
+    canActivate: [healthCheckGuard],
+    data: { title: 'Documentation' },
+  },
+  {
+    path: 'docs/:section/:filename',
+    component: DocsComponent,
+    canActivate: [healthCheckGuard],
+    data: { title: 'Documentation' },
   },
   {
     path: '',

@@ -13,7 +13,13 @@
         "build": {
           "builder": "@angular/build:application",
           "options": {
-            "allowedCommonJsDependencies": ["human-number", "dayjs"],
+            "allowedCommonJsDependencies": [
+              "human-number",
+              "dayjs",
+              "mermaid",
+              "clipboard",
+              "emoji-toolkit"
+            ],
             "deleteOutputPath": false,
             "outputPath": "../tressi-cli/dist",
             "browser": "src/main.ts",
@@ -23,13 +29,34 @@
               {
                 "glob": "**/*",
                 "input": "public"
+              },
+              {
+                "glob": "**/*.md",
+                "input": "../../docs",
+                "output": "public/docs"
               }
             ],
-            "styles": ["src/styles.css"]
+            "styles": [
+              "src/styles.css",
+              "../../node_modules/prismjs/themes/prism-tomorrow.css",
+              "../../node_modules/prismjs/plugins/line-numbers/prism-line-numbers.css"
+            ],
+            "scripts": [
+              "../../node_modules/marked/lib/marked.umd.js",
+              "../../node_modules/prismjs/prism.js",
+              "../../node_modules/prismjs/components/prism-typescript.min.js",
+              "../../node_modules/prismjs/components/prism-javascript.min.js",
+              "../../node_modules/prismjs/components/prism-json.min.js",
+              "../../node_modules/prismjs/components/prism-bash.min.js",
+              "../../node_modules/prismjs/plugins/line-numbers/prism-line-numbers.min.js",
+              "../../node_modules/emoji-toolkit/lib/js/joypixels.min.js",
+              "../../node_modules/mermaid/dist/mermaid.min.js",
+              "../../node_modules/clipboard/dist/clipboard.min.js"
+            ]
           },
           "configurations": {
             "local": {
-              "optimization": true,
+              "optimization": false,
               "extractLicenses": true,
               "sourceMap": true
             }
@@ -60,6 +87,11 @@
               {
                 "glob": "**/*",
                 "input": "public"
+              },
+              {
+                "glob": "**/*.md",
+                "input": "../../docs",
+                "output": "public/docs"
               }
             ],
             "styles": ["src/styles.css"]

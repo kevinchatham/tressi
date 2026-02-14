@@ -253,3 +253,82 @@
     background-position: 200% 0;
   }
 }
+
+/* GitHub-like Markdown Styles */
+.markdown-body {
+  @apply text-base-content leading-relaxed;
+}
+
+.markdown-body h1 {
+  @apply border-base-content/10 mb-4 border-b pb-2 text-3xl font-semibold;
+}
+
+.markdown-body h2 {
+  @apply border-base-content/10 mt-6 mb-4 border-b pb-2 text-2xl font-semibold;
+}
+
+.markdown-body h3 {
+  @apply mt-6 mb-4 text-xl font-semibold;
+}
+
+.markdown-body p {
+  @apply mb-4;
+}
+
+.markdown-body a {
+  @apply text-primary hover:underline;
+}
+
+.markdown-body ul,
+.markdown-body ol {
+  @apply mb-4 pl-8;
+}
+
+.markdown-body ul {
+  @apply list-disc;
+}
+
+.markdown-body ol {
+  @apply list-decimal;
+}
+
+.markdown-body li {
+  @apply mb-1;
+}
+
+.markdown-body code {
+  @apply bg-base-300 rounded px-1.5 py-0.5 font-mono text-sm;
+}
+
+.markdown-body pre {
+  @apply bg-base-300 mb-4 overflow-x-auto rounded-lg p-4;
+}
+
+.markdown-body pre code {
+  @apply bg-transparent p-0;
+}
+
+.markdown-body blockquote {
+  @apply border-primary/30 text-base-content/70 mb-4 border-l-4 pl-4 italic;
+}
+
+.markdown-body table {
+  @apply mb-4 w-full border-collapse;
+}
+
+.markdown-body th,
+.markdown-body td {
+  @apply border-base-content/10 border p-2;
+}
+
+.markdown-body th {
+  @apply bg-base-300 font-semibold;
+}
+
+.markdown-body hr {
+  @apply border-base-content/10 my-8 border-t;
+}
+
+.markdown-body img {
+  @apply max-w-full rounded-lg;
+}

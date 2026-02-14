@@ -155,3 +155,13 @@ export type ExportTestRequest = InferRequestType<
 export type GetTestStatusResponse = InferResponseType<
   typeof client.test.status.$get
 >;
+
+// ! Docs
+export type GetDocsResponse = InferResponseType<typeof client.docs.list.$get>;
+
+export type GetDocsResponseSuccess = Extract<
+  GetDocsResponse,
+  Record<string, string[]>
+>;
+
+export type GetDocsResponseError = Extract<GetDocsResponse, { error: object }>;

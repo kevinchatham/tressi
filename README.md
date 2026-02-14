@@ -3,8 +3,8 @@
   <br/>
   <em>Stress less, test more.</em>
   <br/><br/>
-  <a href="./docs/LICENSE">
-    <img src="https://img.shields.io/badge/license-Unlicense-blue" alt="Unlicense"/>
+  <a href="./LICENSE">
+    <img src="https://img.shields.io/badge/license-MIT%20%2B%20Commons%20Clause-orange" alt="Source Available"/>
   </a>
 </p>
 
@@ -739,7 +739,7 @@ await runLoadTest({
 
 This project was built during late-night hours as a way to deepen my understanding of Node.js performance and CLI architecture. Keeping it as a solo effort allows me to iterate rapidly, make breaking changes without constraint, and focus narrowly on my own use cases.
 
-That said, I'm grateful for the community's interest and may open it up in the future. For more details, see [CONTRIBUTING.md](docs/CONTRIBUTING.md).
+That said, I'm grateful for the community's interest and may open it up in the future. For more details, see [CONTRIBUTING.md](./CONTRIBUTING).
 
 ## 🧭 Stability & Compatibility
 
