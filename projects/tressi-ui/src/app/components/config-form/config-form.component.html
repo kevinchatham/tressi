@@ -98,8 +98,19 @@
     }
   </div>
 
+  @if (form().touched() && form().invalid()) {
+    <div class="-pt-2">
+      <span class="text-error text-sm">Additional Validation Errors</span>
+      <ul>
+        @for (error of formErrors(); track error) {
+          <li class="text-error ml-4 text-sm">- {{ error }}.</li>
+        }
+      </ul>
+    </div>
+  }
+
   <!-- Form Actions -->
-  <div class="bg-base-200 p-4">
+  <div class="bg-base-200 px-4">
     <div class="flex justify-end gap-3">
       <app-button
         (click)="onCancel($event)"

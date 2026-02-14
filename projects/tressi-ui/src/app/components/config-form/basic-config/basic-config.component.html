@@ -1,4 +1,4 @@
-<div class="bg-base-200 border-base-content/5 rounded-xl border-2 p-6">
+<div class="bg-base-200 border-base-content/5 rounded-xl border-2 px-4 pt-4">
   <h2 class="mb-4 flex items-center gap-2 text-lg font-semibold">
     <app-icon name="stat_1" />
     Basic Configuration
@@ -10,7 +10,7 @@
       <legend class="fieldset-legend">Duration (seconds)</legend>
       <input
         type="number"
-        class="input"
+        class="input max-w-28"
         [field]="form().config.options.durationSec"
       />
       @if (

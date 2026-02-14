@@ -116,6 +116,16 @@ export class ConfigFormComponent {
     return this.form().valid();
   });
 
+  readonly formErrors = computed<string[]>(() => {
+    return this.form()
+      .errors()
+      .flatMap((e) => e.message)
+      .filter((e): e is string => !!e)
+      .flatMap((e) => JSON.parse(e))
+      .map((e) => e.message)
+      .filter((e: string) => !e.includes('URL'));
+  });
+
   onJsonTextAreaChange(): void {
     this.model.update((current) => ({ ...current }));
   }
