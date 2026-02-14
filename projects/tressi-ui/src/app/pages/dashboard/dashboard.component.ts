@@ -149,10 +149,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       lastSelectedConfig: config,
     });
 
-    // Update the route to include the config ID
-    this.router.navigate(['/dashboard', configId], {
-      replaceUrl: false,
-    });
+    history.pushState({}, '', `/dashboard/${configId}}`);
   }
 
   /**
