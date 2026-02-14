@@ -2,6 +2,7 @@ import chalk from 'chalk';
 import { Command } from 'commander';
 
 import pkg from '../../../package.json';
+import { ResetCommand } from './commands/reset-command';
 import { RunCommand } from './commands/run-command';
 import { ServeCommand } from './commands/serve-command';
 import { initializeDatabase } from './database/init';
@@ -60,6 +61,16 @@ class TressiCLI {
         await command.execute({ port });
       });
 
+    // Reset command
+    this.program
+      .command('reset')
+      .summary('Completely reset Tressi database')
+      .description(ResetCommand.getDescription())
+      .action(async () => {
+        const command = new ResetCommand();
+        await command.execute();
+      });
+
     // Default run command (when no specific command is provided)
     this.program.action(async (opts) => {
       const command = new RunCommand();
@@ -76,6 +87,7 @@ class TressiCLI {
       `
 Commands:
   serve   Start a Hono server with healthcheck endpoint
+  reset   Completely reset Tressi database
 
 Options:
   -c, --config <path>  Path or URL to JSON configuration file (local file path or remote URL)
@@ -107,6 +119,9 @@ Examples:
 
   # Start the Tressi server on a custom port
   $ tressi serve --port 8080
+
+  # Reset the Tressi database
+  $ tressi reset
 `,
     );
   }
