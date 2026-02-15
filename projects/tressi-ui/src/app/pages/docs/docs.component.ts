@@ -27,17 +27,22 @@ export class DocsComponent implements OnInit {
   markdownSrc = signal<string>('');
   error = signal<string | null>(null);
   availableDocs = signal<GetDocsResponseSuccess>({});
+  isTransitioning = signal(false);
 
   // Custom comparator to preserve the order from the server
   preserveOrder = (): number => {
     return 0;
   };
 
+  formatTitle(title: string): string {
+    return title.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
+  }
+
   ngOnInit(): void {
     this.initializeFromResolvedData();
     this.route.params.subscribe((params) => {
       const section = params['section'];
-      const filename = params['filename'] || 'home';
+      const filename = params['filename'] || 'index';
       const fullPath = section ? `${section}/${filename}` : filename;
       this.loadDocs(fullPath);
     });
@@ -55,17 +60,57 @@ export class DocsComponent implements OnInit {
     }
   }
 
-  loadDocs(filename: string): void {
-    this.error.set(null);
+  loadDocs(slug: string): void {
+    this.isTransitioning.set(true);
 
-    const safeFilename = filename.endsWith('.md') ? filename : `${filename}.md`;
+    // Small delay to allow fade out to start/complete
+    setTimeout(() => {
+      this.error.set(null);
 
-    // Use root-relative path to ensure it works regardless of current route depth
-    this.markdownSrc.set(`/public/docs/${safeFilename}`);
+      let realPath = slug;
+      const docs = this.availableDocs();
+
+      // Find the real path from the nice slug
+      for (const section of Object.values(docs)) {
+        // Check if the slug is exactly the section path (e.g. /docs/core-concepts)
+        // If so, we want to load the index file for that section
+        if (section.path === slug && section.path !== '') {
+          const indexDoc = section.docs.find((d) => d.slug === 'index');
+          if (indexDoc) {
+            realPath = indexDoc.realPath;
+            break;
+          }
+        }
+
+        const docMatch = section.docs.find((d) => {
+          const fullSlug = d.sectionSlug
+            ? `${d.sectionSlug}/${d.slug}`
+            : d.slug;
+          return fullSlug === slug;
+        });
+
+        if (docMatch) {
+          realPath = docMatch.realPath;
+          break;
+        }
+      }
+
+      const safeFilename = realPath.endsWith('.md')
+        ? realPath
+        : `${realPath}.md`;
+
+      // Use root-relative path to ensure it works regardless of current route depth
+      this.markdownSrc.set(`/public/docs/${safeFilename}`);
+    }, 150);
+  }
+
+  onLoad(): void {
+    this.isTransitioning.set(false);
   }
 
   onError(): void {
     this.error.set('Failed to load documentation.');
+    this.isTransitioning.set(false);
   }
 
   goBack(): void {

@@ -12,11 +12,11 @@
 
 @layer components {
   .cdk-drag-preview {
-    @apply bg-base-100 text-base-content rounded-lg px-4 py-2 font-medium shadow-lg;
+    @apply bg-base-100 text-base-content rounded-xl px-4 py-2 font-medium shadow-lg;
   }
 
   .cdk-drag-placeholder {
-    @apply bg-primary/20 border-primary rounded-lg border-2 border-dashed;
+    @apply bg-primary/20 border-primary rounded-xl border-2 border-dashed;
   }
 
   .cdk-drag-animating {
@@ -301,7 +301,7 @@
 }
 
 .markdown-body pre {
-  @apply bg-base-300 mb-4 overflow-x-auto rounded-lg p-4;
+  @apply bg-base-300 mb-4 overflow-x-auto rounded-xl p-4;
 }
 
 .markdown-body pre code {
@@ -330,7 +330,7 @@
 }
 
 .markdown-body img {
-  @apply max-w-full rounded-lg;
+  @apply max-w-full rounded-xl;
 }
 
 /* Loading Component Styles */

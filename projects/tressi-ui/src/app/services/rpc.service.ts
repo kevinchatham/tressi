@@ -161,7 +161,14 @@ export type GetDocsResponse = InferResponseType<typeof client.docs.list.$get>;
 
 export type GetDocsResponseSuccess = Extract<
   GetDocsResponse,
-  Record<string, string[]>
+  Record<
+    string,
+    {
+      path: string;
+      realPath: string;
+      docs: { slug: string; sectionSlug?: string; realPath: string }[];
+    }
+  >
 >;
 
 export type GetDocsResponseError = Extract<GetDocsResponse, { error: object }>;

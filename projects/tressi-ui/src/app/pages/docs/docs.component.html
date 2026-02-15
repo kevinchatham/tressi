@@ -19,26 +19,35 @@
           track section.key
         ) {
           <div>
-            <h3
-              class="mb-2 text-xs font-bold tracking-wider uppercase opacity-50"
+            <a
+              [routerLink]="
+                section.key === 'Home'
+                  ? ['/docs']
+                  : ['/docs', section.value.path]
+              "
+              routerLinkActive="text-primary !opacity-100"
+              [routerLinkActiveOptions]="{ exact: true }"
+              class="mb-2 block cursor-pointer text-xs font-bold tracking-wider uppercase opacity-50 transition-opacity hover:opacity-100"
             >
               {{ section.key }}
-            </h3>
+            </a>
             <ul class="menu menu-sm p-0">
-              @for (doc of section.value; track doc) {
-                <li>
-                  <a
-                    [routerLink]="
-                      doc.includes('/')
-                        ? ['/docs', doc.split('/')[0], doc.split('/')[1]]
-                        : ['/docs', doc]
-                    "
-                    routerLinkActive="active"
-                    class="capitalize"
-                  >
-                    {{ doc.split('/').pop()?.replace('-', ' ') }}
-                  </a>
-                </li>
+              @for (doc of section.value.docs; track doc.slug) {
+                @if (doc.slug !== 'index') {
+                  <li>
+                    <a
+                      [routerLink]="
+                        section.value.path
+                          ? ['/docs', section.value.path, doc.slug]
+                          : ['/docs', doc.slug]
+                      "
+                      routerLinkActive="text-primary active"
+                      class="capitalize"
+                    >
+                      {{ formatTitle(doc.slug) }}
+                    </a>
+                  </li>
+                }
               }
             </ul>
           </div>
@@ -57,9 +66,14 @@
 
       <div
         [class.hidden]="error()"
-        class="markdown-body bg-base-200 border-base-content/5 max-w-none rounded-xl border-2 p-8"
+        [class.opacity-0]="isTransitioning()"
+        class="markdown-body bg-base-200 border-base-content/5 max-w-none rounded-xl border-2 p-8 transition-opacity duration-200 ease-in-out"
       >
-        <markdown [src]="markdownSrc()" (error)="onError()"></markdown>
+        <markdown
+          [src]="markdownSrc()"
+          (load)="onLoad()"
+          (error)="onError()"
+        ></markdown>
       </div>
     </div>
   </div>
