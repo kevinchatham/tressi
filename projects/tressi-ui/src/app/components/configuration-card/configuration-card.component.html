@@ -75,7 +75,10 @@
           <h4 class="text-base-content/70 mb-1 text-sm font-semibold">
             Duration
           </h4>
-          <p class="text-sm" [appFormatDuration]="input().config.options.durationSec"></p>
+          <p
+            class="text-sm"
+            [appFormatDuration]="input().config.options.durationSec"
+          ></p>
         </div>
         <div>
           <h4 class="text-base-content/70 mb-1 text-sm font-semibold">
@@ -90,7 +93,10 @@
           <h4 class="text-base-content/70 mb-1 text-sm font-semibold">
             Ramp Up
           </h4>
-          <p class="text-sm" [appFormatDuration]="getEffectiveRampUpDuration()"></p>
+          <p
+            class="text-sm"
+            [appFormatDuration]="getEffectiveRampUpDuration()"
+          ></p>
         </div>
         <div>
           <h4 class="text-base-content/70 mb-1 text-sm font-semibold">

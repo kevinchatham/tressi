@@ -13,6 +13,9 @@ import { ServerUnavailableComponent } from './pages/server-unavailable/server-un
 import { ShowcaseComponent } from './pages/showcase/showcase.component';
 import { TestDetailComponent } from './pages/test-detail/test-detail.component';
 import { WelcomeComponent } from './pages/welcome/welcome.component';
+import { configsResolver } from './resolvers/configs.resolver';
+import { docsResolver } from './resolvers/docs.resolver';
+import { testDetailResolver } from './resolvers/test-detail.resolver';
 import { ConfigService } from './services/config.service';
 import { HealthService } from './services/health.service';
 
@@ -94,18 +97,21 @@ export const routes: Routes = [
     path: 'configs',
     component: ConfigurationsComponent,
     canActivate: [healthCheckGuard],
+    resolve: { configs: configsResolver },
     data: { title: 'Configs' },
   },
   {
     path: 'dashboard',
     component: DashboardComponent,
     canActivate: [healthCheckGuard, configGuard],
+    resolve: { configs: configsResolver },
     data: { title: 'Dashboard' },
   },
   {
     path: 'dashboard/:configId',
     component: DashboardComponent,
     canActivate: [healthCheckGuard, configGuard],
+    resolve: { configs: configsResolver },
     data: { title: 'Dashboard' },
   },
   {
@@ -117,24 +123,28 @@ export const routes: Routes = [
     path: 'tests/:testId',
     component: TestDetailComponent,
     canActivate: [healthCheckGuard],
+    resolve: { data: testDetailResolver },
     data: { title: 'Test Details' },
   },
   {
     path: 'docs',
     component: DocsComponent,
     canActivate: [healthCheckGuard],
+    resolve: { availableDocs: docsResolver },
     data: { title: 'Documentation' },
   },
   {
     path: 'docs/:filename',
     component: DocsComponent,
     canActivate: [healthCheckGuard],
+    resolve: { availableDocs: docsResolver },
     data: { title: 'Documentation' },
   },
   {
     path: 'docs/:section/:filename',
     component: DocsComponent,
     canActivate: [healthCheckGuard],
+    resolve: { availableDocs: docsResolver },
     data: { title: 'Documentation' },
   },
   {

@@ -6,7 +6,7 @@ import {
   OnInit,
   signal,
 } from '@angular/core';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ButtonComponent } from 'src/app/components/button/button.component';
 import { ThemeSwitcherComponent } from 'src/app/components/theme-switcher/theme-switcher.component';
 
@@ -17,7 +17,6 @@ import { IconComponent } from '../../components/icon/icon.component';
 import { ImportConfigButtonComponent } from '../../components/import-config-button/import-config-button.component';
 import { SearchBarComponent } from '../../components/search-bar/search-bar.component';
 import { ConfigService } from '../../services/config.service';
-import { LoadingService } from '../../services/loading.service';
 import {
   ConfigDocument,
   ModifyConfigRequest,
@@ -44,8 +43,8 @@ export class ConfigurationsComponent implements OnInit {
   /** Service injection */
   private readonly configService = inject(ConfigService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   readonly timeService = inject(TimeService);
-  private readonly loadingService = inject(LoadingService);
   private readonly toastService = inject(ToastService);
 
   /** Reactive signals for state management */
@@ -85,21 +84,15 @@ export class ConfigurationsComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    this.loadingService.registerPage('settings');
-    this.loadConfigurations();
+    this.initializeFromResolvedData();
   }
 
   /**
-   * Loads all available configurations from the server.
+   * Initializes the component using data pre-resolved by the router.
    */
-  private async loadConfigurations(): Promise<void> {
-    this.loadingService.setPageLoading('settings', true);
-    try {
-      const configs = await this.configService.getAll();
-      this.configs.set(configs);
-    } finally {
-      this.loadingService.setPageLoading('settings', false);
-    }
+  private initializeFromResolvedData(): void {
+    const configs = this.route.snapshot.data['configs'] as ConfigDocument[];
+    this.configs.set(configs);
   }
 
   /**
@@ -161,47 +154,35 @@ export class ConfigurationsComponent implements OnInit {
     const config = this.configToDelete();
     if (!config) return;
 
-    this.loadingService.setPageLoading('settings', true);
-    try {
-      await this.configService.deleteConfig(config.id);
-      this.showDeleteModal.set(false);
-      this.configToDelete.set(null);
+    await this.configService.deleteConfig(config.id);
+    this.showDeleteModal.set(false);
+    this.configToDelete.set(null);
 
-      // Update configs directly instead of reloading
-      this.configs.update((configs) =>
-        configs.filter((c) => c.id !== config.id),
-      );
-    } finally {
-      this.loadingService.setPageLoading('settings', false);
-    }
+    // Update configs directly instead of reloading
+    this.configs.update((configs) => configs.filter((c) => c.id !== config.id));
   }
 
   /**
    * Handles configuration saved event from config-form component.
    */
   async onConfigSaved(event: ModifyConfigRequest): Promise<void> {
-    this.loadingService.setPageLoading('settings', true);
-    try {
-      const savedConfig = await this.configService.saveConfig(event);
+    const savedConfig = await this.configService.saveConfig(event);
 
-      // Update configs directly instead of reloading
-      this.configs.update((configs) => {
-        const existingIndex = configs.findIndex((c) => c.id === savedConfig.id);
-        if (existingIndex >= 0) {
-          // Update existing config
-          const updatedConfigs = [...configs];
-          updatedConfigs[existingIndex] = savedConfig;
-          return updatedConfigs;
-        } else {
-          // Add new config
-          return [...configs, savedConfig];
-        }
-      });
+    // Update configs directly instead of reloading
+    this.configs.update((configs) => {
+      const existingIndex = configs.findIndex((c) => c.id === savedConfig.id);
+      if (existingIndex >= 0) {
+        // Update existing config
+        const updatedConfigs = [...configs];
+        updatedConfigs[existingIndex] = savedConfig;
+        return updatedConfigs;
+      } else {
+        // Add new config
+        return [...configs, savedConfig];
+      }
+    });
 
-      this.cancelEdit();
-    } finally {
-      this.loadingService.setPageLoading('settings', false);
-    }
+    this.cancelEdit();
   }
 
   /**

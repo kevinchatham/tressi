@@ -14,7 +14,6 @@ import { Router, RouterModule } from '@angular/router';
 import { Subscription } from 'rxjs';
 
 import { EventService } from '../../services/event.service';
-import { LoadingService } from '../../services/loading.service';
 import { LogService } from '../../services/log.service';
 import type {
   ConfigDocument,
@@ -57,7 +56,6 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly testService = inject(TestService);
   private readonly logService = inject(LogService);
-  private readonly loadingService = inject(LoadingService);
   private readonly eventService = inject(EventService);
   private readonly columnsService = inject(TestListColumnsService);
   private readonly selectionService = inject(TestListSelectionService);
@@ -114,7 +112,6 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
   private testEventsSubscription?: Subscription;
 
   ngOnInit(): void {
-    this.loadingService.registerPage('test-list');
     this.subscribeToMetrics();
     this.subscribeToTestEvents();
   }
@@ -127,7 +124,6 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
 
   async loadTests(): Promise<void> {
     try {
-      this.loadingService.setPageLoading('test-list', true);
       this.error.set(null);
 
       // Load tests for this config - use config().id directly
@@ -142,8 +138,6 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
       this.tests.set([]);
       // Emit test history update (no tests due to error)
       this.testHistoryUpdate.emit(false);
-    } finally {
-      this.loadingService.setPageLoading('test-list', false);
     }
   }
 

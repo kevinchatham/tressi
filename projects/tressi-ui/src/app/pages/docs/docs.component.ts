@@ -6,7 +6,7 @@ import { MarkdownModule } from 'ngx-markdown';
 import { ButtonComponent } from '../../components/button/button.component';
 import { HeaderComponent } from '../../components/header/header.component';
 import { IconComponent } from '../../components/icon/icon.component';
-import { GetDocsResponseSuccess, RPCService } from '../../services/rpc.service';
+import { GetDocsResponseSuccess } from '../../services/rpc.service';
 
 @Component({
   selector: 'app-docs',
@@ -24,8 +24,6 @@ import { GetDocsResponseSuccess, RPCService } from '../../services/rpc.service';
 export class DocsComponent implements OnInit {
   private readonly location = inject(Location);
   private readonly route = inject(ActivatedRoute);
-  private readonly rpc = inject(RPCService);
-
   markdownSrc = signal<string>('');
   isLoading = signal<boolean>(true);
   error = signal<string | null>(null);
@@ -37,7 +35,7 @@ export class DocsComponent implements OnInit {
   };
 
   ngOnInit(): void {
-    this.loadAvailableDocs();
+    this.initializeFromResolvedData();
     this.route.params.subscribe((params) => {
       const section = params['section'];
       const filename = params['filename'] || 'home';
@@ -46,19 +44,15 @@ export class DocsComponent implements OnInit {
     });
   }
 
-  async loadAvailableDocs(): Promise<void> {
-    try {
-      const response = await this.rpc.client.docs.list.$get();
-      if (response.ok) {
-        const data = await response.json();
-        if ('error' in data) {
-          throw new Error('Failed to load documentation');
-        }
-        this.availableDocs.set(data);
-      }
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error('Failed to load available docs:', error);
+  /**
+   * Initializes the component using data pre-resolved by the router.
+   */
+  private initializeFromResolvedData(): void {
+    const data = this.route.snapshot.data[
+      'availableDocs'
+    ] as GetDocsResponseSuccess;
+    if (data) {
+      this.availableDocs.set(data);
     }
   }
 

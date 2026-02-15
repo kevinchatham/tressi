@@ -1,6 +1,5 @@
 import { inject, Injectable } from '@angular/core';
 
-import { LoadingService } from '../../services/loading.service';
 import { LogService } from '../../services/log.service';
 import { TestService } from '../../services/test.service';
 
@@ -24,7 +23,6 @@ export interface DeleteResult {
 @Injectable({ providedIn: 'root' })
 export class TestListDeleteService {
   private readonly testService = inject(TestService);
-  private readonly loadingService = inject(LoadingService);
   private readonly logService = inject(LogService);
 
   /**
@@ -132,36 +130,17 @@ export class TestListDeleteService {
   /**
    * Deletes a single test with loading state management.
    * @param testId - The ID of the test to delete
-   * @param loadingKey - The loading key to use for the loading service (default: 'test-list')
    * @returns Promise resolving to the deletion result
    */
-  async deleteTestWithLoading(
-    testId: string,
-    loadingKey: string = 'test-list',
-  ): Promise<DeleteResult> {
-    this.loadingService.setPageLoading(loadingKey, true);
-    try {
-      return await this.deleteTest(testId);
-    } finally {
-      this.loadingService.setPageLoading(loadingKey, false);
-    }
+  async deleteTestWithLoading(testId: string): Promise<DeleteResult> {
+    return await this.deleteTest(testId);
   }
 
   /**
-   * Deletes multiple tests with loading state management.
+   * Deletes multiple tests.
    * @param testIds - Array of test IDs to delete
-   * @param loadingKey - The loading key to use for the loading service (default: 'test-list')
-   * @returns Promise resolving to the combined deletion result
    */
-  async deleteTestsWithLoading(
-    testIds: string[],
-    loadingKey: string = 'test-list',
-  ): Promise<DeleteResult> {
-    this.loadingService.setPageLoading(loadingKey, true);
-    try {
-      return await this.deleteTests(testIds);
-    } finally {
-      this.loadingService.setPageLoading(loadingKey, false);
-    }
+  async deleteTestsWithLoading(testIds: string[]): Promise<DeleteResult> {
+    return await this.deleteTests(testIds);
   }
 }

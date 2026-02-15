@@ -8,16 +8,14 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 import { ButtonComponent } from 'src/app/components/button/button.component';
 
 import { HeaderComponent } from '../../components/header/header.component';
 import { StartButtonComponent } from '../../components/start-button/start-button.component';
 import { TestListComponent } from '../../components/test-list/test-list.component';
-import { ConfigService } from '../../services/config.service';
 import { EventService } from '../../services/event.service';
-import { LoadingService } from '../../services/loading.service';
 import { LocalStorageService } from '../../services/local-storage.service';
 import { LogService } from '../../services/log.service';
 import { ConfigDocument } from '../../services/rpc.service';
@@ -34,11 +32,10 @@ import { ConfigDocument } from '../../services/rpc.service';
 })
 export class DashboardComponent implements OnInit, OnDestroy {
   /** Service injection */
-  private readonly configService = inject(ConfigService);
   private readonly logService = inject(LogService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly localStorageService = inject(LocalStorageService);
-  private readonly loadingService = inject(LoadingService);
   private readonly eventService = inject(EventService);
 
   /** Route parameter for config ID */
@@ -70,8 +67,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private readonly destroy$ = new Subject<void>();
 
   ngOnInit(): void {
-    this.loadingService.registerPage('dashboard');
-    this.loadConfigurations();
+    this.initializeFromResolvedData();
     this.subscribeToTestEvents();
   }
 
@@ -81,18 +77,15 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Loads all available configurations from the server.
+   * Initializes the component using data pre-resolved by the router.
    */
-  private async loadConfigurations(): Promise<void> {
-    this.loadingService.setPageLoading('dashboard', true);
-
-    const configs = await this.configService.getAll();
+  private initializeFromResolvedData(): void {
+    const configs = this.route.snapshot.data['configs'] as ConfigDocument[];
 
     this.configs.set(configs);
 
     if (configs.length === 0) {
       this.router.navigate(['welcome']);
-      this.loadingService.setPageLoading('dashboard', false);
       return;
     }
 
@@ -110,8 +103,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
     } else {
       this.selectFallbackConfig(configs, lastSelectedConfig);
     }
-
-    this.loadingService.setPageLoading('dashboard', false);
   }
 
   /**

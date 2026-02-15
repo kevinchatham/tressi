@@ -14,9 +14,9 @@ import { ButtonComponent } from 'src/app/components/button/button.component';
 import { HeaderComponent } from '../../components/header/header.component';
 import { IconComponent } from '../../components/icon/icon.component';
 import { StatusBadgeComponent } from '../../components/status-badge/status-badge.component';
+import { TestDetailResolvedData } from '../../resolvers/test-detail.resolver';
 import { ConfigService } from '../../services/config.service';
 import { EventService, TestEventData } from '../../services/event.service';
-import { LoadingService } from '../../services/loading.service';
 import { LogService } from '../../services/log.service';
 import {
   type ConfigDocument,
@@ -68,7 +68,6 @@ export class TestDetailComponent implements OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly testService = inject(TestService);
-  private readonly loadingService = inject(LoadingService);
   private readonly logService = inject(LogService);
   private readonly configService = inject(ConfigService);
   private readonly eventService = inject(EventService);
@@ -133,7 +132,6 @@ export class TestDetailComponent implements OnDestroy {
 
   // Config signals
   readonly config = signal<ConfigDocument | null>(null);
-  readonly configLoading = signal<boolean>(false);
   readonly configError = signal<string>('');
 
   // Collapsible state
@@ -195,16 +193,31 @@ export class TestDetailComponent implements OnDestroy {
   private pollingTimerId: ReturnType<typeof setInterval> | null = null;
 
   constructor() {
-    // Subscribe to route params to ensure we get the testId
-    this.route.params.subscribe((params) => {
-      const id = params['testId'] || null;
-      this.testId.set(id);
-      this.loadTestDetails(id);
-      // Set up real-time updates after we have a test ID
-      if (id) {
-        this.startRealTimeUpdates(id);
+    // Initialize from resolved data
+    const resolvedData = this.route.snapshot.data[
+      'data'
+    ] as TestDetailResolvedData;
+    if (resolvedData) {
+      this.testId.set(resolvedData.test.id);
+      this.test.set(resolvedData.test);
+      this.metrics.set(resolvedData.metrics);
+
+      // Set static time range for charts from the initial load
+      if (resolvedData.test.summary?.global) {
+        this.testTimeRange.set({
+          min: resolvedData.test.summary.global.epochStartedAt,
+          max: resolvedData.test.summary.global.epochEndedAt,
+        });
       }
-    });
+
+      // Load config after test data is loaded
+      if (resolvedData.test.configId) {
+        this.loadConfig(resolvedData.test.configId);
+      }
+
+      // Set up real-time updates
+      this.startRealTimeUpdates(resolvedData.test.id);
+    }
 
     // Effect to handle polling interval changes
     effect(() => {
@@ -225,52 +238,10 @@ export class TestDetailComponent implements OnDestroy {
     });
   }
 
-  async loadTestDetails(testId: string | null): Promise<void> {
-    if (!testId) return;
-
-    this.loadingService.setPageLoading('test-detail', true);
-    this.hasError.set(false);
-    this.errorMessage.set('');
-
-    try {
-      // Moved from TestDetailService - direct data loading
-      const [testResult, metricsResult] = await Promise.all([
-        this.testService.getTestById(testId),
-        this.testService.getTestMetrics(testId),
-      ]);
-
-      this.test.set(testResult);
-      this.metrics.set(metricsResult);
-
-      // Set static time range for charts from the initial load
-      if (testResult?.summary?.global) {
-        this.testTimeRange.set({
-          min: testResult.summary.global.epochStartedAt,
-          max: testResult.summary.global.epochEndedAt,
-        });
-      }
-
-      // Load config after test data is loaded
-      if (testResult?.configId) {
-        await this.loadConfig(testResult.configId);
-      }
-    } catch (error) {
-      this.hasError.set(true);
-      this.errorMessage.set(
-        error instanceof Error ? error.message : 'Failed to load test details',
-      );
-      this.logService.error('Failed to load test details', error);
-    } finally {
-      this.loadingService.setPageLoading('test-detail', false);
-    }
-  }
-
   async loadConfig(configId: string | undefined): Promise<void> {
     if (!configId) return;
 
-    this.configLoading.set(true);
     this.configError.set('');
-    this.loadingService.setPageLoading('test-detail-config', true);
 
     try {
       const configData = await this.configService.getOne(configId);
@@ -286,9 +257,6 @@ export class TestDetailComponent implements OnDestroy {
         error instanceof Error ? error.message : 'Failed to load configuration',
       );
       this.logService.error('Failed to load configuration', error);
-    } finally {
-      this.configLoading.set(false);
-      this.loadingService.setPageLoading('test-detail-config', false);
     }
   }
 
@@ -502,7 +470,6 @@ export class TestDetailComponent implements OnDestroy {
     if (!testId) return;
 
     this.isDeleting.set(true);
-    this.loadingService.setPageLoading('test-detail-delete', true);
 
     try {
       await this.testService.deleteTest(testId);
@@ -512,7 +479,6 @@ export class TestDetailComponent implements OnDestroy {
       this.logService.error('Failed to delete test', error);
     } finally {
       this.isDeleting.set(false);
-      this.loadingService.setPageLoading('test-detail-delete', false);
       this.showDeleteModal.set(false);
     }
   }

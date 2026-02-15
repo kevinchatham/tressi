@@ -1,5 +1,5 @@
 <div class="bg-base-100 min-h-screen">
-  <app-loading [show]="loadingService.isLoading()" />
+  <app-loading [navigating]="isNavigating()" />
   <app-toast />
   <router-outlet />
 </div>

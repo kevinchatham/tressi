@@ -61,12 +61,6 @@
           Failed to Load Test Details
         </h2>
         <p class="text-base-content/70 mb-4">{{ errorMessage() }}</p>
-        <app-button
-          (click)="loadTestDetails(testId())"
-          [title]="'Try Again'"
-          [color]="'primary'"
-          [icon]="'search'"
-        />
       </div>
     </div>
   }

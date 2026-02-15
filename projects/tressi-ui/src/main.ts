@@ -5,7 +5,7 @@ import {
   provideZonelessChangeDetection,
 } from '@angular/core';
 import { bootstrapApplication } from '@angular/platform-browser';
-import { provideRouter } from '@angular/router';
+import { provideRouter, withViewTransitions } from '@angular/router';
 import {
   CLIPBOARD_OPTIONS,
   MARKED_OPTIONS,
@@ -21,7 +21,7 @@ const appConfig: ApplicationConfig = {
     provideZonelessChangeDetection(),
     provideHttpClient(),
     provideBrowserGlobalErrorListeners(),
-    provideRouter(routes),
+    provideRouter(routes, withViewTransitions()),
     provideMarkdown({
       clipboardOptions: {
         provide: CLIPBOARD_OPTIONS,
