@@ -51,15 +51,19 @@
                 </span>
               </div>
               <div class="flex items-center gap-1">
-                <span class="text-base-content/60 text-xs">
-                  {{ request.rps }} RPS
-                </span>
+                <span
+                  class="text-base-content/60 text-xs"
+                  [appFormatRps]="request.rps"
+                ></span>
               </div>
             </div>
           }
           @if (input().config.requests.length > 3) {
             <div class="text-base-content/60 text-center text-sm">
-              +{{ input().config.requests.length - 3 }} more
+              +<span
+                [appFormatNumber]="input().config.requests.length - 3"
+              ></span>
+              more
             </div>
           }
         </div>
@@ -71,25 +75,22 @@
           <h4 class="text-base-content/70 mb-1 text-sm font-semibold">
             Duration
           </h4>
-          <p class="text-sm">
-            {{ input().config.options.durationSec }} seconds
-          </p>
+          <p class="text-sm" [appFormatDuration]="input().config.options.durationSec"></p>
         </div>
         <div>
           <h4 class="text-base-content/70 mb-1 text-sm font-semibold">
             Threads
           </h4>
           <p class="text-sm">
-            {{ input().config.options.threads }} thread{{
-              input().config.options.threads !== 1 ? 's' : ''
-            }}
+            <span [appFormatNumber]="input().config.options.threads"></span>
+            thread{{ input().config.options.threads !== 1 ? 's' : '' }}
           </p>
         </div>
         <div>
           <h4 class="text-base-content/70 mb-1 text-sm font-semibold">
             Ramp Up
           </h4>
-          <p class="text-sm">{{ getEffectiveRampUpDuration() }} seconds</p>
+          <p class="text-sm" [appFormatDuration]="getEffectiveRampUpDuration()"></p>
         </div>
         <div>
           <h4 class="text-base-content/70 mb-1 text-sm font-semibold">
@@ -103,15 +104,13 @@
           <h4 class="text-base-content/70 mb-1 text-sm font-semibold">
             Endpoints
           </h4>
-          <p class="text-sm">
-            {{ getTotalEndpoints() }}
-          </p>
+          <p class="text-sm" [appFormatNumber]="getTotalEndpoints()"></p>
         </div>
         <div>
           <h4 class="text-base-content/70 mb-1 text-sm font-semibold">
             Total RPS
           </h4>
-          <p class="text-sm">{{ getTotalRPS() }} RPS</p>
+          <p class="text-sm" [appFormatRps]="getTotalRPS()"></p>
         </div>
       </div>
     </div>

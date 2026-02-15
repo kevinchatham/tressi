@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, computed, inject, input } from '@angular/core';
 
 import { FormatDurationDirective } from '../../../directives/format/format-duration.directive';
-import { FormatNumberDirective } from '../../../directives/format/format-number.directive';
+import { FormatLatencyDirective } from '../../../directives/format/format-latency.directive';
 import { FormatPercentageDirective } from '../../../directives/format/format-percentage.directive';
 import { FormatRpsDirective } from '../../../directives/format/format-rps.directive';
 import {
@@ -19,7 +19,7 @@ import { TestService } from '../../../services/test.service';
     FormatDurationDirective,
     FormatPercentageDirective,
     FormatRpsDirective,
-    FormatNumberDirective,
+    FormatLatencyDirective,
   ],
   templateUrl: './test-hero-stats.component.html',
 })

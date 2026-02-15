@@ -2,7 +2,9 @@ import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
 import { Component, inject, input, output } from '@angular/core';
 
 import { FormatBytesDirective } from '../../../directives/format/format-bytes.directive';
+import { FormatDateDirective } from '../../../directives/format/format-date.directive';
 import { FormatDurationDirective } from '../../../directives/format/format-duration.directive';
+import { FormatLatencyDirective } from '../../../directives/format/format-latency.directive';
 import { FormatNetworkThroughputDirective } from '../../../directives/format/format-network.directive';
 import { FormatNumberDirective } from '../../../directives/format/format-number.directive';
 import { FormatPercentageDirective } from '../../../directives/format/format-percentage.directive';
@@ -16,7 +18,7 @@ import { ColumnKey, FieldPath } from '../column-keys.enum';
 import type { SortConfig } from '../test-list-columns.service';
 
 // Define extractor function type
-type ValueExtractor = (test: TestDocument) => any;
+type ValueExtractor = (test: TestDocument) => unknown;
 
 @Component({
   selector: 'app-test-table',
@@ -25,11 +27,13 @@ type ValueExtractor = (test: TestDocument) => any;
     DragDropModule,
     StatusBadgeComponent,
     FormatDurationDirective,
+    FormatDateDirective,
     FormatPercentageDirective,
     FormatRpsDirective,
     FormatNumberDirective,
     FormatBytesDirective,
     FormatNetworkThroughputDirective,
+    FormatLatencyDirective,
   ],
   templateUrl: './test-table.component.html',
 })
@@ -101,6 +105,7 @@ export class TestTableComponent {
       test.summary?.configSnapshot?.options?.rampUpDurationSec ?? null,
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   getColumnValue(test: TestDocument, column: ColumnConfig): any {
     // Handle special 'select' column which doesn't extract data
     if (column.field === 'select') {
@@ -134,11 +139,6 @@ export class TestTableComponent {
     }
 
     return this.testService.getTestDuration(test) / 1000;
-  }
-
-  formatDate(timestamp: number | null): string {
-    if (!timestamp) return '—';
-    return new Date(timestamp).toLocaleString();
   }
 
   onViewTest(testId: string): void {

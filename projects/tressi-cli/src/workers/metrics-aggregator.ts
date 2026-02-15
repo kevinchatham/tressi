@@ -8,7 +8,6 @@ import { ServerEvents } from '../events/event-types';
 import { globalEventEmitter } from '../events/global-event-emitter';
 import type { TestSummary } from '../reporting/types';
 import { transformAggregatedMetricToTestSummary } from '../reporting/utils/transformations';
-import { truncateToDecimals } from '../utils/math-utils';
 import {
   IHdrHistogramManager,
   IMetricsAggregator,
@@ -541,19 +540,17 @@ export class MetricsAggregator implements IMetricsAggregator {
         totalRequests: endpointTotalRequests,
         successfulRequests: endpointSuccessRequests,
         failedRequests: endpointFailureRequests,
-        minLatencyMs: truncateToDecimals(endpointStats.minLatency),
-        maxLatencyMs: truncateToDecimals(endpointStats.maxLatency),
-        p50LatencyMs: truncateToDecimals(endpointStats.p50Latency),
-        p95LatencyMs: truncateToDecimals(endpointStats.p95Latency),
-        p99LatencyMs: truncateToDecimals(endpointStats.p99Latency),
-        averageRequestsPerSecond: truncateToDecimals(
-          endpointAverageRequestsPerSecond,
-        ),
-        peakRequestsPerSecond: truncateToDecimals(endpointPeakRps),
+        minLatencyMs: endpointStats.minLatency,
+        maxLatencyMs: endpointStats.maxLatency,
+        p50LatencyMs: endpointStats.p50Latency,
+        p95LatencyMs: endpointStats.p95Latency,
+        p99LatencyMs: endpointStats.p99Latency,
+        averageRequestsPerSecond: endpointAverageRequestsPerSecond,
+        peakRequestsPerSecond: endpointPeakRps,
         statusCodeDistribution: statusCounts,
         networkBytesSent: endpointBytesSent,
         networkBytesReceived: endpointBytesReceived,
-        networkBytesPerSec: truncateToDecimals(endpointBytesPerSec),
+        networkBytesPerSec: endpointBytesPerSec,
         errorRate: endpointFailureRequests / endpointTotalRequests,
       };
     });
@@ -638,17 +635,17 @@ export class MetricsAggregator implements IMetricsAggregator {
       totalRequests,
       successfulRequests: totalSuccess,
       failedRequests: totalFailure,
-      minLatencyMs: truncateToDecimals(globalStats.minLatency),
-      maxLatencyMs: truncateToDecimals(globalStats.maxLatency),
-      p50LatencyMs: truncateToDecimals(globalStats.p50Latency),
-      p95LatencyMs: truncateToDecimals(globalStats.p95Latency),
-      p99LatencyMs: truncateToDecimals(globalStats.p99Latency),
-      averageRequestsPerSecond: truncateToDecimals(averageRequestsPerSecond),
-      peakRequestsPerSecond: truncateToDecimals(globalPeakRps),
+      minLatencyMs: globalStats.minLatency,
+      maxLatencyMs: globalStats.maxLatency,
+      p50LatencyMs: globalStats.p50Latency,
+      p95LatencyMs: globalStats.p95Latency,
+      p99LatencyMs: globalStats.p99Latency,
+      averageRequestsPerSecond: averageRequestsPerSecond,
+      peakRequestsPerSecond: globalPeakRps,
       statusCodeDistribution: globalStatusCodeDistribution,
       networkBytesSent: totalBytesSent,
       networkBytesReceived: totalBytesReceived,
-      networkBytesPerSec: truncateToDecimals(globalBytesPerSec),
+      networkBytesPerSec: globalBytesPerSec,
       errorRate: totalFailure / totalRequests,
     };
 
@@ -984,12 +981,12 @@ export class MetricsAggregator implements IMetricsAggregator {
     });
 
     return {
-      averageLatency: truncateToDecimals(averageLatency),
-      minLatency: truncateToDecimals(minLatency === Infinity ? 0 : minLatency),
-      maxLatency: truncateToDecimals(maxLatency),
-      p50Latency: truncateToDecimals(weightedP50),
-      p95Latency: truncateToDecimals(weightedP95),
-      p99Latency: truncateToDecimals(weightedP99),
+      averageLatency,
+      minLatency: minLatency === Infinity ? 0 : minLatency,
+      maxLatency,
+      p50Latency: weightedP50,
+      p95Latency: weightedP95,
+      p99Latency: weightedP99,
       totalCount,
     };
   }

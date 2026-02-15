@@ -16,7 +16,7 @@ export class FormatRpsDirective {
         this.el.nativeElement.textContent = '0/s';
         return;
       }
-      this.el.nativeElement.textContent = `${Math.round(value)}/s`;
+      this.el.nativeElement.textContent = `${Math.trunc(value).toLocaleString()}/s`;
     });
   }
 }

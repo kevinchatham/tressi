@@ -5,6 +5,7 @@ import { ButtonComponent } from '../../../components/button/button.component';
 import { CollapsibleCardComponent } from '../../../components/collapsible-card/collapsible-card.component';
 import { IconComponent } from '../../../components/icon/icon.component';
 import { JsonTextareaComponent } from '../../../components/json-textarea/json-textarea.component';
+import { FormatDateDirective } from '../../../directives/format/format-date.directive';
 import { TestDocument } from '../../../services/rpc.service';
 import { ToastService } from '../../../services/toast.service';
 
@@ -16,6 +17,7 @@ import { ToastService } from '../../../services/toast.service';
     CollapsibleCardComponent,
     IconComponent,
     JsonTextareaComponent,
+    FormatDateDirective,
   ],
   templateUrl: './test-metadata.component.html',
 })
@@ -42,14 +44,6 @@ export class TestMetadataComponent {
    */
   onCollapsedChange(collapsed: boolean): void {
     this.collapsedChange.emit(collapsed);
-  }
-
-  /**
-   * Format epoch timestamp to locale string
-   */
-  formatDate(epoch: number | null | undefined): string {
-    if (!epoch) return 'N/A';
-    return new Date(epoch).toLocaleString();
   }
 
   /**

@@ -14,10 +14,13 @@
             code === 'all' ? 'All' : code
           }}</span>
           @if (code !== 'all') {
-            <span class="text-xs">({{ getCount(code).toLocaleString() }})</span>
-            <span class="text-xs opacity-70">
-              {{ getPercentage(code).toFixed(1) }}%
-            </span>
+            <span class="text-xs"
+              >(<span [appFormatNumber]="getCount(code)"></span>)</span
+            >
+            <span
+              class="text-xs opacity-70"
+              [appFormatPercentage]="getPercentage(code) / 100"
+            ></span>
           }
         </button>
       }
@@ -76,8 +79,11 @@
     <!-- Show more indicator -->
     @if (responseSamples.length > maxSamplesPerCode * 5) {
       <div class="text-base-content/60 mt-2 text-center text-sm">
-        Showing {{ maxSamplesPerCode * 5 }} of
-        {{ responseSamples.length }} samples
+        Showing
+        <span [appFormatNumber]="maxSamplesPerCode * 5"></span>
+        of
+        <span [appFormatNumber]="responseSamples.length"></span>
+        samples
       </div>
     }
   } @else {

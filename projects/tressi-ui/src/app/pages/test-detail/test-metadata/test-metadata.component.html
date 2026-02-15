@@ -29,15 +29,17 @@
             <div class="text-base-content/70 mb-1 text-xs uppercase">
               Started
             </div>
-            <div class="text-sm font-medium">
-              {{ formatDate(testData()?.summary?.global?.epochStartedAt) }}
-            </div>
+            <div
+              class="text-sm font-medium"
+              [appFormatDate]="testData()?.summary?.global?.epochStartedAt"
+            ></div>
           </div>
           <div class="bg-base-200 rounded-lg p-4">
             <div class="text-base-content/70 mb-1 text-xs uppercase">Ended</div>
-            <div class="text-sm font-medium">
-              {{ formatDate(testData()?.summary?.global?.epochEndedAt) }}
-            </div>
+            <div
+              class="text-sm font-medium"
+              [appFormatDate]="testData()?.summary?.global?.epochEndedAt"
+            ></div>
           </div>
         </div>
       </div>

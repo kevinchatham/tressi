@@ -3,11 +3,12 @@ import { Component, input, output } from '@angular/core';
 import { ButtonComponent } from 'src/app/components/button/button.component';
 
 import { IconComponent } from '../../../components/icon/icon.component';
+import { FormatDateDirective } from '../../../directives/format/format-date.directive';
 import { TestDocument } from '../../../services/rpc.service';
 
 @Component({
   selector: 'app-delete-confirmation-modal',
-  imports: [CommonModule, IconComponent, ButtonComponent],
+  imports: [CommonModule, IconComponent, ButtonComponent, FormatDateDirective],
   templateUrl: './delete-confirmation-modal.component.html',
 })
 export class DeleteConfirmationModalComponent {
@@ -43,10 +44,5 @@ export class DeleteConfirmationModalComponent {
       default:
         return 'badge-neutral';
     }
-  }
-
-  formatDate(epoch?: number | null): string {
-    if (!epoch) return '';
-    return new Date(epoch).toLocaleString();
   }
 }

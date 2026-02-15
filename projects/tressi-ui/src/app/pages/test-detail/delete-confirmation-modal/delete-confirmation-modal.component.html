@@ -22,7 +22,7 @@
       </div>
       <div class="flex items-center gap-2">
         <span class="text-base-content/70 text-sm">Created:</span>
-        <span class="text-sm">{{ formatDate(test()?.epochCreatedAt) }}</span>
+        <span class="text-sm" [appFormatDate]="test()?.epochCreatedAt"></span>
       </div>
     </div>
 

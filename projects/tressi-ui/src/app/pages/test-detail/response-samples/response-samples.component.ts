@@ -6,6 +6,8 @@ import {
   type IconName,
 } from '../../../components/icon/icon.component';
 import { JsonTextareaComponent } from '../../../components/json-textarea/json-textarea.component';
+import { FormatNumberDirective } from '../../../directives/format/format-number.directive';
+import { FormatPercentageDirective } from '../../../directives/format/format-percentage.directive';
 
 interface ResponseSample {
   statusCode: number;
@@ -21,7 +23,13 @@ type StatusCategory = 'success' | 'redirect' | 'client-error' | 'server-error';
  */
 @Component({
   selector: 'app-response-samples',
-  imports: [CommonModule, IconComponent, JsonTextareaComponent],
+  imports: [
+    CommonModule,
+    IconComponent,
+    JsonTextareaComponent,
+    FormatNumberDirective,
+    FormatPercentageDirective,
+  ],
   templateUrl: './response-samples.component.html',
 })
 export class ResponseSamplesComponent {

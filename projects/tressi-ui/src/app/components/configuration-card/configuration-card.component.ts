@@ -8,6 +8,9 @@ import {
 } from '@angular/core';
 import { TressiRequestConfig } from 'tressi-cli/src/common/config/types';
 
+import { FormatDurationDirective } from '../../directives/format/format-duration.directive';
+import { FormatNumberDirective } from '../../directives/format/format-number.directive';
+import { FormatRpsDirective } from '../../directives/format/format-rps.directive';
 import { ConfigDocument } from '../../services/rpc.service';
 import { TimeService } from '../../services/time.service';
 import { ButtonComponent } from '../button/button.component';
@@ -15,7 +18,13 @@ import { ExportConfigButtonComponent } from '../export-config-button/export-conf
 
 @Component({
   selector: 'app-configuration-card',
-  imports: [ExportConfigButtonComponent, ButtonComponent],
+  imports: [
+    ExportConfigButtonComponent,
+    ButtonComponent,
+    FormatNumberDirective,
+    FormatRpsDirective,
+    FormatDurationDirective,
+  ],
   templateUrl: './configuration-card.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
