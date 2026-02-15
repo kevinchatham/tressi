@@ -2,6 +2,14 @@ import { CommonModule } from '@angular/common';
 import { Component, computed, input } from '@angular/core';
 
 import { IconComponent } from '../../../components/icon/icon.component';
+import { FormatBytesDirective } from '../../../directives/format/format-bytes.directive';
+import { FormatCpuUsageDirective } from '../../../directives/format/format-cpu.directive';
+import { FormatDurationDirective } from '../../../directives/format/format-duration.directive';
+import { FormatMemoryDirective } from '../../../directives/format/format-memory.directive';
+import { FormatNetworkThroughputDirective } from '../../../directives/format/format-network.directive';
+import { FormatNumberDirective } from '../../../directives/format/format-number.directive';
+import { FormatPercentageDirective } from '../../../directives/format/format-percentage.directive';
+import { FormatRpsDirective } from '../../../directives/format/format-rps.directive';
 import { EndpointSummary, GlobalSummary } from '../../../services/rpc.service';
 
 /**
@@ -39,7 +47,18 @@ export const METRIC_TOOLTIPS: Record<string, string> = {
 
 @Component({
   selector: 'app-metrics-summary',
-  imports: [CommonModule, IconComponent],
+  imports: [
+    CommonModule,
+    IconComponent,
+    FormatDurationDirective,
+    FormatPercentageDirective,
+    FormatRpsDirective,
+    FormatNumberDirective,
+    FormatBytesDirective,
+    FormatNetworkThroughputDirective,
+    FormatCpuUsageDirective,
+    FormatMemoryDirective,
+  ],
   templateUrl: './metrics-summary.component.html',
 })
 export class MetricsSummaryComponent {
@@ -61,103 +80,6 @@ export class MetricsSummaryComponent {
       return s as unknown as GlobalSummary;
     else return null;
   });
-
-  formatDuration(seconds: number | undefined): string {
-    if (!seconds) return '0s';
-
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = Math.floor(seconds % 60);
-
-    const parts: string[] = [];
-    if (hours > 0) parts.push(`${hours}h`);
-    if (minutes > 0) parts.push(`${minutes}m`);
-    if (secs > 0 || parts.length === 0) parts.push(`${secs}s`);
-
-    return parts.join(' ');
-  }
-
-  formatPercentage(value: number | undefined): string {
-    if (value === undefined || value === null) return '0%';
-    return `${value}%`;
-  }
-
-  formatRps(value: number | undefined): string {
-    if (!value) return '0/s';
-    return `${Math.round(value)}/s`;
-  }
-
-  formatNumber(value: number | undefined): string {
-    if (value === undefined || value === null) return '0';
-    return value.toLocaleString();
-  }
-
-  /**
-   * Formats network throughput with appropriate units (B/s, KB/s, MB/s, GB/s)
-   */
-  formatNetworkThroughput(bytesPerSec: number | undefined): string {
-    if (
-      bytesPerSec === undefined ||
-      bytesPerSec === null ||
-      bytesPerSec === 0
-    ) {
-      return '0 B/s';
-    }
-
-    const absValue = Math.abs(bytesPerSec);
-
-    if (absValue < 1024) {
-      return `${Math.round(bytesPerSec)} B/s`;
-    } else if (absValue < 1024 * 1024) {
-      return `${(bytesPerSec / 1024).toFixed(1)} KB/s`;
-    } else if (absValue < 1024 * 1024 * 1024) {
-      return `${(bytesPerSec / (1024 * 1024)).toFixed(1)} MB/s`;
-    } else {
-      return `${(bytesPerSec / (1024 * 1024 * 1024)).toFixed(2)} GB/s`;
-    }
-  }
-
-  /**
-   * Formats bytes to human-readable format (B, KB, MB, GB)
-   */
-  formatBytes(bytes: number | undefined): string {
-    if (bytes === undefined || bytes === null || bytes === 0) {
-      return '0 B';
-    }
-
-    const absValue = Math.abs(bytes);
-
-    if (absValue < 1024) {
-      return `${Math.round(bytes)} B`;
-    } else if (absValue < 1024 * 1024) {
-      return `${(bytes / 1024).toFixed(1)} KB`;
-    } else if (absValue < 1024 * 1024 * 1024) {
-      return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-    } else {
-      return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
-    }
-  }
-
-  /**
-   * Formats CPU usage percentage
-   */
-  formatCpuUsage(percent: number | undefined): string {
-    if (percent === undefined || percent === null) return '0.0%';
-    return `${percent.toFixed(1)}%`;
-  }
-
-  /**
-   * Formats memory usage with MB or GB units
-   */
-  formatMemoryMB(mb: number | undefined): string {
-    if (mb === undefined || mb === null) return '0 MB';
-
-    if (mb < 1024) {
-      return `${Math.round(mb)} MB`;
-    } else {
-      return `${(mb / 1024).toFixed(2)} GB`;
-    }
-  }
 
   /**
    * Determines CPU usage state based on percentage thresholds

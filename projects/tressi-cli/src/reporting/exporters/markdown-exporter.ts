@@ -337,7 +337,7 @@ export class MarkdownExporter {
       '| Endpoint | Total | Success | Failed | Error Rate | Avg RPS | Peak RPS | Target Achieved |\n';
     md += '|---|---|---|---|---|---|---|---|\n';
     for (const endpoint of endpoints) {
-      const targetAchieved = endpoint.targetAchieved.toFixed(1);
+      const targetAchieved = (endpoint.targetAchieved * 100).toFixed(1);
       const errorRate = (endpoint.errorRate * 100).toFixed(2);
       md += `| ${endpoint.method} ${endpoint.url} | ${endpoint.totalRequests} | ${endpoint.successfulRequests} | ${endpoint.failedRequests} | ${errorRate}% | ${endpoint.averageRequestsPerSecond.toFixed(2)} | ${endpoint.peakRequestsPerSecond.toFixed(2)} | ${targetAchieved}% |\n`;
     }

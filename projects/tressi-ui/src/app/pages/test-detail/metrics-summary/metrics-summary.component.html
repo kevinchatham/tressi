@@ -19,9 +19,10 @@
         >
           Average RPS
         </div>
-        <div class="text-2xl font-bold">
-          {{ formatRps(summary()?.averageRequestsPerSecond) }}
-        </div>
+        <div
+          class="text-2xl font-bold"
+          [appFormatRps]="summary()?.averageRequestsPerSecond"
+        ></div>
         <div class="text-base-content/60 mt-1 text-xs">requests per sec</div>
       </div>
 
@@ -36,9 +37,10 @@
         >
           Peak RPS
         </div>
-        <div class="text-2xl font-bold">
-          {{ formatRps(summary()?.peakRequestsPerSecond) }}
-        </div>
+        <div
+          class="text-2xl font-bold"
+          [appFormatRps]="summary()?.peakRequestsPerSecond"
+        ></div>
         <div class="text-base-content/60 mt-1 text-xs">highest window</div>
       </div>
 
@@ -51,9 +53,10 @@
           >
             Duration
           </div>
-          <div class="text-2xl font-bold">
-            {{ formatDuration(globalSummary()?.finalDurationSec) }}
-          </div>
+          <div
+            class="text-2xl font-bold"
+            [appFormatDuration]="globalSummary()?.finalDurationSec"
+          ></div>
           <div class="text-base-content/60 mt-1 text-xs">total time</div>
         </div>
       }
@@ -67,9 +70,10 @@
           >
             Endpoints
           </div>
-          <div class="text-2xl font-bold">
-            {{ formatNumber(globalSummary()?.totalEndpoints) }}
-          </div>
+          <div
+            class="text-2xl font-bold"
+            [appFormatNumber]="globalSummary()?.totalEndpoints"
+          ></div>
           <div class="text-base-content/60 mt-1 text-xs">tested</div>
         </div>
       }
@@ -83,9 +87,10 @@
           >
             Target Achieved
           </div>
-          <div class="text-2xl font-bold">
-            {{ formatPercentage(endpointSummary()?.targetAchieved) }}
-          </div>
+          <div
+            class="text-2xl font-bold"
+            [appFormatPercentage]="endpointSummary()?.targetAchieved"
+          ></div>
           <div class="text-base-content/60 mt-1 text-xs">of target RPS</div>
         </div>
       }
@@ -99,9 +104,10 @@
           >
             Max Throughput
           </div>
-          <div class="text-2xl font-bold">
-            {{ formatRps(endpointSummary()?.theoreticalMaxRps) }}
-          </div>
+          <div
+            class="text-2xl font-bold"
+            [appFormatRps]="endpointSummary()?.theoreticalMaxRps"
+          ></div>
           <div class="text-base-content/60 mt-1 text-xs">theoretical limit</div>
         </div>
       }
@@ -114,20 +120,22 @@
         >
           Total Requests
         </div>
-        <div class="text-2xl font-bold">
-          {{ formatNumber(summary()?.totalRequests) }}
-        </div>
+        <div
+          class="text-2xl font-bold"
+          [appFormatNumber]="summary()?.totalRequests"
+        ></div>
         <div class="text-base-content/60 mt-1 text-xs">all requests</div>
       </div>
 
       <!-- Successful Requests -->
       <div class="bg-base-200 rounded-lg p-4">
         <div class="text-base-content/70 mb-1 text-sm">Successful Requests</div>
-        <div class="text-success text-2xl font-bold">
-          {{ formatNumber(summary()?.successfulRequests) }}
-        </div>
+        <div
+          class="text-success text-2xl font-bold"
+          [appFormatNumber]="summary()?.successfulRequests"
+        ></div>
         <div class="text-success mt-1 text-xs">
-          {{ formatPercentage(100 - (summary()?.errorRate || 0) * 100) }}
+          <span [appFormatPercentage]="summary()?.errorRate"></span>
           success rate
         </div>
       </div>
@@ -142,9 +150,8 @@
         <div
           class="text-2xl font-bold"
           [class.text-error]="(summary()?.failedRequests ?? 0) > 0"
-        >
-          {{ formatNumber(summary()?.failedRequests) }}
-        </div>
+          [appFormatNumber]="summary()?.failedRequests"
+        ></div>
         <div
           class="mt-1 text-xs"
           [class.text-error]="(summary()?.failedRequests ?? 0) > 0"
@@ -165,9 +172,8 @@
         <div
           class="text-2xl font-bold"
           [class.text-error]="(summary()?.errorRate ?? 0) > 0.05"
-        >
-          {{ formatPercentage(summary()?.errorRate) }}
-        </div>
+          [appFormatPercentage]="summary()?.errorRate"
+        ></div>
         <div class="text-base-content/60 mt-1 text-xs">of total requests</div>
       </div>
     </div>
@@ -193,7 +199,7 @@
           Min Latency
         </div>
         <div class="text-2xl font-bold">
-          {{ formatNumber(summary()?.minLatencyMs) }} ms
+          <span [appFormatNumber]="summary()?.minLatencyMs"></span> ms
         </div>
         <div class="text-base-content/60 mt-1 text-xs">fastest</div>
       </div>
@@ -206,7 +212,7 @@
           P50 Latency
         </div>
         <div class="text-2xl font-bold">
-          {{ formatNumber(summary()?.p50LatencyMs) }} ms
+          <span [appFormatNumber]="summary()?.p50LatencyMs"></span> ms
         </div>
         <div class="text-base-content/60 mt-1 text-xs">median</div>
       </div>
@@ -219,7 +225,7 @@
           P95 Latency
         </div>
         <div class="text-2xl font-bold">
-          {{ formatNumber(summary()?.p95LatencyMs) }} ms
+          <span [appFormatNumber]="summary()?.p95LatencyMs"></span> ms
         </div>
         <div class="text-base-content/60 mt-1 text-xs">slow</div>
       </div>
@@ -232,7 +238,7 @@
           P99 Latency
         </div>
         <div class="text-2xl font-bold">
-          {{ formatNumber(summary()?.p99LatencyMs) }} ms
+          <span [appFormatNumber]="summary()?.p99LatencyMs"></span> ms
         </div>
         <div class="text-base-content/60 mt-1 text-xs">slower</div>
       </div>
@@ -245,7 +251,7 @@
           Max Latency
         </div>
         <div class="text-2xl font-bold">
-          {{ formatNumber(summary()?.maxLatencyMs) }} ms
+          <span [appFormatNumber]="summary()?.maxLatencyMs"></span> ms
         </div>
         <div class="text-base-content/60 mt-1 text-xs">slowest</div>
       </div>
@@ -274,9 +280,10 @@
             >
               CPU Usage
             </div>
-            <div class="text-2xl font-bold">
-              {{ formatCpuUsage(globalSummary()?.avgSystemCpuUsagePercent) }}
-            </div>
+            <div
+              class="text-2xl font-bold"
+              [appFormatCpu]="globalSummary()?.avgSystemCpuUsagePercent"
+            ></div>
             <div class="text-base-content/70 mt-1 text-xs">
               @switch (getCpuState(globalSummary()?.avgSystemCpuUsagePercent)) {
                 @case ('good') {
@@ -302,9 +309,10 @@
             >
               Memory Usage
             </div>
-            <div class="text-2xl font-bold">
-              {{ formatMemoryMB(globalSummary()?.avgProcessMemoryUsageMB) }}
-            </div>
+            <div
+              class="text-2xl font-bold"
+              [appFormatMemory]="globalSummary()?.avgProcessMemoryUsageMB"
+            ></div>
             <div class="text-base-content/70 mt-1 text-xs">
               @switch (
                 getMemoryState(globalSummary()?.avgProcessMemoryUsageMB)
@@ -332,9 +340,10 @@
             >
               Throughput
             </div>
-            <div class="text-2xl font-bold">
-              {{ formatNetworkThroughput(globalSummary()?.networkBytesPerSec) }}
-            </div>
+            <div
+              class="text-2xl font-bold"
+              [appFormatNetwork]="globalSummary()?.networkBytesPerSec"
+            ></div>
             <div class="text-base-content/60 mt-1 text-xs">avg data rate</div>
           </div>
         }
@@ -348,9 +357,10 @@
             >
               Bytes Sent
             </div>
-            <div class="text-2xl font-bold">
-              {{ formatBytes(globalSummary()?.networkBytesSent) }}
-            </div>
+            <div
+              class="text-2xl font-bold"
+              [appFormatBytes]="globalSummary()?.networkBytesSent"
+            ></div>
             <div class="text-base-content/60 mt-1 text-xs">total uploaded</div>
           </div>
         }
@@ -364,9 +374,10 @@
             >
               Bytes Received
             </div>
-            <div class="text-2xl font-bold">
-              {{ formatBytes(globalSummary()?.networkBytesReceived) }}
-            </div>
+            <div
+              class="text-2xl font-bold"
+              [appFormatBytes]="globalSummary()?.networkBytesReceived"
+            ></div>
             <div class="text-base-content/60 mt-1 text-xs">
               total downloaded
             </div>

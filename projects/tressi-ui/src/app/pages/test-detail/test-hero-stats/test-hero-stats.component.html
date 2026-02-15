@@ -4,34 +4,37 @@
   <!-- Success Rate Stat -->
   <div class="stat place-items-center">
     <div class="stat-title">Success Rate</div>
-    <div class="stat-value text-success">
-      {{ formatPercentage(successRate()) }}
-    </div>
+    <div
+      class="stat-value text-success"
+      [appFormatPercentage]="successRate() / 100"
+    ></div>
   </div>
 
   <!-- Average RPS Stat -->
   <div class="stat place-items-center">
     <div class="stat-title">Average RPS</div>
-    <div class="stat-value text-primary">
-      {{ formatRps(selectedSummary()?.averageRequestsPerSecond) }}
-    </div>
+    <div
+      class="stat-value text-primary"
+      [appFormatRps]="selectedSummary()?.averageRequestsPerSecond"
+    ></div>
   </div>
 
   <!-- Peak RPS Stat -->
   <div class="stat place-items-center">
     <div class="stat-title">Peak RPS</div>
-    <div class="stat-value text-secondary">
-      {{ formatRps(selectedSummary()?.peakRequestsPerSecond) }}
-    </div>
+    <div
+      class="stat-value text-secondary"
+      [appFormatRps]="selectedSummary()?.peakRequestsPerSecond"
+    ></div>
   </div>
 
   <!-- P50/95/99 Latency Stat -->
   <div class="stat place-items-center">
     <div class="stat-title">P50 \ 95 \ 99 Latency</div>
     <div class="stat-value text-info">
-      {{ formatLatency(selectedSummary()?.p50LatencyMs) }} \
-      {{ formatLatency(selectedSummary()?.p95LatencyMs) }} \
-      {{ formatLatency(selectedSummary()?.p99LatencyMs) }}
+      <span [appFormatNumber]="selectedSummary()?.p50LatencyMs"></span> \
+      <span [appFormatNumber]="selectedSummary()?.p95LatencyMs"></span> \
+      <span [appFormatNumber]="selectedSummary()?.p99LatencyMs"></span>
       <span class="text-sm font-normal">ms</span>
     </div>
   </div>
@@ -39,8 +42,6 @@
   <!-- Duration Stat -->
   <div class="stat place-items-center">
     <div class="stat-title">Duration</div>
-    <div class="stat-value">
-      {{ formatDuration() }}
-    </div>
+    <div class="stat-value" [appFormatDuration]="getDurationSec()"></div>
   </div>
 </div>

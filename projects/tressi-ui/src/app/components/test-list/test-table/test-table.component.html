@@ -95,7 +95,7 @@
             @if (column.key === 'startTime') {
               <td class="text-center">
                 <div class="text-base-content font-medium">
-                  {{ getColumnValue(test, column) }}
+                  {{ formatDate(getColumnValue(test, column)) }}
                 </div>
               </td>
             }
@@ -107,23 +107,24 @@
               </td>
             }
             @if (column.key === 'duration') {
-              <td class="text-base-content text-center">
-                {{ getColumnValue(test, column) }}
-              </td>
+              <td
+                class="text-base-content text-center"
+                [appFormatDuration]="getColumnValue(test, column)"
+              ></td>
             }
             @if (column.key === 'requests') {
-              <td class="text-base-content text-center">
-                {{ getColumnValue(test, column) }}
-              </td>
+              <td
+                class="text-base-content text-center"
+                [appFormatNumber]="getColumnValue(test, column)"
+              ></td>
             }
             @if (column.key === 'errorRate') {
               <td class="text-center">
                 <span
                   [class.text-error]="test.status === 'failed' || test.error"
                   class="font-medium"
-                >
-                  {{ getColumnValue(test, column) }}
-                </span>
+                  [appFormatPercentage]="getColumnValue(test, column)"
+                ></span>
               </td>
             }
             @if (
@@ -137,7 +138,33 @@
               column.key !== 'actions'
             ) {
               <td class="text-base-content text-center">
-                {{ getColumnValue(test, column) }}
+                @if (column.field.includes('Latency')) {
+                  <span [appFormatNumber]="getColumnValue(test, column)"></span>
+                  ms
+                } @else if (column.field.includes('BytesPerSec')) {
+                  <span
+                    [appFormatNetwork]="getColumnValue(test, column)"
+                  ></span>
+                } @else if (column.field.includes('Bytes')) {
+                  <span [appFormatBytes]="getColumnValue(test, column)"></span>
+                } @else if (column.field.includes('RequestsPerSecond')) {
+                  <span [appFormatRps]="getColumnValue(test, column)"></span>
+                } @else if (
+                  column.field.includes('Requests') ||
+                  column.field.includes('threads')
+                ) {
+                  <span [appFormatNumber]="getColumnValue(test, column)"></span>
+                } @else if (column.field.includes('DurationSec')) {
+                  <span
+                    [appFormatDuration]="getColumnValue(test, column)"
+                  ></span>
+                } @else if (column.field.includes('errorRate')) {
+                  <span
+                    [appFormatPercentage]="getColumnValue(test, column)"
+                  ></span>
+                } @else {
+                  {{ getColumnValue(test, column) ?? '—' }}
+                }
               </td>
             }
           }

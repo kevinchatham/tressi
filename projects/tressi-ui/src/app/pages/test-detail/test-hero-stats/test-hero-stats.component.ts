@@ -1,6 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, input } from '@angular/core';
 
+import { FormatDurationDirective } from '../../../directives/format/format-duration.directive';
+import { FormatNumberDirective } from '../../../directives/format/format-number.directive';
+import { FormatPercentageDirective } from '../../../directives/format/format-percentage.directive';
+import { FormatRpsDirective } from '../../../directives/format/format-rps.directive';
 import {
   EndpointSummary,
   GlobalSummary,
@@ -10,7 +14,13 @@ import { TestService } from '../../../services/test.service';
 
 @Component({
   selector: 'app-test-hero-stats',
-  imports: [CommonModule],
+  imports: [
+    CommonModule,
+    FormatDurationDirective,
+    FormatPercentageDirective,
+    FormatRpsDirective,
+    FormatNumberDirective,
+  ],
   templateUrl: './test-hero-stats.component.html',
 })
 export class TestHeroStatsComponent {
@@ -40,36 +50,12 @@ export class TestHeroStatsComponent {
   });
 
   /**
-   * Format RPS value
+   * Get test duration in seconds
    */
-  formatRps(value: number | undefined): string {
-    if (!value) return '0';
-    return Math.round(value).toLocaleString();
-  }
-
-  /**
-   * Format latency value
-   */
-  formatLatency(value: number | undefined): string {
-    if (!value) return '0';
-    return Math.round(value).toLocaleString();
-  }
-
-  /**
-   * Format percentage value
-   */
-  formatPercentage(value: number): string {
-    return `${value.toFixed(1)}%`;
-  }
-
-  /**
-   * Format test duration
-   */
-  formatDuration(): string {
+  getDurationSec(): number | null {
     const test = this.testData();
-    if (!test) return 'N/A';
+    if (!test) return null;
 
-    const durationMs = this.testService.getTestDuration(test);
-    return this.testService.formatDuration(durationMs);
+    return this.testService.getTestDuration(test) / 1000;
   }
 }

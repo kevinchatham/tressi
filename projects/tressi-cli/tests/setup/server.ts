@@ -43,6 +43,7 @@
  *
  * MISCELLANEOUS:
  * - GET /rate-limit - 30% chance of returning 429 rate limit error
+ * - GET /error-50-percent - 50% chance of returning 500 error
  * - GET / - Root endpoint with available endpoints documentation
  */
 /* eslint-disable no-console */
@@ -380,6 +381,28 @@ app.get('/rate-limit', (c) => {
   }
 });
 
+// 50% error simulation
+app.get('/error-50-percent', (c) => {
+  const shouldError = Math.random() < 0.5;
+
+  if (shouldError) {
+    return c.json(
+      {
+        error: 'Internal Server Error',
+        message: 'This is a purposeful 50% chance error',
+        timestamp: new Date().toISOString(),
+      },
+      500,
+    );
+  } else {
+    return c.json({
+      status: 'success',
+      message: 'Request successful',
+      timestamp: new Date().toISOString(),
+    });
+  }
+});
+
 // Headers endpoint
 app.get('/headers', (c) => {
   return c.json({
@@ -448,6 +471,7 @@ app.get('/', (c) => {
       payload: '/payload/:size - Returns response of specified size (KB)',
       slowResponse: '/slow-response - Slow incremental response',
       rateLimit: '/rate-limit - Simulates rate limiting',
+      error50Percent: '/error-50-percent - 50% chance of 500 error',
       headers: '/headers - Returns request headers',
       ip: '/ip - Returns client IP',
       health: '/health - Health check',
@@ -485,6 +509,7 @@ app.notFound((c) => {
         '/payload/:size',
         '/slow-response',
         '/rate-limit',
+        '/error-50-percent',
         '/headers',
         '/ip',
         '/metrics',
@@ -567,6 +592,7 @@ console.log('\n🚦 Miscellaneous:');
 console.log(
   '  GET  /rate-limit - 30% chance of returning 429 rate limit error',
 );
+console.log('  GET  /error-50-percent - 50% chance of returning 500 error');
 console.log('  GET  / - Root endpoint with available endpoints documentation');
 console.log('\nPress Ctrl+C to stop the server');
 

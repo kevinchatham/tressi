@@ -453,14 +453,9 @@ export class MetricsAggregator implements IMetricsAggregator {
       const endpointStats = this.calculateEndpointLatencyStats(histograms);
       const endpointTotalRequests = endpointStats.totalCount;
 
-      const endpointSuccessRequests = Object.values(statusCounts).reduce(
-        (sum, count) => sum + count,
-        0,
-      );
-      const endpointFailureRequests =
-        endpointTotalRequests - endpointSuccessRequests;
-
-      // Aggregate network metrics per endpoint
+      // Aggregate success/failure and network metrics per endpoint
+      let endpointSuccessRequests = 0;
+      let endpointFailureRequests = 0;
       let endpointBytesSent = 0;
       let endpointBytesReceived = 0;
 
@@ -478,6 +473,8 @@ export class MetricsAggregator implements IMetricsAggregator {
 
           const endpointUrl = endpoints[globalEndpointIndex];
           if (endpointUrl === url) {
+            endpointSuccessRequests += counters.successCount;
+            endpointFailureRequests += counters.failureCount;
             endpointBytesSent += counters.bytesSent;
             endpointBytesReceived += counters.bytesReceived;
           }

@@ -152,29 +152,4 @@ export class TestService {
 
     return 0;
   }
-
-  /**
-   * Format test duration as human-readable string
-   * @param durationMs Duration in milliseconds
-   * @returns string Formatted duration (e.g., "2m 30s")
-   */
-  formatDuration(durationMs: number): string {
-    if (durationMs < 1000) {
-      return `${durationMs}ms`;
-    }
-
-    const seconds = Math.floor(durationMs / 1000);
-    const minutes = Math.floor(seconds / 60);
-    const hours = Math.floor(minutes / 60);
-
-    if (hours > 0) {
-      return `${hours}h ${minutes % 60}m ${seconds % 60}s`;
-    }
-
-    if (minutes > 0) {
-      return `${minutes}m ${seconds % 60}s`;
-    }
-
-    return `${seconds}s`;
-  }
 }
