@@ -1,17 +1,19 @@
-import { CommonModule } from '@angular/common';
 import { Component, input, output } from '@angular/core';
 
 import { CollapsibleCardComponent } from '../../../components/collapsible-card/collapsible-card.component';
-import { ResponseSamplesComponent } from '../response-samples/response-samples.component';
+import {
+  ResponseSample,
+  ResponseSamplesComponent,
+} from '../response-samples/response-samples.component';
 
 @Component({
   selector: 'app-response-samples-card',
-  imports: [CommonModule, CollapsibleCardComponent, ResponseSamplesComponent],
+  imports: [CollapsibleCardComponent, ResponseSamplesComponent],
   templateUrl: './response-samples-card.component.html',
 })
 export class ResponseSamplesCardComponent {
   /** Response samples data */
-  readonly responseSamples = input<any[] | undefined>();
+  readonly responseSamples = input<ResponseSample[] | undefined>();
 
   /** Status code distribution data */
   readonly statusCodeDistribution = input<Record<string, number> | undefined>();

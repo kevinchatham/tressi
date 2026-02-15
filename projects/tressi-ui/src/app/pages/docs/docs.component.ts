@@ -1,4 +1,4 @@
-import { CommonModule, Location } from '@angular/common';
+import { Location } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { MarkdownModule } from 'ngx-markdown';
@@ -13,7 +13,6 @@ import { DocsMenuComponent } from './docs-menu/docs-menu.component';
   selector: 'app-docs',
   standalone: true,
   imports: [
-    CommonModule,
     RouterModule,
     MarkdownModule,
     HeaderComponent,

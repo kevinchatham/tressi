@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, input, output } from '@angular/core';
 
 import { CollapsibleCardComponent } from '../../../components/collapsible-card/collapsible-card.component';
@@ -7,7 +6,7 @@ import { LatencyHistogramComponent } from '../latency-histogram/latency-histogra
 
 @Component({
   selector: 'app-latency-distribution',
-  imports: [CommonModule, CollapsibleCardComponent, LatencyHistogramComponent],
+  imports: [CollapsibleCardComponent, LatencyHistogramComponent],
   templateUrl: './latency-distribution.component.html',
 })
 export class LatencyDistributionComponent {

@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import {
   Component,
   computed,
@@ -49,7 +48,6 @@ import { TestMetadataComponent } from './test-metadata/test-metadata.component';
 @Component({
   selector: 'app-test-detail',
   imports: [
-    CommonModule,
     HeaderComponent,
     IconComponent,
     DeleteConfirmationModalComponent,

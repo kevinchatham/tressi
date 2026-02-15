@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, input, output } from '@angular/core';
 
 import { ButtonComponent } from '../../../components/button/button.component';
@@ -19,7 +18,6 @@ import {
 @Component({
   selector: 'app-performance-over-time',
   imports: [
-    CommonModule,
     CollapsibleCardComponent,
     IconComponent,
     LineChartComponent,

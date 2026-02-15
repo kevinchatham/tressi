@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, inject, input, output } from '@angular/core';
 
 import { ButtonComponent } from '../../../components/button/button.component';
@@ -12,7 +11,6 @@ import { ToastService } from '../../../services/toast.service';
 @Component({
   selector: 'app-test-metadata',
   imports: [
-    CommonModule,
     ButtonComponent,
     CollapsibleCardComponent,
     IconComponent,

@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, computed, input, output } from '@angular/core';
 
 import { IconComponent, IconName } from '../icon/icon.component';
@@ -20,7 +19,7 @@ export type ButtonColor = (typeof BUTTON_COLORS)[number];
 
 @Component({
   selector: 'app-button',
-  imports: [IconComponent, CommonModule],
+  imports: [IconComponent],
   templateUrl: './button.component.html',
   host: {
     '[style.pointer-events]': 'disabled() ? "none" : "auto"',

@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, computed, inject, input } from '@angular/core';
 
 import { FormatDurationDirective } from '../../../directives/format/format-duration.directive';
@@ -15,7 +14,6 @@ import { TestService } from '../../../services/test.service';
 @Component({
   selector: 'app-test-hero-stats',
   imports: [
-    CommonModule,
     FormatDurationDirective,
     FormatPercentageDirective,
     FormatRpsDirective,

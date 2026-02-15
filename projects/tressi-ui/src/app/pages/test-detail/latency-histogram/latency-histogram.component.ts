@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, input } from '@angular/core';
 import { LatencyHistogramBucket } from 'tressi-cli/src/reporting/types';
 
@@ -18,7 +17,7 @@ interface HistogramPercentile {
  */
 @Component({
   selector: 'app-latency-histogram',
-  imports: [CommonModule, IconComponent, FormatLatencyDirective],
+  imports: [IconComponent, FormatLatencyDirective],
   templateUrl: './latency-histogram.component.html',
 })
 export class LatencyHistogramComponent {

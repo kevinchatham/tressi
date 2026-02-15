@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, computed, input } from '@angular/core';
 
 import { IconComponent } from '../../../components/icon/icon.component';
@@ -49,7 +48,6 @@ export const METRIC_TOOLTIPS: Record<string, string> = {
 @Component({
   selector: 'app-metrics-summary',
   imports: [
-    CommonModule,
     IconComponent,
     FormatDurationDirective,
     FormatPercentageDirective,

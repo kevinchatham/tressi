@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { TitleCasePipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -11,7 +11,7 @@ import { ButtonComponent } from '../button/button.component';
 
 @Component({
   selector: 'app-theme-switcher',
-  imports: [CommonModule, ButtonComponent],
+  imports: [ButtonComponent, TitleCasePipe],
   templateUrl: './theme-switcher.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

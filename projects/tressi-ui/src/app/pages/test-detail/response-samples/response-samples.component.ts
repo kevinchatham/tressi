@@ -1,5 +1,4 @@
-import { CommonModule } from '@angular/common';
-import { Component, Input, signal } from '@angular/core';
+import { Component, input, signal } from '@angular/core';
 
 import {
   IconComponent,
@@ -9,11 +8,11 @@ import { JsonTextareaComponent } from '../../../components/json-textarea/json-te
 import { FormatNumberDirective } from '../../../directives/format/format-number.directive';
 import { FormatPercentageDirective } from '../../../directives/format/format-percentage.directive';
 
-interface ResponseSample {
+export type ResponseSample = {
   statusCode: number;
   headers: Record<string, string>;
   body: string;
-}
+};
 
 type StatusCategory = 'success' | 'redirect' | 'client-error' | 'server-error';
 
@@ -24,7 +23,6 @@ type StatusCategory = 'success' | 'redirect' | 'client-error' | 'server-error';
 @Component({
   selector: 'app-response-samples',
   imports: [
-    CommonModule,
     IconComponent,
     JsonTextareaComponent,
     FormatNumberDirective,
@@ -33,9 +31,9 @@ type StatusCategory = 'success' | 'redirect' | 'client-error' | 'server-error';
   templateUrl: './response-samples.component.html',
 })
 export class ResponseSamplesComponent {
-  @Input() responseSamples: ResponseSample[] | undefined;
-  @Input() statusCodeDistribution: Record<string, number> | undefined;
-  @Input() totalRequests: number | undefined;
+  readonly responseSamples = input<ResponseSample[]>();
+  readonly statusCodeDistribution = input<Record<string, number>>();
+  readonly totalRequests = input<number>();
 
   readonly selectedStatusCode = signal<string>('all');
   readonly maxSamplesPerCode = 3;
@@ -44,9 +42,10 @@ export class ResponseSamplesComponent {
    * Gets available status codes for filtering, including 'all' option
    */
   getAvailableStatusCodes(): string[] {
-    if (!this.statusCodeDistribution) return ['all'];
+    const statusCodeDistribution = this.statusCodeDistribution();
+    if (!statusCodeDistribution) return ['all'];
 
-    const codes = Object.keys(this.statusCodeDistribution)
+    const codes = Object.keys(statusCodeDistribution)
       .map((code) => parseInt(code, 10))
       .sort((a, b) => a - b)
       .map((code) => code.toString());
@@ -58,9 +57,10 @@ export class ResponseSamplesComponent {
    * Filters samples based on selected status code
    */
   getFilteredSamples(): ResponseSample[] {
-    if (!this.responseSamples) return [];
+    const responseSamples = this.responseSamples();
+    if (!responseSamples) return [];
 
-    const samples = this.responseSamples.slice(0, this.maxSamplesPerCode * 5); // Limit total samples
+    const samples = responseSamples.slice(0, this.maxSamplesPerCode * 5); // Limit total samples
 
     if (this.selectedStatusCode() === 'all') {
       return samples;
@@ -120,9 +120,9 @@ export class ResponseSamplesComponent {
    */
   getCount(code: string): number {
     if (code === 'all') {
-      return this.responseSamples?.length || 0;
+      return this.responseSamples()?.length || 0;
     }
-    return this.statusCodeDistribution?.[code] || 0;
+    return this.statusCodeDistribution()?.[code] || 0;
   }
 
   /**
@@ -132,11 +132,12 @@ export class ResponseSamplesComponent {
     if (code === 'all') {
       return 100;
     }
-    if (!this.totalRequests || this.totalRequests === 0) {
+    const totalRequests = this.totalRequests();
+    if (!totalRequests || totalRequests === 0) {
       return 0;
     }
-    const count = this.statusCodeDistribution?.[code] || 0;
-    return (count / this.totalRequests) * 100;
+    const count = this.statusCodeDistribution()?.[code] || 0;
+    return (count / totalRequests) * 100;
   }
 
   /**

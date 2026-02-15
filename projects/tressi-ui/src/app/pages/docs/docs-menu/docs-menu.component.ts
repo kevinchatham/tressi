@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { KeyValuePipe } from '@angular/common';
 import { Component, input } from '@angular/core';
 import { RouterModule } from '@angular/router';
 
@@ -7,7 +7,7 @@ import { GetDocsResponseSuccess } from '../../../services/rpc.service';
 @Component({
   selector: 'app-docs-menu',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [RouterModule, KeyValuePipe],
   templateUrl: './docs-menu.component.html',
 })
 export class DocsMenuComponent {

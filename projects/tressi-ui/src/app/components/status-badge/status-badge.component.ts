@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { NgClass } from '@angular/common';
 import { Component, input } from '@angular/core';
 
 import type { TestStatus } from '../../services/rpc.service';
@@ -6,7 +6,7 @@ import { IconComponent, IconName } from '../icon/icon.component';
 
 @Component({
   selector: 'app-status-badge',
-  imports: [CommonModule, IconComponent],
+  imports: [IconComponent, NgClass],
   templateUrl: './status-badge.component.html',
 })
 export class StatusBadgeComponent {

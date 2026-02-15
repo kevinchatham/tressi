@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, input, output } from '@angular/core';
 
 import { CollapsibleCardComponent } from '../../../components/collapsible-card/collapsible-card.component';
@@ -12,7 +11,7 @@ import { MetricsSummaryComponent } from '../metrics-summary/metrics-summary.comp
  */
 @Component({
   selector: 'app-performance-summary',
-  imports: [CommonModule, CollapsibleCardComponent, MetricsSummaryComponent],
+  imports: [CollapsibleCardComponent, MetricsSummaryComponent],
   templateUrl: './performance-summary.component.html',
 })
 export class PerformanceSummaryComponent {

@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import {
   Component,
   contentChildren,
@@ -11,7 +11,7 @@ import { ButtonComponent } from '../button/button.component';
 
 @Component({
   selector: 'app-collapsible-card',
-  imports: [CommonModule, ButtonComponent],
+  imports: [ButtonComponent, NgTemplateOutlet],
   templateUrl: './collapsible-card.component.html',
   styleUrl: './collapsible-card.component.css',
 })

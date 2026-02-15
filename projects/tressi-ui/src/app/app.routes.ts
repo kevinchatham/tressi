@@ -6,13 +6,6 @@ import {
   Routes,
 } from '@angular/router';
 
-import { ConfigurationsComponent } from './pages/configs/configs.component';
-import { DashboardComponent } from './pages/dashboard/dashboard.component';
-import { DocsComponent } from './pages/docs/docs.component';
-import { ServerUnavailableComponent } from './pages/server-unavailable/server-unavailable.component';
-import { ShowcaseComponent } from './pages/showcase/showcase.component';
-import { TestDetailComponent } from './pages/test-detail/test-detail.component';
-import { WelcomeComponent } from './pages/welcome/welcome.component';
 import { configsResolver } from './resolvers/configs.resolver';
 import { docsResolver } from './resolvers/docs.resolver';
 import { testDetailResolver } from './resolvers/test-detail.resolver';
@@ -84,65 +77,89 @@ const configGuard = async (
 export const routes: Routes = [
   {
     path: 'server-unavailable',
-    component: ServerUnavailableComponent,
+    loadComponent: () =>
+      import('./pages/server-unavailable/server-unavailable.component').then(
+        (m) => m.ServerUnavailableComponent,
+      ),
     data: { title: 'Server Unavailable' },
   },
   {
     path: 'welcome',
-    component: WelcomeComponent,
+    loadComponent: () =>
+      import('./pages/welcome/welcome.component').then(
+        (m) => m.WelcomeComponent,
+      ),
     canActivate: [healthCheckGuard, configGuard],
     data: { title: 'Welcome' },
   },
   {
     path: 'configs',
-    component: ConfigurationsComponent,
+    loadComponent: () =>
+      import('./pages/configs/configs.component').then(
+        (m) => m.ConfigurationsComponent,
+      ),
     canActivate: [healthCheckGuard],
     resolve: { configs: configsResolver },
     data: { title: 'Configs' },
   },
   {
     path: 'dashboard',
-    component: DashboardComponent,
+    loadComponent: () =>
+      import('./pages/dashboard/dashboard.component').then(
+        (m) => m.DashboardComponent,
+      ),
     canActivate: [healthCheckGuard, configGuard],
     resolve: { configs: configsResolver },
     data: { title: 'Dashboard' },
   },
   {
     path: 'dashboard/:configId',
-    component: DashboardComponent,
+    loadComponent: () =>
+      import('./pages/dashboard/dashboard.component').then(
+        (m) => m.DashboardComponent,
+      ),
     canActivate: [healthCheckGuard, configGuard],
     resolve: { configs: configsResolver },
     data: { title: 'Dashboard' },
   },
   {
     path: 'showcase',
-    component: ShowcaseComponent,
+    loadComponent: () =>
+      import('./pages/showcase/showcase.component').then(
+        (m) => m.ShowcaseComponent,
+      ),
     data: { title: 'Showcase' },
   },
   {
     path: 'tests/:testId',
-    component: TestDetailComponent,
+    loadComponent: () =>
+      import('./pages/test-detail/test-detail.component').then(
+        (m) => m.TestDetailComponent,
+      ),
     canActivate: [healthCheckGuard],
     resolve: { data: testDetailResolver },
     data: { title: 'Test Details' },
   },
   {
     path: 'docs',
-    component: DocsComponent,
+    loadComponent: () =>
+      import('./pages/docs/docs.component').then((m) => m.DocsComponent),
     canActivate: [healthCheckGuard],
     resolve: { availableDocs: docsResolver },
     data: { title: 'Documentation' },
   },
   {
     path: 'docs/:filename',
-    component: DocsComponent,
+    loadComponent: () =>
+      import('./pages/docs/docs.component').then((m) => m.DocsComponent),
     canActivate: [healthCheckGuard],
     resolve: { availableDocs: docsResolver },
     data: { title: 'Documentation' },
   },
   {
     path: 'docs/:section/:filename',
-    component: DocsComponent,
+    loadComponent: () =>
+      import('./pages/docs/docs.component').then((m) => m.DocsComponent),
     canActivate: [healthCheckGuard],
     resolve: { availableDocs: docsResolver },
     data: { title: 'Documentation' },

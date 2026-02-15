@@ -1,5 +1,5 @@
 <div class="space-y-4">
-  @if (responseSamples && responseSamples.length > 0) {
+  @if ((responseSamples() || []).length > 0) {
     <!-- Status Code Distribution & Filter -->
     <div class="mb-4 flex flex-wrap gap-2">
       @for (code of getAvailableStatusCodes(); track code) {
@@ -9,7 +9,7 @@
           [class.btn-ghost]="selectedStatusCode() !== code"
           (click)="selectedStatusCode.set(code)"
         >
-          <app-icon [name]="getCategoryIcon(code)" class="text-sm"></app-icon>
+          <app-icon [name]="getCategoryIcon(code)" class="text-sm" />
           <span class="font-mono font-bold">{{
             code === 'all' ? 'All' : code
           }}</span>
@@ -77,12 +77,12 @@
     </div>
 
     <!-- Show more indicator -->
-    @if (responseSamples.length > maxSamplesPerCode * 5) {
+    @if ((responseSamples() || []).length > maxSamplesPerCode * 5) {
       <div class="text-base-content/60 mt-2 text-center text-sm">
         Showing
         <span [appFormatNumber]="maxSamplesPerCode * 5"></span>
         of
-        <span [appFormatNumber]="responseSamples.length"></span>
+        <span [appFormatNumber]="(responseSamples() || []).length"></span>
         samples
       </div>
     }
