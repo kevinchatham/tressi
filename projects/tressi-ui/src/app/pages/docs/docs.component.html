@@ -10,50 +10,7 @@
 
   <div class="mx-auto flex max-w-6xl gap-8">
     <!-- Sidebar -->
-    <div class="w-64 shrink-0">
-      <div
-        class="bg-base-200 border-base-content/5 flex flex-col gap-6 rounded-xl border-2 p-4"
-      >
-        @for (
-          section of availableDocs() | keyvalue: preserveOrder;
-          track section.key
-        ) {
-          <div>
-            <a
-              [routerLink]="
-                section.key === 'Home'
-                  ? ['/docs']
-                  : ['/docs', section.value.path]
-              "
-              routerLinkActive="text-primary !opacity-100"
-              [routerLinkActiveOptions]="{ exact: true }"
-              class="mb-2 block cursor-pointer text-xs font-bold tracking-wider uppercase opacity-50 transition-opacity hover:opacity-100"
-            >
-              {{ section.key }}
-            </a>
-            <ul class="menu menu-sm p-0">
-              @for (doc of section.value.docs; track doc.slug) {
-                @if (doc.slug !== 'index') {
-                  <li>
-                    <a
-                      [routerLink]="
-                        section.value.path
-                          ? ['/docs', section.value.path, doc.slug]
-                          : ['/docs', doc.slug]
-                      "
-                      routerLinkActive="text-primary active"
-                      class="capitalize"
-                    >
-                      {{ formatTitle(doc.slug) }}
-                    </a>
-                  </li>
-                }
-              }
-            </ul>
-          </div>
-        }
-      </div>
-    </div>
+    <app-docs-menu [availableDocs]="availableDocs()" />
 
     <!-- Content -->
     <div class="flex-1">

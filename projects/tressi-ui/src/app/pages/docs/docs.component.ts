@@ -7,6 +7,7 @@ import { ButtonComponent } from '../../components/button/button.component';
 import { HeaderComponent } from '../../components/header/header.component';
 import { IconComponent } from '../../components/icon/icon.component';
 import { GetDocsResponseSuccess } from '../../services/rpc.service';
+import { DocsMenuComponent } from './docs-menu/docs-menu.component';
 
 @Component({
   selector: 'app-docs',
@@ -18,6 +19,7 @@ import { GetDocsResponseSuccess } from '../../services/rpc.service';
     HeaderComponent,
     ButtonComponent,
     IconComponent,
+    DocsMenuComponent,
   ],
   templateUrl: './docs.component.html',
 })
@@ -28,15 +30,6 @@ export class DocsComponent implements OnInit {
   error = signal<string | null>(null);
   availableDocs = signal<GetDocsResponseSuccess>({});
   isTransitioning = signal(false);
-
-  // Custom comparator to preserve the order from the server
-  preserveOrder = (): number => {
-    return 0;
-  };
-
-  formatTitle(title: string): string {
-    return title.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
-  }
 
   ngOnInit(): void {
     this.initializeFromResolvedData();
