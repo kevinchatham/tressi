@@ -48,12 +48,6 @@
 
     <!-- Content -->
     <div class="flex-1">
-      @if (isLoading()) {
-        <div class="flex justify-center p-12">
-          <span class="loading loading-spinner loading-lg"></span>
-        </div>
-      }
-
       @if (error()) {
         <div class="alert alert-error">
           <app-icon [name]="'error'" />
@@ -62,14 +56,10 @@
       }
 
       <div
-        [class.hidden]="isLoading() || error()"
+        [class.hidden]="error()"
         class="markdown-body bg-base-200 border-base-content/5 max-w-none rounded-xl border-2 p-8"
       >
-        <markdown
-          [src]="markdownSrc()"
-          (load)="onLoad()"
-          (error)="onError()"
-        ></markdown>
+        <markdown [src]="markdownSrc()" (error)="onError()"></markdown>
       </div>
     </div>
   </div>

@@ -25,7 +25,6 @@ export class DocsComponent implements OnInit {
   private readonly location = inject(Location);
   private readonly route = inject(ActivatedRoute);
   markdownSrc = signal<string>('');
-  isLoading = signal<boolean>(true);
   error = signal<string | null>(null);
   availableDocs = signal<GetDocsResponseSuccess>({});
 
@@ -57,7 +56,6 @@ export class DocsComponent implements OnInit {
   }
 
   loadDocs(filename: string): void {
-    this.isLoading.set(true);
     this.error.set(null);
 
     const safeFilename = filename.endsWith('.md') ? filename : `${filename}.md`;
@@ -66,12 +64,7 @@ export class DocsComponent implements OnInit {
     this.markdownSrc.set(`/public/docs/${safeFilename}`);
   }
 
-  onLoad(): void {
-    this.isLoading.set(false);
-  }
-
   onError(): void {
-    this.isLoading.set(false);
     this.error.set('Failed to load documentation.');
   }
 

@@ -45,15 +45,16 @@ export class AppComponent implements OnInit {
    */
   private setupNavigationListeners(): void {
     this.router.events.subscribe((event) => {
-      if (event instanceof NavigationStart) {
-        this.isNavigating.set(true);
-      } else if (
+      const isNavigationStart = event instanceof NavigationStart;
+      const isNavigationEnd =
         event instanceof NavigationEnd ||
         event instanceof NavigationCancel ||
-        event instanceof NavigationError
-      ) {
-        this.isNavigating.set(false);
-      }
+        event instanceof NavigationError;
+
+      if (isNavigationStart) {
+        if (event.url.includes('/docs/')) return;
+        this.isNavigating.set(true);
+      } else if (isNavigationEnd) this.isNavigating.set(false);
     });
   }
 }
