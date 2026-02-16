@@ -58,6 +58,7 @@
     "dayjs": "^1.11.19",
     "emoji-toolkit": "^10.0.0",
     "eventemitter3": "^5.0.1",
+    "fuse.js": "^7.1.0",
     "hdr-histogram-js": "^3.0.1",
     "hono": "^4.10.6",
     "human-number": "^2.0.8",

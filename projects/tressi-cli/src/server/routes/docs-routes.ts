@@ -1,6 +1,7 @@
-import { readdir } from 'node:fs/promises';
+import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
+import Fuse from 'fuse.js';
 import { Hono } from 'hono';
 
 import { createApiErrorResponse } from '../utils/error-response-generator';
@@ -94,25 +95,83 @@ async function scanDocs(dir: string): Promise<MarkdownSlugs> {
  *
  * @returns {Hono} Hono app configured for documentation routes
  */
-const docs = new Hono().get('/list', async (c) => {
-  try {
-    // Path relative to the server's execution context (dist/server)
-    // The browser assets are in dist/browser/public/docs
-    const docsPath = join(__dirname, 'browser', 'public', 'docs');
-    const structuredDocs = await scanDocs(docsPath);
+const docs = new Hono()
+  .get('/list', async (c) => {
+    try {
+      // Path relative to the server's execution context (dist/server)
+      // The browser assets are in dist/browser/public/docs
+      const docsPath = join(__dirname, 'browser', 'public', 'docs');
+      const structuredDocs = await scanDocs(docsPath);
 
-    return c.json(structuredDocs);
-  } catch (error) {
-    return c.json(
-      createApiErrorResponse(
-        'Could not read docs directory',
-        'DOCS_READ_ERROR',
-        [error instanceof Error ? error.message : String(error)],
-        c.req.path,
-      ),
-      500,
-    );
-  }
-});
+      return c.json(structuredDocs);
+    } catch (error) {
+      return c.json(
+        createApiErrorResponse(
+          'Could not read docs directory',
+          'DOCS_READ_ERROR',
+          [error instanceof Error ? error.message : String(error)],
+          c.req.path,
+        ),
+        500,
+      );
+    }
+  })
+  .get('/search', async (c) => {
+    const query = c.req.query('q');
+    if (!query) {
+      return c.json([]);
+    }
+
+    try {
+      const docsPath = join(__dirname, 'browser', 'public', 'docs');
+      const structuredDocs = await scanDocs(docsPath);
+
+      const allDocs: {
+        title: string;
+        content: string;
+        slug: string;
+        section?: string;
+        path: string;
+      }[] = [];
+
+      for (const [sectionName, section] of Object.entries(structuredDocs)) {
+        for (const doc of section.docs) {
+          const filePath = join(docsPath, `${doc.realPath}.md`);
+          const content = await readFile(filePath, 'utf-8');
+          allDocs.push({
+            title: doc.slug,
+            content,
+            slug: doc.slug,
+            section:
+              sectionName === DEFAULT_SECTION_NAME ? undefined : sectionName,
+            path: section.path ? `${section.path}/${doc.slug}` : doc.slug,
+          });
+        }
+      }
+
+      const fuse = new Fuse(allDocs, {
+        keys: ['title', 'content'],
+        includeScore: true,
+        threshold: 0.4,
+      });
+
+      const results = fuse.search(query).map((result) => ({
+        ...result.item,
+        score: result.score,
+      }));
+
+      return c.json(results);
+    } catch (error) {
+      return c.json(
+        createApiErrorResponse(
+          'Could not perform search',
+          'DOCS_SEARCH_ERROR',
+          [error instanceof Error ? error.message : String(error)],
+          c.req.path,
+        ),
+        500,
+      );
+    }
+  });
 
 export default docs;

@@ -12,6 +12,8 @@ export type IconName =
   | 'browse_activity'
   | 'check'
   | 'check_circle'
+  | 'chevron_left'
+  | 'chevron_right'
   | 'close'
   | 'copy_all'
   | 'delete'

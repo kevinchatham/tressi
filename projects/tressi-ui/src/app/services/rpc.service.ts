@@ -172,3 +172,16 @@ export type GetDocsResponseSuccess = Extract<
 >;
 
 export type GetDocsResponseError = Extract<GetDocsResponse, { error: object }>;
+
+export type SearchDocsResponse = InferResponseType<
+  typeof client.docs.search.$get
+>;
+
+export type SearchDocsResponseSuccess = Extract<SearchDocsResponse, unknown[]>;
+
+export type SearchDocsResponseError = Extract<
+  SearchDocsResponse,
+  { error: object }
+>;
+
+export type SearchResult = SearchDocsResponseSuccess[number];
