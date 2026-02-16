@@ -40,7 +40,7 @@
                 @for (result of searchResults(); track result.path) {
                   <li>
                     <a
-                      [routerLink]="['/docs', result.path]"
+                      [routerLink]="['/docs'].concat(result.path.split('/'))"
                       routerLinkActive="text-primary active"
                       class="flex flex-col items-start gap-0"
                     >

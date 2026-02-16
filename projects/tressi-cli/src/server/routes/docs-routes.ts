@@ -142,8 +142,7 @@ const docs = new Hono()
             title: doc.slug,
             content,
             slug: doc.slug,
-            section:
-              sectionName === DEFAULT_SECTION_NAME ? undefined : sectionName,
+            section: sectionName,
             path: section.path ? `${section.path}/${doc.slug}` : doc.slug,
           });
         }

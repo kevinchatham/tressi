@@ -10,7 +10,7 @@
       <legend class="fieldset-legend">Duration (seconds)</legend>
       <input
         type="number"
-        class="input max-w-28"
+        class="input max-w-28 outline-none!"
         [field]="form().config.options.durationSec"
       />
       @if (
@@ -85,7 +85,7 @@
                   <input
                     #urlInput
                     type="url"
-                    class="input flex-1"
+                    class="input flex-1 outline-none!"
                     [field]="form().config.requests[$index].url"
                     placeholder="https://api.example.com/endpoint"
                   />
@@ -118,7 +118,7 @@
                 <legend class="fieldset-legend">RPS</legend>
                 <input
                   type="number"
-                  class="input"
+                  class="input outline-none!"
                   [field]="form().config.requests[$index].rps"
                   placeholder="Requests per second"
                 />
@@ -143,7 +143,7 @@
                 <legend class="fieldset-legend">Ramp Up Time (seconds)</legend>
                 <input
                   type="number"
-                  class="input"
+                  class="input outline-none!"
                   [field]="form().config.requests[$index].rampUpDurationSec"
                   placeholder="Time to reach target RPS"
                 />
