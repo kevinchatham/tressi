@@ -8,9 +8,11 @@
     />
   </app-header>
 
-  <div class="mx-auto flex max-w-6xl gap-4">
+  <div class="mx-auto flex max-w-6xl items-start gap-4">
     <!-- Sidebar -->
-    <app-docs-menu [availableDocs]="availableDocs()" />
+    <div class="sticky top-4">
+      <app-docs-menu [availableDocs]="availableDocs()" />
+    </div>
 
     <!-- Content -->
     <div class="flex-1">
