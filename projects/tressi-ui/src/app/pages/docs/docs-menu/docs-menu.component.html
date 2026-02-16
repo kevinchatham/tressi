@@ -1,41 +1,46 @@
-<div class="w-64 shrink-0">
+<div class="w-48 shrink-0">
   <div
-    class="bg-base-200 border-base-content/5 flex flex-col gap-6 rounded-xl border-2 p-4"
+    class="bg-base-200 border-base-content/5 flex flex-col gap-2 rounded-xl border-2 p-4"
   >
     @for (
       section of availableDocs() | keyvalue: preserveOrder;
       track section.key
     ) {
       <div>
-        <a
-          [routerLink]="
-            section.key === 'Home' ? ['/docs'] : ['/docs', section.value.path]
-          "
-          routerLinkActive="text-primary !opacity-100"
-          [routerLinkActiveOptions]="{ exact: true }"
-          class="mb-2 block cursor-pointer text-xs font-bold tracking-wider uppercase opacity-50 transition-opacity hover:opacity-100"
+        <div
+          (click)="toggleSection(section.key)"
+          class="mb-2 flex cursor-pointer items-center justify-between font-bold tracking-wider transition-opacity hover:opacity-100"
+          [class.opacity-50]="expandedSection() !== section.key"
+          [class.opacity-100]="expandedSection() === section.key"
+          [class.text-primary]="expandedSection() === section.key"
         >
-          {{ section.key }}
-        </a>
-        <ul class="menu menu-sm p-0">
-          @for (doc of section.value.docs; track doc.slug) {
-            @if (doc.slug !== 'index') {
-              <li>
-                <a
-                  [routerLink]="
-                    section.value.path
-                      ? ['/docs', section.value.path, doc.slug]
-                      : ['/docs', doc.slug]
-                  "
-                  routerLinkActive="text-primary active"
-                  class="capitalize"
-                >
-                  {{ formatTitle(doc.slug) }}
-                </a>
-              </li>
+          <span>{{ section.key }}</span>
+        </div>
+        <div
+          class="collapse-transition"
+          [class.collapse-expanded]="expandedSection() === section.key"
+          [class.collapse-collapsed]="expandedSection() !== section.key"
+        >
+          <ul class="menu p-0">
+            @for (doc of section.value.docs; track doc.slug) {
+              @if (doc.slug !== 'index') {
+                <li>
+                  <a
+                    [routerLink]="
+                      section.value.path
+                        ? ['/docs', section.value.path, doc.slug]
+                        : ['/docs', doc.slug]
+                    "
+                    routerLinkActive="text-primary active"
+                    class="capitalize"
+                  >
+                    {{ formatTitle(doc.slug) }}
+                  </a>
+                </li>
+              }
             }
-          }
-        </ul>
+          </ul>
+        </div>
       </div>
     }
   </div>

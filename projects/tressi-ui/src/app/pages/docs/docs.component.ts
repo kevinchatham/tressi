@@ -97,7 +97,10 @@ export class DocsComponent implements OnInit {
   }
 
   onLoad(): void {
-    this.isTransitioning.set(false);
+    // Small delay to ensure the markdown is fully rendered
+    setTimeout(() => {
+      this.isTransitioning.set(false);
+    }, 100);
   }
 
   onError(): void {
