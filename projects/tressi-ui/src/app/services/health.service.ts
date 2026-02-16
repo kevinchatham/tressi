@@ -1,9 +1,10 @@
 import { computed, inject, Injectable, Signal, signal } from '@angular/core';
-import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 
+import { AppRoutes } from '../app.routes';
 import { EventService } from './event.service';
 import { LogService } from './log.service';
+import { AppRouterService } from './router.service';
 
 /**
  * Service responsible for monitoring the health of the backend server using the unified event stream
@@ -27,7 +28,7 @@ import { LogService } from './log.service';
 @Injectable({ providedIn: 'root' })
 export class HealthService {
   private readonly log = inject(LogService);
-  private readonly router = inject(Router);
+  private readonly appRouter = inject(AppRouterService);
   private readonly eventService = inject(EventService);
 
   /** Timeout for heartbeat in milliseconds (5 seconds) */
@@ -81,9 +82,16 @@ export class HealthService {
         }));
 
         // If we were on the server-unavailable page and just reconnected
-        if (this.router.url === '/server-unavailable') {
+        if (
+          this.appRouter.getCurrentUrl().includes(AppRoutes.SERVER_UNAVAILABLE)
+        ) {
           this.log.info('Server recovered, redirecting to dashboard');
-          this.router.navigate(['/']);
+          this.appRouter.toHome();
+          // Stop retrying if we were in a retry loop
+          this.stopRetryTimer();
+          // Reset heartbeat timeout
+          this.resetHeartbeatTimeout();
+          return;
         }
 
         // Stop retrying if we were in a retry loop
@@ -126,9 +134,11 @@ export class HealthService {
     }));
 
     // Navigate to server unavailable page if not already there
-    if (this.router.url !== '/server-unavailable') {
+    if (
+      !this.appRouter.getCurrentUrl().includes(AppRoutes.SERVER_UNAVAILABLE)
+    ) {
       this.log.error('Server unavailable, redirecting to error page');
-      this.router.navigate(['/server-unavailable']);
+      this.appRouter.toServerUnavailable();
     }
 
     // Start retrying to connect

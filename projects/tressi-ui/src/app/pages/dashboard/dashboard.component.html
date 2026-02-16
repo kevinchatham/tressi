@@ -37,14 +37,15 @@
     </div>
 
     <app-button
-      (click)="navigateToConfigs()"
+      (click)="appRouter.toConfigs()"
       [title]="'View Configs'"
       [color]="'info'"
       [icon]="'sdk'"
     />
   </app-header>
+
   @if (selectedConfig()) {
-    <div class="mt-8">
+    <div class="mt-8 px-8">
       <app-test-list
         [config]="selectedConfig()!"
         (testHistoryUpdate)="onTestHistoryUpdate($event)"

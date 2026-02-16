@@ -1,10 +1,18 @@
 <div class="p-12">
   <app-header [title]="'Documentation'">
     <app-button
-      (click)="goBack()"
+      (click)="appRouter.back()"
       [icon]="'arrow_back'"
       [title]="'Back'"
       [ghost]="true"
+      [disabled]="isBaseUrl()"
+    />
+
+    <app-button
+      (click)="appRouter.toHome()"
+      [color]="'info'"
+      [title]="'Dashboard'"
+      [icon]="'browse_activity'"
     />
   </app-header>
 

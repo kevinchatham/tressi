@@ -16,13 +16,13 @@
 
       <div class="flex justify-center gap-4">
         <app-button
-          (click)="navigateToConfigs()"
+          (click)="appRouter.toConfigs()"
           [color]="'primary'"
           [icon]="'rocket'"
           [title]="'Get Started'"
         />
         <app-button
-          (click)="navigateToDocs()"
+          (click)="appRouter.toDocs()"
           [color]="'secondary'"
           [icon]="'help_outline'"
           [title]="'Docs'"

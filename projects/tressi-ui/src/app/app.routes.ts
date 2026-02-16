@@ -1,7 +1,6 @@
 import { inject } from '@angular/core';
 import {
   ActivatedRouteSnapshot,
-  Router,
   RouterStateSnapshot,
   Routes,
 } from '@angular/router';
@@ -11,15 +10,30 @@ import { docsResolver } from './resolvers/docs.resolver';
 import { testDetailResolver } from './resolvers/test-detail.resolver';
 import { ConfigService } from './services/config.service';
 import { HealthService } from './services/health.service';
+import { AppRouterService } from './services/router.service';
+
+export const AppRoutes = {
+  HOME: '',
+  WELCOME: 'welcome',
+  CONFIGS: 'configs',
+  DASHBOARD: 'dashboard',
+  DASHBOARD_WITH_ID: 'dashboard/:configId',
+  TESTS_WITH_ID: 'tests/:testId',
+  DOCS: 'docs',
+  DOCS_WITH_FILENAME: 'docs/:filename',
+  DOCS_WITH_SECTION: 'docs/:section/:filename',
+  SERVER_UNAVAILABLE: 'server-unavailable',
+  SHOWCASE: 'showcase',
+} as const;
 
 // Health check guard using the centralized service
 const healthCheckGuard = (): boolean => {
   const health = inject(HealthService);
-  const router = inject(Router);
+  const appRouter = inject(AppRouterService);
 
   // If already known to be unhealthy, navigate to error page
   if (!health.isHealthy()) {
-    router.navigate(['/server-unavailable']);
+    appRouter.toServerUnavailable();
     return false;
   }
 
@@ -33,7 +47,7 @@ const configGuard = async (
   state?: RouterStateSnapshot,
 ): Promise<boolean> => {
   const configService = inject(ConfigService);
-  const router = inject(Router);
+  const appRouter = inject(AppRouterService);
 
   try {
     const configs = await configService.getAll();
@@ -49,8 +63,8 @@ const configGuard = async (
 
     if (hasConfigs) {
       // When configs exist, redirect away from welcome to dashboard
-      if (pathToCheck === 'welcome' || pathToCheck === '') {
-        await router.navigate(['/dashboard']);
+      if (pathToCheck === AppRoutes.WELCOME || pathToCheck === AppRoutes.HOME) {
+        await appRouter.toDashboard();
         return false;
       } else {
         return true;
@@ -58,13 +72,13 @@ const configGuard = async (
     } else {
       // No configs exist, only allow welcome or settings
       if (
-        pathToCheck === 'welcome' ||
+        pathToCheck === AppRoutes.WELCOME ||
         pathToCheck === 'settings' ||
-        pathToCheck === ''
+        pathToCheck === AppRoutes.HOME
       ) {
         return true;
       } else {
-        await router.navigate(['/welcome']);
+        await appRouter.toWelcome();
         return false;
       }
     }
@@ -76,7 +90,7 @@ const configGuard = async (
 
 export const routes: Routes = [
   {
-    path: 'server-unavailable',
+    path: AppRoutes.SERVER_UNAVAILABLE,
     loadComponent: () =>
       import('./pages/server-unavailable/server-unavailable.component').then(
         (m) => m.ServerUnavailableComponent,
@@ -84,7 +98,7 @@ export const routes: Routes = [
     data: { title: 'Server Unavailable' },
   },
   {
-    path: 'welcome',
+    path: AppRoutes.WELCOME,
     loadComponent: () =>
       import('./pages/welcome/welcome.component').then(
         (m) => m.WelcomeComponent,
@@ -93,7 +107,7 @@ export const routes: Routes = [
     data: { title: 'Welcome' },
   },
   {
-    path: 'configs',
+    path: AppRoutes.CONFIGS,
     loadComponent: () =>
       import('./pages/configs/configs.component').then(
         (m) => m.ConfigurationsComponent,
@@ -103,7 +117,7 @@ export const routes: Routes = [
     data: { title: 'Configs' },
   },
   {
-    path: 'dashboard',
+    path: AppRoutes.DASHBOARD,
     loadComponent: () =>
       import('./pages/dashboard/dashboard.component').then(
         (m) => m.DashboardComponent,
@@ -113,7 +127,7 @@ export const routes: Routes = [
     data: { title: 'Dashboard' },
   },
   {
-    path: 'dashboard/:configId',
+    path: AppRoutes.DASHBOARD_WITH_ID,
     loadComponent: () =>
       import('./pages/dashboard/dashboard.component').then(
         (m) => m.DashboardComponent,
@@ -123,7 +137,7 @@ export const routes: Routes = [
     data: { title: 'Dashboard' },
   },
   {
-    path: 'showcase',
+    path: AppRoutes.SHOWCASE,
     loadComponent: () =>
       import('./pages/showcase/showcase.component').then(
         (m) => m.ShowcaseComponent,
@@ -131,7 +145,7 @@ export const routes: Routes = [
     data: { title: 'Showcase' },
   },
   {
-    path: 'tests/:testId',
+    path: AppRoutes.TESTS_WITH_ID,
     loadComponent: () =>
       import('./pages/test-detail/test-detail.component').then(
         (m) => m.TestDetailComponent,
@@ -141,7 +155,7 @@ export const routes: Routes = [
     data: { title: 'Test Details' },
   },
   {
-    path: 'docs',
+    path: AppRoutes.DOCS,
     loadComponent: () =>
       import('./pages/docs/docs.component').then((m) => m.DocsComponent),
     canActivate: [healthCheckGuard],
@@ -149,7 +163,7 @@ export const routes: Routes = [
     data: { title: 'Documentation' },
   },
   {
-    path: 'docs/:filename',
+    path: AppRoutes.DOCS_WITH_FILENAME,
     loadComponent: () =>
       import('./pages/docs/docs.component').then((m) => m.DocsComponent),
     canActivate: [healthCheckGuard],
@@ -157,7 +171,7 @@ export const routes: Routes = [
     data: { title: 'Documentation' },
   },
   {
-    path: 'docs/:section/:filename',
+    path: AppRoutes.DOCS_WITH_SECTION,
     loadComponent: () =>
       import('./pages/docs/docs.component').then((m) => m.DocsComponent),
     canActivate: [healthCheckGuard],
@@ -165,12 +179,12 @@ export const routes: Routes = [
     data: { title: 'Documentation' },
   },
   {
-    path: '',
+    path: AppRoutes.HOME,
     pathMatch: 'full',
-    redirectTo: '/welcome',
+    redirectTo: `/${AppRoutes.WELCOME}`,
   },
   {
     path: '**',
-    redirectTo: '/welcome',
+    redirectTo: `/${AppRoutes.WELCOME}`,
   },
 ];

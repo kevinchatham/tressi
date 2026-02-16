@@ -10,11 +10,12 @@ import {
   signal,
   SimpleChanges,
 } from '@angular/core';
-import { Router, RouterModule } from '@angular/router';
+import { RouterModule } from '@angular/router';
 import { Subscription } from 'rxjs';
 
 import { EventService } from '../../services/event.service';
 import { LogService } from '../../services/log.service';
+import { AppRouterService } from '../../services/router.service';
 import type {
   ConfigDocument,
   TestDocument,
@@ -53,7 +54,7 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
   /** Output event to notify parent component about test history changes */
   readonly testHistoryUpdate = output<boolean>();
 
-  private readonly router = inject(Router);
+  readonly appRouter = inject(AppRouterService);
   private readonly testService = inject(TestService);
   private readonly logService = inject(LogService);
   private readonly eventService = inject(EventService);
@@ -139,10 +140,6 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
       // Emit test history update (no tests due to error)
       this.testHistoryUpdate.emit(false);
     }
-  }
-
-  viewTestDetails(testId: string): void {
-    this.router.navigate(['/tests', testId]);
   }
 
   async refreshTests(): Promise<void> {

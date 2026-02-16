@@ -1,6 +1,8 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { Router, RouterModule } from '@angular/router';
+import { RouterModule } from '@angular/router';
 import { ButtonComponent } from 'src/app/components/button/button.component';
+
+import { AppRouterService } from '../../services/router.service';
 
 @Component({
   selector: 'app-welcome',
@@ -9,12 +11,5 @@ import { ButtonComponent } from 'src/app/components/button/button.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class WelcomeComponent {
-  private readonly router = inject(Router);
-  navigateToConfigs(): void {
-    this.router.navigate(['/configs']);
-  }
-
-  navigateToDocs(): void {
-    this.router.navigate(['/docs']);
-  }
+  readonly appRouter = inject(AppRouterService);
 }

@@ -4,6 +4,6 @@ Understand the fundamental building blocks of Tressi and how to configure your t
 
 ## 📚 In this section
 
-- [Configuration Guide](/docs/02-core-concepts/configuration): Learn how to define your tests using JSON or YAML.
-- [Running Tests](/docs/02-core-concepts/running-tests): How to execute tests and manage the CLI.
-- [Interpreting Results](/docs/02-core-concepts/results-guide): A deep dive into the metrics and reports Tressi generates.
+- [Configuration Guide](/docs/core-concepts/configuration): Learn how to define your tests using JSON or YAML.
+- [Running Tests](/docs/core-concepts/running-tests): How to execute tests and manage the CLI.
+- [Interpreting Results](/docs/core-concepts/results-guide): A deep dive into the metrics and reports Tressi generates.

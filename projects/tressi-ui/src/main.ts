@@ -3,6 +3,7 @@ import {
   ApplicationConfig,
   provideBrowserGlobalErrorListeners,
   provideZonelessChangeDetection,
+  SecurityContext,
 } from '@angular/core';
 import { bootstrapApplication } from '@angular/platform-browser';
 import { provideRouter, withViewTransitions } from '@angular/router';
@@ -11,6 +12,7 @@ import {
   MARKED_OPTIONS,
   MERMAID_OPTIONS,
   provideMarkdown,
+  SANITIZE,
 } from 'ngx-markdown';
 
 import { AppComponent } from './app/app.component';
@@ -23,6 +25,10 @@ const appConfig: ApplicationConfig = {
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes, withViewTransitions()),
     provideMarkdown({
+      sanitize: {
+        provide: SANITIZE,
+        useValue: SecurityContext.NONE,
+      },
       clipboardOptions: {
         provide: CLIPBOARD_OPTIONS,
         useValue: {

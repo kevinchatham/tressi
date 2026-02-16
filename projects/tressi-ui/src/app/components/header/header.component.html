@@ -1,15 +1,22 @@
 <div class="mb-4 flex items-center justify-between">
   <div class="flex items-center space-x-4">
     <img src="tressi-logo-512.png" alt="Tressi Logo" class="h-12 w-12" />
-    <span class="align-middle text-3xl font-bold">{{ title }}</span>
+    <span class="align-middle text-3xl font-bold">
+      {{ titleService.getTitle() }}
+    </span>
   </div>
   <div class="flex items-center justify-end gap-4">
-    <app-button
-      (click)="navigateToDocs()"
-      [icon]="'help_outline'"
-      [title]="'Docs'"
-      [ghost]="true"
-    />
+    @if (!appRouter.isOnDocs()) {
+      <div class="fixed right-4 bottom-4">
+        <app-button
+          (click)="appRouter.toDocs()"
+          [icon]="'help_outline'"
+          [title]="'Docs'"
+          [color]="'neutral'"
+          [ghost]="true"
+        />
+      </div>
+    }
     <ng-content />
   </div>
 </div>

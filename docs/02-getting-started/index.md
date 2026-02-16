@@ -4,7 +4,7 @@ Welcome to Tressi! This section will help you get up and running with your first
 
 ## 📚 In this section
 
-- [Introduction](/docs/01-getting-started/intro): Learn what Tressi is and why we built it.
-- [Quickstart](/docs/01-getting-started/quickstart): Get your first test running in under 5 minutes.
-- [Installation](/docs/01-getting-started/installation): Detailed installation instructions for various platforms.
-- [Core Principles](/docs/01-getting-started/principles): Understand the philosophy behind Tressi's design.
+- [Introduction](/docs/getting-started/intro): Learn what Tressi is and why we built it.
+- [Quickstart](/docs/getting-started/quickstart): Get your first test running in under 5 minutes.
+- [Installation](/docs/getting-started/installation): Detailed installation instructions for various platforms.
+- [Core Principles](/docs/getting-started/principles): Understand the philosophy behind Tressi's design.

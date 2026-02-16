@@ -8,7 +8,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 import { ButtonComponent } from 'src/app/components/button/button.component';
 
@@ -18,6 +18,7 @@ import { TestListComponent } from '../../components/test-list/test-list.componen
 import { EventService } from '../../services/event.service';
 import { LocalStorageService } from '../../services/local-storage.service';
 import { LogService } from '../../services/log.service';
+import { AppRouterService } from '../../services/router.service';
 import { ConfigDocument } from '../../services/rpc.service';
 
 @Component({
@@ -33,7 +34,7 @@ import { ConfigDocument } from '../../services/rpc.service';
 export class DashboardComponent implements OnInit, OnDestroy {
   /** Service injection */
   private readonly logService = inject(LogService);
-  private readonly router = inject(Router);
+  readonly appRouter = inject(AppRouterService);
   private readonly route = inject(ActivatedRoute);
   private readonly localStorageService = inject(LocalStorageService);
   private readonly eventService = inject(EventService);
@@ -85,7 +86,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.configs.set(configs);
 
     if (configs.length === 0) {
-      this.router.navigate(['welcome']);
+      this.appRouter.toWelcome();
       return;
     }
 
@@ -140,7 +141,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       lastSelectedConfig: config,
     });
 
-    history.pushState({}, '', `/dashboard/${configId}}`);
+    this.appRouter.updateDashboardUrl(configId);
   }
 
   /**
@@ -154,13 +155,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
     } else {
       this.selectedConfig.set(null);
     }
-  }
-
-  /**
-   * Navigates to the configs page.
-   */
-  navigateToConfigs(): void {
-    this.router.navigate(['/configs']);
   }
 
   /**

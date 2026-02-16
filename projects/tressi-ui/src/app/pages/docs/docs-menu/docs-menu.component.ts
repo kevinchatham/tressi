@@ -5,7 +5,9 @@ import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { filter } from 'rxjs';
 import { IconComponent } from 'src/app/components/icon/icon.component';
 
+import { AppRoutes } from '../../../app.routes';
 import { SearchBarComponent } from '../../../components/search-bar/search-bar.component';
+import { AppRouterService } from '../../../services/router.service';
 import {
   GetDocsResponseSuccess,
   RPCService,
@@ -28,12 +30,14 @@ export class DocsMenuComponent {
   searchResults = signal<SearchResult[]>([]);
   isSearching = signal(false);
 
-  private readonly router = inject(Router);
+  readonly appRouter = inject(AppRouterService);
   private readonly rpc = inject(RPCService);
-  private readonly currentUrl = signal(this.router.url);
+  private readonly router = inject(Router);
+  private readonly currentUrl = signal(this.appRouter.getCurrentUrl());
 
   constructor() {
     // Update the currentUrl signal on every successful navigation
+    // We still need to listen to router events for URL updates
     this.router.events
       .pipe(
         filter(
@@ -41,37 +45,34 @@ export class DocsMenuComponent {
         ),
         takeUntilDestroyed(),
       )
-      .subscribe((event) => {
+      .subscribe((event: NavigationEnd) => {
         this.currentUrl.set(event.urlAfterRedirects);
       });
 
-    effect(
-      () => {
-        const docs = this.availableDocs();
-        const url = this.currentUrl();
+    effect(() => {
+      const docs = this.availableDocs();
+      const url = this.currentUrl();
 
-        // If we're at the root docs page, expand Home
-        if (url === '/docs') {
-          this.expandedSection.set('Home');
+      // If we're at the root docs page, expand Home
+      if (url.endsWith(AppRoutes.DOCS)) {
+        this.expandedSection.set('Home');
+        return;
+      }
+
+      // Otherwise, find which section contains the current URL
+      for (const [sectionKey, sectionValue] of Object.entries(docs)) {
+        const sectionPath = sectionValue.path;
+        if (sectionPath && url.includes(`/${AppRoutes.DOCS}}/${sectionPath}`)) {
+          this.expandedSection.set(sectionKey);
           return;
         }
+      }
 
-        // Otherwise, find which section contains the current URL
-        for (const [sectionKey, sectionValue] of Object.entries(docs)) {
-          const sectionPath = sectionValue.path;
-          if (sectionPath && url.includes(`/docs/${sectionPath}`)) {
-            this.expandedSection.set(sectionKey);
-            return;
-          }
-        }
-
-        // Default to Home if nothing else matches
-        if (!this.expandedSection()) {
-          this.expandedSection.set('Home');
-        }
-      },
-      { allowSignalWrites: true },
-    );
+      // Default to Home if nothing else matches
+      if (!this.expandedSection()) {
+        this.expandedSection.set('Home');
+      }
+    });
 
     // Search effect
     effect(async () => {
@@ -109,8 +110,7 @@ export class DocsMenuComponent {
     if (!section) return;
 
     // Navigate to the section's index (e.g., /docs/getting-started)
-    const path = section.path ? ['/docs', section.path] : ['/docs'];
-    this.router.navigate(path);
+    this.appRouter.toDocs(section.path);
 
     // Ensure the section expands immediately
     this.expandedSection.set(sectionKey);

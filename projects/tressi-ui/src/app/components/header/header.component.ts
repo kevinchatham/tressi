@@ -1,23 +1,15 @@
 import { Component, inject } from '@angular/core';
-import { Router } from '@angular/router';
 
+import { AppRouterService } from '../../services/router.service';
 import { TitleService } from '../../services/title.service';
 import { ButtonComponent } from '../button/button.component';
 
 @Component({
   selector: 'app-header',
-  imports: [ButtonComponent],
   templateUrl: './header.component.html',
+  imports: [ButtonComponent],
 })
 export class HeaderComponent {
-  private titleService = inject(TitleService);
-  private router = inject(Router);
-
-  get title(): string {
-    return this.titleService.getTitle();
-  }
-
-  navigateToDocs(): void {
-    this.router.navigate(['/docs']);
-  }
+  readonly titleService = inject(TitleService);
+  readonly appRouter = inject(AppRouterService);
 }

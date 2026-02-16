@@ -6,7 +6,7 @@ import {
   OnInit,
   signal,
 } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { ButtonComponent } from 'src/app/components/button/button.component';
 import { ThemeSwitcherComponent } from 'src/app/components/theme-switcher/theme-switcher.component';
 
@@ -17,6 +17,7 @@ import { IconComponent } from '../../components/icon/icon.component';
 import { ImportConfigButtonComponent } from '../../components/import-config-button/import-config-button.component';
 import { SearchBarComponent } from '../../components/search-bar/search-bar.component';
 import { ConfigService } from '../../services/config.service';
+import { AppRouterService } from '../../services/router.service';
 import {
   ConfigDocument,
   ModifyConfigRequest,
@@ -42,7 +43,7 @@ import { ToastService } from '../../services/toast.service';
 export class ConfigurationsComponent implements OnInit {
   /** Service injection */
   private readonly configService = inject(ConfigService);
-  private readonly router = inject(Router);
+  readonly appRouter = inject(AppRouterService);
   private readonly route = inject(ActivatedRoute);
   readonly timeService = inject(TimeService);
   private readonly toastService = inject(ToastService);
@@ -203,25 +204,10 @@ export class ConfigurationsComponent implements OnInit {
   }
 
   /**
-   * Navigates back to dashboard.
-   */
-  navigateToDashboard(event?: ConfigDocument): void {
-    if (event) this.router.navigate(['/dashboard', event.id]);
-    else this.router.navigate(['/']);
-  }
-
-  /**
    * Updates the search query when it changes from the search bar.
    */
   onSearchQueryChange(query: string): void {
     this.searchQuery.set(query);
-  }
-
-  /**
-   * Handles configuration selection and navigates to dashboard.
-   */
-  onConfigSelect(config: ConfigDocument): void {
-    this.router.navigate(['/dashboard', config.id]);
   }
 
   /**

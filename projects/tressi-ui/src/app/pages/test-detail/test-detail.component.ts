@@ -6,7 +6,7 @@ import {
   OnDestroy,
   signal,
 } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { ButtonComponent } from 'src/app/components/button/button.component';
 
@@ -17,6 +17,7 @@ import { TestDetailResolvedData } from '../../resolvers/test-detail.resolver';
 import { ConfigService } from '../../services/config.service';
 import { EventService, TestEventData } from '../../services/event.service';
 import { LogService } from '../../services/log.service';
+import { AppRouterService } from '../../services/router.service';
 import {
   type ConfigDocument,
   EndpointSummary,
@@ -64,7 +65,7 @@ import { TestMetadataComponent } from './test-metadata/test-metadata.component';
 })
 export class TestDetailComponent implements OnDestroy {
   private readonly route = inject(ActivatedRoute);
-  private readonly router = inject(Router);
+  readonly appRouter = inject(AppRouterService);
   private readonly testService = inject(TestService);
   private readonly logService = inject(LogService);
   private readonly configService = inject(ConfigService);
@@ -472,7 +473,7 @@ export class TestDetailComponent implements OnDestroy {
     try {
       await this.testService.deleteTest(testId);
       this.logService.info('Test deleted successfully', { testId });
-      this.router.navigate(['/']);
+      this.appRouter.toHome();
     } catch (error) {
       this.logService.error('Failed to delete test', error);
     } finally {
@@ -483,10 +484,6 @@ export class TestDetailComponent implements OnDestroy {
 
   handleDeleteCancel(): void {
     this.showDeleteModal.set(false);
-  }
-
-  goBack(): void {
-    this.router.navigate(['/']);
   }
 
   private getGlobalChartData(metricType: ChartType): ChartData {

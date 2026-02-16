@@ -15,7 +15,7 @@
         [icon]="'post_add'"
       />
       <app-button
-        (click)="navigateToDashboard()"
+        (click)="appRouter.toHome()"
         [color]="'info'"
         [title]="'Dashboard'"
         [icon]="'browse_activity'"
@@ -23,99 +23,103 @@
     }
   </app-header>
 
-  <!-- Configuration List -->
-  @if (!showForm()) {
-    <!-- Search Bar -->
-    <div class="mb-6 flex justify-start">
-      <app-search-bar
-        [query]="searchQuery()"
-        (queryChange)="onSearchQueryChange($event)"
-      />
-    </div>
-
-    <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-      @for (config of filteredConfigs(); track config.id) {
-        <app-configuration-card
-          [input]="config"
-          (edit)="startEdit($event)"
-          (duplicate)="startDuplicate($event)"
-          (delete)="showDeleteConfirm($event)"
-          (navigate)="navigateToDashboard($event)"
+  <div class="px-8">
+    <!-- Configuration List -->
+    @if (!showForm()) {
+      <!-- Search Bar -->
+      <div class="mb-6 flex justify-start">
+        <app-search-bar
+          [query]="searchQuery()"
+          (queryChange)="onSearchQueryChange($event)"
         />
-      }
-    </div>
+      </div>
 
-    @if (hasNoConfigs()) {
-      <div
-        class="border-base-content/5 bg-base-200 mx-auto rounded-xl border-2 p-8"
-      >
-        <div class="text-center">
-          <p class="text-base-content/70 mb-4 text-lg">
-            No configurations found
-          </p>
-          <app-button
-            (click)="startCreate()"
-            [color]="'primary'"
-            [icon]="'add'"
-            [title]="'Create'"
+      <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        @for (config of filteredConfigs(); track config.id) {
+          <app-configuration-card
+            [input]="config"
+            (edit)="startEdit($event)"
+            (duplicate)="startDuplicate($event)"
+            (delete)="showDeleteConfirm($event)"
+            (navigate)="appRouter.toDashboard($event.id)"
+          />
+        }
+      </div>
+
+      @if (hasNoConfigs()) {
+        <div
+          class="border-base-content/5 bg-base-200 mx-auto rounded-xl border-2 p-8"
+        >
+          <div class="text-center">
+            <p class="text-base-content/70 mb-4 text-lg">
+              No configurations found
+            </p>
+            <app-button
+              (click)="startCreate()"
+              [color]="'primary'"
+              [icon]="'add'"
+              [title]="'Create'"
+            />
+          </div>
+        </div>
+      }
+    }
+
+    <!-- Edit/Create Form -->
+    @if (showForm()) {
+      <div class="mx-auto max-w-5xl">
+        <div class="border-base-content/5 bg-base-200 rounded-xl border-2 p-6">
+          <h2 class="mb-4 text-xl font-semibold">
+            {{
+              currentConfig()?.id
+                ? 'Edit Configuration'
+                : 'Create Configuration'
+            }}
+          </h2>
+          <app-config-form
+            [input]="currentConfig()"
+            (output)="onConfigSaved($event)"
+            (closed)="cancelEdit()"
           />
         </div>
       </div>
     }
-  }
+  </div>
 
-  <!-- Edit/Create Form -->
-  @if (showForm()) {
-    <div class="mx-auto max-w-4xl">
-      <div class="border-base-content/5 bg-base-200 rounded-xl border-2 p-6">
-        <h2 class="mb-4 text-xl font-semibold">
-          {{
-            currentConfig()?.id ? 'Edit Configuration' : 'Create Configuration'
-          }}
-        </h2>
-        <app-config-form
-          [input]="currentConfig()"
-          (output)="onConfigSaved($event)"
-          (closed)="cancelEdit()"
+  <!-- Delete Confirmation Modal -->
+  <div class="modal" [class.modal-open]="showDeleteModal()">
+    <div
+      class="border-base-content/5 bg-base-200 sm:max-w-[calc(100%-2rem) rounded-xl border-2 p-6 sm:m-4 md:max-w-lg"
+    >
+      <h3 class="text-lg font-semibold">Delete Configuration</h3>
+      <p class="py-4">
+        Are you sure you want to delete
+        <strong>
+          {{ getConfigToDeleteName() }}
+        </strong>
+        ?
+      </p>
+      <div class="alert alert-warning mt-4">
+        <app-icon name="warning" />
+        <span>
+          All tests and metrics linked to this configuration will be permanently
+          removed.
+        </span>
+      </div>
+      <div class="mt-6 flex justify-end gap-3">
+        <app-button
+          (click)="cancelDelete()"
+          [icon]="'close'"
+          [title]="'Cancel'"
+          [ghost]="true"
+        />
+        <app-button
+          (click)="deleteConfig()"
+          [icon]="'delete'"
+          [color]="'error'"
+          [title]="'Delete'"
         />
       </div>
-    </div>
-  }
-</div>
-
-<!-- Delete Confirmation Modal -->
-<div class="modal" [class.modal-open]="showDeleteModal()">
-  <div
-    class="border-base-content/5 bg-base-200 sm:max-w-[calc(100%-2rem) rounded-xl border-2 p-6 sm:m-4 md:max-w-lg"
-  >
-    <h3 class="text-lg font-semibold">Delete Configuration</h3>
-    <p class="py-4">
-      Are you sure you want to delete
-      <strong>
-        {{ getConfigToDeleteName() }}
-      </strong>
-      ?
-    </p>
-    <div class="alert alert-warning mt-4">
-      <app-icon name="warning" />
-      <span>
-        All tests and metrics linked to this configuration will be permanently
-        removed.
-      </span>
-    </div>
-    <div class="mt-6 flex justify-end gap-3">
-      <app-button
-        (click)="cancelDelete()"
-        [icon]="'close'"
-        [title]="'Cancel'"
-        [ghost]="true"
-      />
-      <app-button
-        (click)="deleteConfig()"
-        [icon]="'delete'"
-        [color]="'error'"
-        [title]="'Delete'"
-      />
     </div>
   </div>
 </div>

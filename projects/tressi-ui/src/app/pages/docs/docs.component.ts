@@ -1,11 +1,11 @@
-import { Location } from '@angular/common';
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { MarkdownModule } from 'ngx-markdown';
 
 import { ButtonComponent } from '../../components/button/button.component';
 import { HeaderComponent } from '../../components/header/header.component';
 import { IconComponent } from '../../components/icon/icon.component';
+import { AppRouterService } from '../../services/router.service';
 import { GetDocsResponseSuccess } from '../../services/rpc.service';
 import { DocsMenuComponent } from './docs-menu/docs-menu.component';
 
@@ -23,12 +23,14 @@ import { DocsMenuComponent } from './docs-menu/docs-menu.component';
   templateUrl: './docs.component.html',
 })
 export class DocsComponent implements OnInit {
-  private readonly location = inject(Location);
   private readonly route = inject(ActivatedRoute);
+  readonly appRouter = inject(AppRouterService);
   markdownSrc = signal<string>('');
   error = signal<string | null>(null);
   availableDocs = signal<GetDocsResponseSuccess>({});
   isTransitioning = signal(false);
+
+  isBaseUrl = computed<boolean>(() => window.location.href.endsWith('/docs'));
 
   ngOnInit(): void {
     this.initializeFromResolvedData();
@@ -106,9 +108,5 @@ export class DocsComponent implements OnInit {
   onError(): void {
     this.error.set('Failed to load documentation.');
     this.isTransitioning.set(false);
-  }
-
-  goBack(): void {
-    this.location.back();
   }
 }
