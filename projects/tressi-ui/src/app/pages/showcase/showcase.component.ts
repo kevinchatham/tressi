@@ -3,10 +3,11 @@ import {
   BUTTON_COLORS,
   ButtonComponent,
 } from 'src/app/components/button/button.component';
+import { ThemeSwitcherComponent } from 'src/app/components/theme-switcher/theme-switcher.component';
 
 @Component({
   selector: 'app-showcase',
-  imports: [ButtonComponent],
+  imports: [ButtonComponent, ThemeSwitcherComponent],
   templateUrl: './showcase.component.html',
 })
 export class ShowcaseComponent {

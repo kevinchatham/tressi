@@ -10,6 +10,7 @@ import { ActivatedRoute } from '@angular/router';
 import { ButtonComponent } from 'src/app/components/button/button.component';
 import { ThemeSwitcherComponent } from 'src/app/components/theme-switcher/theme-switcher.component';
 
+import { AppRoutes } from '../../app.routes';
 import { ConfigFormComponent } from '../../components/config-form/config-form.component';
 import { ConfigurationCardComponent } from '../../components/configuration-card/configuration-card.component';
 import { HeaderComponent } from '../../components/header/header.component';
@@ -95,6 +96,15 @@ export class ConfigurationsComponent implements OnInit {
   private _initializeFromResolvedData(): void {
     const configs = this._route.snapshot.data['configs'] as ConfigDocument[];
     this.configs.set(configs);
+
+    // Check if the current route is the 'create' route
+    const isCreateRoute = this._route.snapshot.url.some(
+      (segment) => segment.path === 'create',
+    );
+
+    if (isCreateRoute) {
+      this.startCreate();
+    }
   }
 
   /**
@@ -103,6 +113,7 @@ export class ConfigurationsComponent implements OnInit {
   startCreate(): void {
     this.currentConfig.set(null);
     this.showForm.set(true);
+    this.appRouter.updateUrl(AppRoutes.CONFIGS_CREATE);
   }
 
   /**
@@ -193,6 +204,7 @@ export class ConfigurationsComponent implements OnInit {
   cancelEdit(): void {
     this.currentConfig.set(null);
     this.showForm.set(false);
+    this.appRouter.updateUrl(AppRoutes.CONFIGS);
   }
 
   /**

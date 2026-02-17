@@ -48,7 +48,7 @@
 
       @if (hasNoConfigs()) {
         <div
-          class="border-base-content/5 bg-base-200 mx-auto rounded-xl border-2 p-8"
+          class="border-base-content/5 bg-base-300 mx-auto rounded-xl border-2 p-8"
         >
           <div class="text-center">
             <p class="text-base-content/70 mb-4 text-lg">
@@ -68,7 +68,7 @@
     <!-- Edit/Create Form -->
     @if (showForm()) {
       <div class="mx-auto max-w-5xl">
-        <div class="border-base-content/5 bg-base-200 rounded-xl border-2 p-6">
+        <div class="border-base-content/5 bg-base-300 rounded-xl border-2 p-6">
           <h2 class="mb-4 text-xl font-semibold">
             {{
               currentConfig()?.id
@@ -89,7 +89,7 @@
   <!-- Delete Confirmation Modal -->
   <div class="modal" [class.modal-open]="showDeleteModal()">
     <div
-      class="border-base-content/5 bg-base-200 sm:max-w-[calc(100%-2rem) rounded-xl border-2 p-6 sm:m-4 md:max-w-lg"
+      class="border-base-content/5 bg-base-300 sm:max-w-[calc(100%-2rem) rounded-xl border-2 p-6 sm:m-4 md:max-w-lg"
     >
       <h3 class="text-lg font-semibold">Delete Configuration</h3>
       <p class="py-4">

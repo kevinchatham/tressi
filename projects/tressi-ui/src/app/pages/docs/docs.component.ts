@@ -29,9 +29,7 @@ export class DocsComponent implements OnInit {
   readonly error = signal<string | null>(null);
   readonly availableDocs = signal<GetDocsResponseSuccess>({});
   readonly isTransitioning = signal(false);
-  readonly isBaseUrl = computed<boolean>(() =>
-    window.location.href.endsWith('/docs'),
-  );
+  readonly isBaseUrl = computed<boolean>(() => this.appRouter.isOnDocs());
 
   ngOnInit(): void {
     this._initializeFromResolvedData();

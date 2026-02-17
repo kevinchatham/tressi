@@ -1,22 +1,17 @@
-<div class="space-y-6">
+<div class="space-y-4">
   <!-- Global Headers Section -->
-  <div class="bg-base-200 border-base-content/5 rounded-xl border-2 p-4">
-    <h2 class="mb-4 flex items-center gap-2 text-lg font-semibold">
-      <app-icon name="stat_2" />
-      Global Configuration
-    </h2>
-
+  <div class="bg-base-300 px-8">
     <div class="space-y-2">
       <!-- Ramp Up Duration -->
       <fieldset class="fieldset">
         <legend class="fieldset-legend">Ramp Up Time (seconds)</legend>
         <input
           type="number"
-          class="input outline-none!"
+          class="input max-w-28 outline-none!"
           [field]="form().config.options.rampUpDurationSec"
           placeholder="Time to reach target RPS"
         />
-        <p class="label">Global ramp-up time (0 = no ramp-up)</p>
+        <p class="label">0 = no ramp-up</p>
         @if (
           form().config.options.rampUpDurationSec().touched() &&
           form().config.options.rampUpDurationSec().invalid()
@@ -38,12 +33,9 @@
           [(value)]="model().config.options.headers"
           [rows]="3"
           (valueChange)="onJsonTextareaValueChange()"
-          placeholder='{"User-Agent": "Tressi/1.0.0", "Accept": "application/json"}'
+          placeholder='{"User-Agent": "Tressi", "Accept": "application/json"}'
         />
-        <p class="label text-wrap">
-          Request-level headers will override these if the same header name is
-          used.
-        </p>
+        <p class="label text-wrap">Overrides request level headers</p>
         @if (
           form().config.options.headers().touched() &&
           form().config.options.headers().invalid()
@@ -61,11 +53,11 @@
     </div>
   </div>
 
-  <!-- Worker Early Exit Section -->
-  <div class="bg-base-200 border-base-content/5 rounded-xl border-2 p-4">
+  <!-- Early Exit Section -->
+  <div class="bg-base-300 px-8">
     <h2 class="mb-4 flex items-center gap-2 text-lg font-semibold">
-      <app-icon name="warning" class="h-5 w-5" />
-      Worker Early Exit Configuration
+      <app-icon name="warning" />
+      Early Exit Configuration
     </h2>
 
     <app-early-exit-config

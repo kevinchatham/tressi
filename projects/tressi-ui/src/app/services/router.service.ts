@@ -4,7 +4,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router } from '@angular/router';
 import { filter, map } from 'rxjs';
 
-import { AppRoutes } from '../app.routes';
+import { AppRoute, AppRoutes } from '../app.routes';
 
 @Injectable({ providedIn: 'root' })
 export class AppRouterService {
@@ -25,11 +25,7 @@ export class AppRouterService {
   });
 
   // has template references!
-  isOnDocs = computed(
-    () =>
-      this.getCurrentUrl().endsWith(AppRoutes.DOCS) ||
-      this.getCurrentUrl().includes(AppRoutes.DOCS),
-  );
+  isOnDocs = computed(() => this.getCurrentUrl().endsWith(AppRoutes.DOCS));
 
   // has template references!
   isOnServerUnavailable = computed(() =>
@@ -86,6 +82,11 @@ export class AppRouterService {
   /** Updates the URL without triggering a full route navigation (Soft Navigation) */
   updateDashboardUrl(configId: string): void {
     this._location.go(`/${AppRoutes.DASHBOARD}/${configId}`);
+  }
+
+  updateUrl(route: AppRoute): void {
+    if (route.includes(':')) return;
+    this._location.go(`/${route}`);
   }
 
   /** Navigates back in the platform history */

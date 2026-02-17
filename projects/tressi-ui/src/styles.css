@@ -10,31 +10,49 @@
   default: true;
   prefersdark: false;
   color-scheme: 'light';
-  --color-base-100: oklch(98% 0.001 106.423);
-  --color-base-200: oklch(97% 0.001 106.424);
-  --color-base-300: oklch(92% 0.003 48.717);
-  --color-base-content: oklch(21% 0.006 56.043);
-  --color-primary: oklch(81% 0.111 293.571);
-  --color-primary-content: oklch(28% 0.141 291.089);
-  --color-secondary: oklch(78% 0.115 274.713);
-  --color-secondary-content: oklch(25% 0.09 281.288);
-  --color-accent: oklch(78% 0.115 274.713);
-  --color-accent-content: oklch(25% 0.09 281.288);
-  --color-neutral: oklch(14% 0.004 49.25);
-  --color-neutral-content: oklch(98% 0.001 106.423);
-  --color-info: oklch(68% 0.169 237.323);
-  --color-info-content: oklch(97% 0.013 236.62);
-  --color-success: oklch(69% 0.17 162.48);
-  --color-success-content: oklch(97% 0.021 166.113);
-  --color-warning: oklch(70% 0.213 47.604);
-  --color-warning-content: oklch(98% 0.016 73.684);
-  --color-error: oklch(63% 0.237 25.331);
-  --color-error-content: oklch(97% 0.013 17.38);
+
+  /* --- Base (much softer, no retina burn) --- */
+  --color-base-100: oklch(93% 0.006 255);
+  --color-base-200: oklch(91% 0.008 255);
+  --color-base-300: oklch(87% 0.012 255);
+  --color-base-content: oklch(25% 0.02 260);
+
+  /* --- Primary (indigo brand) --- */
+  --color-primary: oklch(68% 0.15 275);
+  --color-primary-content: oklch(20% 0.04 275);
+
+  /* --- Secondary (cool lavender, clearly different) --- */
+  --color-secondary: oklch(72% 0.09 300);
+  --color-secondary-content: oklch(22% 0.03 300);
+
+  /* --- Accent (true teal, not cyan) --- */
+  --color-accent: oklch(70% 0.14 190);
+  --color-accent-content: oklch(20% 0.04 190);
+
+  /* --- Neutral --- */
+  --color-neutral: oklch(35% 0.02 260);
+  --color-neutral-content: oklch(92% 0.01 255);
+
+  /* --- Semantic --- */
+  --color-info: oklch(68% 0.12 228);
+  --color-info-content: oklch(22% 0.04 228);
+
+  --color-success: oklch(68% 0.16 160);
+  --color-success-content: oklch(20% 0.04 160);
+
+  --color-warning: oklch(78% 0.14 95);
+  --color-warning-content: oklch(28% 0.05 95);
+
+  --color-error: oklch(65% 0.18 25);
+  --color-error-content: oklch(20% 0.04 25);
+
   --radius-selector: 1rem;
   --radius-field: 0.5rem;
   --radius-box: 1rem;
+
   --size-selector: 0.25rem;
   --size-field: 0.25rem;
+
   --border: 1px;
   --depth: 0;
   --noise: 0;
@@ -45,31 +63,48 @@
   default: false;
   prefersdark: true;
   color-scheme: 'dark';
-  --color-base-100: oklch(28.822% 0.022 277.508);
-  --color-base-200: oklch(26.805% 0.02 277.508);
-  --color-base-300: oklch(24.787% 0.019 277.508);
-  --color-base-content: oklch(97.747% 0.007 106.545);
-  --color-primary: oklch(75.461% 0.183 346.812);
-  --color-primary-content: oklch(15.092% 0.036 346.812);
-  --color-secondary: oklch(74.202% 0.148 301.883);
-  --color-secondary-content: oklch(14.84% 0.029 301.883);
-  --color-accent: oklch(83.392% 0.124 66.558);
-  --color-accent-content: oklch(16.678% 0.024 66.558);
-  --color-neutral: oklch(39.445% 0.032 275.524);
-  --color-neutral-content: oklch(87.889% 0.006 275.524);
-  --color-info: oklch(88.263% 0.093 212.846);
-  --color-info-content: oklch(17.652% 0.018 212.846);
-  --color-success: oklch(87.099% 0.219 148.024);
-  --color-success-content: oklch(17.419% 0.043 148.024);
-  --color-warning: oklch(95.533% 0.134 112.757);
-  --color-warning-content: oklch(19.106% 0.026 112.757);
-  --color-error: oklch(68.22% 0.206 24.43);
-  --color-error-content: oklch(13.644% 0.041 24.43);
+
+  /* --- Base --- */
+  --color-base-100: oklch(27% 0.025 265);
+  --color-base-200: oklch(25% 0.022 265);
+  --color-base-300: oklch(22% 0.02 265);
+  --color-base-content: oklch(95% 0.01 255);
+
+  /* --- Primary (brand indigo) --- */
+  --color-primary: oklch(68% 0.15 275);
+  --color-primary-content: oklch(18% 0.04 275);
+
+  /* --- Secondary (clearly different, muted lavender) --- */
+  --color-secondary: oklch(62% 0.11 295);
+  --color-secondary-content: oklch(16% 0.04 295);
+
+  /* --- Accent (teal highlight) --- */
+  --color-accent: oklch(68% 0.14 190);
+  --color-accent-content: oklch(18% 0.04 190);
+  /* --- Neutral --- */
+  --color-neutral: oklch(34% 0.03 265);
+  --color-neutral-content: oklch(86% 0.01 255);
+
+  /* --- Semantic --- */
+  --color-info: oklch(72% 0.11 228);
+  --color-info-content: oklch(18% 0.04 228);
+
+  --color-success: oklch(72% 0.17 160);
+  --color-success-content: oklch(18% 0.04 160);
+
+  --color-warning: oklch(83% 0.12 95);
+  --color-warning-content: oklch(20% 0.04 95);
+
+  --color-error: oklch(68% 0.18 25);
+  --color-error-content: oklch(15% 0.04 25);
+
   --radius-selector: 1rem;
   --radius-field: 0.5rem;
   --radius-box: 1rem;
+
   --size-selector: 0.25rem;
   --size-field: 0.25rem;
+
   --border: 1px;
   --depth: 0;
   --noise: 0;
@@ -84,7 +119,7 @@
 
 @layer components {
   .cdk-drag-preview {
-    @apply bg-base-100 text-base-content rounded-xl px-4 py-2 font-medium shadow-lg;
+    @apply bg-base-300 text-base-content rounded-xl px-4 py-2 font-medium shadow-lg;
   }
 
   .cdk-drag-placeholder {

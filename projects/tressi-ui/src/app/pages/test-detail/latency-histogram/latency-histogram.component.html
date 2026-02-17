@@ -1,6 +1,6 @@
 @if (histogram() && histogram()!.totalCount > 0) {
   <!-- NEW: Proper Histogram Visualization -->
-  <div class="bg-base-200 rounded-xl p-4">
+  <div class="bg-base-300 rounded-xl p-4">
     <h4 class="text-base-content/80 mb-4 text-sm font-semibold">
       Distribution
     </h4>
@@ -64,7 +64,7 @@
   </div>
 
   <!-- Enhanced Percentile Table -->
-  <div class="bg-base-200 rounded-xl p-4">
+  <div class="bg-base-300 rounded-xl p-4">
     <h4 class="text-base-content/80 mb-3 text-sm font-semibold">Percentiles</h4>
     <div class="space-y-2">
       @for (item of getPercentileData(); track item.percentile) {

@@ -51,20 +51,24 @@ export class JsonTextareaComponent<T> implements FormValueControl<T> {
     EditorView.theme(
       {
         '&.cm-editor': {
-          backgroundColor: this._themeService.base300(),
-          color: this._themeService.baseContent(),
+          backgroundColor: this._themeService.neutral(),
+          color: this._themeService.neutralContent(),
           height: 'auto',
           borderRadius: '8px',
           padding: '8px',
         },
         '.cm-content': {},
+        '.cm-cursor': {
+          borderLeftColor: this._themeService.primary(),
+          borderLeftWidth: '2px',
+        },
         '.cm-gutters': {
-          backgroundColor: this._themeService.base300(),
-          color: this._themeService.neutral(),
+          backgroundColor: this._themeService.neutral(),
+          color: this._themeService.neutralContent(),
           border: 'none',
         },
       },
-      { dark: true },
+      { dark: this._themeService.isDark() },
     ),
   );
 
@@ -82,7 +86,7 @@ export class JsonTextareaComponent<T> implements FormValueControl<T> {
       },
       { tag: tags.bool, color: this._themeService.primary() },
       { tag: tags.propertyName, color: this._themeService.info() },
-      { tag: tags.comment, color: this._themeService.neutral() + 'aa' }, // Add transparency
+      { tag: tags.comment, color: this._themeService.neutral() + 'aa' },
     ]),
   );
 

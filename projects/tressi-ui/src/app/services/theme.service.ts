@@ -12,6 +12,8 @@ export type Theme = (typeof AllThemes)[number];
 export class ThemeService {
   private readonly _localStorageService = inject(LocalStorageService);
 
+  readonly isDark = computed(() => this.getTheme() === 'storm');
+
   readonly getTheme = computed(
     () => this._localStorageService.preferences().selectedTheme,
   );

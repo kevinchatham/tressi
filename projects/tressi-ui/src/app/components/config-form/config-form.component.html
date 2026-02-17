@@ -1,25 +1,6 @@
 <form (submit)="onSubmit($event)" class="space-y-4">
   <!-- Tabs Navigation -->
   <div class="border-neutral border-b">
-    <!-- Metadata Form -->
-    <fieldset class="fieldset mb-4">
-      <legend class="fieldset-legend">Configuration Name</legend>
-      <input
-        id="config-name"
-        type="text"
-        class="input outline-none!"
-        placeholder="Enter configuration name"
-        [field]="form.name"
-      />
-      <p class="label">A unique name for this configuration</p>
-      @if (form.name().touched() && form.name().invalid()) {
-        <p class="label text-error">
-          @for (error of form.name().errors(); track error) {
-            {{ error.message }}
-          }
-        </p>
-      }
-    </fieldset>
     <!-- Sub Component Navigation -->
     <nav class="flex items-center justify-around">
       <button
@@ -110,7 +91,7 @@
   }
 
   <!-- Form Actions -->
-  <div class="bg-base-200 px-4">
+  <div class="bg-base-300 px-8 py-4">
     <div class="flex justify-end gap-3">
       <app-button
         (click)="onCancel($event)"

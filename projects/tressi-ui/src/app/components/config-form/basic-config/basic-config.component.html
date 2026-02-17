@@ -1,33 +1,54 @@
-<div class="bg-base-200 border-base-content/5 rounded-xl border-2 px-4 pt-4">
-  <h2 class="mb-4 flex items-center gap-2 text-lg font-semibold">
-    <app-icon name="stat_1" />
-    Basic Configuration
-  </h2>
+<div class="space-y-6">
+  <div class="bg-base-300 px-8">
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <!-- Configuration Name -->
+      <fieldset class="fieldset md:col-span-2">
+        <legend class="fieldset-legend">Configuration Name</legend>
+        <input
+          id="config-name"
+          type="text"
+          class="input outline-none!"
+          placeholder="Enter configuration name"
+          [field]="form().name"
+        />
+        <p class="label">Display name for this test</p>
+        @if (form().name().touched() && form().name().invalid()) {
+          <p class="label text-error">
+            @for (error of form().name().errors(); track error) {
+              {{ error.message }}
+            }
+          </p>
+        }
+      </fieldset>
 
-  <div class="space-y-6">
-    <!-- Duration -->
-    <fieldset class="fieldset">
-      <legend class="fieldset-legend">Duration (seconds)</legend>
-      <input
-        type="number"
-        class="input max-w-28 outline-none!"
-        [field]="form().config.options.durationSec"
-      />
-      @if (
-        form().config.options.durationSec().touched() &&
-        form().config.options.durationSec().invalid()
-      ) {
-        <p class="label text-error">
-          @for (
-            error of form().config.options.durationSec().errors();
-            track error
-          ) {
-            {{ error.message }}
-          }
-        </p>
-      }
-    </fieldset>
+      <!-- Duration -->
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">Duration (seconds)</legend>
+        <input
+          type="number"
+          class="input outline-none!"
+          [field]="form().config.options.durationSec"
+          placeholder="Total test duration"
+        />
+        <p class="label">Total test duration</p>
+        @if (
+          form().config.options.durationSec().touched() &&
+          form().config.options.durationSec().invalid()
+        ) {
+          <p class="label text-error">
+            @for (
+              error of form().config.options.durationSec().errors();
+              track error
+            ) {
+              {{ error.message }}
+            }
+          </p>
+        }
+      </fieldset>
+    </div>
+  </div>
 
+  <div class="px-8">
     <!-- Requests Configuration -->
     <div>
       <div class="mb-4 flex items-center justify-between">
@@ -44,13 +65,14 @@
       </div>
 
       @for (request of model().config.requests; track $index) {
-        <div class="bg-base-200 border-base-content/5 mb-4 rounded-xl border-2">
+        <div class="border-base-content/5 mb-4 rounded-xl border-2">
           <div class="flex items-center justify-between p-4">
             <h3 class="truncate text-lg font-medium">
-              Request {{ $index + 1 }}:
-              <span class="truncate">{{ request.url || 'New Request' }}</span>
+              <span class="truncate">{{
+                `${request.method}: ${request.url}` || 'Blank Request'
+              }}</span>
             </h3>
-            <div class="flex items-center">
+            <div class="flex items-center gap-2">
               <app-button
                 (click)="removeRequest.emit($index)"
                 [color]="'error'"
@@ -59,7 +81,6 @@
                 [title]="'Remove Request'"
               />
               <app-button
-                class="ml-2"
                 (click)="toggleRequest($index)"
                 [ghost]="true"
                 [title]="isRequestExpanded($index) ? 'Collapse' : 'Expand'"
@@ -147,7 +168,7 @@
                   [field]="form().config.requests[$index].rampUpDurationSec"
                   placeholder="Time to reach target RPS"
                 />
-                <p class="label">Endpoint ramp-up time</p>
+                <p class="label">Per endpoint</p>
                 @if (
                   form()
                     .config.requests[$index].rampUpDurationSec()

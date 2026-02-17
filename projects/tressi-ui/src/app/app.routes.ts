@@ -16,6 +16,7 @@ export const AppRoutes = {
   HOME: '',
   WELCOME: 'welcome',
   CONFIGS: 'configs',
+  CONFIGS_CREATE: 'configs/create',
   DASHBOARD: 'dashboard',
   DASHBOARD_WITH_ID: 'dashboard/:configId',
   TESTS_WITH_ID: 'tests/:testId',
@@ -25,6 +26,8 @@ export const AppRoutes = {
   SERVER_UNAVAILABLE: 'server-unavailable',
   SHOWCASE: 'showcase',
 } as const;
+
+export type AppRoute = (typeof AppRoutes)[keyof typeof AppRoutes];
 
 // Health check guard using the centralized service
 const healthCheckGuard = (): boolean => {
@@ -115,6 +118,16 @@ export const routes: Routes = [
     canActivate: [healthCheckGuard],
     resolve: { configs: configsResolver },
     data: { title: 'Configs' },
+  },
+  {
+    path: AppRoutes.CONFIGS_CREATE,
+    loadComponent: () =>
+      import('./pages/configs/configs.component').then(
+        (m) => m.ConfigurationsComponent,
+      ),
+    canActivate: [healthCheckGuard],
+    resolve: { configs: configsResolver },
+    data: { title: 'Create Config' },
   },
   {
     path: AppRoutes.DASHBOARD,
