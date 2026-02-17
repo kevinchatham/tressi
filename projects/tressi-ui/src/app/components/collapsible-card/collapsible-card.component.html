@@ -1,4 +1,4 @@
-<div class="bg-base-200/50 border-base-300 rounded-xl border p-4">
+<div class="bg-base-200 border-base-300 rounded-xl border p-4">
   <div class="flex items-center justify-between">
     <h2 class="text-xl font-semibold">{{ title() }}</h2>
     <div class="flex items-center justify-end gap-4">
@@ -9,7 +9,9 @@
       <app-button
         (click)="toggleCollapsed()"
         [title]="collapsed() ? 'Expand' : 'Collapse'"
-        [icon]="collapsed() ? 'keyboard_arrow_down' : 'keyboard_arrow_up'"
+        [icon]="'keyboard_arrow_up'"
+        [secondaryIcon]="'keyboard_arrow_down'"
+        [toggled]="collapsed()"
         [ghost]="true"
       />
     </div>

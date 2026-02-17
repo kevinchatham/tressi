@@ -1,4 +1,4 @@
-import { Component, inject, input, output } from '@angular/core';
+import { Component, inject, input, output, signal } from '@angular/core';
 
 import { ButtonComponent } from '../../../components/button/button.component';
 import { CollapsibleCardComponent } from '../../../components/collapsible-card/collapsible-card.component';
@@ -37,6 +37,9 @@ export class TestMetadataComponent {
   /** Emits when collapsed state changes */
   readonly collapsedChange = output<boolean>();
 
+  /** Whether the configuration was recently copied */
+  readonly copied = signal<boolean>(false);
+
   /**
    * Handle collapsed state change from collapsible card
    */
@@ -58,6 +61,10 @@ export class TestMetadataComponent {
       const jsonString = JSON.stringify(snapshot, null, 2);
       await navigator.clipboard.writeText(jsonString);
       this._toastService.show('Configuration copied to clipboard', 'success');
+
+      // Show success icon feedback
+      this.copied.set(true);
+      setTimeout(() => this.copied.set(false), 2000);
     } catch {
       this._toastService.show('Failed to copy configuration', 'error');
     }

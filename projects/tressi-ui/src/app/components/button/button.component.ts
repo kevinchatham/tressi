@@ -1,4 +1,4 @@
-import { Component, computed, input, output } from '@angular/core';
+import { Component, computed, input, model, output } from '@angular/core';
 
 import { IconComponent, IconName } from '../icon/icon.component';
 
@@ -31,6 +31,8 @@ export class ButtonComponent {
   disabled = input<boolean>(false);
   ghost = input<boolean>(false);
   icon = input<IconName>();
+  secondaryIcon = input<IconName>();
+  toggled = model<boolean>(false);
   tabindex = input<number>();
   title = input<string>();
   tooltip = input<string>();
@@ -129,6 +131,9 @@ export class ButtonComponent {
   onClick(event: Event): void {
     event.stopPropagation();
     if (!this.disabled()) {
+      if (this.secondaryIcon()) {
+        this.toggled.set(!this.toggled());
+      }
       this.click.emit(event);
     }
   }

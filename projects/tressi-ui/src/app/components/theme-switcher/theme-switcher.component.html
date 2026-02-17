@@ -2,5 +2,7 @@
   (click)="themeService.toggleTheme()"
   [color]="'rainbow'"
   [title]="'Toggle Theme'"
-  [icon]="themeService.getTheme() === 'shine' ? 'light_mode' : 'thunderstorm'"
+  [icon]="'light_mode'"
+  [secondaryIcon]="'thunderstorm'"
+  [toggled]="themeService.isDark()"
 />

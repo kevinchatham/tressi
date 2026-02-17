@@ -15,7 +15,26 @@
       >{{ title() }}</span
     >
   }
-  @if (icon()) {
+  @if (secondaryIcon()) {
+    <div class="relative flex size-6 items-center justify-center">
+      <app-icon
+        [name]="icon()"
+        class="absolute transition-all duration-300 ease-in-out"
+        [class.opacity-0]="toggled()"
+        [class.scale-0]="toggled()"
+        [class.rotate-90]="toggled()"
+      />
+      <app-icon
+        [name]="secondaryIcon()"
+        class="absolute transition-all duration-300 ease-in-out"
+        [class.opacity-0]="!toggled()"
+        [class.scale-100]="toggled()"
+        [class.scale-0]="!toggled()"
+        [class.rotate-0]="toggled()"
+        [class.-rotate-90]="!toggled()"
+      />
+    </div>
+  } @else if (icon()) {
     <app-icon [name]="icon()" />
   }
 </button>

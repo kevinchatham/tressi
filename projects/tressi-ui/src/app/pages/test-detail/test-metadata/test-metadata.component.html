@@ -10,6 +10,8 @@
         (click)="copyConfig()"
         [title]="'Copy Config'"
         [icon]="'copy_all'"
+        [secondaryIcon]="'check'"
+        [toggled]="copied()"
         [ghost]="true"
       />
     </ng-template>
@@ -25,7 +27,7 @@
           Timing
         </h4>
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div class="bg-base-300 rounded-xl p-4">
+          <div class="bg-base-100 rounded-xl p-4">
             <div class="text-base-content/70 mb-1 text-xs uppercase">
               Started
             </div>
@@ -34,7 +36,7 @@
               [appFormatDate]="testData()?.summary?.global?.epochStartedAt"
             ></div>
           </div>
-          <div class="bg-base-300 rounded-xl p-4">
+          <div class="bg-base-100 rounded-xl p-4">
             <div class="text-base-content/70 mb-1 text-xs uppercase">Ended</div>
             <div
               class="text-sm font-medium"

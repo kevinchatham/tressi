@@ -12,7 +12,7 @@
     </h3>
     <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-5">
       <!-- Average RPS -->
-      <div class="bg-base-300 rounded-xl p-4">
+      <div class="bg-base-100 rounded-xl p-4">
         <div
           class="text-base-content/70 mb-1 text-sm"
           [attr.title]="tooltips['avgRps']"
@@ -28,7 +28,7 @@
 
       <!-- Peak RPS -->
       <div
-        class="rounded-xl p-4"
+        class="bg-base-100 rounded-xl p-4"
         [class.bg-base-300]="!summary()?.peakRequestsPerSecond"
       >
         <div
@@ -46,7 +46,7 @@
 
       <!-- Global view: Test Duration -->
       @if (globalSummary()?.finalDurationSec) {
-        <div class="bg-base-300 rounded-xl p-4">
+        <div class="bg-base-100 rounded-xl p-4">
           <div
             class="text-base-content/70 mb-1 text-sm"
             [attr.title]="tooltips['duration']"
@@ -63,7 +63,7 @@
 
       <!-- Global view: Endpoints Tested -->
       @if (globalSummary()?.totalEndpoints) {
-        <div class="bg-base-300 rounded-xl p-4">
+        <div class="bg-base-100 rounded-xl p-4">
           <div
             class="text-base-content/70 mb-1 text-sm"
             [attr.title]="tooltips['endpoints']"
@@ -80,7 +80,7 @@
 
       <!-- Endpoint view: Target Achieved -->
       @if (endpointSummary()?.targetAchieved) {
-        <div class="bg-base-300 rounded-xl p-4">
+        <div class="bg-base-100 rounded-xl p-4">
           <div
             class="text-base-content/70 mb-1 text-sm"
             [attr.title]="tooltips['targetAchieved']"
@@ -97,7 +97,7 @@
 
       <!-- Endpoint view: Theoretical Max RPS -->
       @if (endpointSummary()?.theoreticalMaxRps) {
-        <div class="bg-base-300 rounded-xl p-4">
+        <div class="bg-base-100 rounded-xl p-4">
           <div
             class="text-base-content/70 mb-1 text-sm"
             [attr.title]="tooltips['maxThroughput']"
@@ -113,7 +113,7 @@
       }
 
       <!-- Total Requests -->
-      <div class="bg-base-300 rounded-xl p-4">
+      <div class="bg-base-100 rounded-xl p-4">
         <div
           class="text-base-content/70 mb-1 text-sm"
           [attr.title]="tooltips['totalRequests']"
@@ -128,7 +128,7 @@
       </div>
 
       <!-- Successful Requests -->
-      <div class="bg-base-300 rounded-xl p-4">
+      <div class="bg-base-100 rounded-xl p-4">
         <div class="text-base-content/70 mb-1 text-sm">Successful Requests</div>
         <div
           class="text-success text-2xl font-bold"
@@ -191,7 +191,7 @@
       Latency
     </h3>
     <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-5">
-      <div class="bg-base-300 rounded-xl p-4">
+      <div class="bg-base-100 rounded-xl p-4">
         <div
           class="text-base-content/70 mb-1 text-sm"
           [attr.title]="tooltips['minLatency']"
@@ -205,7 +205,7 @@
         <div class="text-base-content/60 mt-1 text-xs">fastest</div>
       </div>
 
-      <div class="bg-base-300 rounded-xl p-4">
+      <div class="bg-base-100 rounded-xl p-4">
         <div
           class="text-base-content/70 mb-1 text-sm"
           [attr.title]="tooltips['p50Latency']"
@@ -219,7 +219,7 @@
         <div class="text-base-content/60 mt-1 text-xs">median</div>
       </div>
 
-      <div class="bg-base-300 rounded-xl p-4">
+      <div class="bg-base-100 rounded-xl p-4">
         <div
           class="text-base-content/70 mb-1 text-sm"
           [attr.title]="tooltips['p95Latency']"
@@ -233,7 +233,7 @@
         <div class="text-base-content/60 mt-1 text-xs">slow</div>
       </div>
 
-      <div class="bg-base-300 rounded-xl p-4">
+      <div class="bg-base-100 rounded-xl p-4">
         <div
           class="text-base-content/70 mb-1 text-sm"
           [attr.title]="tooltips['p99Latency']"
@@ -247,7 +247,7 @@
         <div class="text-base-content/60 mt-1 text-xs">slower</div>
       </div>
 
-      <div class="bg-base-300 rounded-xl p-4">
+      <div class="bg-base-100 rounded-xl p-4">
         <div
           class="text-base-content/70 mb-1 text-sm"
           [attr.title]="tooltips['maxLatency']"
@@ -278,7 +278,7 @@
       <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-5">
         <!-- CPU Usage -->
         @if (globalSummary()?.avgSystemCpuUsagePercent) {
-          <div class="bg-base-300 rounded-xl p-4">
+          <div class="bg-base-100 rounded-xl p-4">
             <div
               class="text-base-content/70 mb-1 text-sm"
               [attr.title]="tooltips['cpuUsage']"
@@ -307,7 +307,7 @@
 
         <!-- Memory Usage -->
         @if (globalSummary()?.avgProcessMemoryUsageMB) {
-          <div class="bg-base-300 rounded-xl p-4">
+          <div class="bg-base-100 rounded-xl p-4">
             <div
               class="text-base-content/70 mb-1 text-sm"
               [attr.title]="tooltips['memoryUsage']"
@@ -338,7 +338,7 @@
 
         <!-- Network Throughput -->
         @if (globalSummary()?.networkBytesPerSec) {
-          <div class="bg-base-300 rounded-xl p-4">
+          <div class="bg-base-100 rounded-xl p-4">
             <div
               class="text-base-content/70 mb-1 text-sm"
               [attr.title]="tooltips['networkThroughput']"
@@ -355,7 +355,7 @@
 
         <!-- Bytes Sent -->
         @if (globalSummary()?.networkBytesSent) {
-          <div class="bg-base-300 rounded-xl p-4">
+          <div class="bg-base-100 rounded-xl p-4">
             <div
               class="text-base-content/70 mb-1 text-sm"
               [attr.title]="tooltips['networkSent']"
@@ -372,7 +372,7 @@
 
         <!-- Bytes Received -->
         @if (globalSummary()?.networkBytesReceived) {
-          <div class="bg-base-300 rounded-xl p-4">
+          <div class="bg-base-100 rounded-xl p-4">
             <div
               class="text-base-content/70 mb-1 text-sm"
               [attr.title]="tooltips['networkReceived']"
