@@ -92,7 +92,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     const routeConfigId = this.configId();
     const lastSelectedConfig =
-      this.localStorageService.getPreferences().lastSelectedConfig;
+      this.localStorageService.preferences().lastSelectedConfig;
 
     if (routeConfigId) {
       const configFromRoute = configs.find((c) => c.id === routeConfigId);
@@ -137,7 +137,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.selectedConfig.set(config);
     // Save the selected config to localStorage
     this.localStorageService.savePreferences({
-      ...this.localStorageService.getPreferences(),
+      ...this.localStorageService.preferences(),
       lastSelectedConfig: config,
     });
 

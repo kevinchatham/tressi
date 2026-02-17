@@ -90,7 +90,7 @@ export class TestListColumnsService {
    */
   private loadColumnPreferences(): ColumnConfig[] {
     try {
-      const preferences = this.localStorageService.getPreferences();
+      const preferences = this.localStorageService.preferences();
       const savedColumns = preferences.columnPreferences;
 
       if (savedColumns && savedColumns.length > 0) {
@@ -111,7 +111,7 @@ export class TestListColumnsService {
    */
   private saveColumnPreferences(): void {
     try {
-      const preferences = this.localStorageService.getPreferences();
+      const preferences = this.localStorageService.preferences();
       const updatedPreferences = {
         ...preferences,
         columnPreferences: this.columns(),

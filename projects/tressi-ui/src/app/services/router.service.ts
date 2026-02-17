@@ -31,6 +31,11 @@ export class AppRouterService {
       this.getCurrentUrl().includes(AppRoutes.DOCS),
   );
 
+  // has template references!
+  isOnServerUnavailable = computed(() =>
+    this.getCurrentUrl().endsWith(AppRoutes.SERVER_UNAVAILABLE),
+  );
+
   isOnDocsSubroute = computed(() =>
     this.getCurrentUrl().includes(`/${AppRoutes.DOCS}/`),
   );

@@ -70,17 +70,17 @@ export class JsonTextareaComponent<T> implements FormValueControl<T> {
 
   daisyHighlightStyle = computed(() =>
     HighlightStyle.define([
-      { tag: tags.string, color: this.themeService.secondaryColor() },
+      { tag: tags.string, color: this.themeService.secondary() },
       { tag: tags.number, color: this.themeService.success() },
-      { tag: tags.keyword, color: this.themeService.primaryColor() },
+      { tag: tags.keyword, color: this.themeService.primary() },
       { tag: tags.operator, color: this.themeService.baseContent() },
       { tag: tags.brace, color: this.themeService.warning() },
       {
         tag: tags.null,
-        color: this.themeService.primaryColor(),
+        color: this.themeService.primary(),
         fontStyle: 'italic',
       },
-      { tag: tags.bool, color: this.themeService.primaryColor() },
+      { tag: tags.bool, color: this.themeService.primary() },
       { tag: tags.propertyName, color: this.themeService.info() },
       { tag: tags.comment, color: this.themeService.neutral() + 'aa' }, // Add transparency
     ]),
