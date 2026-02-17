@@ -38,23 +38,23 @@ type ValueExtractor = (test: TestDocument) => unknown;
   templateUrl: './test-table.component.html',
 })
 export class TestTableComponent {
-  tests = input.required<TestDocument[]>();
-  columns = input.required<ColumnConfig[]>();
-  selectedTests = input.required<Set<string>>();
-  isAllSelected = input.required<boolean>();
-  isSomeSelected = input.required<boolean>();
-  currentSort = input<SortConfig | null>(null);
+  readonly tests = input.required<TestDocument[]>();
+  readonly columns = input.required<ColumnConfig[]>();
+  readonly selectedTests = input.required<Set<string>>();
+  readonly isAllSelected = input.required<boolean>();
+  readonly isSomeSelected = input.required<boolean>();
+  readonly currentSort = input<SortConfig | null>(null);
 
-  viewTest = output<string>();
-  toggleSelection = output<{ testId: string; event: Event }>();
-  toggleAllSelection = output<Event>();
-  columnReorder = output<{ draggedKey: string; targetKey: string }>();
-  columnSort = output<string>();
+  readonly viewTest = output<string>();
+  readonly toggleSelection = output<{ testId: string; event: Event }>();
+  readonly toggleAllSelection = output<Event>();
+  readonly columnReorder = output<{ draggedKey: string; targetKey: string }>();
+  readonly columnSort = output<string>();
 
-  private readonly testService = inject(TestService);
+  private readonly _testService = inject(TestService);
 
   // Create complete mapping that TypeScript will type-check
-  private readonly VALUE_EXTRACTORS: Record<FieldPath, ValueExtractor> = {
+  private readonly _valueExtractors: Record<FieldPath, ValueExtractor> = {
     select: () => '',
     'test.status': (test) => test.status || 'unknown',
     'test.epochStartedAt': (test) =>
@@ -112,7 +112,7 @@ export class TestTableComponent {
       return '';
     }
 
-    const extractor = this.VALUE_EXTRACTORS[column.field];
+    const extractor = this._valueExtractors[column.field];
     if (!extractor) {
       return null; // This should never happen with proper typing
     }
@@ -138,7 +138,7 @@ export class TestTableComponent {
       );
     }
 
-    return this.testService.getTestDuration(test) / 1000;
+    return this._testService.getTestDuration(test) / 1000;
   }
 
   onViewTest(testId: string): void {

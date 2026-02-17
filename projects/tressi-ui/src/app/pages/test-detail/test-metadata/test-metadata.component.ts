@@ -20,7 +20,7 @@ import { ToastService } from '../../../services/toast.service';
   templateUrl: './test-metadata.component.html',
 })
 export class TestMetadataComponent {
-  private readonly toastService = inject(ToastService);
+  private readonly _toastService = inject(ToastService);
 
   /** Test data document */
   readonly testData = input<TestDocument | null>(null);
@@ -50,16 +50,16 @@ export class TestMetadataComponent {
   async copyConfig(): Promise<void> {
     const snapshot = this.configSnapshot();
     if (!snapshot) {
-      this.toastService.show('No configuration to copy', 'error');
+      this._toastService.show('No configuration to copy', 'error');
       return;
     }
 
     try {
       const jsonString = JSON.stringify(snapshot, null, 2);
       await navigator.clipboard.writeText(jsonString);
-      this.toastService.show('Configuration copied to clipboard', 'success');
+      this._toastService.show('Configuration copied to clipboard', 'success');
     } catch {
-      this.toastService.show('Failed to copy configuration', 'error');
+      this._toastService.show('Failed to copy configuration', 'error');
     }
   }
 }

@@ -8,9 +8,9 @@ import { AgentConfig } from '../reporting/types';
  * and lifecycle management.
  */
 export class AgentManager {
-  private agents: Map<string, Dispatcher> = new Map();
-  private agentConfigs: Map<string, AgentConfig> = new Map();
-  private defaultConfig: AgentConfig = {
+  private _agents: Map<string, Dispatcher> = new Map();
+  private _agentConfigs: Map<string, AgentConfig> = new Map();
+  private _defaultConfig: AgentConfig = {
     connections: 256, // Maximum connections per origin
     keepAliveTimeout: 10000, // Keep connections alive longer
     keepAliveMaxTimeout: 120000,
@@ -42,21 +42,21 @@ export class AgentManager {
    */
   getAgent(url: string, config?: AgentConfig): Dispatcher {
     // Extract origin from URL
-    const origin = this.extractOrigin(url);
+    const origin = this._extractOrigin(url);
 
     // Check if we already have an agent for this origin
-    let agent = this.agents.get(origin);
+    let agent = this._agents.get(origin);
     if (agent) {
       return agent;
     }
 
     // Create a new agent with merged configuration
-    const mergedConfig = { ...this.defaultConfig, ...config };
+    const mergedConfig = { ...this._defaultConfig, ...config };
     agent = new Agent(mergedConfig);
 
     // Store the agent and its configuration
-    this.agents.set(origin, agent);
-    this.agentConfigs.set(origin, mergedConfig);
+    this._agents.set(origin, agent);
+    this._agentConfigs.set(origin, mergedConfig);
 
     return agent;
   }
@@ -78,7 +78,7 @@ export class AgentManager {
    * // Returns: 'https://api.example.com:8080'
    * ```
    */
-  private extractOrigin(url: string): string {
+  private _extractOrigin(url: string): string {
     try {
       const parsedUrl = new URL(url);
       return `${parsedUrl.protocol}//${parsedUrl.host}`;

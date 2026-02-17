@@ -49,72 +49,70 @@ import { TestTableComponent } from './test-table/test-table.component';
   templateUrl: './test-list.component.html',
 })
 export class TestListComponent implements OnChanges, OnInit, OnDestroy {
-  config = input.required<ConfigDocument>();
+  readonly appRouter = inject(AppRouterService);
+  private readonly _testService = inject(TestService);
+  private readonly _logService = inject(LogService);
+  private readonly _eventService = inject(EventService);
+  private readonly _columnsService = inject(TestListColumnsService);
+  private readonly _selectionService = inject(TestListSelectionService);
+  private readonly _deleteService = inject(TestListDeleteService);
 
-  /** Output event to notify parent component about test history changes */
+  readonly config = input.required<ConfigDocument>();
   readonly testHistoryUpdate = output<boolean>();
 
-  readonly appRouter = inject(AppRouterService);
-  private readonly testService = inject(TestService);
-  private readonly logService = inject(LogService);
-  private readonly eventService = inject(EventService);
-  private readonly columnsService = inject(TestListColumnsService);
-  private readonly selectionService = inject(TestListSelectionService);
-  private readonly deleteService = inject(TestListDeleteService);
-
   // Signals for reactive state management
-  private readonly tests = signal<TestDocument[]>([]);
+  private readonly _tests = signal<TestDocument[]>([]);
+  private readonly _error = signal<string | null>(null);
+  private readonly _latestMetrics = signal<TestSummary | null>(null);
   readonly configName = computed(
     () => this.config()?.name || '[Deleted Configuration]',
   );
-  private readonly error = signal<string | null>(null);
   readonly showDeleteModal = signal<boolean>(false);
   readonly testToDelete = signal<TestDocument | null>(null);
   readonly isBulkDelete = signal<boolean>(false);
-  private readonly latestMetrics = signal<TestSummary | null>(null);
   readonly showColumnSelector = signal<boolean>(false);
 
   // Computed signals for derived state
   readonly displayedTests = computed(() => {
-    const tests = this.tests();
+    const tests = this._tests();
     const sortConfig = this.currentSort();
 
     if (!sortConfig) {
       return tests;
     }
 
-    return this.sortTests(tests, sortConfig);
+    return this._sortTests(tests, sortConfig);
   });
-  readonly hasError = computed(() => this.error() !== null);
-  readonly errorMessage = computed(() => this.error());
-  readonly hasTests = computed(() => this.tests().length > 0);
+  readonly hasError = computed(() => this._error() !== null);
+  readonly errorMessage = computed(() => this._error());
+  readonly hasTests = computed(() => this._tests().length > 0);
   readonly pageTitle = computed(() => `Test History - ${this.configName()}`);
 
   // Expose service signals and computed values
-  readonly visibleColumns = this.columnsService.visibleColumns;
-  readonly columnGroups = this.columnsService.columnGroups;
-  readonly currentSort = this.columnsService.currentSort;
-  readonly selectedTests = this.selectionService.selectedTestsSet;
+  readonly visibleColumns = this._columnsService.visibleColumns;
+  readonly columnGroups = this._columnsService.columnGroups;
+  readonly currentSort = this._columnsService.currentSort;
+  readonly selectedTests = this._selectionService.selectedTestsSet;
   readonly selectedTestsCount = computed(() =>
-    this.selectionService.getSelectedCount(),
+    this._selectionService.getSelectedCount(),
   );
   readonly isAllSelected = computed(() => {
-    const allTestIds = this.tests().map((test) => test.id);
-    return this.selectionService.isAllSelected(allTestIds);
+    const allTestIds = this._tests().map((test) => test.id);
+    return this._selectionService.isAllSelected(allTestIds);
   });
   readonly isSomeSelected = computed(() =>
-    this.selectionService.isSomeSelected(),
+    this._selectionService.isSomeSelected(),
   );
   readonly hasRunningTestsSelected = computed(() =>
-    this.selectionService.hasRunningTestsSelected(this.tests()),
+    this._selectionService.hasRunningTestsSelected(this._tests()),
   );
 
-  private metricsSubscription?: Subscription;
-  private testEventsSubscription?: Subscription;
+  private _metricsSubscription?: Subscription;
+  private _testEventsSubscription?: Subscription;
 
   ngOnInit(): void {
-    this.subscribeToMetrics();
-    this.subscribeToTestEvents();
+    this._subscribeToMetrics();
+    this._subscribeToTestEvents();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -125,25 +123,27 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
 
   async loadTests(): Promise<void> {
     try {
-      this.error.set(null);
+      this._error.set(null);
 
       // Load tests for this config - use config().id directly
-      const tests = await this.testService.getTestsByConfigId(this.config().id);
-      this.tests.set(tests);
+      const tests = await this._testService.getTestsByConfigId(
+        this.config().id,
+      );
+      this._tests.set(tests);
       // Emit test history update
       this.testHistoryUpdate.emit(tests.length > 0);
     } catch (err) {
-      this.error.set(
+      this._error.set(
         err instanceof Error ? err.message : 'Failed to load tests',
       );
-      this.tests.set([]);
+      this._tests.set([]);
       // Emit test history update (no tests due to error)
       this.testHistoryUpdate.emit(false);
     }
   }
 
   async refreshTests(): Promise<void> {
-    this.error.set(null);
+    this._error.set(null);
     await this.loadTests();
   }
 
@@ -158,24 +158,24 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
    * Handles test start failed event from StartButtonComponent
    */
   onTestStartFailed(error: Error): void {
-    this.logService.error('Failed to start test:', error);
+    this._logService.error('Failed to start test:', error);
   }
 
   // Column management - delegate to service
   toggleColumn(key: string): void {
-    this.columnsService.toggleColumn(key);
+    this._columnsService.toggleColumn(key);
   }
 
   resetColumns(): void {
-    this.columnsService.resetColumns();
+    this._columnsService.resetColumns();
   }
 
   onColumnReorder(event: { draggedKey: string; targetKey: string }): void {
-    this.columnsService.reorderColumn(event.draggedKey, event.targetKey);
+    this._columnsService.reorderColumn(event.draggedKey, event.targetKey);
   }
 
   onColumnSort(columnKey: string): void {
-    this.columnsService.toggleSort(columnKey);
+    this._columnsService.toggleSort(columnKey);
   }
 
   toggleColumnSelector(): void {
@@ -188,12 +188,12 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
 
   // Selection management - delegate to service
   toggleTestSelection(testId: string, event: Event): void {
-    this.selectionService.toggleTestSelection(testId, event);
+    this._selectionService.toggleTestSelection(testId, event);
   }
 
   toggleAllTests(event: Event): void {
-    const allTestIds = this.tests().map((test) => test.id);
-    this.selectionService.toggleAllTests(allTestIds, event);
+    const allTestIds = this._tests().map((test) => test.id);
+    this._selectionService.toggleAllTests(allTestIds, event);
   }
 
   // Delete functionality
@@ -217,12 +217,12 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
     this.showDeleteModal.set(false);
     this.testToDelete.set(null);
     this.isBulkDelete.set(false);
-    this.selectionService.clearSelection();
+    this._selectionService.clearSelection();
   }
 
   async deleteTestConfirmed(): Promise<void> {
     this.showDeleteModal.set(false);
-    this.error.set(null);
+    this._error.set(null);
 
     if (this.isBulkDelete()) {
       await this.deleteSelectedTests();
@@ -230,83 +230,89 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
       const test = this.testToDelete();
       if (!test) return;
 
-      const result = await this.deleteService.deleteTestWithLoading(test.id);
-      this.handleDeleteResult(result, [test.id]);
+      const result = await this._deleteService.deleteTestWithLoading(test.id);
+      this._handleDeleteResult(result, [test.id]);
     }
   }
 
   async deleteSelectedTests(): Promise<void> {
-    const selectedIds = Array.from(this.selectionService.getSelectedIds());
+    const selectedIds = Array.from(this._selectionService.getSelectedIds());
     if (selectedIds.length === 0) return;
 
-    const result = await this.deleteService.deleteTestsWithLoading(selectedIds);
-    this.handleDeleteResult(result, selectedIds);
+    const result =
+      await this._deleteService.deleteTestsWithLoading(selectedIds);
+    this._handleDeleteResult(result, selectedIds);
   }
 
-  private handleDeleteResult(result: DeleteResult, deletedIds: string[]): void {
+  private _handleDeleteResult(
+    result: DeleteResult,
+    deletedIds: string[],
+  ): void {
     if (result.deletedCount > 0) {
-      this.tests.update((tests) =>
+      this._tests.update((tests) =>
         tests.filter((test) => !deletedIds.includes(test.id)),
       );
       // Emit test history update after deletion
-      const remainingTests = this.tests();
+      const remainingTests = this._tests();
       this.testHistoryUpdate.emit(remainingTests.length > 0);
     }
 
     if (result.failedCount > 0) {
-      this.error.set(
+      this._error.set(
         result.errors.join(', ') ||
           `Failed to delete ${result.failedCount} test(s)`,
       );
     }
 
-    this.selectionService.clearSelection();
+    this._selectionService.clearSelection();
     this.testToDelete.set(null);
   }
 
   // Subscription methods
-  private subscribeToMetrics(): void {
-    this.metricsSubscription = this.eventService.getMetricsStream().subscribe({
-      next: ({ testSummary }) => {
-        this.latestMetrics.set(testSummary);
-        this.updateRunningTest(testSummary);
-      },
-      error: (error: Error) => {
-        this.logService.error('Metrics stream error:', error);
-      },
-    });
-  }
-
-  private subscribeToTestEvents(): void {
-    this.testEventsSubscription = this.eventService
-      .getTestEventsStream()
+  private _subscribeToMetrics(): void {
+    this._metricsSubscription = this._eventService
+      .getMetricsStream()
       .subscribe({
-        next: (event) => {
-          if (event.configId === this.config().id) {
-            this.handleTestEvent(event);
-          }
+        next: ({ testSummary }) => {
+          this._latestMetrics.set(testSummary);
+          this._updateRunningTest(testSummary);
         },
         error: (error: Error) => {
-          this.logService.error('Test events stream error:', error);
+          this._logService.error('Metrics stream error:', error);
         },
       });
   }
 
-  private async handleTestEvent(event: {
+  private _subscribeToTestEvents(): void {
+    this._testEventsSubscription = this._eventService
+      .getTestEventsStream()
+      .subscribe({
+        next: (event) => {
+          if (event.configId === this.config().id) {
+            this._handleTestEvent(event);
+          }
+        },
+        error: (error: Error) => {
+          this._logService.error('Test events stream error:', error);
+        },
+      });
+  }
+
+  private async _handleTestEvent(event: {
     testId: string;
     status: string;
     configId?: string;
   }): Promise<void> {
     if (event.status === 'completed' || event.status === 'failed') {
-      await this.refreshTest(event.testId);
+      await this._refreshTest(event.testId);
     }
   }
 
-  private async refreshTest(testId: string): Promise<void> {
+  private async _refreshTest(testId: string): Promise<void> {
     try {
-      const updatedTest = await this.testService.getTestById(testId);
+      const updatedTest = await this._testService.getTestById(testId);
 
-      this.tests.update((tests) => {
+      this._tests.update((tests) => {
         const index = tests.findIndex((t) => t.id === testId);
         if (index !== -1) {
           const newTests = [...tests];
@@ -316,12 +322,12 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
         return tests;
       });
     } catch (error) {
-      this.logService.error(`Failed to refresh test ${testId}:`, error);
+      this._logService.error(`Failed to refresh test ${testId}:`, error);
     }
   }
 
-  private updateRunningTest(summary: TestSummary): void {
-    this.tests.update((tests) => {
+  private _updateRunningTest(summary: TestSummary): void {
+    this._tests.update((tests) => {
       const runningTestIndex = tests.findIndex((t) => t.status === 'running');
       if (runningTestIndex === -1) return tests;
 
@@ -335,11 +341,11 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.metricsSubscription?.unsubscribe();
-    this.testEventsSubscription?.unsubscribe();
+    this._metricsSubscription?.unsubscribe();
+    this._testEventsSubscription?.unsubscribe();
   }
 
-  private sortTests(
+  private _sortTests(
     tests: TestDocument[],
     sortConfig: { columnKey: string; direction: 'asc' | 'desc' },
   ): TestDocument[] {

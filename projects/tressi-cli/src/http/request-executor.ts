@@ -11,16 +11,16 @@ import { ResponseSampler } from './response-sampler';
  * This class manages HTTP request execution, response processing, and error handling.
  */
 export class RequestExecutor {
-  private headersPool: Record<string, string>[];
-  private resultPool: RequestResult[];
-  private maxPoolSize: number;
-  private responseSampler: ResponseSampler;
+  private _headersPool: Record<string, string>[];
+  private _resultPool: RequestResult[];
+  private _maxPoolSize: number;
+  private _responseSampler: ResponseSampler;
 
   constructor(responseSampler: ResponseSampler, maxPoolSize: number = 1000) {
-    this.responseSampler = responseSampler;
-    this.headersPool = [];
-    this.resultPool = [];
-    this.maxPoolSize = maxPoolSize;
+    this._responseSampler = responseSampler;
+    this._headersPool = [];
+    this._resultPool = [];
+    this._maxPoolSize = maxPoolSize;
   }
 
   /**
@@ -34,14 +34,14 @@ export class RequestExecutor {
     globalHeaders?: Record<string, string>,
   ): Promise<RequestResult> {
     const start = performance.now();
-    const headers = this.getHeadersObject();
-    const result = this.getResultObject();
+    const headers = this._getHeadersObject();
+    const result = this._getResultObject();
 
     try {
       // Reuse headers object instead of creating new one
       Object.assign(headers, globalHeaders, req.headers);
 
-      const requestBody = this.hasValidPayload(req.payload, req.method)
+      const requestBody = this._hasValidPayload(req.payload, req.method)
         ? JSON.stringify(req.payload)
         : undefined;
 
@@ -75,7 +75,7 @@ export class RequestExecutor {
       let body: string | undefined;
 
       // Check if we should sample this status code for this endpoint
-      const shouldSampleBody = this.responseSampler.shouldSampleResponse(
+      const shouldSampleBody = this._responseSampler.shouldSampleResponse(
         method,
         req.url,
         statusCode,
@@ -139,7 +139,7 @@ export class RequestExecutor {
       return result;
     } finally {
       // Always release headers object back to pool
-      this.releaseHeadersObject(headers);
+      this._releaseHeadersObject(headers);
       // Note: result object is released by caller after it's processed
     }
   }
@@ -147,35 +147,35 @@ export class RequestExecutor {
   /**
    * Gets a reusable headers object from the pool or creates a new one
    */
-  private getHeadersObject(): Record<string, string> {
-    return this.headersPool.pop() || {};
+  private _getHeadersObject(): Record<string, string> {
+    return this._headersPool.pop() || {};
   }
 
   /**
    * Returns a headers object to the pool for reuse
    */
-  private releaseHeadersObject(headers: Record<string, string>): void {
-    if (this.headersPool.length < this.maxPoolSize) {
+  private _releaseHeadersObject(headers: Record<string, string>): void {
+    if (this._headersPool.length < this._maxPoolSize) {
       // Clear the object for reuse
       for (const key in headers) {
         delete headers[key];
       }
-      this.headersPool.push(headers);
+      this._headersPool.push(headers);
     }
   }
 
   /**
    * Gets a RequestResult object from the pool or creates a new one
    */
-  private getResultObject(): RequestResult {
-    return this.resultPool.pop() || ({} as RequestResult);
+  private _getResultObject(): RequestResult {
+    return this._resultPool.pop() || ({} as RequestResult);
   }
 
   /**
    * Returns a RequestResult object to the pool for reuse
    */
   releaseResultObject(result: RequestResult): void {
-    if (this.resultPool.length < this.maxPoolSize) {
+    if (this._resultPool.length < this._maxPoolSize) {
       // Clear the object for reuse
       result.method = '';
       result.url = '';
@@ -187,14 +187,14 @@ export class RequestExecutor {
       result.timestamp = 0;
       result.bytesSent = 0;
       result.bytesReceived = 0;
-      this.resultPool.push(result);
+      this._resultPool.push(result);
     }
   }
 
   /**
    * Checks if the payload is valid and should be included in the request
    */
-  private hasValidPayload(payload: unknown, method?: string): boolean {
+  private _hasValidPayload(payload: unknown, method?: string): boolean {
     // Only include body for methods that support it
     const bodyMethods = ['POST', 'PUT', 'PATCH'];
     if (!method || !bodyMethods.includes(method.toUpperCase())) {

@@ -5,15 +5,15 @@ import { RPCService } from './rpc.service';
 
 @Injectable({ providedIn: 'root' })
 export class TestExportService {
-  private readonly rpcService = inject(RPCService);
-  private readonly logService = inject(LogService);
+  private readonly _rpcService = inject(RPCService);
+  private readonly _logService = inject(LogService);
 
   async exportTest(
     testId: string,
     format: 'json' | 'xlsx' | 'md',
   ): Promise<void> {
     try {
-      const response = await this.rpcService.client.tests[':id'].export.$get({
+      const response = await this._rpcService.client.tests[':id'].export.$get({
         param: { id: testId },
         query: { format },
       });
@@ -24,16 +24,16 @@ export class TestExportService {
 
       const blob = await response.blob();
       const filename = `test-${testId}.${format}`;
-      this.downloadFile(blob, filename);
+      this._downloadFile(blob, filename);
 
-      this.logService.info('Test exported successfully', { testId, format });
+      this._logService.info('Test exported successfully', { testId, format });
     } catch (error) {
-      this.logService.error('Failed to export test', error);
+      this._logService.error('Failed to export test', error);
       throw error;
     }
   }
 
-  private downloadFile(blob: Blob, filename: string): void {
+  private _downloadFile(blob: Blob, filename: string): void {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;

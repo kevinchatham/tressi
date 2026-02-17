@@ -64,13 +64,14 @@ import { TestMetadataComponent } from './test-metadata/test-metadata.component';
   templateUrl: './test-detail.component.html',
 })
 export class TestDetailComponent implements OnDestroy {
-  private readonly route = inject(ActivatedRoute);
   readonly appRouter = inject(AppRouterService);
-  private readonly testService = inject(TestService);
-  private readonly logService = inject(LogService);
-  private readonly configService = inject(ConfigService);
-  private readonly eventService = inject(EventService);
-  private readonly testExportService = inject(TestExportService);
+
+  private readonly _route = inject(ActivatedRoute);
+  private readonly _testService = inject(TestService);
+  private readonly _logService = inject(LogService);
+  private readonly _configService = inject(ConfigService);
+  private readonly _eventService = inject(EventService);
+  private readonly _testExportService = inject(TestExportService);
 
   // Signals - moved from TestDetailService
   readonly test = signal<TestDocument | null>(null);
@@ -157,7 +158,7 @@ export class TestDetailComponent implements OnDestroy {
     if (!metrics) return { data: [], labels: [] };
 
     if (endpoint === 'global') {
-      return this.getGlobalChartData(chartType);
+      return this._getGlobalChartData(chartType);
     } else {
       return this.getCachedEndpointChartData(endpoint, chartType);
     }
@@ -184,16 +185,16 @@ export class TestDetailComponent implements OnDestroy {
   });
 
   // Cache for endpoint chart data
-  private readonly cachedEndpointChartData: EndpointChartDataCache = new Map();
+  private readonly _cachedEndpointChartData: EndpointChartDataCache = new Map();
 
   // Private state for subscriptions - moved from TestDetailService
-  private metricsStreamSubscription: Subscription | null = null;
-  private testEventsSubscription: Subscription | null = null;
-  private pollingTimerId: ReturnType<typeof setInterval> | null = null;
+  private _metricsStreamSubscription: Subscription | null = null;
+  private _testEventsSubscription: Subscription | null = null;
+  private _pollingTimerId: ReturnType<typeof setInterval> | null = null;
 
   constructor() {
     // Initialize from resolved data
-    const resolvedData = this.route.snapshot.data[
+    const resolvedData = this._route.snapshot.data[
       'data'
     ] as TestDetailResolvedData;
     if (resolvedData) {
@@ -233,7 +234,7 @@ export class TestDetailComponent implements OnDestroy {
         return;
       }
 
-      this.setupPolling(interval);
+      this._setupPolling(interval);
     });
   }
 
@@ -243,7 +244,7 @@ export class TestDetailComponent implements OnDestroy {
     this.configError.set('');
 
     try {
-      const configData = await this.configService.getOne(configId);
+      const configData = await this._configService.getOne(configId);
       if (configData) {
         this.config.set(configData);
       } else {
@@ -255,20 +256,20 @@ export class TestDetailComponent implements OnDestroy {
       this.configError.set(
         error instanceof Error ? error.message : 'Failed to load configuration',
       );
-      this.logService.error('Failed to load configuration', error);
+      this._logService.error('Failed to load configuration', error);
     }
   }
 
-  private setupPolling(interval: number): void {
+  private _setupPolling(interval: number): void {
     // Clear existing timer
-    if (this.pollingTimerId) {
-      clearInterval(this.pollingTimerId);
-      this.pollingTimerId = null;
+    if (this._pollingTimerId) {
+      clearInterval(this._pollingTimerId);
+      this._pollingTimerId = null;
     }
 
     // Set up new timer if interval > 0
     if (interval > 0) {
-      this.pollingTimerId = setInterval(() => {
+      this._pollingTimerId = setInterval(() => {
         this.refreshMetrics();
       }, interval);
     }
@@ -279,10 +280,10 @@ export class TestDetailComponent implements OnDestroy {
     if (!testId) return;
 
     try {
-      const metricsResult = await this.testService.getTestMetrics(testId);
+      const metricsResult = await this._testService.getTestMetrics(testId);
       this.metrics.set(metricsResult);
     } catch (error) {
-      this.logService.error('Failed to refresh metrics', error);
+      this._logService.error('Failed to refresh metrics', error);
     }
   }
 
@@ -291,38 +292,38 @@ export class TestDetailComponent implements OnDestroy {
     if (!testId) return;
 
     // Clean up existing subscriptions
-    this.cleanupSubscriptions();
+    this._cleanupSubscriptions();
 
     // Subscribe to metrics stream for real-time updates
-    this.metricsStreamSubscription = this.eventService
+    this._metricsStreamSubscription = this._eventService
       .getMetricsStream()
       .subscribe({
         next: (data) => {
           if (data.testId === testId) {
-            this.mergeRealTimeMetrics(data.testSummary);
+            this._mergeRealTimeMetrics(data.testSummary);
           }
         },
         error: (error: unknown) => {
-          this.logService.error('Real-time metrics error:', error);
+          this._logService.error('Real-time metrics error:', error);
         },
       });
 
     // Subscribe to test events for completion/failure notifications
-    this.testEventsSubscription = this.eventService
+    this._testEventsSubscription = this._eventService
       .getTestEventsStream()
       .subscribe({
         next: (event: TestEventData) => {
           if (event.testId === testId) {
-            this.handleTestEvent(event);
+            this._handleTestEvent(event);
           }
         },
         error: (error: unknown) => {
-          this.logService.error('Test events error:', error);
+          this._logService.error('Test events error:', error);
         },
       });
   }
 
-  private mergeRealTimeMetrics(testSummary: TestSummary): void {
+  private _mergeRealTimeMetrics(testSummary: TestSummary): void {
     const currentTest = this.test();
     if (!currentTest) return;
 
@@ -333,7 +334,7 @@ export class TestDetailComponent implements OnDestroy {
     });
   }
 
-  private handleTestEvent(event: TestEventData): void {
+  private _handleTestEvent(event: TestEventData): void {
     const currentTest = this.test();
     if (!currentTest || currentTest.id !== event.testId) return;
 
@@ -345,39 +346,39 @@ export class TestDetailComponent implements OnDestroy {
 
     // Stop real-time updates when test completes
     if (event.status === 'completed' || event.status === 'failed') {
-      this.cleanupSubscriptions();
+      this._cleanupSubscriptions();
     }
   }
 
-  private cleanupSubscriptions(): void {
-    if (this.pollingTimerId) {
-      clearInterval(this.pollingTimerId);
-      this.pollingTimerId = null;
+  private _cleanupSubscriptions(): void {
+    if (this._pollingTimerId) {
+      clearInterval(this._pollingTimerId);
+      this._pollingTimerId = null;
     }
 
-    if (this.metricsStreamSubscription) {
-      this.metricsStreamSubscription.unsubscribe();
-      this.metricsStreamSubscription = null;
+    if (this._metricsStreamSubscription) {
+      this._metricsStreamSubscription.unsubscribe();
+      this._metricsStreamSubscription = null;
     }
 
-    if (this.testEventsSubscription) {
-      this.testEventsSubscription.unsubscribe();
-      this.testEventsSubscription = null;
+    if (this._testEventsSubscription) {
+      this._testEventsSubscription.unsubscribe();
+      this._testEventsSubscription = null;
     }
   }
 
   ngOnDestroy(): void {
-    this.cleanupSubscriptions();
+    this._cleanupSubscriptions();
   }
 
   getCachedEndpointChartData(url: string, metricType: ChartType): ChartData {
     const cacheKey = `${url}-${metricType}`;
 
-    if (!this.cachedEndpointChartData.has(url)) {
-      this.cachedEndpointChartData.set(url, new Map());
+    if (!this._cachedEndpointChartData.has(url)) {
+      this._cachedEndpointChartData.set(url, new Map());
     }
 
-    const urlCache = this.cachedEndpointChartData.get(url)!;
+    const urlCache = this._cachedEndpointChartData.get(url)!;
 
     if (urlCache.has(cacheKey)) {
       return urlCache.get(cacheKey)!;
@@ -471,11 +472,11 @@ export class TestDetailComponent implements OnDestroy {
     this.isDeleting.set(true);
 
     try {
-      await this.testService.deleteTest(testId);
-      this.logService.info('Test deleted successfully', { testId });
+      await this._testService.deleteTest(testId);
+      this._logService.info('Test deleted successfully', { testId });
       this.appRouter.toHome();
     } catch (error) {
-      this.logService.error('Failed to delete test', error);
+      this._logService.error('Failed to delete test', error);
     } finally {
       this.isDeleting.set(false);
       this.showDeleteModal.set(false);
@@ -486,7 +487,7 @@ export class TestDetailComponent implements OnDestroy {
     this.showDeleteModal.set(false);
   }
 
-  private getGlobalChartData(metricType: ChartType): ChartData {
+  private _getGlobalChartData(metricType: ChartType): ChartData {
     const metrics = this.metricsData();
     if (!metrics?.global?.length) return { data: [], labels: [] };
 
@@ -561,14 +562,14 @@ export class TestDetailComponent implements OnDestroy {
   async exportResults(format: 'json' | 'xlsx' | 'md'): Promise<void> {
     const testId = this.testId();
     if (!testId) {
-      this.logService.warn('No test ID available for export');
+      this._logService.warn('No test ID available for export');
       return;
     }
 
     try {
-      await this.testExportService.exportTest(testId, format);
+      await this._testExportService.exportTest(testId, format);
     } catch (error) {
-      this.logService.error('Export failed', error);
+      this._logService.error('Export failed', error);
     }
   }
 

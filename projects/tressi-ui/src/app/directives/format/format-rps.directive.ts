@@ -4,7 +4,7 @@ import { Directive, effect, ElementRef, inject, input } from '@angular/core';
   selector: '[appFormatRps]',
 })
 export class FormatRpsDirective {
-  private readonly el = inject(ElementRef);
+  private readonly _el = inject(ElementRef);
   readonly value = input<number | undefined | null>(undefined, {
     alias: 'appFormatRps',
   });
@@ -13,10 +13,10 @@ export class FormatRpsDirective {
     effect(() => {
       const value = this.value();
       if (!value) {
-        this.el.nativeElement.textContent = '0/s';
+        this._el.nativeElement.textContent = '0/s';
         return;
       }
-      this.el.nativeElement.textContent = `${Math.trunc(value).toLocaleString()}/s`;
+      this._el.nativeElement.textContent = `${Math.trunc(value).toLocaleString()}/s`;
     });
   }
 }

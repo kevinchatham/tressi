@@ -19,15 +19,15 @@ import { fromEvent } from 'rxjs';
 export class OutsideClickDirective {
   readonly outsideClick = output<void>();
 
-  private elementRef = inject(ElementRef);
-  private destroyRef = inject(DestroyRef);
+  private _elementRef = inject(ElementRef);
+  private _destroyRef = inject(DestroyRef);
 
   constructor() {
     fromEvent(document, 'click')
-      .pipe(takeUntilDestroyed(this.destroyRef))
+      .pipe(takeUntilDestroyed(this._destroyRef))
       .subscribe((event) => {
         const target = event.target as HTMLElement;
-        const clickedInside = this.elementRef.nativeElement.contains(target);
+        const clickedInside = this._elementRef.nativeElement.contains(target);
 
         if (!clickedInside) {
           this.outsideClick.emit();

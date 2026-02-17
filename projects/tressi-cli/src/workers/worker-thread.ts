@@ -32,60 +32,60 @@ import { WorkerRateLimiter } from './worker-rate-limiter';
  * token bucket algorithm that allows burst traffic while maintaining target RPS.
  */
 export class WorkerThread {
-  private rateLimiter: WorkerRateLimiter;
-  private statsCounterManager: StatsCounterManager;
-  private hdrHistogramManager: HdrHistogramManager;
-  private workerStateManager: WorkerStateManager;
-  private endpointStateManager: EndpointStateManager;
-  private requestExecutor: RequestExecutor;
-  private isRunning = false;
-  private workerId: number;
-  private assignedEndpoints: TressiRequestConfig[];
-  private endpointOffset: number;
-  private startTime: number;
-  private durationMs: number;
-  private totalWorkers: number;
+  private _rateLimiter: WorkerRateLimiter;
+  private _statsCounterManager: StatsCounterManager;
+  private _hdrHistogramManager: HdrHistogramManager;
+  private _workerStateManager: WorkerStateManager;
+  private _endpointStateManager: EndpointStateManager;
+  private _requestExecutor: RequestExecutor;
+  private _isRunning = false;
+  private _workerId: number;
+  private _assignedEndpoints: TressiRequestConfig[];
+  private _endpointOffset: number;
+  private _startTime: number;
+  private _durationMs: number;
+  private _totalWorkers: number;
 
   constructor() {
     const data = workerData as WorkerData;
-    this.workerId = data.workerId;
-    this.assignedEndpoints = data.assignedEndpoints;
-    this.endpointOffset = data.endpointOffset;
-    this.totalWorkers = data.totalWorkers;
+    this._workerId = data.workerId;
+    this._assignedEndpoints = data.assignedEndpoints;
+    this._endpointOffset = data.endpointOffset;
+    this._totalWorkers = data.totalWorkers;
 
     // Create managers with provided buffers
-    this.statsCounterManager = new StatsCounterManager(
-      this.assignedEndpoints.length,
+    this._statsCounterManager = new StatsCounterManager(
+      this._assignedEndpoints.length,
       100,
       data.statsBuffer,
     );
 
-    this.hdrHistogramManager = new HdrHistogramManager(
-      this.assignedEndpoints.length,
+    this._hdrHistogramManager = new HdrHistogramManager(
+      this._assignedEndpoints.length,
       3,
       1,
       120_000_000,
       data.histogramBuffer,
     );
 
-    this.workerStateManager = new WorkerStateManager(
-      this.totalWorkers,
+    this._workerStateManager = new WorkerStateManager(
+      this._totalWorkers,
       data.workerStateBuffer,
     );
 
     const totalEndpoints = data.endpointStateBuffer.byteLength / 4; // 4 bytes per Int32
-    this.endpointStateManager = new EndpointStateManager(
+    this._endpointStateManager = new EndpointStateManager(
       totalEndpoints,
       data.endpointStateBuffer,
     );
 
-    this.rateLimiter = new WorkerRateLimiter(
-      this.assignedEndpoints,
+    this._rateLimiter = new WorkerRateLimiter(
+      this._assignedEndpoints,
       data.rampUpDurationSec,
     );
-    this.requestExecutor = new RequestExecutor(new ResponseSampler(), 1000);
-    this.startTime = Date.now();
-    this.durationMs = data.durationSec * 1000;
+    this._requestExecutor = new RequestExecutor(new ResponseSampler(), 1000);
+    this._startTime = Date.now();
+    this._durationMs = data.durationSec * 1000;
   }
 
   /**
@@ -105,20 +105,23 @@ export class WorkerThread {
    * adds new requests as others complete, ensuring maximum throughput.
    */
   async start(): Promise<void> {
-    this.isRunning = true;
-    this.workerStateManager.setWorkerState(this.workerId, WorkerState.RUNNING);
+    this._isRunning = true;
+    this._workerStateManager.setWorkerState(
+      this._workerId,
+      WorkerState.RUNNING,
+    );
 
     // Pipeline configuration
     const PIPELINE_DEPTH = 15; // Number of concurrent requests
     const inFlightRequests = new Set<Promise<void>>();
 
-    while (this.isRunning) {
-      const elapsed = Date.now() - this.startTime;
-      if (elapsed >= this.durationMs) break;
-      if (this.allEndpointsStopped()) break;
+    while (this._isRunning) {
+      const elapsed = Date.now() - this._startTime;
+      if (elapsed >= this._durationMs) break;
+      if (this._allEndpointsStopped()) break;
 
       // Get batch of available requests (NON-BLOCKING)
-      const requests = this.rateLimiter.getAvailableRequests(
+      const requests = this._rateLimiter.getAvailableRequests(
         PIPELINE_DEPTH,
         elapsed,
       );
@@ -126,16 +129,16 @@ export class WorkerThread {
       if (requests.length > 0) {
         // CRITICAL: Fire requests WITHOUT waiting - TRUE PIPELINING
         requests.forEach((request, index) => {
-          const localEndpointIndex = this.getLocalEndpointIndex(request);
-          const globalEndpointIndex = this.endpointOffset + localEndpointIndex;
+          const localEndpointIndex = this._getLocalEndpointIndex(request);
+          const globalEndpointIndex = this._endpointOffset + localEndpointIndex;
 
           if (
-            this.endpointStateManager.isEndpointRunning(globalEndpointIndex)
+            this._endpointStateManager.isEndpointRunning(globalEndpointIndex)
           ) {
             // Add small stagger to smooth out traffic (2ms between requests)
             const pipelineDelay = index * 2;
 
-            const requestPromise = this.delayedExecute(
+            const requestPromise = this._delayedExecute(
               request,
               localEndpointIndex,
               globalEndpointIndex,
@@ -160,7 +163,10 @@ export class WorkerThread {
 
     // Wait for all in-flight requests to complete
     await Promise.allSettled(inFlightRequests);
-    this.workerStateManager.setWorkerState(this.workerId, WorkerState.FINISHED);
+    this._workerStateManager.setWorkerState(
+      this._workerId,
+      WorkerState.FINISHED,
+    );
   }
 
   /**
@@ -175,7 +181,7 @@ export class WorkerThread {
    * Used to stagger requests within a pipeline batch, creating smoother traffic patterns.
    * The 2ms default stagger between requests helps prevent thundering herd effects.
    */
-  private async delayedExecute(
+  private async _delayedExecute(
     request: TressiRequestConfig,
     localEndpointIndex: number,
     globalEndpointIndex: number,
@@ -184,7 +190,11 @@ export class WorkerThread {
     if (delayMs > 0) {
       await new Promise((resolve) => setTimeout(resolve, delayMs));
     }
-    await this.executeRequest(request, localEndpointIndex, globalEndpointIndex);
+    await this._executeRequest(
+      request,
+      localEndpointIndex,
+      globalEndpointIndex,
+    );
   }
 
   /**
@@ -205,25 +215,25 @@ export class WorkerThread {
    *
    * All metrics are written to shared memory for aggregation by the main thread.
    */
-  private async executeRequest(
+  private async _executeRequest(
     request: TressiRequestConfig,
     localEndpointIndex: number,
     globalEndpointIndex: number,
   ): Promise<void> {
     try {
       const startTime = performance.now();
-      const result = await this.requestExecutor.executeRequest(request);
+      const result = await this._requestExecutor.executeRequest(request);
       const latency = performance.now() - startTime;
 
       // Record success/failure
-      this.statsCounterManager.recordRequest(
+      this._statsCounterManager.recordRequest(
         localEndpointIndex,
         result.success,
       );
 
       // Record status code
       if (result.status) {
-        this.statsCounterManager.recordStatusCode(
+        this._statsCounterManager.recordStatusCode(
           localEndpointIndex,
           result.status,
         );
@@ -231,20 +241,20 @@ export class WorkerThread {
 
       // Record network metrics
       if (result.bytesSent !== undefined) {
-        this.statsCounterManager.recordBytesSent(
+        this._statsCounterManager.recordBytesSent(
           localEndpointIndex,
           result.bytesSent,
         );
       }
       if (result.bytesReceived !== undefined) {
-        this.statsCounterManager.recordBytesReceived(
+        this._statsCounterManager.recordBytesReceived(
           localEndpointIndex,
           result.bytesReceived,
         );
       }
 
       // Record latency
-      this.hdrHistogramManager.recordLatency(localEndpointIndex, latency);
+      this._hdrHistogramManager.recordLatency(localEndpointIndex, latency);
 
       // Send body sample to main thread if response body exists
       if (result.body && result.status && parentPort) {
@@ -260,22 +270,22 @@ export class WorkerThread {
       }
 
       // Release result object back to pool
-      this.requestExecutor.releaseResultObject(result);
+      this._requestExecutor.releaseResultObject(result);
     } catch {
       // Record failure
-      this.statsCounterManager.recordRequest(localEndpointIndex, false);
+      this._statsCounterManager.recordRequest(localEndpointIndex, false);
       // Record 0 bytes received for failed requests
-      this.statsCounterManager.recordBytesReceived(localEndpointIndex, 0);
+      this._statsCounterManager.recordBytesReceived(localEndpointIndex, 0);
       terminal.print('request failure');
     }
   }
   /**
    * Check if all endpoints assigned to this worker are stopped
    */
-  private allEndpointsStopped(): boolean {
-    for (let i = 0; i < this.assignedEndpoints.length; i++) {
-      const globalEndpointIndex = this.endpointOffset + i;
-      if (this.endpointStateManager.isEndpointRunning(globalEndpointIndex)) {
+  private _allEndpointsStopped(): boolean {
+    for (let i = 0; i < this._assignedEndpoints.length; i++) {
+      const globalEndpointIndex = this._endpointOffset + i;
+      if (this._endpointStateManager.isEndpointRunning(globalEndpointIndex)) {
         return false;
       }
     }
@@ -293,8 +303,8 @@ export class WorkerThread {
    * Uses URL matching to find the correct local index for metrics recording.
    * Returns 0 as fallback for safety (though this should not occur in normal operation).
    */
-  private getLocalEndpointIndex(request: TressiRequestConfig): number {
-    const index = this.assignedEndpoints.findIndex(
+  private _getLocalEndpointIndex(request: TressiRequestConfig): number {
+    const index = this._assignedEndpoints.findIndex(
       (ep) => ep.url === request.url,
     );
     if (index === -1) {

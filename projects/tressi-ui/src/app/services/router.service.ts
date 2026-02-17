@@ -8,10 +8,10 @@ import { AppRoutes } from '../app.routes';
 
 @Injectable({ providedIn: 'root' })
 export class AppRouterService {
-  private readonly router = inject(Router);
-  private readonly location = inject(Location);
-  private readonly navigationTrigger = toSignal(
-    this.router.events.pipe(
+  private readonly _router = inject(Router);
+  private readonly _location = inject(Location);
+  private readonly _navigationTrigger = toSignal(
+    this._router.events.pipe(
       filter((event) => event instanceof NavigationEnd),
       map(() => Date.now()), // Just a trigger
     ),
@@ -20,7 +20,7 @@ export class AppRouterService {
 
   /** Returns the current URL */
   getCurrentUrl = computed(() => {
-    this.navigationTrigger();
+    this._navigationTrigger();
     return window.location.href;
   });
 
@@ -45,17 +45,17 @@ export class AppRouterService {
     const path = configId
       ? [`/${AppRoutes.DASHBOARD}`, configId]
       : [`/${AppRoutes.DASHBOARD}`];
-    return this.router.navigate(path);
+    return this._router.navigate(path);
   }
 
   /** Navigates to the root/home path */
   toHome(): Promise<boolean> {
-    return this.router.navigate([`/${AppRoutes.HOME}`]);
+    return this._router.navigate([`/${AppRoutes.HOME}`]);
   }
 
   /** Navigates to the configurations management page */
   toConfigs(): Promise<boolean> {
-    return this.router.navigate([`/${AppRoutes.CONFIGS}`]);
+    return this._router.navigate([`/${AppRoutes.CONFIGS}`]);
   }
 
   /** Navigates to documentation, supporting sections and specific files */
@@ -63,33 +63,33 @@ export class AppRouterService {
     const path = [`/${AppRoutes.DOCS}`];
     if (section) path.push(section);
     if (filename) path.push(filename);
-    return this.router.navigate(path);
+    return this._router.navigate(path);
   }
 
   /** Navigates to the details of a specific test execution */
   toTestDetails(testId: string): Promise<boolean> {
     // Extract base path from constant (tests/:testId -> tests)
     const basePath = AppRoutes.TESTS_WITH_ID.split('/')[0];
-    return this.router.navigate([`/${basePath}`, testId]);
+    return this._router.navigate([`/${basePath}`, testId]);
   }
 
   /** Navigates to the welcome/onboarding page */
   toWelcome(): Promise<boolean> {
-    return this.router.navigate([`/${AppRoutes.WELCOME}`]);
+    return this._router.navigate([`/${AppRoutes.WELCOME}`]);
   }
 
   /** Navigates to the server unavailable error page */
   toServerUnavailable(): Promise<boolean> {
-    return this.router.navigate([`/${AppRoutes.SERVER_UNAVAILABLE}`]);
+    return this._router.navigate([`/${AppRoutes.SERVER_UNAVAILABLE}`]);
   }
 
   /** Updates the URL without triggering a full route navigation (Soft Navigation) */
   updateDashboardUrl(configId: string): void {
-    this.location.go(`/${AppRoutes.DASHBOARD}/${configId}`);
+    this._location.go(`/${AppRoutes.DASHBOARD}/${configId}`);
   }
 
   /** Navigates back in the platform history */
   back(): void {
-    this.location.back();
+    this._location.back();
   }
 }

@@ -5,7 +5,7 @@ import humanNumber from 'human-number';
   selector: '[appFormatNumber]',
 })
 export class FormatNumberDirective {
-  private readonly el = inject(ElementRef);
+  private readonly _el = inject(ElementRef);
   readonly value = input<number | undefined | null>(undefined, {
     alias: 'appFormatNumber',
   });
@@ -14,10 +14,10 @@ export class FormatNumberDirective {
     effect(() => {
       const value = this.value();
       if (value === undefined || value === null) {
-        this.el.nativeElement.textContent = '0';
+        this._el.nativeElement.textContent = '0';
         return;
       }
-      this.el.nativeElement.textContent = humanNumber(value, (n) =>
+      this._el.nativeElement.textContent = humanNumber(value, (n) =>
         n.toFixed(0),
       );
     });

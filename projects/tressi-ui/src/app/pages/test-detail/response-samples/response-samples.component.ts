@@ -143,7 +143,7 @@ export class ResponseSamplesComponent {
   /**
    * Gets the category for a status code
    */
-  private getCategory(code: number): StatusCategory {
+  private _getCategory(code: number): StatusCategory {
     if (code >= 200 && code < 300) return 'success';
     if (code >= 300 && code < 400) return 'redirect';
     if (code >= 400 && code < 500) return 'client-error';
@@ -157,7 +157,7 @@ export class ResponseSamplesComponent {
     if (code === 'all') {
       return 'list_alt';
     }
-    const category = this.getCategory(parseInt(code, 10));
+    const category = this._getCategory(parseInt(code, 10));
     switch (category) {
       case 'success':
         return 'check';
@@ -177,7 +177,7 @@ export class ResponseSamplesComponent {
     if (code === 'all') {
       return 'bg-base-300 text-base-content';
     }
-    const category = this.getCategory(parseInt(code, 10));
+    const category = this._getCategory(parseInt(code, 10));
     switch (category) {
       case 'success':
         return 'bg-success/20 text-success';

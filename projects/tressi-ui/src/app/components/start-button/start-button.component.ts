@@ -21,49 +21,49 @@ import { ButtonComponent } from '../button/button.component';
 })
 export class StartButtonComponent implements OnDestroy {
   /** Service injection */
-  private readonly eventService = inject(EventService);
-  private readonly logService = inject(LogService);
-  private readonly rpc = inject(RPCService);
+  private readonly _eventService = inject(EventService);
+  private readonly _logService = inject(LogService);
+  private readonly _rpc = inject(RPCService);
 
   /** Input configuration */
-  config = input<ConfigDocument | null>(null);
+  readonly config = input<ConfigDocument | null>(null);
 
   /** Output events */
-  testStarted = output<void>();
-  testStartFailed = output<Error>();
+  readonly testStarted = output<void>();
+  readonly testStartFailed = output<Error>();
 
   /** Internal state signals */
-  isTestRunning = signal<boolean>(true);
+  readonly isTestRunning = signal<boolean>(true);
 
   /** Computed disabled state */
-  isDisabled = computed(() => {
+  readonly isDisabled = computed(() => {
     const config = this.config();
     return !config || 'error' in config || !config.id || this.isTestRunning();
   });
 
   /** Subject for managing subscription cleanup */
-  private readonly destroy$ = new Subject<void>();
+  private readonly _destroy$ = new Subject<void>();
 
   constructor() {
-    this.initializeTestState(); // Initialize state from backend before setting up listeners
-    this.setupTestEventsListener();
+    this._initializeTestState(); // Initialize state from backend before setting up listeners
+    this._setupTestEventsListener();
   }
 
   ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
+    this._destroy$.next();
+    this._destroy$.complete();
   }
 
   /**
    * Initializes the test state by checking the backend for any running tests
    * This ensures the button state is correct after page refresh
    */
-  private async initializeTestState(): Promise<void> {
+  private async _initializeTestState(): Promise<void> {
     try {
-      const status = await this.rpc.getTestStatus();
+      const status = await this._rpc.getTestStatus();
       this.isTestRunning.set(status.isRunning);
     } catch (error) {
-      this.logService.error('Failed to initialize test state:', error);
+      this._logService.error('Failed to initialize test state:', error);
       this.isTestRunning.set(false); // Safe default
     }
   }
@@ -76,20 +76,20 @@ export class StartButtonComponent implements OnDestroy {
 
     if (!selected || 'error' in selected) {
       const error = new Error('No valid configuration selected');
-      this.logService.error(error.message);
+      this._logService.error(error.message);
       this.testStartFailed.emit(error);
       return;
     }
 
     if (!selected.config) {
       const error = new Error('Configuration data is missing');
-      this.logService.error(error.message);
+      this._logService.error(error.message);
       this.testStartFailed.emit(error);
       return;
     }
 
     try {
-      const response = await this.rpc.client.test.$post({
+      const response = await this._rpc.client.test.$post({
         json: { configId: selected.id },
       });
       if (!response.ok) {
@@ -99,7 +99,7 @@ export class StartButtonComponent implements OnDestroy {
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error : new Error('Unknown error occurred');
-      this.logService.error('Failed to start load test:', errorMessage);
+      this._logService.error('Failed to start load test:', errorMessage);
       this.testStartFailed.emit(errorMessage);
     }
   }
@@ -107,10 +107,10 @@ export class StartButtonComponent implements OnDestroy {
   /**
    * Sets up test event listeners to track test execution state
    */
-  private setupTestEventsListener(): void {
-    this.eventService
+  private _setupTestEventsListener(): void {
+    this._eventService
       .getTestEventsStream()
-      .pipe(takeUntil(this.destroy$))
+      .pipe(takeUntil(this._destroy$))
       .subscribe({
         next: (event) => {
           if (event.status === 'running') {
@@ -123,7 +123,7 @@ export class StartButtonComponent implements OnDestroy {
           }
         },
         error: (error) => {
-          this.logService.error('Failed to handle test event:', error);
+          this._logService.error('Failed to handle test event:', error);
         },
       });
   }

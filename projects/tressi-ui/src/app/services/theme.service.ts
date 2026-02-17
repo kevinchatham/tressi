@@ -10,10 +10,10 @@ export type Theme = (typeof AllThemes)[number];
   providedIn: 'root',
 })
 export class ThemeService {
-  private readonly localStorageService = inject(LocalStorageService);
+  private readonly _localStorageService = inject(LocalStorageService);
 
   readonly getTheme = computed(
-    () => this.localStorageService.preferences().selectedTheme,
+    () => this._localStorageService.preferences().selectedTheme,
   );
 
   private readonly _primary = signal<string>('');
@@ -103,14 +103,14 @@ export class ThemeService {
   constructor() {
     this.loadInitialTheme();
     // Listen for theme changes (DaisyUI adds data-theme attribute)
-    const observer = new MutationObserver(() => this.extractTheme());
+    const observer = new MutationObserver(() => this._extractTheme());
     observer.observe(document.documentElement, {
       attributes: true,
       attributeFilter: ['data-theme'],
     });
   }
 
-  private extractTheme(): void {
+  private _extractTheme(): void {
     const computedStyle = getComputedStyle(document.documentElement);
     this._primary.set(
       computedStyle.getPropertyValue('--color-primary').trim() ||
@@ -243,21 +243,21 @@ export class ThemeService {
 
   setTheme(theme: Theme): void {
     document.documentElement.setAttribute('data-theme', theme);
-    const preferences = this.localStorageService.preferences();
-    this.localStorageService.savePreferences({
+    const preferences = this._localStorageService.preferences();
+    this._localStorageService.savePreferences({
       ...preferences,
       selectedTheme: theme,
     });
-    this.extractTheme();
+    this._extractTheme();
   }
 
   loadInitialTheme(): void {
-    const preferences = this.localStorageService.preferences();
+    const preferences = this._localStorageService.preferences();
     document.documentElement.setAttribute(
       'data-theme',
       preferences.selectedTheme,
     );
-    this.extractTheme();
+    this._extractTheme();
   }
 }
 

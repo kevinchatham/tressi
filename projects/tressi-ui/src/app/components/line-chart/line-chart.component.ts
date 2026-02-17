@@ -53,6 +53,9 @@ export type LineChartOptions = {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LineChartComponent {
+  private readonly _themeService = inject(ThemeService);
+  private readonly _syncService = inject(ChartSyncService);
+
   readonly chart = viewChild<ChartComponent>('chart');
 
   readonly title = input<string>('');
@@ -69,19 +72,16 @@ export class LineChartComponent {
   readonly chartClick = output<ChartEventData>();
   readonly chartMouseMove = output<ChartEventData>();
 
-  private readonly themeService = inject(ThemeService);
-  private readonly syncService = inject(ChartSyncService);
-
-  public readonly chartOptions = computed(() => this.createChartOptions());
-  public readonly isMaster = computed(
-    () => this.chartId() === this.syncService.lastInteractedChartId(),
+  readonly chartOptions = computed(() => this._createChartOptions());
+  readonly isMaster = computed(
+    () => this.chartId() === this._syncService.lastInteractedChartId(),
   );
 
   // State tracking for efficient updates
-  private lastDataLength = 0;
+  private _lastDataLength = 0;
 
   // Add computed property for effective initial state
-  private readonly effectiveInitialState = computed(() => {
+  private readonly _effectiveInitialState = computed(() => {
     const globalRange = this.testTimeRange();
     if (globalRange) {
       return globalRange;
@@ -104,7 +104,7 @@ export class LineChartComponent {
     effect(() => {
       const chartId = this.chartId();
       if (chartId) {
-        this.syncService.registerChart(chartId);
+        this._syncService.registerChart(chartId);
       }
     });
 
@@ -112,29 +112,29 @@ export class LineChartComponent {
     effect(() => {
       const chartId = this.chartId();
       const chart = this.chart();
-      const lastInteracted = this.syncService.lastInteractedChartId();
+      const lastInteracted = this._syncService.lastInteractedChartId();
 
       if (chartId && chart && chartId !== lastInteracted) {
-        this.syncToMasterState();
+        this._syncToMasterState();
       }
     });
 
     // Setup reset handler when chart is available
     effect(() => {
       if (this.chart()) {
-        this.setupCustomResetHandler();
+        this._setupCustomResetHandler();
       }
     });
 
     // Update chart when theme or data changes
     effect(() => {
-      this.themeService.getChartColors();
-      this.updateChart();
+      this._themeService.getChartColors();
+      this._updateChart();
     });
   }
 
-  private createChartOptions(): LineChartOptions {
-    const themeColors = this.themeService.getChartColors();
+  private _createChartOptions(): LineChartOptions {
+    const themeColors = this._themeService.getChartColors();
     const seriesName = this.seriesName();
     const data = this.data();
     const labels = this.labels();
@@ -145,7 +145,7 @@ export class LineChartComponent {
     const yAxisLabel = this.yAxisLabel();
 
     // Calculate data boundaries for x-axis constraints using effective initial state
-    const effectiveState = this.effectiveInitialState();
+    const effectiveState = this._effectiveInitialState();
     const minBoundary = effectiveState?.min;
     const maxBoundary = effectiveState?.max;
 
@@ -234,20 +234,20 @@ export class LineChartComponent {
         foreColor: themeColors.text,
         events: {
           click: (event, chartContext, config): void => {
-            this.handleChartClick();
+            this._handleChartClick();
             this.chartClick.emit({ event, chartContext, config });
           },
           mouseMove: (event, chartContext, config): void => {
             this.chartMouseMove.emit({ event, chartContext, config });
           },
           zoomed: (_chartContext, { xaxis }): void => {
-            this.handleZoomOrPan(xaxis);
+            this._handleZoomOrPan(xaxis);
           },
           selection: (_chartContext, { xaxis }): void => {
-            this.handleSelection(xaxis);
+            this._handleSelection(xaxis);
           },
           scrolled: (_chartContext, { xaxis }): void => {
-            this.handleZoomOrPan(xaxis);
+            this._handleZoomOrPan(xaxis);
           },
         },
       },
@@ -333,7 +333,7 @@ export class LineChartComponent {
             fontFamily: 'Roboto Mono, monospace',
             fontSize: '11px',
           },
-          formatter: this.getYAxisFormatter(),
+          formatter: this._getYAxisFormatter(),
         },
         axisBorder: {
           color: themeColors.border,
@@ -378,18 +378,18 @@ export class LineChartComponent {
     };
   }
 
-  private handleChartClick(): void {
+  private _handleChartClick(): void {
     const chartId = this.chartId();
     if (chartId) {
-      this.syncService.setAsMaster(chartId);
+      this._syncService.setAsMaster(chartId);
     }
   }
 
-  private handleZoomOrPan(xaxis: { min: number; max: number }): void {
+  private _handleZoomOrPan(xaxis: { min: number; max: number }): void {
     const chartId = this.chartId();
     if (chartId) {
-      this.syncService.setAsMaster(chartId);
-      this.syncService.broadcastState({
+      this._syncService.setAsMaster(chartId);
+      this._syncService.broadcastState({
         xAxisMin: xaxis.min,
         xAxisMax: xaxis.max,
         selectionStart: null,
@@ -398,11 +398,11 @@ export class LineChartComponent {
     }
   }
 
-  private handleSelection(xaxis: { min: number; max: number }): void {
+  private _handleSelection(xaxis: { min: number; max: number }): void {
     const chartId = this.chartId();
     if (chartId) {
-      this.syncService.setAsMaster(chartId);
-      this.syncService.broadcastState({
+      this._syncService.setAsMaster(chartId);
+      this._syncService.broadcastState({
         selectionStart: xaxis.min,
         selectionEnd: xaxis.max,
         xAxisMin: null,
@@ -411,11 +411,11 @@ export class LineChartComponent {
     }
   }
 
-  private syncToMasterState(): void {
+  private _syncToMasterState(): void {
     const chart = this.chart();
     if (!chart) return;
 
-    const state = this.syncService.getState();
+    const state = this._syncService.getState();
 
     // Add a small delay to ensure chart is fully initialized
     setTimeout(() => {
@@ -456,7 +456,7 @@ export class LineChartComponent {
     }, 100); // 100ms delay to ensure chart is ready
   }
 
-  private updateChart(): void {
+  private _updateChart(): void {
     const data = this.data();
     const labels = this.labels();
 
@@ -471,7 +471,7 @@ export class LineChartComponent {
         : 0;
 
     // Early exit if data hasn't changed
-    if (dataLength === this.lastDataLength && dataLength > 0) {
+    if (dataLength === this._lastDataLength && dataLength > 0) {
       return;
     }
 
@@ -510,17 +510,17 @@ export class LineChartComponent {
       chart.updateSeries(series);
 
       // Update tracking state
-      this.lastDataLength = dataLength;
+      this._lastDataLength = dataLength;
     });
   }
 
-  private getYAxisFormatter(): (value: number) => string {
+  private _getYAxisFormatter(): (value: number) => string {
     return (value: number): string => {
       return humanNumber(Math.round(value));
     };
   }
 
-  private setupCustomResetHandler(): void {
+  private _setupCustomResetHandler(): void {
     const chart = this.chart();
     if (!chart) return;
 
@@ -531,11 +531,11 @@ export class LineChartComponent {
         return originalReset();
       }
 
-      const initialState = this.effectiveInitialState();
+      const initialState = this._effectiveInitialState();
 
       if (initialState) {
         // 1. Broadcast to sync service (for other charts)
-        this.syncService.broadcastState({
+        this._syncService.broadcastState({
           xAxisMin: initialState.min,
           xAxisMax: initialState.max,
           selectionStart: null,

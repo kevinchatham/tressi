@@ -15,14 +15,14 @@ export interface SortConfig {
 
 @Injectable({ providedIn: 'root' })
 export class TestListColumnsService {
-  private readonly logService = inject(LogService);
-  private readonly localStorageService = inject(LocalStorageService);
+  private readonly _logService = inject(LogService);
+  private readonly _localStorageService = inject(LocalStorageService);
 
-  private readonly DEFAULT_COLUMNS: ColumnConfig[] = DEFAULT_COLUMN_CONFIGS;
-  private readonly sortConfig = signal<SortConfig | null>(null);
+  private readonly _defaultColumns: ColumnConfig[] = DEFAULT_COLUMN_CONFIGS;
+  private readonly _sortConfig = signal<SortConfig | null>(null);
 
-  private readonly columns = signal<ColumnConfig[]>(
-    this.loadColumnPreferences(),
+  private readonly _columns = signal<ColumnConfig[]>(
+    this._loadColumnPreferences(),
   );
 
   /**
@@ -31,7 +31,7 @@ export class TestListColumnsService {
    * followed by configurable visible columns sorted by their order property.
    */
   readonly visibleColumns = linkedSignal({
-    source: this.columns,
+    source: this._columns,
     computation: (columns) => {
       const allColumns = columns;
       const fixedColumns = allColumns.filter(
@@ -56,7 +56,7 @@ export class TestListColumnsService {
    * Excludes action, status, and select columns from grouping.
    */
   readonly columnGroups = linkedSignal({
-    source: this.columns,
+    source: this._columns,
     computation: (columns) => {
       const groups: Record<string, ColumnConfig[]> = {
         basic: [],
@@ -82,43 +82,43 @@ export class TestListColumnsService {
   /**
    * Current sort configuration
    */
-  readonly currentSort = this.sortConfig.asReadonly();
+  readonly currentSort = this._sortConfig.asReadonly();
 
   /**
    * Loads column preferences from local storage and merges them with default configurations.
    * @returns Array of column configurations with applied preferences
    */
-  private loadColumnPreferences(): ColumnConfig[] {
+  private _loadColumnPreferences(): ColumnConfig[] {
     try {
-      const preferences = this.localStorageService.preferences();
+      const preferences = this._localStorageService.preferences();
       const savedColumns = preferences.columnPreferences;
 
       if (savedColumns && savedColumns.length > 0) {
         // Merge with defaults to handle new columns
-        return this.DEFAULT_COLUMNS.map((defaultCol) => {
+        return this._defaultColumns.map((defaultCol) => {
           const saved = savedColumns.find((col) => col.key === defaultCol.key);
           return saved ? { ...defaultCol, ...saved } : defaultCol;
         });
       }
     } catch (error) {
-      this.logService.error('Failed to load column preferences:', error);
+      this._logService.error('Failed to load column preferences:', error);
     }
-    return this.DEFAULT_COLUMNS;
+    return this._defaultColumns;
   }
 
   /**
    * Saves current column preferences to local storage.
    */
-  private saveColumnPreferences(): void {
+  private _saveColumnPreferences(): void {
     try {
-      const preferences = this.localStorageService.preferences();
+      const preferences = this._localStorageService.preferences();
       const updatedPreferences = {
         ...preferences,
-        columnPreferences: this.columns(),
+        columnPreferences: this._columns(),
       };
-      this.localStorageService.savePreferences(updatedPreferences);
+      this._localStorageService.savePreferences(updatedPreferences);
     } catch (error) {
-      this.logService.error('Failed to save column preferences:', error);
+      this._logService.error('Failed to save column preferences:', error);
     }
   }
 
@@ -127,12 +127,12 @@ export class TestListColumnsService {
    * @param key - The column key to toggle
    */
   toggleColumn(key: string): void {
-    this.columns.update((cols) =>
+    this._columns.update((cols) =>
       cols.map((col) =>
         col.key === key ? { ...col, visible: !col.visible } : col,
       ),
     );
-    this.saveColumnPreferences();
+    this._saveColumnPreferences();
   }
 
   /**
@@ -141,7 +141,7 @@ export class TestListColumnsService {
    * @param targetKey - The key of the target column position
    */
   reorderColumn(draggedKey: string, targetKey: string): void {
-    this.columns.update((cols) => {
+    this._columns.update((cols) => {
       const draggedIndex = cols.findIndex((col) => col.key === draggedKey);
       const targetIndex = cols.findIndex((col) => col.key === targetKey);
 
@@ -163,7 +163,7 @@ export class TestListColumnsService {
       }));
     });
 
-    this.saveColumnPreferences();
+    this._saveColumnPreferences();
   }
 
   /**
@@ -172,10 +172,10 @@ export class TestListColumnsService {
    * @param width - The new width in pixels
    */
   updateColumnWidth(key: string, width: number): void {
-    this.columns.update((cols) =>
+    this._columns.update((cols) =>
       cols.map((col) => (col.key === key ? { ...col, width } : col)),
     );
-    this.saveColumnPreferences();
+    this._saveColumnPreferences();
   }
 
   /**
@@ -185,9 +185,9 @@ export class TestListColumnsService {
    */
   updateSort(columnKey: string, direction: 'asc' | 'desc' | null): void {
     if (direction === null) {
-      this.sortConfig.set(null);
+      this._sortConfig.set(null);
     } else {
-      this.sortConfig.set({ columnKey, direction });
+      this._sortConfig.set({ columnKey, direction });
     }
   }
 
@@ -196,11 +196,11 @@ export class TestListColumnsService {
    * @param columnKey - The key of the column to toggle sort for
    */
   toggleSort(columnKey: string): void {
-    const current = this.sortConfig();
+    const current = this._sortConfig();
     if (!current || current.columnKey !== columnKey) {
-      this.sortConfig.set({ columnKey, direction: 'asc' });
+      this._sortConfig.set({ columnKey, direction: 'asc' });
     } else {
-      this.sortConfig.set({
+      this._sortConfig.set({
         columnKey,
         direction: current.direction === 'asc' ? 'desc' : 'asc',
       });
@@ -212,15 +212,15 @@ export class TestListColumnsService {
    * @returns Array of columns that support sorting
    */
   getSortableColumns(): ColumnConfig[] {
-    return this.columns().filter((col) => col.sortable !== false);
+    return this._columns().filter((col) => col.sortable !== false);
   }
 
   /**
    * Resets all columns to their default configuration.
    */
   resetColumns(): void {
-    this.columns.set(this.DEFAULT_COLUMNS);
-    this.sortConfig.set(null);
-    this.saveColumnPreferences();
+    this._columns.set(this._defaultColumns);
+    this._sortConfig.set(null);
+    this._saveColumnPreferences();
   }
 }

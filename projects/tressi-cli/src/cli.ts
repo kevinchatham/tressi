@@ -12,33 +12,33 @@ import { terminal } from './tui/terminal';
  * The main CLI application for Tressi.
  */
 class TressiCLI {
-  private program: Command;
+  private _program: Command;
 
   constructor() {
-    this.program = new Command();
-    this.setupProgram();
-    this.setupCommands();
-    this.setupHelp();
+    this._program = new Command();
+    this._setupProgram();
+    this._setupCommands();
+    this._setupHelp();
   }
 
   /**
    * Sets up the base program configuration.
    */
-  private setupProgram(): void {
-    this.program
+  private _setupProgram(): void {
+    this._program
       .name('tressi')
       .description('A modern, simple load testing tool for APIs.')
       .version(pkg.version);
 
-    this.program.option(
+    this._program.option(
       '-c, --config [path]',
       'Path or URL to JSON configuration file (local file path or remote URL). Defaults to ./tressi.config.json',
     );
-    this.program.option(
+    this._program.option(
       '-e, --export [path]',
       'Export test results to specified path (supports .json, .xlsx, .md formats)',
     );
-    this.program.option(
+    this._program.option(
       '-s, --silent',
       'Run in silent mode without TUI or progress output',
       false,
@@ -48,9 +48,9 @@ class TressiCLI {
   /**
    * Sets up all CLI commands.
    */
-  private setupCommands(): void {
+  private _setupCommands(): void {
     // Serve command
-    this.program
+    this._program
       .command('serve')
       .summary('Start a Hono server with healthcheck endpoint')
       .description(ServeCommand.getDescription())
@@ -62,7 +62,7 @@ class TressiCLI {
       });
 
     // Reset command
-    this.program
+    this._program
       .command('reset')
       .summary('Completely reset Tressi database')
       .description(ResetCommand.getDescription())
@@ -72,7 +72,7 @@ class TressiCLI {
       });
 
     // Default run command (when no specific command is provided)
-    this.program.action(async (opts) => {
+    this._program.action(async (opts) => {
       const command = new RunCommand();
       await command.execute(opts.config, opts.export, opts.silent);
     });
@@ -81,8 +81,8 @@ class TressiCLI {
   /**
    * Sets up help text and examples.
    */
-  private setupHelp(): void {
-    this.program.addHelpText(
+  private _setupHelp(): void {
+    this._program.addHelpText(
       'after',
       `
 Commands:
@@ -135,7 +135,7 @@ Examples:
     try {
       // Initialize database before any commands run
       await initializeDatabase();
-      await this.program.parseAsync(process.argv);
+      await this._program.parseAsync(process.argv);
     } catch (error) {
       terminal.print(chalk.red(`CLI Error: ${(error as Error).message}`));
       process.exit(1);

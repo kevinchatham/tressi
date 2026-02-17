@@ -42,11 +42,12 @@ import { ToastService } from '../../services/toast.service';
 })
 export class ConfigurationsComponent implements OnInit {
   /** Service injection */
-  private readonly configService = inject(ConfigService);
+  private readonly _configService = inject(ConfigService);
+  private readonly _route = inject(ActivatedRoute);
+  private readonly _toastService = inject(ToastService);
+
   readonly appRouter = inject(AppRouterService);
-  private readonly route = inject(ActivatedRoute);
   readonly timeService = inject(TimeService);
-  private readonly toastService = inject(ToastService);
 
   /** Reactive signals for state management */
   readonly configs = signal<ConfigDocument[]>([]);
@@ -85,14 +86,14 @@ export class ConfigurationsComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    this.initializeFromResolvedData();
+    this._initializeFromResolvedData();
   }
 
   /**
    * Initializes the component using data pre-resolved by the router.
    */
-  private initializeFromResolvedData(): void {
-    const configs = this.route.snapshot.data['configs'] as ConfigDocument[];
+  private _initializeFromResolvedData(): void {
+    const configs = this._route.snapshot.data['configs'] as ConfigDocument[];
     this.configs.set(configs);
   }
 
@@ -155,7 +156,7 @@ export class ConfigurationsComponent implements OnInit {
     const config = this.configToDelete();
     if (!config) return;
 
-    await this.configService.deleteConfig(config.id);
+    await this._configService.deleteConfig(config.id);
     this.showDeleteModal.set(false);
     this.configToDelete.set(null);
 
@@ -167,7 +168,7 @@ export class ConfigurationsComponent implements OnInit {
    * Handles configuration saved event from config-form component.
    */
   async onConfigSaved(event: ModifyConfigRequest): Promise<void> {
-    const savedConfig = await this.configService.saveConfig(event);
+    const savedConfig = await this._configService.saveConfig(event);
 
     // Update configs directly instead of reloading
     this.configs.update((configs) => {
@@ -230,13 +231,13 @@ export class ConfigurationsComponent implements OnInit {
    * Handles import errors with toast notification
    */
   onImportError(error: string): void {
-    this.toastService.show(error, 'error');
+    this._toastService.show(error, 'error');
   }
 
   /**
    * Dismisses the toast notification
    */
   dismissToast(): void {
-    this.toastService.dismiss();
+    this._toastService.dismiss();
   }
 }

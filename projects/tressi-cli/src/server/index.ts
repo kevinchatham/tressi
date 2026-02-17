@@ -12,16 +12,16 @@ import createApp from './routes';
 import { SSEManager } from './utils/sse-manager';
 
 export class TressiServer {
-  private app: Hono;
-  private server: ReturnType<typeof serve> | null = null;
-  private port: number;
-  private sseManager: SSEManager;
-  private heartbeatInterval: NodeJS.Timeout | null = null;
+  private _app: Hono;
+  private _server: ReturnType<typeof serve> | null = null;
+  private _port: number;
+  private _sseManager: SSEManager;
+  private _heartbeatInterval: NodeJS.Timeout | null = null;
 
   constructor(port: number = 3108) {
-    this.port = port;
-    this.sseManager = new SSEManager();
-    this.app = createApp(this.sseManager, port);
+    this._port = port;
+    this._sseManager = new SSEManager();
+    this._app = createApp(this._sseManager, port);
   }
 
   async start(): Promise<void> {
@@ -41,12 +41,12 @@ export class TressiServer {
 
     return new Promise((resolve, reject) => {
       try {
-        this.server = serve({
-          fetch: this.app.fetch,
-          port: this.port,
+        this._server = serve({
+          fetch: this._app.fetch,
+          port: this._port,
         });
-        this.server.on('listening', () => {
-          const url = `http://localhost:${this.port}`;
+        this._server.on('listening', () => {
+          const url = `http://localhost:${this._port}`;
           const dbPath = join(homedir(), '.tressi', 'tressi.db');
 
           terminal.print('');
@@ -62,10 +62,10 @@ export class TressiServer {
           );
           terminal.print('');
 
-          this.startHeartbeat();
+          this._startHeartbeat();
           resolve();
         });
-        this.server.on('error', (error) => {
+        this._server.on('error', (error) => {
           reject(error as Error);
         });
       } catch (error) {
@@ -76,23 +76,23 @@ export class TressiServer {
 
   async stop(): Promise<void> {
     return new Promise((resolve) => {
-      if (this.heartbeatInterval) {
-        clearInterval(this.heartbeatInterval);
-        this.heartbeatInterval = null;
+      if (this._heartbeatInterval) {
+        clearInterval(this._heartbeatInterval);
+        this._heartbeatInterval = null;
       }
 
-      if (this.server) {
+      if (this._server) {
         // Force close all SSE connections first
-        this.sseManager.forceClose();
+        this._sseManager.forceClose();
 
         // Set a timeout to force exit if graceful shutdown takes too long
         const timeout = setTimeout(() => {
           process.exit(0);
         }, 500);
 
-        this.server.close(() => {
+        this._server.close(() => {
           clearTimeout(timeout);
-          this.sseManager.cleanup();
+          this._sseManager.cleanup();
           resolve();
         });
       } else {
@@ -105,15 +105,15 @@ export class TressiServer {
    * Starts the heartbeat interval for sending regular connected events
    * @private
    */
-  private startHeartbeat(): void {
-    this.heartbeatInterval = setInterval(() => {
+  private _startHeartbeat(): void {
+    this._heartbeatInterval = setInterval(() => {
       const message = {
         event: ServerEvents.CONNECTED,
         data: {
           timestamp: Date.now(),
         },
       };
-      this.sseManager.broadcast(message);
+      this._sseManager.broadcast(message);
     }, 1000); // Send heartbeat every 1 second
   }
 }

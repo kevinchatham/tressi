@@ -27,14 +27,14 @@ import { EarlyExitThresholds } from './types';
  * Supports both per-endpoint and global (all endpoints combined) threshold configurations.
  */
 export class EarlyExitCoordinator implements IEarlyExitCoordinator {
-  private thresholds: EarlyExitThresholds;
-  private monitoringInterval?: NodeJS.Timeout;
+  private _thresholds: EarlyExitThresholds;
+  private _monitoringInterval?: NodeJS.Timeout;
   constructor(
-    private config: TressiConfig,
-    private statsCounterManagers: IStatsCounterManager[],
-    private endpointStateManager: IEndpointStateManager,
+    private _config: TressiConfig,
+    private _statsCounterManagers: IStatsCounterManager[],
+    private _endpointStateManager: IEndpointStateManager,
   ) {
-    this.thresholds = this.parseThresholds();
+    this._thresholds = this._parseThresholds();
   }
 
   /**
@@ -49,8 +49,8 @@ export class EarlyExitCoordinator implements IEarlyExitCoordinator {
    *
    * @throws {Error} If configuration parsing fails due to invalid data types
    */
-  private parseThresholds(): EarlyExitThresholds {
-    const globalExitConfig = this.config.options.workerEarlyExit;
+  private _parseThresholds(): EarlyExitThresholds {
+    const globalExitConfig = this._config.options.workerEarlyExit;
 
     if (!globalExitConfig?.enabled) {
       return {
@@ -63,7 +63,7 @@ export class EarlyExitCoordinator implements IEarlyExitCoordinator {
     const globalMonitoringWindow = globalExitConfig.monitoringWindowMs || 5000;
 
     // Process each endpoint to determine its effective early exit config
-    this.config.requests.forEach((request) => {
+    this._config.requests.forEach((request) => {
       // Precedence: request-level > global defaults
       const requestConfig = request.earlyExit;
 
@@ -107,11 +107,11 @@ export class EarlyExitCoordinator implements IEarlyExitCoordinator {
    * The monitoring interval is determined by the monitoringWindowMs configuration parameter.
    */
   startMonitoring(): void {
-    if (!this.config.options.workerEarlyExit?.enabled) return;
+    if (!this._config.options.workerEarlyExit?.enabled) return;
 
-    this.monitoringInterval = setInterval(() => {
-      this.checkEarlyExitConditions();
-    }, this.thresholds.monitoringWindowMs);
+    this._monitoringInterval = setInterval(() => {
+      this._checkEarlyExitConditions();
+    }, this._thresholds.monitoringWindowMs);
   }
 
   /**
@@ -126,10 +126,10 @@ export class EarlyExitCoordinator implements IEarlyExitCoordinator {
    * individually, allowing the rest of the test to continue. This provides granular
    * control over test execution and resource usage.
    */
-  private checkEarlyExitConditions(): void {
-    const endpointsToStop = this.getEndpointsToStop();
+  private _checkEarlyExitConditions(): void {
+    const endpointsToStop = this._getEndpointsToStop();
     if (endpointsToStop.length > 0) {
-      this.triggerEndpointEarlyExit(endpointsToStop);
+      this._triggerEndpointEarlyExit(endpointsToStop);
     }
   }
 
@@ -154,17 +154,17 @@ export class EarlyExitCoordinator implements IEarlyExitCoordinator {
    * // This endpoint would be added to the stop list
    * ```
    */
-  private getEndpointsToStop(): string[] {
+  private _getEndpointsToStop(): string[] {
     const endpoints: string[] = [];
 
     // Check each endpoint across all workers
-    this.config.requests.forEach((request, globalEndpointIndex) => {
+    this._config.requests.forEach((request, globalEndpointIndex) => {
       // Skip if endpoint is already stopped
-      if (!this.endpointStateManager.isEndpointRunning(globalEndpointIndex)) {
+      if (!this._endpointStateManager.isEndpointRunning(globalEndpointIndex)) {
         return;
       }
 
-      const threshold = this.thresholds.perEndpoint.get(request.url);
+      const threshold = this._thresholds.perEndpoint.get(request.url);
       if (!threshold) return;
 
       let endpointTotalRequests = 0;
@@ -172,13 +172,13 @@ export class EarlyExitCoordinator implements IEarlyExitCoordinator {
       let statusCodeCounts: Record<number, number> = {};
 
       // Find which worker owns this endpoint
-      const workerId = globalEndpointIndex % this.statsCounterManagers.length;
+      const workerId = globalEndpointIndex % this._statsCounterManagers.length;
       const localEndpointIndex = Math.floor(
-        globalEndpointIndex / this.statsCounterManagers.length,
+        globalEndpointIndex / this._statsCounterManagers.length,
       );
 
-      if (workerId < this.statsCounterManagers.length) {
-        const manager = this.statsCounterManagers[workerId];
+      if (workerId < this._statsCounterManagers.length) {
+        const manager = this._statsCounterManagers[workerId];
         if (localEndpointIndex < manager.getEndpointsCount()) {
           const counters = manager.getEndpointCounters(localEndpointIndex);
           endpointTotalRequests = counters.successCount + counters.failureCount;
@@ -228,18 +228,18 @@ export class EarlyExitCoordinator implements IEarlyExitCoordinator {
    * Updates the endpoint state in shared memory to mark endpoints as stopped,
    * which workers check before executing requests.
    */
-  private triggerEndpointEarlyExit(endpoints: string[]): void {
+  private _triggerEndpointEarlyExit(endpoints: string[]): void {
     process.stdout.write(
       `🚨 Endpoint early exit triggered for: ${endpoints.join(', ')}\n`,
     );
 
     // Stop individual endpoints instead of global stop
     endpoints.forEach((endpointUrl) => {
-      const endpointIndex = this.config.requests.findIndex(
+      const endpointIndex = this._config.requests.findIndex(
         (req) => req.url === endpointUrl,
       );
       if (endpointIndex !== -1) {
-        this.endpointStateManager.stopEndpoint(endpointIndex);
+        this._endpointStateManager.stopEndpoint(endpointIndex);
       }
     });
   }
@@ -253,8 +253,8 @@ export class EarlyExitCoordinator implements IEarlyExitCoordinator {
    * to prevent continued monitoring after test completion.
    */
   stopMonitoring(): void {
-    if (this.monitoringInterval) {
-      clearInterval(this.monitoringInterval);
+    if (this._monitoringInterval) {
+      clearInterval(this._monitoringInterval);
     }
   }
 }

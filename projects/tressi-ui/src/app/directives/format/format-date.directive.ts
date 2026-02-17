@@ -4,7 +4,7 @@ import { Directive, effect, ElementRef, inject, input } from '@angular/core';
   selector: '[appFormatDate]',
 })
 export class FormatDateDirective {
-  private readonly el = inject(ElementRef);
+  private readonly _el = inject(ElementRef);
   readonly value = input<number | string | Date | undefined | null>(undefined, {
     alias: 'appFormatDate',
   });
@@ -13,19 +13,19 @@ export class FormatDateDirective {
     effect(() => {
       const dateValue = this.value();
       if (!dateValue) {
-        this.el.nativeElement.textContent = '—';
+        this._el.nativeElement.textContent = '—';
         return;
       }
 
       try {
         const date = new Date(dateValue);
         if (isNaN(date.getTime())) {
-          this.el.nativeElement.textContent = '—';
+          this._el.nativeElement.textContent = '—';
           return;
         }
-        this.el.nativeElement.textContent = date.toLocaleString();
+        this._el.nativeElement.textContent = date.toLocaleString();
       } catch {
-        this.el.nativeElement.textContent = '—';
+        this._el.nativeElement.textContent = '—';
       }
     });
   }

@@ -40,117 +40,117 @@ import { WorkerState } from './types';
  * Each worker is assigned a subset of endpoints using round-robin distribution.
  */
 export class WorkerPoolManager {
-  private workers: Worker[] = [];
-  private metricsAggregator: MetricsAggregator;
-  private earlyExitCoordinator: EarlyExitCoordinator;
-  private maxWorkers: number;
-  private workerStateManager: WorkerStateManager;
-  private endpointStateManager: EndpointStateManager;
-  private endpoints: TressiRequestConfig[];
-  private workerAssignments: TressiRequestConfig[][] = [];
-  private hdrHistogramManagers: HdrHistogramManager[] = [];
-  private statsCounterManagers: StatsCounterManager[] = [];
-  private readonly runId = `ephemeral-${randomUUID()}`;
-  constructor(private config: TressiConfig) {
+  private _workers: Worker[] = [];
+  private _metricsAggregator: MetricsAggregator;
+  private _earlyExitCoordinator: EarlyExitCoordinator;
+  private _maxWorkers: number;
+  private _workerStateManager: WorkerStateManager;
+  private _endpointStateManager: EndpointStateManager;
+  private _endpoints: TressiRequestConfig[];
+  private _workerAssignments: TressiRequestConfig[][] = [];
+  private _hdrHistogramManagers: HdrHistogramManager[] = [];
+  private _statsCounterManagers: StatsCounterManager[] = [];
+  private readonly _runId = `ephemeral-${randomUUID()}`;
+  constructor(private _config: TressiConfig) {
     const cpuCount = os.cpus().length;
-    const requestedThreads = config.options.threads ?? cpuCount;
+    const requestedThreads = _config.options.threads ?? cpuCount;
     const maxWorkers =
       requestedThreads > cpuCount ? cpuCount : requestedThreads;
 
-    this.maxWorkers = maxWorkers;
-    this.endpoints = config.requests;
+    this._maxWorkers = maxWorkers;
+    this._endpoints = _config.requests;
 
     // Create managers using new SharedMemoryFactory
     const managers = SharedMemoryFactory.createManagers(
-      this.maxWorkers,
-      this.endpoints,
+      this._maxWorkers,
+      this._endpoints,
       {
         ringBufferSize: 100,
         bodySampleBufferSize: 1000,
       },
     );
 
-    this.workerStateManager = managers.workerState;
-    this.endpointStateManager = managers.endpointState;
-    this.hdrHistogramManagers = managers.hdrHistogram;
-    this.statsCounterManagers = managers.statsCounter;
+    this._workerStateManager = managers.workerState;
+    this._endpointStateManager = managers.endpointState;
+    this._hdrHistogramManagers = managers.hdrHistogram;
+    this._statsCounterManagers = managers.statsCounter;
 
     // Build endpoint method map from config
     const endpointMethodMap: Record<string, string> = {};
-    for (const request of config.requests) {
+    for (const request of _config.requests) {
       endpointMethodMap[request.url] = request.method;
     }
 
     // Create new metrics aggregator with new managers and method map
-    this.metricsAggregator = new MetricsAggregator(
-      this.hdrHistogramManagers,
-      this.statsCounterManagers,
+    this._metricsAggregator = new MetricsAggregator(
+      this._hdrHistogramManagers,
+      this._statsCounterManagers,
       endpointMethodMap,
-      this.runId,
+      this._runId,
     );
 
     // Set the config for metrics aggregation
-    this.metricsAggregator.setConfig(config);
+    this._metricsAggregator.setConfig(_config);
 
-    this.earlyExitCoordinator = new EarlyExitCoordinator(
-      config,
-      this.statsCounterManagers,
-      this.endpointStateManager,
+    this._earlyExitCoordinator = new EarlyExitCoordinator(
+      _config,
+      this._statsCounterManagers,
+      this._endpointStateManager,
     );
   }
 
   async start(): Promise<void> {
     // Distribute endpoints to workers
-    this.workerAssignments = this.distributeEndpoints();
-    const actualWorkers = this.workerAssignments.length;
+    this._workerAssignments = this._distributeEndpoints();
+    const actualWorkers = this._workerAssignments.length;
 
     // Initialize worker states
     for (let i = 0; i < actualWorkers; i++) {
-      this.workerStateManager.setWorkerState(i, WorkerState.INITIALIZING);
+      this._workerStateManager.setWorkerState(i, WorkerState.INITIALIZING);
     }
 
     const workerPath = FileUtils.getWorkerThreadPath();
 
     for (let i = 0; i < actualWorkers; i++) {
-      const assignedEndpoints = this.workerAssignments[i];
-      const endpointOffset = this.getEndpointOffset(i);
+      const assignedEndpoints = this._workerAssignments[i];
+      const endpointOffset = this._getEndpointOffset(i);
 
       const worker = new Worker(workerPath, {
         workerData: {
           workerId: i,
           assignedEndpoints,
           endpointOffset,
-          statsBuffer: this.statsCounterManagers[i].getSharedBuffer(),
-          histogramBuffer: this.hdrHistogramManagers[i].getSharedBuffer(),
-          workerStateBuffer: this.workerStateManager.getSharedBuffer(),
-          endpointStateBuffer: this.endpointStateManager.getSharedBuffer(),
-          memoryLimit: this.config.options.workerMemoryLimit,
+          statsBuffer: this._statsCounterManagers[i].getSharedBuffer(),
+          histogramBuffer: this._hdrHistogramManagers[i].getSharedBuffer(),
+          workerStateBuffer: this._workerStateManager.getSharedBuffer(),
+          endpointStateBuffer: this._endpointStateManager.getSharedBuffer(),
+          memoryLimit: this._config.options.workerMemoryLimit,
           totalWorkers: actualWorkers,
-          durationSec: this.config.options.durationSec || 10,
-          rampUpDurationSec: this.config.options.rampUpDurationSec || 0,
+          durationSec: this._config.options.durationSec || 10,
+          rampUpDurationSec: this._config.options.rampUpDurationSec || 0,
         },
         resourceLimits: {
-          maxOldGenerationSizeMb: this.config.options.workerMemoryLimit,
+          maxOldGenerationSizeMb: this._config.options.workerMemoryLimit,
         },
       });
 
-      this.setupWorkerErrorHandling(worker, i);
-      this.workers.push(worker);
+      this._setupWorkerErrorHandling(worker, i);
+      this._workers.push(worker);
 
       // Set worker to ready state
-      this.workerStateManager.setWorkerState(i, WorkerState.READY);
+      this._workerStateManager.setWorkerState(i, WorkerState.READY);
     }
 
     // Start early exit monitoring
-    this.earlyExitCoordinator.startMonitoring();
+    this._earlyExitCoordinator.startMonitoring();
 
     // Set endpoints and start metrics aggregation polling
-    const endpoints = this.config.requests.map((req) => req.url);
-    this.metricsAggregator.setEndpoints(endpoints);
-    this.metricsAggregator.startPolling();
+    const endpoints = this._config.requests.map((req) => req.url);
+    this._metricsAggregator.setEndpoints(endpoints);
+    this._metricsAggregator.startPolling();
 
     // Wait for all workers to be ready
-    await this.waitForWorkersReady();
+    await this._waitForWorkersReady();
   }
 
   /**
@@ -163,18 +163,18 @@ export class WorkerPoolManager {
    * Handles both error events (thrown exceptions) and exit events (normal/abnormal termination).
    * Updates worker state in shared memory to reflect error conditions.
    */
-  private setupWorkerErrorHandling(worker: Worker, workerId: number): void {
+  private _setupWorkerErrorHandling(worker: Worker, workerId: number): void {
     worker.on('error', (error) => {
       process.stderr.write(`Worker ${workerId} error: ${error.message}\n`);
-      this.workerStateManager.setWorkerState(workerId, WorkerState.ERROR);
+      this._workerStateManager.setWorkerState(workerId, WorkerState.ERROR);
     });
 
     worker.on('exit', (code) => {
       if (code !== 0) {
         process.stderr.write(`Worker ${workerId} exited with code ${code}\n`);
-        this.workerStateManager.setWorkerState(workerId, WorkerState.ERROR);
+        this._workerStateManager.setWorkerState(workerId, WorkerState.ERROR);
       } else {
-        this.workerStateManager.setWorkerState(workerId, WorkerState.FINISHED);
+        this._workerStateManager.setWorkerState(workerId, WorkerState.FINISHED);
       }
     });
 
@@ -189,8 +189,8 @@ export class WorkerPoolManager {
         'body' in message &&
         'url' in message
       ) {
-        this.metricsAggregator.recordResponseSample(
-          this.runId,
+        this._metricsAggregator.recordResponseSample(
+          this._runId,
           message.url as string,
           message.statusCode as number,
           (message as { headers?: Record<string, string> }).headers || {},
@@ -217,9 +217,9 @@ export class WorkerPoolManager {
    * // Worker 1 gets endpoint [1]
    * ```
    */
-  private distributeEndpoints(): TressiRequestConfig[][] {
-    const endpoints = this.config.requests;
-    const workers = Math.min(this.maxWorkers, endpoints.length);
+  private _distributeEndpoints(): TressiRequestConfig[][] {
+    const endpoints = this._config.requests;
+    const workers = Math.min(this._maxWorkers, endpoints.length);
     const distribution: TressiRequestConfig[][] = Array.from(
       { length: workers },
       () => [],
@@ -244,10 +244,10 @@ export class WorkerPoolManager {
    * and global endpoint indices (0..total_endpoints-1 across all workers).
    * Essential for shared memory coordination where endpoints are stored in global arrays.
    */
-  private getEndpointOffset(workerId: number): number {
+  private _getEndpointOffset(workerId: number): number {
     let offset = 0;
     for (let i = 0; i < workerId; i++) {
-      offset += this.workerAssignments[i].length;
+      offset += this._workerAssignments[i].length;
     }
     return offset;
   }
@@ -262,11 +262,11 @@ export class WorkerPoolManager {
    * If a worker fails to become ready within the timeout, a warning is logged but execution continues.
    * This prevents the entire test from failing due to a single slow worker.
    */
-  private async waitForWorkersReady(): Promise<void> {
-    const actualWorkers = this.workers.length;
+  private async _waitForWorkersReady(): Promise<void> {
+    const actualWorkers = this._workers.length;
 
     for (let i = 0; i < actualWorkers; i++) {
-      const ready = this.workerStateManager.waitForState(
+      const ready = this._workerStateManager.waitForState(
         i,
         WorkerState.RUNNING,
         5000,
@@ -291,8 +291,8 @@ export class WorkerPoolManager {
    * into a single comprehensive metrics object.
    */
   getAggregatedResults(): AggregatedMetrics {
-    const endpoints = this.config.requests.map((req) => req.url);
-    return this.metricsAggregator.getResults(this.workers.length, endpoints);
+    const endpoints = this._config.requests.map((req) => req.url);
+    return this._metricsAggregator.getResults(this._workers.length, endpoints);
   }
 
   /**
@@ -301,7 +301,7 @@ export class WorkerPoolManager {
    */
   getResponseSamples(): ResponseSamples {
     const responseSamplesMap =
-      this.metricsAggregator.getCollectedResponseSamples(this.runId);
+      this._metricsAggregator.getCollectedResponseSamples(this._runId);
 
     const result: ResponseSamples = {};
     responseSamplesMap.forEach((samples, url) => {
@@ -315,7 +315,7 @@ export class WorkerPoolManager {
    * Clean up body samples for this run
    */
   cleanupResponseSamples(): void {
-    this.metricsAggregator.cleanupResponseSamples(this.runId);
+    this._metricsAggregator.cleanupResponseSamples(this._runId);
   }
 
   /**
@@ -323,7 +323,7 @@ export class WorkerPoolManager {
    * @param testId The test ID from database
    */
   setTestId(testId: string): void {
-    this.metricsAggregator.setTestId(testId);
+    this._metricsAggregator.setTestId(testId);
   }
 
   /**
@@ -331,7 +331,7 @@ export class WorkerPoolManager {
    * @param startTime Unix timestamp in milliseconds
    */
   public setStartTime(startTime: number): void {
-    this.metricsAggregator.setStartTime(startTime);
+    this._metricsAggregator.setStartTime(startTime);
   }
 
   /**
@@ -339,9 +339,9 @@ export class WorkerPoolManager {
    * @returns TestSummary object
    */
   public getTestSummary(): TestSummary {
-    const endpoints = this.config.requests.map((req) => req.url);
-    return this.metricsAggregator.getTestSummary(
-      this.workers.length,
+    const endpoints = this._config.requests.map((req) => req.url);
+    return this._metricsAggregator.getTestSummary(
+      this._workers.length,
       endpoints,
     );
   }
@@ -360,14 +360,15 @@ export class WorkerPoolManager {
    * Uses a polling approach with 100ms intervals for responsive completion detection.
    */
   async waitForWorkersComplete(): Promise<void> {
-    const maxDurationMs = (this.config.options.durationSec || 10) * 1000 + 5000;
+    const maxDurationMs =
+      (this._config.options.durationSec || 10) * 1000 + 5000;
     const startTime = Date.now();
-    const actualWorkers = this.workers.length;
+    const actualWorkers = this._workers.length;
 
     while (true) {
       // Check if all endpoints are stopped
       const allEndpointsStopped =
-        this.endpointStateManager.getRunningEndpointsCount() === 0;
+        this._endpointStateManager.getRunningEndpointsCount() === 0;
       if (allEndpointsStopped) {
         process.stdout.write('All endpoints stopped - terminating test\n');
         break;
@@ -375,7 +376,7 @@ export class WorkerPoolManager {
 
       // Check if all workers are complete
       const allComplete = Array.from({ length: actualWorkers }, (_, i) => {
-        const state = this.workerStateManager.getWorkerState(i);
+        const state = this._workerStateManager.getWorkerState(i);
         return state === WorkerState.FINISHED || state === WorkerState.ERROR;
       }).every(Boolean);
 
@@ -408,17 +409,17 @@ export class WorkerPoolManager {
    * Designed to be called after test completion or on user interrupt.
    */
   async stop(): Promise<void> {
-    this.earlyExitCoordinator.stopMonitoring();
-    this.metricsAggregator.stopPolling();
+    this._earlyExitCoordinator.stopMonitoring();
+    this._metricsAggregator.stopPolling();
 
-    const actualWorkers = this.workers.length;
+    const actualWorkers = this._workers.length;
     for (let i = 0; i < actualWorkers; i++) {
-      this.workerStateManager.setWorkerState(i, WorkerState.TERMINATED);
+      this._workerStateManager.setWorkerState(i, WorkerState.TERMINATED);
     }
 
-    await this.waitForWorkersExit();
+    await this._waitForWorkersExit();
 
-    for (const worker of this.workers) {
+    for (const worker of this._workers) {
       if (worker.threadId) {
         try {
           await worker.terminate();
@@ -438,12 +439,12 @@ export class WorkerPoolManager {
    * Used during shutdown to ensure clean worker termination.
    * Polls worker states with 100ms intervals until all workers report completion.
    */
-  private async waitForWorkersExit(): Promise<void> {
-    const actualWorkers = this.workers.length;
+  private async _waitForWorkersExit(): Promise<void> {
+    const actualWorkers = this._workers.length;
 
     while (true) {
       const allExited = Array.from({ length: actualWorkers }, (_, i) => {
-        const state = this.workerStateManager.getWorkerState(i);
+        const state = this._workerStateManager.getWorkerState(i);
         return (
           state === WorkerState.TERMINATED || state === WorkerState.FINISHED
         );

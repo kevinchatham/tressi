@@ -4,7 +4,7 @@ import { Directive, effect, ElementRef, inject, input } from '@angular/core';
   selector: '[appFormatPercentage]',
 })
 export class FormatPercentageDirective {
-  private readonly el = inject(ElementRef);
+  private readonly _el = inject(ElementRef);
   readonly value = input<number | undefined | null>(undefined, {
     alias: 'appFormatPercentage',
   });
@@ -13,14 +13,14 @@ export class FormatPercentageDirective {
     effect(() => {
       const value = this.value();
       if (value === undefined || value === null || value === 0) {
-        this.el.nativeElement.textContent = '0%';
+        this._el.nativeElement.textContent = '0%';
         return;
       }
       const v = value * 100;
       if (v < 1) {
-        this.el.nativeElement.textContent = `${value.toFixed(1)}%`;
+        this._el.nativeElement.textContent = `${value.toFixed(1)}%`;
       } else {
-        this.el.nativeElement.textContent = `${v.toFixed(0)}%`;
+        this._el.nativeElement.textContent = `${v.toFixed(0)}%`;
       }
     });
   }

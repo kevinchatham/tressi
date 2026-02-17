@@ -6,7 +6,7 @@ import { ISSEClientManager } from '../../workers/interfaces';
  * Handles adding, removing, and broadcasting to connected clients
  */
 export class SSEManager implements ISSEClientManager {
-  private clients: Set<ReadableStreamDefaultController> = new Set();
+  private _clients: Set<ReadableStreamDefaultController> = new Set();
 
   /**
    * Adds a new Server-Sent Events client connection.
@@ -19,7 +19,7 @@ export class SSEManager implements ISSEClientManager {
    * Multiple clients can be connected simultaneously, each receiving the same broadcast data.
    */
   addClient(controller: ReadableStreamDefaultController): void {
-    this.clients.add(controller);
+    this._clients.add(controller);
   }
 
   /**
@@ -33,7 +33,7 @@ export class SSEManager implements ISSEClientManager {
    * is otherwise terminated.
    */
   removeClient(controller: ReadableStreamDefaultController): void {
-    this.clients.delete(controller);
+    this._clients.delete(controller);
   }
 
   /**
@@ -62,12 +62,12 @@ export class SSEManager implements ISSEClientManager {
   broadcast(message: ServerEventMessage): void {
     const sseMessage = `data: ${JSON.stringify(message)}\n\n`;
 
-    for (const client of this.clients) {
+    for (const client of this._clients) {
       try {
         client.enqueue(sseMessage);
       } catch {
         // Client disconnected or failed, remove from set
-        this.clients.delete(client);
+        this._clients.delete(client);
       }
     }
   }
@@ -83,7 +83,7 @@ export class SSEManager implements ISSEClientManager {
    * active listeners.
    */
   getClientCount(): number {
-    return this.clients.size;
+    return this._clients.size;
   }
 
   /**
@@ -100,7 +100,7 @@ export class SSEManager implements ISSEClientManager {
    */
   cleanup(): void {
     // Send a close message to all clients before closing
-    for (const client of this.clients) {
+    for (const client of this._clients) {
       try {
         client.enqueue('event: close\ndata: Server shutting down\n\n');
         client.close();
@@ -108,7 +108,7 @@ export class SSEManager implements ISSEClientManager {
         // Ignore errors during cleanup
       }
     }
-    this.clients.clear();
+    this._clients.clear();
   }
 
   /**
@@ -118,13 +118,13 @@ export class SSEManager implements ISSEClientManager {
    * Used for immediate shutdown when graceful cleanup fails.
    */
   forceClose(): void {
-    for (const client of this.clients) {
+    for (const client of this._clients) {
       try {
         client.close();
       } catch {
         // Ignore errors during force close
       }
     }
-    this.clients.clear();
+    this._clients.clear();
   }
 }

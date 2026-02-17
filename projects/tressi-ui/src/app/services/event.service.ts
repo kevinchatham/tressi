@@ -7,43 +7,43 @@ import { TestSummary } from './rpc.service';
   providedIn: 'root',
 })
 export class EventService {
-  private readonly url = '/api/metrics/stream';
-  private eventSource: EventSource | null = null;
+  private readonly _url = '/api/metrics/stream';
+  private _eventSource: EventSource | null = null;
 
-  private readonly metricsSubject = new Subject<TestSummaryData>();
-  private readonly testEventsSubject = new Subject<TestEventData>();
-  private readonly connectedSubject = new Subject<ConnectedEventData>();
+  private readonly _metricsSubject = new Subject<TestSummaryData>();
+  private readonly _testEventsSubject = new Subject<TestEventData>();
+  private readonly _connectedSubject = new Subject<ConnectedEventData>();
 
   /**
    * Get metrics stream with unified event format
    */
   getMetricsStream(): Observable<TestSummaryData> {
-    this.ensureConnected();
-    return this.metricsSubject.asObservable();
+    this._ensureConnected();
+    return this._metricsSubject.asObservable();
   }
 
   /**
    * Get test events stream with unified event format
    */
   getTestEventsStream(): Observable<TestEventData> {
-    this.ensureConnected();
-    return this.testEventsSubject.asObservable();
+    this._ensureConnected();
+    return this._testEventsSubject.asObservable();
   }
 
   /**
    * Get connected events stream with unified event format
    */
   getConnectedStream(): Observable<ConnectedEventData> {
-    this.ensureConnected();
-    return this.connectedSubject.asObservable();
+    this._ensureConnected();
+    return this._connectedSubject.asObservable();
   }
 
   /**
    * Ensure the event stream is connected
    * @private
    */
-  private ensureConnected(): void {
-    if (!this.eventSource) {
+  private _ensureConnected(): void {
+    if (!this._eventSource) {
       this.connectToEventStream();
     }
   }
@@ -52,27 +52,27 @@ export class EventService {
    * Connect to the unified event stream
    */
   connectToEventStream(): void {
-    if (this.eventSource) {
+    if (this._eventSource) {
       this.disconnectFromEventStream();
     }
 
-    this.eventSource = new EventSource(this.url);
+    this._eventSource = new EventSource(this._url);
 
-    this.eventSource.onmessage = (event): void => {
+    this._eventSource.onmessage = (event): void => {
       try {
         const message = JSON.parse(event.data);
 
         switch (message.event) {
           case 'metrics':
-            this.metricsSubject.next(message.data as TestSummaryData);
+            this._metricsSubject.next(message.data as TestSummaryData);
             break;
           case 'test:started':
           case 'test:completed':
           case 'test:failed':
-            this.testEventsSubject.next(message.data as TestEventData);
+            this._testEventsSubject.next(message.data as TestEventData);
             break;
           case 'connected':
-            this.connectedSubject.next(message.data as ConnectedEventData);
+            this._connectedSubject.next(message.data as ConnectedEventData);
             break;
         }
       } catch (error) {
@@ -81,7 +81,7 @@ export class EventService {
       }
     };
 
-    this.eventSource.onerror = (error): void => {
+    this._eventSource.onerror = (error): void => {
       // eslint-disable-next-line no-console
       console.error('EventSource error:', error);
       // Close the failed connection to allow for a clean retry
@@ -93,9 +93,9 @@ export class EventService {
    * Disconnect from the event stream
    */
   disconnectFromEventStream(): void {
-    if (this.eventSource) {
-      this.eventSource.close();
-      this.eventSource = null;
+    if (this._eventSource) {
+      this._eventSource.close();
+      this._eventSource = null;
     }
   }
 }

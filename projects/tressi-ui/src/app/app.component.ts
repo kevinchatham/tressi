@@ -30,29 +30,29 @@ import { TitleService } from './services/title.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AppComponent implements OnInit {
-  private readonly titleService = inject(TitleService);
-  private readonly themeService = inject(ThemeService);
-  private readonly router = inject(Router);
-  private readonly destroyRef = inject(DestroyRef);
+  private readonly _titleService = inject(TitleService);
+  private readonly _themeService = inject(ThemeService);
+  private readonly _router = inject(Router);
+  private readonly _destroyRef = inject(DestroyRef);
 
   /** Signal to track if a route transition is in progress (resolving data) */
   readonly isNavigating = signal(false);
   readonly appRouter = inject(AppRouterService);
 
   ngOnInit(): void {
-    this.titleService.resetTitle();
-    this.themeService.loadInitialTheme();
-    this.setupNavigationListeners();
+    this._titleService.resetTitle();
+    this._themeService.loadInitialTheme();
+    this._setupNavigationListeners();
   }
 
   /**
    * Listens to router events to show/hide the global loading indicator
    * during route transitions (when resolvers are running).
    */
-  private setupNavigationListeners(): void {
-    this.router.events
+  private _setupNavigationListeners(): void {
+    this._router.events
       .pipe(
-        takeUntilDestroyed(this.destroyRef),
+        takeUntilDestroyed(this._destroyRef),
         filter(
           (event) =>
             event instanceof NavigationStart ||

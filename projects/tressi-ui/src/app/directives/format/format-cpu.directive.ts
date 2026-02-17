@@ -4,7 +4,7 @@ import { Directive, effect, ElementRef, inject, input } from '@angular/core';
   selector: '[appFormatCpu]',
 })
 export class FormatCpuUsageDirective {
-  private readonly el = inject(ElementRef);
+  private readonly _el = inject(ElementRef);
   readonly value = input<number | undefined | null>(undefined, {
     alias: 'appFormatCpu',
   });
@@ -13,10 +13,10 @@ export class FormatCpuUsageDirective {
     effect(() => {
       const percent = this.value();
       if (percent === undefined || percent === null) {
-        this.el.nativeElement.textContent = '0.0%';
+        this._el.nativeElement.textContent = '0.0%';
         return;
       }
-      this.el.nativeElement.textContent = `${percent.toFixed(1)}%`;
+      this._el.nativeElement.textContent = `${percent.toFixed(1)}%`;
     });
   }
 }

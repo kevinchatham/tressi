@@ -7,51 +7,51 @@ import { filter } from 'rxjs/operators';
   providedIn: 'root',
 })
 export class TitleService {
-  private titleService = inject(Title);
-  private router = inject(Router);
+  private readonly _titleService = inject(Title);
+  private readonly _router = inject(Router);
 
-  private defaultTitle = 'Tressi';
-  private currentTitle = this.defaultTitle;
+  private readonly _defaultTitle = 'Tressi';
+  private _currentTitle = this._defaultTitle;
 
   constructor() {
-    this.initializeRouteListener();
+    this._initializeRouteListener();
   }
 
-  private initializeRouteListener(): void {
-    this.router.events
+  private _initializeRouteListener(): void {
+    this._router.events
       .pipe(
         filter(
           (event): event is NavigationEnd => event instanceof NavigationEnd,
         ),
       )
       .subscribe(() => {
-        this.updateTitleFromRoute();
+        this._updateTitleFromRoute();
       });
   }
 
-  private updateTitleFromRoute(): void {
-    let route = this.router.routerState.root;
+  private _updateTitleFromRoute(): void {
+    let route = this._router.routerState.root;
 
     while (route.firstChild) {
       route = route.firstChild;
     }
 
     route.data.subscribe((d: { title?: string }) => {
-      const title = d.title || this.defaultTitle;
+      const title = d.title || this._defaultTitle;
       this.setTitle(title);
     });
   }
 
   setTitle(title: string): void {
-    this.currentTitle = title;
-    this.titleService.setTitle(title);
+    this._currentTitle = title;
+    this._titleService.setTitle(title);
   }
 
   getTitle(): string {
-    return this.currentTitle;
+    return this._currentTitle;
   }
 
   resetTitle(): void {
-    this.setTitle(this.defaultTitle);
+    this.setTitle(this._defaultTitle);
   }
 }

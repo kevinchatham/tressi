@@ -22,7 +22,7 @@ import { TestService } from '../../../services/test.service';
   templateUrl: './test-hero-stats.component.html',
 })
 export class TestHeroStatsComponent {
-  private readonly testService = inject(TestService);
+  private readonly _testService = inject(TestService);
 
   /** Test data document */
   readonly testData = input<TestDocument | null>(null);
@@ -54,6 +54,6 @@ export class TestHeroStatsComponent {
     const test = this.testData();
     if (!test) return null;
 
-    return this.testService.getTestDuration(test) / 1000;
+    return this._testService.getTestDuration(test) / 1000;
   }
 }

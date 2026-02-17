@@ -46,7 +46,7 @@ export class SharedMemoryFactory {
     const statsCounter: StatsCounterManager[] = [];
 
     // Distribute endpoints to workers
-    const workerEndpoints = this.distributeEndpoints(workersCount, endpoints);
+    const workerEndpoints = this._distributeEndpoints(workersCount, endpoints);
 
     // Create per-worker managers with their assigned endpoint count
     for (let workerId = 0; workerId < workersCount; workerId++) {
@@ -79,7 +79,7 @@ export class SharedMemoryFactory {
    * @param endpoints Array of all endpoints
    * @returns Array of endpoints assigned to each worker
    */
-  private static distributeEndpoints(
+  private static _distributeEndpoints(
     workersCount: number,
     endpoints: TressiRequestConfig[],
   ): TressiRequestConfig[][] {

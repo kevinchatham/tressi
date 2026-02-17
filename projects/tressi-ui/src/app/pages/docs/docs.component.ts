@@ -23,18 +23,19 @@ import { DocsMenuComponent } from './docs-menu/docs-menu.component';
   templateUrl: './docs.component.html',
 })
 export class DocsComponent implements OnInit {
-  private readonly route = inject(ActivatedRoute);
+  private readonly _route = inject(ActivatedRoute);
   readonly appRouter = inject(AppRouterService);
-  markdownSrc = signal<string>('');
-  error = signal<string | null>(null);
-  availableDocs = signal<GetDocsResponseSuccess>({});
-  isTransitioning = signal(false);
-
-  isBaseUrl = computed<boolean>(() => window.location.href.endsWith('/docs'));
+  readonly markdownSrc = signal<string>('');
+  readonly error = signal<string | null>(null);
+  readonly availableDocs = signal<GetDocsResponseSuccess>({});
+  readonly isTransitioning = signal(false);
+  readonly isBaseUrl = computed<boolean>(() =>
+    window.location.href.endsWith('/docs'),
+  );
 
   ngOnInit(): void {
-    this.initializeFromResolvedData();
-    this.route.params.subscribe((params) => {
+    this._initializeFromResolvedData();
+    this._route.params.subscribe((params) => {
       const section = params['section'];
       const filename = params['filename'] || 'index';
       const fullPath = section ? `${section}/${filename}` : filename;
@@ -45,8 +46,8 @@ export class DocsComponent implements OnInit {
   /**
    * Initializes the component using data pre-resolved by the router.
    */
-  private initializeFromResolvedData(): void {
-    const data = this.route.snapshot.data[
+  private _initializeFromResolvedData(): void {
+    const data = this._route.snapshot.data[
       'availableDocs'
     ] as GetDocsResponseSuccess;
     if (data) {

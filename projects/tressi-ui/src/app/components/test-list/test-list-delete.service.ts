@@ -22,8 +22,8 @@ export interface DeleteResult {
  */
 @Injectable({ providedIn: 'root' })
 export class TestListDeleteService {
-  private readonly testService = inject(TestService);
-  private readonly logService = inject(LogService);
+  private readonly _testService = inject(TestService);
+  private readonly _logService = inject(LogService);
 
   /**
    * Deletes a single test by ID.
@@ -32,10 +32,10 @@ export class TestListDeleteService {
    */
   async deleteTest(testId: string): Promise<DeleteResult> {
     try {
-      const result = await this.testService.deleteTest(testId);
+      const result = await this._testService.deleteTest(testId);
 
       if (result.success) {
-        this.logService.info(`Test ${testId} deleted successfully`);
+        this._logService.info(`Test ${testId} deleted successfully`);
         return {
           success: true,
           deletedCount: 1,
@@ -53,7 +53,7 @@ export class TestListDeleteService {
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
-      this.logService.error(`Failed to delete test ${testId}:`, error);
+      this._logService.error(`Failed to delete test ${testId}:`, error);
       return {
         success: false,
         deletedCount: 0,
@@ -81,7 +81,7 @@ export class TestListDeleteService {
     try {
       // Delete tests one by one
       const results = await Promise.allSettled(
-        testIds.map((testId) => this.testService.deleteTest(testId)),
+        testIds.map((testId) => this._testService.deleteTest(testId)),
       );
 
       const successfulDeletions = results.filter(
@@ -103,7 +103,7 @@ export class TestListDeleteService {
       });
 
       if (successfulDeletions.length > 0) {
-        this.logService.info(
+        this._logService.info(
           `${successfulDeletions.length} tests deleted successfully`,
         );
       }
@@ -117,7 +117,7 @@ export class TestListDeleteService {
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
-      this.logService.error('Failed to delete tests:', error);
+      this._logService.error('Failed to delete tests:', error);
       return {
         success: false,
         deletedCount: 0,

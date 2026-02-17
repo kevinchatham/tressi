@@ -12,20 +12,20 @@ import { WorkerPoolManager } from '../workers/worker-pool-manager';
  * This class coordinates between all specialized components and manages the test lifecycle.
  */
 export class Runner extends EventEmitter<IRunnerEvents> {
-  private workerPool: WorkerPoolManager;
-  private startTime: number = 0;
+  private _workerPool: WorkerPoolManager;
+  private _startTime: number = 0;
 
   /**
    * Creates a new CoreRunner instance.
-   * @param config The Tressi configuration
+   * @param _config The Tressi configuration
    */
-  constructor(private config: TressiConfig) {
+  constructor(private _config: TressiConfig) {
     super();
-    this.workerPool = new WorkerPoolManager(config);
+    this._workerPool = new WorkerPoolManager(_config);
   }
 
   getAggregatedMetrics(): AggregatedMetrics {
-    return this.workerPool.getAggregatedResults();
+    return this._workerPool.getAggregatedResults();
   }
 
   /**
@@ -33,27 +33,27 @@ export class Runner extends EventEmitter<IRunnerEvents> {
    * This is the main entry point that coordinates all components.
    */
   public async run(): Promise<void> {
-    this.startTime = performance.now();
+    this._startTime = performance.now();
 
     // Sync start time with metrics aggregator
-    this.workerPool.setStartTime(this.startTime);
+    this._workerPool.setStartTime(this._startTime);
 
     try {
       this.emit('start', {
-        config: this.config,
-        startTime: this.startTime,
+        config: this._config,
+        startTime: this._startTime,
       });
-      await this.runWithWorkers();
+      await this._runWithWorkers();
     } catch (error) {
       this.emit('error', error);
       throw error;
     }
   }
 
-  private async runWithWorkers(): Promise<void> {
-    await this.workerPool.start();
-    await this.workerPool.waitForWorkersComplete();
-    const results = this.workerPool.getAggregatedResults();
+  private async _runWithWorkers(): Promise<void> {
+    await this._workerPool.start();
+    await this._workerPool.waitForWorkersComplete();
+    const results = this._workerPool.getAggregatedResults();
     this.emit('complete', results);
   }
 
@@ -61,7 +61,7 @@ export class Runner extends EventEmitter<IRunnerEvents> {
    * Stops the test execution.
    */
   public async stop(): Promise<void> {
-    await this.workerPool.stop();
+    await this._workerPool.stop();
   }
 
   /**
@@ -69,7 +69,7 @@ export class Runner extends EventEmitter<IRunnerEvents> {
    * @returns The start time as a Unix timestamp
    */
   public getStartTime(): number {
-    return this.startTime;
+    return this._startTime;
   }
 
   /**
@@ -77,7 +77,7 @@ export class Runner extends EventEmitter<IRunnerEvents> {
    * @param startTime Unix timestamp in milliseconds
    */
   public setStartTime(startTime: number): void {
-    this.workerPool.setStartTime(startTime);
+    this._workerPool.setStartTime(startTime);
   }
 
   /**
@@ -85,7 +85,7 @@ export class Runner extends EventEmitter<IRunnerEvents> {
    * @returns The TressiConfig used for this test run
    */
   public getConfig(): TressiConfig {
-    return this.config;
+    return this._config;
   }
 
   /**
@@ -93,7 +93,7 @@ export class Runner extends EventEmitter<IRunnerEvents> {
    * @returns TestSummary object
    */
   public getTestSummary(): TestSummary {
-    return this.workerPool.getTestSummary();
+    return this._workerPool.getTestSummary();
   }
 
   /**
@@ -101,17 +101,17 @@ export class Runner extends EventEmitter<IRunnerEvents> {
    * @returns Record of endpoint URL to body samples
    */
   public getResponseSamples(): ResponseSamples {
-    return this.workerPool.getResponseSamples();
+    return this._workerPool.getResponseSamples();
   }
 
   /**
    * Clean up body samples for this run.
    */
   public cleanupResponseSamples(): void {
-    this.workerPool.cleanupResponseSamples();
+    this._workerPool.cleanupResponseSamples();
   }
 
   public setTestId(testId: string): void {
-    this.workerPool.setTestId(testId);
+    this._workerPool.setTestId(testId);
   }
 }

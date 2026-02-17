@@ -53,7 +53,7 @@ export type ModifyConfigRequestFormType = ReturnType<
   templateUrl: './config-form.component.html',
 })
 export class ConfigFormComponent {
-  private readonly nameService = inject(NameService);
+  private readonly _nameService = inject(NameService);
 
   /** Input configuration to edit */
   readonly input = input<ConfigDocument | null>(null);
@@ -65,7 +65,7 @@ export class ConfigFormComponent {
   readonly closed = output<void>();
 
   /** Form model with complete TressiConfig structure */
-  readonly model = signal<ModifyConfigRequest>(this.createEmptyConfig());
+  readonly model = signal<ModifyConfigRequest>(this._createEmptyConfig());
 
   constructor() {
     effect(() => {
@@ -73,7 +73,7 @@ export class ConfigFormComponent {
       if (input !== null) {
         this.model.set(input);
       } else {
-        this.model.set(this.createEmptyConfig());
+        this.model.set(this._createEmptyConfig());
       }
     });
   }
@@ -138,7 +138,7 @@ export class ConfigFormComponent {
 
   onCancel(event: Event): void {
     event.preventDefault();
-    this.model.set(this.createEmptyConfig());
+    this.model.set(this._createEmptyConfig());
     this.form().reset();
     this.closed.emit();
   }
@@ -343,12 +343,12 @@ export class ConfigFormComponent {
   }
 
   /** Create an empty configuration structure */
-  private createEmptyConfig(): ModifyConfigRequest {
+  private _createEmptyConfig(): ModifyConfigRequest {
     const config = JSON.parse(JSON.stringify(defaultTressiConfig));
     config.requests = [{ ...requestDefaults }];
 
     const defaultConfig: ModifyConfigRequest = {
-      name: this.nameService.generate(),
+      name: this._nameService.generate(),
       config,
     };
     return defaultConfig;

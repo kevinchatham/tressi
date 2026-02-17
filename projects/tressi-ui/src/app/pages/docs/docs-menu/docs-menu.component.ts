@@ -31,14 +31,14 @@ export class DocsMenuComponent {
   isSearching = signal(false);
 
   readonly appRouter = inject(AppRouterService);
-  private readonly rpc = inject(RPCService);
-  private readonly router = inject(Router);
-  private readonly currentUrl = signal(this.appRouter.getCurrentUrl());
+  private readonly _rpc = inject(RPCService);
+  private readonly _router = inject(Router);
+  private readonly _currentUrl = signal(this.appRouter.getCurrentUrl());
 
   constructor() {
     // Update the currentUrl signal on every successful navigation
     // We still need to listen to router events for URL updates
-    this.router.events
+    this._router.events
       .pipe(
         filter(
           (event): event is NavigationEnd => event instanceof NavigationEnd,
@@ -46,12 +46,12 @@ export class DocsMenuComponent {
         takeUntilDestroyed(),
       )
       .subscribe((event: NavigationEnd) => {
-        this.currentUrl.set(event.urlAfterRedirects);
+        this._currentUrl.set(event.urlAfterRedirects);
       });
 
     effect(() => {
       const docs = this.availableDocs();
-      const url = this.currentUrl();
+      const url = this._currentUrl();
 
       // If we're at the root docs page, expand Home
       if (url.endsWith(AppRoutes.DOCS)) {
@@ -85,7 +85,7 @@ export class DocsMenuComponent {
 
       this.isSearching.set(true);
       try {
-        const response = await this.rpc.client.docs.search.$get({
+        const response = await this._rpc.client.docs.search.$get({
           query: { q: query },
         });
         if (response.ok) {

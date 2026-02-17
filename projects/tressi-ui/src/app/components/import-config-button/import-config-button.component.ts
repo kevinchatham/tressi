@@ -11,7 +11,7 @@ import { ButtonComponent } from '../button/button.component';
   templateUrl: './import-config-button.component.html',
 })
 export class ImportConfigButtonComponent {
-  private readonly nameService = inject(NameService);
+  private readonly _nameService = inject(NameService);
 
   /** Output event when a valid config is imported */
   readonly configImported = output<ModifyConfigRequest>();
@@ -42,7 +42,7 @@ export class ImportConfigButtonComponent {
 
       // Convert TressiConfig to ModifyConfigRequest
       const importedConfig: ModifyConfigRequest = {
-        name: this.generateNameFromFile(file.name),
+        name: this._generateNameFromFile(file.name),
         config: validation.data,
       };
 
@@ -59,7 +59,7 @@ export class ImportConfigButtonComponent {
     }
   }
 
-  private generateNameFromFile(fileName: string): string {
+  private _generateNameFromFile(fileName: string): string {
     const cleanedName = fileName
       .replace(/\.(json)$/i, '') // Support json only
       .replace(/^(tressi|config)[-_]/i, '') // Remove common prefixes with dash or underscore
@@ -70,7 +70,7 @@ export class ImportConfigButtonComponent {
 
     // If the cleaned name is empty, generate a unique name
     if (cleanedName.length === 0) {
-      return this.nameService.generate();
+      return this._nameService.generate();
     }
 
     // Convert to title case (capitalize first letter of each word)

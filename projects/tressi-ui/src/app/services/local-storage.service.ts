@@ -57,7 +57,7 @@ export class LocalStorageService {
    */
   preferences = computed(() => this._preferences());
 
-  private readonly logService = inject(LogService);
+  private readonly _logService = inject(LogService);
 
   private readonly _storageKey = 'tressi-user-preferences';
 
@@ -77,7 +77,7 @@ export class LocalStorageService {
   );
 
   constructor() {
-    this.loadPreferences();
+    this._loadPreferences();
   }
 
   /**
@@ -92,12 +92,12 @@ export class LocalStorageService {
   /**
    * Loads and validates user preferences from localStorage
    */
-  private loadPreferences(): void {
+  private _loadPreferences(): void {
     try {
       const stored = localStorage.getItem(this._storageKey);
 
       if (!stored) {
-        this.resetPreferences();
+        this._resetPreferences();
         return;
       }
 
@@ -105,25 +105,25 @@ export class LocalStorageService {
       const result = UserPreferencesSchema.safeParse(parsed);
 
       if (!result.success) {
-        this.logService.error(
+        this._logService.error(
           'Invalid user preferences in localStorage: resetting...',
           result.error,
         );
-        this.resetPreferences();
+        this._resetPreferences();
         return;
       }
 
       this._preferences.set(result.data);
     } catch (error) {
-      this.logService.error(
+      this._logService.error(
         'Failed to load user preferences: resetting...',
         error,
       );
-      this.resetPreferences();
+      this._resetPreferences();
     }
   }
 
-  private resetPreferences(): void {
+  private _resetPreferences(): void {
     const stored = localStorage.getItem(this._storageKey);
     if (stored) localStorage.removeItem(this._storageKey);
     this.savePreferences(this._defaultPreferences());

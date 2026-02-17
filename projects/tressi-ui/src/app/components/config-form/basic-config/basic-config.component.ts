@@ -58,24 +58,25 @@ export class BasicConfigComponent implements AfterViewInit, OnInit, OnChanges {
   expandedRequests = new Set<number>();
 
   /** Signal to track the current request count */
-  private readonly requestCount = signal(0);
+  private readonly _requestCount = signal(0);
 
   /** Query for URL input elements */
-  private urlInputs = viewChildren<ElementRef<HTMLInputElement>>('urlInput');
+  private readonly _urlInputs =
+    viewChildren<ElementRef<HTMLInputElement>>('urlInput');
 
   ngAfterViewInit(): void {
     // Focus the first URL input on initialization
-    this.focusLastUrlInput();
+    this._focusLastUrlInput();
   }
 
   ngOnInit(): void {
     // Initialize request count
-    this.requestCount.set(this.model().config.requests?.length || 0);
+    this._requestCount.set(this.model().config.requests?.length || 0);
   }
 
   ngOnChanges(): void {
     const currentCount = this.model().config.requests?.length || 0;
-    const previousCount = this.requestCount();
+    const previousCount = this._requestCount();
 
     // If a new request was added, handle expansion logic
     if (currentCount > previousCount) {
@@ -88,13 +89,13 @@ export class BasicConfigComponent implements AfterViewInit, OnInit, OnChanges {
       this.expandedRequests.delete(currentCount - 1);
 
       // Update the count
-      this.requestCount.set(currentCount);
+      this._requestCount.set(currentCount);
 
       // Focus the new URL input after the view updates
-      setTimeout(() => this.focusLastUrlInput(), 0);
+      setTimeout(() => this._focusLastUrlInput(), 0);
     } else if (currentCount < previousCount) {
       // Handle request removal
-      this.requestCount.set(currentCount);
+      this._requestCount.set(currentCount);
     }
   }
 
@@ -137,8 +138,8 @@ export class BasicConfigComponent implements AfterViewInit, OnInit, OnChanges {
   }
 
   /** Focus the last URL input element */
-  private focusLastUrlInput(): void {
-    const inputs = this.urlInputs();
+  private _focusLastUrlInput(): void {
+    const inputs = this._urlInputs();
     if (inputs && inputs.length > 0) {
       const lastInput = inputs[inputs.length - 1];
       lastInput.nativeElement.focus();

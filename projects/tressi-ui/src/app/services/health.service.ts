@@ -27,18 +27,18 @@ import { AppRouterService } from './router.service';
  */
 @Injectable({ providedIn: 'root' })
 export class HealthService {
-  private readonly log = inject(LogService);
-  private readonly appRouter = inject(AppRouterService);
-  private readonly eventService = inject(EventService);
+  private readonly _log = inject(LogService);
+  private readonly _appRouter = inject(AppRouterService);
+  private readonly _eventService = inject(EventService);
 
   /** Timeout for heartbeat in milliseconds (5 seconds) */
-  private readonly heartbeatTimeout = 5000;
+  private readonly _heartbeatTimeout = 5000;
 
   /** Interval for reconnection attempts in milliseconds (3 seconds) */
-  private readonly retryInterval = 3000;
+  private readonly _retryInterval = 3000;
 
   /** Internal signal holding the current health state */
-  private readonly state = signal<{
+  private readonly _state = signal<{
     isHealthy: boolean;
     lastCheck: Date | null;
     error: Error | null;
@@ -49,32 +49,30 @@ export class HealthService {
   });
 
   /** Signal indicating whether the server is currently healthy */
-  public readonly isHealthy: Signal<boolean> = computed(
-    () => this.state().isHealthy,
-  );
+  readonly isHealthy: Signal<boolean> = computed(() => this._state().isHealthy);
 
   /** Signal containing the timestamp of the last health check */
-  public readonly lastCheck: Signal<Date | null> = computed(
-    () => this.state().lastCheck,
+  readonly lastCheck: Signal<Date | null> = computed(
+    () => this._state().lastCheck,
   );
 
-  private heartbeatTimeoutId: ReturnType<typeof setTimeout> | null = null;
-  private retryIntervalId: ReturnType<typeof setInterval> | null = null;
-  private subscription: Subscription | null = null;
+  private _heartbeatTimeoutId: ReturnType<typeof setTimeout> | null = null;
+  private _retryIntervalId: ReturnType<typeof setInterval> | null = null;
+  private _subscription: Subscription | null = null;
 
   constructor() {
-    this.subscribeToConnectedEvents();
+    this._subscribeToConnectedEvents();
   }
 
   /**
    * Subscribes to connected events from the unified event stream
    * @private
    */
-  private subscribeToConnectedEvents(): void {
-    this.subscription = this.eventService.getConnectedStream().subscribe({
+  private _subscribeToConnectedEvents(): void {
+    this._subscription = this._eventService.getConnectedStream().subscribe({
       next: (connectedEvent) => {
         // Update health state
-        this.state.update((current) => ({
+        this._state.update((current) => ({
           ...current,
           isHealthy: true,
           lastCheck: new Date(connectedEvent.timestamp),
@@ -83,26 +81,26 @@ export class HealthService {
 
         // If we were on the server-unavailable page and just reconnected
         if (
-          this.appRouter.getCurrentUrl().includes(AppRoutes.SERVER_UNAVAILABLE)
+          this._appRouter.getCurrentUrl().includes(AppRoutes.SERVER_UNAVAILABLE)
         ) {
-          this.log.info('Server recovered, redirecting to dashboard');
-          this.appRouter.toHome();
+          this._log.info('Server recovered, redirecting to dashboard');
+          this._appRouter.toHome();
           // Stop retrying if we were in a retry loop
-          this.stopRetryTimer();
+          this._stopRetryTimer();
           // Reset heartbeat timeout
-          this.resetHeartbeatTimeout();
+          this._resetHeartbeatTimeout();
           return;
         }
 
         // Stop retrying if we were in a retry loop
-        this.stopRetryTimer();
+        this._stopRetryTimer();
 
         // Reset heartbeat timeout
-        this.resetHeartbeatTimeout();
+        this._resetHeartbeatTimeout();
       },
       error: (error) => {
-        this.log.error('Health monitoring subscription error', error);
-        this.handleConnectionLoss();
+        this._log.error('Health monitoring subscription error', error);
+        this._handleConnectionLoss();
       },
     });
   }
@@ -111,23 +109,23 @@ export class HealthService {
    * Resets the heartbeat timeout timer
    * @private
    */
-  private resetHeartbeatTimeout(): void {
-    if (this.heartbeatTimeoutId) {
-      clearTimeout(this.heartbeatTimeoutId);
+  private _resetHeartbeatTimeout(): void {
+    if (this._heartbeatTimeoutId) {
+      clearTimeout(this._heartbeatTimeoutId);
     }
 
-    this.heartbeatTimeoutId = setTimeout(() => {
-      this.handleConnectionLoss();
-    }, this.heartbeatTimeout);
+    this._heartbeatTimeoutId = setTimeout(() => {
+      this._handleConnectionLoss();
+    }, this._heartbeatTimeout);
   }
 
   /**
    * Handles connection loss and initiates reconnection
    * @private
    */
-  private handleConnectionLoss(): void {
+  private _handleConnectionLoss(): void {
     // Update health state
-    this.state.update((current) => ({
+    this._state.update((current) => ({
       ...current,
       isHealthy: false,
       error: new Error('Server connection lost'),
@@ -135,41 +133,41 @@ export class HealthService {
 
     // Navigate to server unavailable page if not already there
     if (
-      !this.appRouter.getCurrentUrl().includes(AppRoutes.SERVER_UNAVAILABLE)
+      !this._appRouter.getCurrentUrl().includes(AppRoutes.SERVER_UNAVAILABLE)
     ) {
-      this.log.error('Server unavailable, redirecting to error page');
-      this.appRouter.toServerUnavailable();
+      this._log.error('Server unavailable, redirecting to error page');
+      this._appRouter.toServerUnavailable();
     }
 
     // Start retrying to connect
-    this.startRetryTimer();
+    this._startRetryTimer();
   }
 
   /**
    * Starts the reconnection retry timer
    * @private
    */
-  private startRetryTimer(): void {
-    if (this.retryIntervalId) {
+  private _startRetryTimer(): void {
+    if (this._retryIntervalId) {
       return;
     }
 
-    this.log.info('Starting reconnection retry timer');
-    this.retryIntervalId = setInterval(() => {
-      this.log.info('Attempting to reconnect to event stream...');
-      this.eventService.connectToEventStream();
-    }, this.retryInterval);
+    this._log.info('Starting reconnection retry timer');
+    this._retryIntervalId = setInterval(() => {
+      this._log.info('Attempting to reconnect to event stream...');
+      this._eventService.connectToEventStream();
+    }, this._retryInterval);
   }
 
   /**
    * Stops the reconnection retry timer
    * @private
    */
-  private stopRetryTimer(): void {
-    if (this.retryIntervalId) {
-      this.log.info('Stopping reconnection retry timer');
-      clearInterval(this.retryIntervalId);
-      this.retryIntervalId = null;
+  private _stopRetryTimer(): void {
+    if (this._retryIntervalId) {
+      this._log.info('Stopping reconnection retry timer');
+      clearInterval(this._retryIntervalId);
+      this._retryIntervalId = null;
     }
   }
 
@@ -177,7 +175,7 @@ export class HealthService {
    * Gets the formatted last check time as a locale string
    * @returns Formatted time string or 'Never' if no check has been performed
    */
-  public getFormattedLastCheckTime(): string {
+  getFormattedLastCheckTime(): string {
     const lastCheck = this.lastCheck();
     return lastCheck ? lastCheck.toLocaleTimeString() : 'Never';
   }
@@ -186,7 +184,7 @@ export class HealthService {
    * Gets a user-friendly retry message based on current state
    * @returns Message indicating connection status
    */
-  public getRetryMessage(): string {
+  getRetryMessage(): string {
     if (this.isHealthy()) {
       return 'Connecting...';
     }
@@ -197,17 +195,17 @@ export class HealthService {
    * Cleanup method to close subscriptions and clear timeouts
    * Called when the service is destroyed
    */
-  public ngOnDestroy(): void {
-    if (this.subscription) {
-      this.subscription.unsubscribe();
-      this.subscription = null;
+  ngOnDestroy(): void {
+    if (this._subscription) {
+      this._subscription.unsubscribe();
+      this._subscription = null;
     }
 
-    if (this.heartbeatTimeoutId) {
-      clearTimeout(this.heartbeatTimeoutId);
-      this.heartbeatTimeoutId = null;
+    if (this._heartbeatTimeoutId) {
+      clearTimeout(this._heartbeatTimeoutId);
+      this._heartbeatTimeoutId = null;
     }
 
-    this.stopRetryTimer();
+    this._stopRetryTimer();
   }
 }

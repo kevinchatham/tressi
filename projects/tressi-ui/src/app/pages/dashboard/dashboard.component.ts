@@ -33,11 +33,11 @@ import { ConfigDocument } from '../../services/rpc.service';
 })
 export class DashboardComponent implements OnInit, OnDestroy {
   /** Service injection */
-  private readonly logService = inject(LogService);
   readonly appRouter = inject(AppRouterService);
-  private readonly route = inject(ActivatedRoute);
-  private readonly localStorageService = inject(LocalStorageService);
-  private readonly eventService = inject(EventService);
+  private readonly _logService = inject(LogService);
+  private readonly _route = inject(ActivatedRoute);
+  private readonly _localStorageService = inject(LocalStorageService);
+  private readonly _eventService = inject(EventService);
 
   /** Route parameter for config ID */
   readonly configId = input<string>();
@@ -65,23 +65,23 @@ export class DashboardComponent implements OnInit, OnDestroy {
   readonly isTestRunning = signal<boolean>(false);
 
   /** Subject for managing subscription cleanup */
-  private readonly destroy$ = new Subject<void>();
+  private readonly _destroy$ = new Subject<void>();
 
   ngOnInit(): void {
-    this.initializeFromResolvedData();
-    this.subscribeToTestEvents();
+    this._initializeFromResolvedData();
+    this._subscribeToTestEvents();
   }
 
   ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
+    this._destroy$.next();
+    this._destroy$.complete();
   }
 
   /**
    * Initializes the component using data pre-resolved by the router.
    */
-  private initializeFromResolvedData(): void {
-    const configs = this.route.snapshot.data['configs'] as ConfigDocument[];
+  private _initializeFromResolvedData(): void {
+    const configs = this._route.snapshot.data['configs'] as ConfigDocument[];
 
     this.configs.set(configs);
 
@@ -92,24 +92,24 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     const routeConfigId = this.configId();
     const lastSelectedConfig =
-      this.localStorageService.preferences().lastSelectedConfig;
+      this._localStorageService.preferences().lastSelectedConfig;
 
     if (routeConfigId) {
       const configFromRoute = configs.find((c) => c.id === routeConfigId);
       if (configFromRoute) {
         this.onConfigSelect(configFromRoute.id);
       } else {
-        this.selectFallbackConfig(configs, lastSelectedConfig);
+        this._selectFallbackConfig(configs, lastSelectedConfig);
       }
     } else {
-      this.selectFallbackConfig(configs, lastSelectedConfig);
+      this._selectFallbackConfig(configs, lastSelectedConfig);
     }
   }
 
   /**
    * Selects a fallback configuration based on last selected or first available.
    */
-  private selectFallbackConfig(
+  private _selectFallbackConfig(
     configs: ConfigDocument[],
     lastSelectedConfig: ConfigDocument | null | undefined,
   ): void {
@@ -136,8 +136,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
     if (!config) return;
     this.selectedConfig.set(config);
     // Save the selected config to localStorage
-    this.localStorageService.savePreferences({
-      ...this.localStorageService.preferences(),
+    this._localStorageService.savePreferences({
+      ...this._localStorageService.preferences(),
       lastSelectedConfig: config,
     });
 
@@ -171,7 +171,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
    * Handles test start failed event from StartButtonComponent
    */
   onTestStartFailed(error: Error): void {
-    this.logService.error('Failed to start test:', error);
+    this._logService.error('Failed to start test:', error);
   }
 
   /**
@@ -184,10 +184,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
   /**
    * Sets up test event listeners to track test execution state
    */
-  private subscribeToTestEvents(): void {
-    this.eventService
+  private _subscribeToTestEvents(): void {
+    this._eventService
       .getTestEventsStream()
-      .pipe(takeUntil(this.destroy$))
+      .pipe(takeUntil(this._destroy$))
       .subscribe({
         next: (event) => {
           if (event.status === 'running') {
@@ -200,7 +200,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
           }
         },
         error: (error) => {
-          this.logService.error('Failed to handle test event:', error);
+          this._logService.error('Failed to handle test event:', error);
         },
       });
   }

@@ -16,29 +16,29 @@ export class XlsxExporter {
   async export(summary: TestSummary, path?: string): Promise<void | Buffer> {
     try {
       const { summary: processedSummary, statusCodeMap } =
-        this.processData(summary);
+        this._processData(summary);
 
       const wb = xlsx.utils.book_new();
 
       // Test Summary Sheet
-      this.addTestSummarySheet(wb, processedSummary);
+      this._addTestSummarySheet(wb, processedSummary);
 
       // Endpoint Summary Sheet
       if (processedSummary.endpoints.length > 0) {
-        this.addEndpointSummarySheet(wb, processedSummary.endpoints);
+        this._addEndpointSummarySheet(wb, processedSummary.endpoints);
       }
 
       // Status Code Distribution Sheet
-      this.addStatusCodeDistributionSheet(wb, statusCodeMap);
+      this._addStatusCodeDistributionSheet(wb, statusCodeMap);
 
       // Configuration Sheet
-      this.addConfigurationSheet(wb, processedSummary.configSnapshot);
+      this._addConfigurationSheet(wb, processedSummary.configSnapshot);
 
       // Latency Distribution Sheet
-      this.addLatencyDistributionSheet(wb, processedSummary);
+      this._addLatencyDistributionSheet(wb, processedSummary);
 
       // Sampled Responses Sheet
-      this.addSampledResponsesSheet(wb, processedSummary.endpoints);
+      this._addSampledResponsesSheet(wb, processedSummary.endpoints);
 
       if (path) {
         validatePath(path);
@@ -58,7 +58,7 @@ export class XlsxExporter {
   /**
    * Process data to extract status code map from summary
    */
-  private processData(summary: TestSummary): {
+  private _processData(summary: TestSummary): {
     summary: TestSummary;
     statusCodeMap: StatusCodeMap;
   } {
@@ -77,7 +77,7 @@ export class XlsxExporter {
     return { summary, statusCodeMap };
   }
 
-  private addTestSummarySheet(wb: xlsx.WorkBook, summary: TestSummary): void {
+  private _addTestSummarySheet(wb: xlsx.WorkBook, summary: TestSummary): void {
     const { global: g } = summary;
 
     const summaryData = [
@@ -110,7 +110,7 @@ export class XlsxExporter {
     xlsx.utils.book_append_sheet(wb, wsSummary, 'Test Summary');
   }
 
-  private addEndpointSummarySheet(
+  private _addEndpointSummarySheet(
     wb: xlsx.WorkBook,
     endpoints: EndpointSummary[],
   ): void {
@@ -143,12 +143,12 @@ export class XlsxExporter {
     xlsx.utils.book_append_sheet(wb, wsEndpoints, 'Endpoint Summary');
   }
 
-  private addStatusCodeDistributionSheet(
+  private _addStatusCodeDistributionSheet(
     wb: xlsx.WorkBook,
     statusCodeMap: Record<number, number>,
   ): void {
     const statusCodeDistribution =
-      this.getStatusCodeDistribution(statusCodeMap);
+      this._getStatusCodeDistribution(statusCodeMap);
 
     const formattedStatusCodeDistribution = Object.entries(
       statusCodeDistribution,
@@ -163,7 +163,7 @@ export class XlsxExporter {
     xlsx.utils.book_append_sheet(wb, wsStatusCode, 'Status Code Distribution');
   }
 
-  private addLatencyDistributionSheet(
+  private _addLatencyDistributionSheet(
     wb: xlsx.WorkBook,
     summary: TestSummary,
   ): void {
@@ -252,7 +252,7 @@ export class XlsxExporter {
     }
   }
 
-  private addSampledResponsesSheet(
+  private _addSampledResponsesSheet(
     wb: xlsx.WorkBook,
     endpoints: EndpointSummary[],
   ): void {
@@ -301,7 +301,7 @@ export class XlsxExporter {
     }
   }
 
-  private addConfigurationSheet(
+  private _addConfigurationSheet(
     wb: xlsx.WorkBook,
     config: TestSummary['configSnapshot'],
   ): void {
@@ -314,7 +314,7 @@ export class XlsxExporter {
     xlsx.utils.book_append_sheet(wb, wsConfig, 'Configuration');
   }
 
-  private getStatusCodeDistribution(
+  private _getStatusCodeDistribution(
     statusCodeMap: Record<number, number>,
   ): Record<string, number> {
     const distribution: Record<string, number> = {
