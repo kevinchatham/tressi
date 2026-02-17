@@ -51,7 +51,7 @@ export class JsonTextareaComponent<T> implements FormValueControl<T> {
     EditorView.theme(
       {
         '&.cm-editor': {
-          backgroundColor: this._themeService.neutral(),
+          backgroundColor: this._themeService.base100(),
           color: this._themeService.neutralContent(),
           height: 'auto',
           borderRadius: '8px',
@@ -63,7 +63,7 @@ export class JsonTextareaComponent<T> implements FormValueControl<T> {
           borderLeftWidth: '2px',
         },
         '.cm-gutters': {
-          backgroundColor: this._themeService.neutral(),
+          backgroundColor: this._themeService.base100(),
           color: this._themeService.neutralContent(),
           border: 'none',
         },

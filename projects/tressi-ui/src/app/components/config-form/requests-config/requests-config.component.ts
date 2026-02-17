@@ -14,23 +14,27 @@ import { httpMethodDefaults } from '@tressi-cli/common/config/schemas';
 
 import { ModifyConfigRequest } from '../../../services/rpc.service';
 import { ButtonComponent } from '../../button/button.component';
+import { CollapsibleCardComponent } from '../../collapsible-card/collapsible-card.component';
 import { IconComponent } from '../../icon/icon.component';
 import { JsonTextareaComponent } from '../../json-textarea/json-textarea.component';
 import { ModifyConfigRequestFormType } from '../config-form.component';
 import { EarlyExitConfigComponent } from '../early-exit-config/early-exit-config.component';
 
 @Component({
-  selector: 'app-basic-config',
+  selector: 'app-requests-config',
   imports: [
     Field,
     IconComponent,
     JsonTextareaComponent,
     EarlyExitConfigComponent,
     ButtonComponent,
+    CollapsibleCardComponent,
   ],
-  templateUrl: './basic-config.component.html',
+  templateUrl: './requests-config.component.html',
 })
-export class BasicConfigComponent implements AfterViewInit, OnInit, OnChanges {
+export class RequestsConfigComponent
+  implements AfterViewInit, OnInit, OnChanges
+{
   /** Form instance from parent */
   readonly form = input.required<ModifyConfigRequestFormType>();
 

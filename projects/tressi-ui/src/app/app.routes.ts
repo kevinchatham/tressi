@@ -127,7 +127,7 @@ export const routes: Routes = [
       ),
     canActivate: [healthCheckGuard],
     resolve: { configs: configsResolver },
-    data: { title: 'Create Config' },
+    data: { title: 'Configs' },
   },
   {
     path: AppRoutes.DASHBOARD,

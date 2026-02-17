@@ -9,7 +9,6 @@ import {
 } from '@angular/core';
 import {
   applyEach,
-  Field,
   form,
   required,
   SchemaPathTree,
@@ -27,9 +26,8 @@ import {
 } from '../../services/rpc.service';
 import { ButtonComponent } from '../button/button.component';
 import { IconComponent } from '../icon/icon.component';
-import { AdvancedConfigComponent } from './advanced-config/advanced-config.component';
-import { BasicConfigComponent } from './basic-config/basic-config.component';
-import { GlobalConfigComponent } from './global-config/global-config.component';
+import { GeneralConfigComponent } from './general-config/general-config.component';
+import { RequestsConfigComponent } from './requests-config/requests-config.component';
 
 // Schema function for validating individual request configuration
 function RequestSchema(request: SchemaPathTree<TressiRequestConfig>): void {
@@ -44,10 +42,8 @@ export type ModifyConfigRequestFormType = ReturnType<
   selector: 'app-config-form',
   imports: [
     IconComponent,
-    AdvancedConfigComponent,
-    BasicConfigComponent,
-    GlobalConfigComponent,
-    Field,
+    GeneralConfigComponent,
+    RequestsConfigComponent,
     ButtonComponent,
   ],
   templateUrl: './config-form.component.html',
@@ -109,7 +105,7 @@ export class ConfigFormComponent {
   });
 
   /** Active tab state */
-  readonly activeTab = signal<'basic' | 'global' | 'advanced'>('basic');
+  readonly activeTab = signal<'general' | 'requests'>('general');
 
   /** Computed signal for form validity */
   readonly isFormValid = computed(() => {
@@ -144,7 +140,7 @@ export class ConfigFormComponent {
   }
 
   /** Set active tab */
-  setActiveTab(tab: 'basic' | 'global' | 'advanced'): void {
+  setActiveTab(tab: 'general' | 'requests'): void {
     this.activeTab.set(tab);
   }
 

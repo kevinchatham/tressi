@@ -9,7 +9,7 @@
       "headers": {
         "User-Agent": "Tressi"
       },
-      "threads": 1,
+      "threads": 4,
       "workerMemoryLimit": 128,
       "workerEarlyExit": {
         "enabled": false,
@@ -161,7 +161,7 @@
         "headers": {
           "User-Agent": "Tressi"
         },
-        "threads": 1,
+        "threads": 4,
         "workerMemoryLimit": 128,
         "workerEarlyExit": {
           "enabled": false,

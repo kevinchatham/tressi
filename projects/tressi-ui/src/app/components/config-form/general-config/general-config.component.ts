@@ -8,16 +8,16 @@ import { ModifyConfigRequestFormType } from '../config-form.component';
 import { EarlyExitConfigComponent } from '../early-exit-config/early-exit-config.component';
 
 @Component({
-  selector: 'app-global-config',
+  selector: 'app-general-config',
   imports: [
     Field,
     IconComponent,
     EarlyExitConfigComponent,
     JsonTextareaComponent,
   ],
-  templateUrl: './global-config.component.html',
+  templateUrl: './general-config.component.html',
 })
-export class GlobalConfigComponent {
+export class GeneralConfigComponent {
   /** Form instance from parent */
   readonly form = input.required<ModifyConfigRequestFormType>();
 

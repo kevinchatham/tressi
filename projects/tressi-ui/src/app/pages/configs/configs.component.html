@@ -70,11 +70,7 @@
       <div class="mx-auto max-w-5xl">
         <div class="border-base-content/5 bg-base-300 rounded-xl border-2 p-6">
           <h2 class="mb-4 text-xl font-semibold">
-            {{
-              currentConfig()?.id
-                ? 'Edit Configuration'
-                : 'Create Configuration'
-            }}
+            {{ currentConfig()?.id ? 'Edit Existing' : 'Create New' }}
           </h2>
           <app-config-form
             [input]="currentConfig()"

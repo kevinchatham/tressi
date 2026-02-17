@@ -2,10 +2,10 @@
   <!-- Enable Early Exit -->
   <div class="form-control">
     <label class="label cursor-pointer">
-      <span class="label-text font-medium">Enable Early Exit</span>
+      <span class="label-text mr-1 font-medium">Enable</span>
       <input
         type="checkbox"
-        class="checkbox checkbox-primary"
+        class="checkbox checkbox-primary checkbox-sm"
         [field]="form().enabled"
       />
     </label>
@@ -16,7 +16,11 @@
       <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
         <!-- Error Rate Threshold -->
         <fieldset class="fieldset">
-          <legend class="fieldset-legend">Error Rate Threshold</legend>
+          <legend
+            class="fieldset-legend text-xs font-bold uppercase opacity-70"
+          >
+            Error Rate Threshold
+          </legend>
           <input
             type="number"
             class="input outline-none!"
@@ -24,7 +28,7 @@
             placeholder="0.0 - 1.0"
             step="0.01"
           />
-          <p class="label">Range: 0.0 - 1.0</p>
+          <p class="label py-0 text-xs opacity-60">Range: 0.0 - 1.0</p>
           @if (
             form().errorRateThreshold().touched() &&
             form().errorRateThreshold().invalid()
@@ -42,14 +46,20 @@
 
         <!-- Monitoring Window -->
         <fieldset class="fieldset">
-          <legend class="fieldset-legend">Monitoring Window (ms)</legend>
+          <legend
+            class="fieldset-legend text-xs font-bold uppercase opacity-70"
+          >
+            Monitoring Window
+          </legend>
           <input
             type="number"
             class="input outline-none!"
             [field]="form().monitoringWindowMs"
             placeholder="Monitoring duration in milliseconds"
           />
-          <p class="label">Duration to monitor for errors (milliseconds)</p>
+          <p class="label py-0 text-xs opacity-60">
+            Duration to monitor for errors (milliseconds)
+          </p>
           @if (
             form().monitoringWindowMs().touched() &&
             form().monitoringWindowMs().invalid()
@@ -80,9 +90,6 @@
         <div class="space-y-2">
           @for (code of getExitStatusCodes(); track $index) {
             <fieldset class="fieldset">
-              <legend class="fieldset-legend">
-                Status Code {{ $index + 1 }}
-              </legend>
               <div class="flex items-center gap-2">
                 <input
                   type="number"

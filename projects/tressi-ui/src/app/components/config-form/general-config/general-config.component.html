@@ -1,0 +1,198 @@
+<div class="space-y-4">
+  <!-- Test Identity & Basic Execution -->
+  <div class="bg-base-200/50 border-base-300 rounded-xl border p-4">
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <!-- Configuration Name -->
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend text-xs font-bold uppercase opacity-70">
+          Configuration Name
+        </legend>
+        <input
+          id="config-name"
+          type="text"
+          class="input outline-none!"
+          placeholder="Enter configuration name"
+          [field]="form().name"
+        />
+        <p class="label py-0 text-xs opacity-60">Display name for this test</p>
+        @if (form().name().touched() && form().name().invalid()) {
+          <p class="label text-error py-0 text-xs">
+            @for (error of form().name().errors(); track error) {
+              {{ error.message }}
+            }
+          </p>
+        }
+      </fieldset>
+
+      <!-- Duration -->
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend text-xs font-bold uppercase opacity-70">
+          Duration (seconds)
+        </legend>
+        <input
+          type="number"
+          class="input outline-none!"
+          [field]="form().config.options.durationSec"
+          placeholder="Total test duration"
+        />
+        <p class="label py-0 text-xs opacity-60">Total test duration</p>
+        @if (
+          form().config.options.durationSec().touched() &&
+          form().config.options.durationSec().invalid()
+        ) {
+          <p class="label text-error py-0 text-xs">
+            @for (
+              error of form().config.options.durationSec().errors();
+              track error
+            ) {
+              {{ error.message }}
+            }
+          </p>
+        }
+      </fieldset>
+    </div>
+  </div>
+
+  <!-- Engine Settings -->
+  <div class="bg-base-200/50 border-base-300 rounded-xl border p-4">
+    <h2 class="mb-4 flex items-center gap-2 text-lg font-semibold">
+      <app-icon name="tune" />
+      Engine Settings
+    </h2>
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <!-- Threads -->
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend text-xs font-bold uppercase opacity-70">
+          Worker Threads
+        </legend>
+        <input
+          type="number"
+          class="input outline-none!"
+          [field]="form().config.options.threads"
+          placeholder="Auto-detect"
+        />
+        <p class="label py-0 text-xs opacity-60">Leave empty for auto-detect</p>
+        @if (
+          form().config.options.threads().touched() &&
+          form().config.options.threads().invalid()
+        ) {
+          <p class="label text-error py-0 text-xs">
+            @for (
+              error of form().config.options.threads().errors();
+              track error
+            ) {
+              {{ error.message }}
+            }
+          </p>
+        }
+      </fieldset>
+
+      <!-- Worker Memory Limit -->
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend text-xs font-bold uppercase opacity-70">
+          Worker Memory Limit (MB)
+        </legend>
+        <input
+          type="number"
+          class="input outline-none!"
+          [field]="form().config.options.workerMemoryLimit"
+          placeholder="Memory per worker thread"
+        />
+        <p class="label py-0 text-xs opacity-60">Memory per worker thread</p>
+        @if (
+          form().config.options.workerMemoryLimit().touched() &&
+          form().config.options.workerMemoryLimit().invalid()
+        ) {
+          <p class="label text-error py-0 text-xs">
+            @for (
+              error of form().config.options.workerMemoryLimit().errors();
+              track error
+            ) {
+              {{ error.message }}
+            }
+          </p>
+        }
+      </fieldset>
+    </div>
+  </div>
+
+  <!-- Global Defaults -->
+  <div class="bg-base-200/50 border-base-300 rounded-xl border p-4">
+    <h2 class="mb-4 flex items-center gap-2 text-lg font-semibold">
+      <app-icon name="lan" />
+      Global Defaults
+    </h2>
+    <div class="space-y-4">
+      <!-- Ramp Up Duration -->
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend text-xs font-bold uppercase opacity-70">
+          Ramp Up Time (seconds)
+        </legend>
+        <input
+          type="number"
+          class="input outline-none!"
+          [field]="form().config.options.rampUpDurationSec"
+          placeholder="Time to reach target RPS"
+        />
+        <p class="label py-0 text-xs opacity-60">0 = no ramp-up</p>
+        @if (
+          form().config.options.rampUpDurationSec().touched() &&
+          form().config.options.rampUpDurationSec().invalid()
+        ) {
+          <p class="label text-error py-0 text-xs">
+            @for (
+              error of form().config.options.rampUpDurationSec().errors();
+              track error
+            ) {
+              {{ error.message }}
+            }
+          </p>
+        }
+      </fieldset>
+
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend text-xs font-bold uppercase opacity-70">
+          Headers (JSON)
+        </legend>
+        <app-json-textarea
+          [(value)]="model().config.options.headers"
+          [rows]="3"
+          (valueChange)="onJsonTextareaValueChange()"
+          placeholder='{"User-Agent": "Tressi", "Accept": "application/json"}'
+        />
+        <p class="label py-0 text-xs text-wrap opacity-60">
+          Overrides request level headers
+        </p>
+        @if (
+          form().config.options.headers().touched() &&
+          form().config.options.headers().invalid()
+        ) {
+          <p class="label text-error py-0 text-xs">
+            @for (
+              error of form().config.options.headers().errors();
+              track error
+            ) {
+              {{ error.message }}
+            }
+          </p>
+        }
+      </fieldset>
+
+      <div>
+        <h3 class="text-md mb-4 flex items-center gap-2 font-semibold">
+          <app-icon name="warning" />
+          Early Exit
+        </h3>
+        <app-early-exit-config
+          [form]="form().config.options.workerEarlyExit"
+          [model]="model().config.options.workerEarlyExit"
+          (addExitStatusCode)="addExitStatusCode.emit()"
+          (removeExitStatusCode)="removeExitStatusCode.emit($event)"
+        />
+        <p class="label py-0 text-xs text-wrap opacity-60">
+          Applies to all requests
+        </p>
+      </div>
+    </div>
+  </div>
+</div>

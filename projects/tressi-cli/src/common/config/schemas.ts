@@ -38,7 +38,7 @@ export const optionsDefaults = {
   durationSec: 10,
   rampUpDurationSec: 0,
   headers: headerDefaults,
-  threads: 1,
+  threads: 4,
   workerMemoryLimit: 128,
   workerEarlyExit: earlyExitDefaults,
 };
