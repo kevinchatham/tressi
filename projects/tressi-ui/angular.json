@@ -36,11 +36,7 @@
                 "output": "docs"
               }
             ],
-            "styles": [
-              "src/styles.css",
-              "../../node_modules/prismjs/themes/prism-tomorrow.css",
-              "../../node_modules/prismjs/plugins/line-numbers/prism-line-numbers.css"
-            ],
+            "styles": ["src/styles.css"],
             "scripts": [
               "../../node_modules/marked/lib/marked.umd.js",
               "../../node_modules/prismjs/prism.js",

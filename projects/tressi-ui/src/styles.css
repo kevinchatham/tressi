@@ -442,11 +442,11 @@
 }
 
 .markdown-body h1 {
-  @apply border-base-content/10 mb-4 border-b pb-2 text-3xl font-semibold;
+  @apply border-base-content/5 mb-4 border-b pb-2 text-3xl font-semibold;
 }
 
 .markdown-body h2 {
-  @apply border-base-content/10 mt-6 mb-4 border-b pb-2 text-2xl font-semibold;
+  @apply border-base-content/5 mt-6 mb-4 border-b pb-2 text-2xl font-semibold;
 }
 
 .markdown-body h3 {
@@ -500,7 +500,7 @@
 
 .markdown-body th,
 .markdown-body td {
-  @apply border-base-content/10 border p-2;
+  @apply border-base-content/5 border p-2;
 }
 
 .markdown-body th {
@@ -508,11 +508,89 @@
 }
 
 .markdown-body hr {
-  @apply border-base-content/10 my-8 border-t;
+  @apply border-base-content/5 my-8 border-t;
 }
 
 .markdown-body img {
   @apply max-w-full rounded-xl;
+}
+
+/* Custom Prism Theme Overrides */
+.markdown-body pre[class*='language-'] {
+  @apply bg-base-200 border-base-content/5 border;
+  text-shadow: none;
+}
+
+.markdown-body code[class*='language-'],
+.markdown-body pre[class*='language-'] {
+  @apply text-base-content font-mono;
+  direction: ltr;
+  text-align: left;
+  white-space: pre;
+  word-spacing: normal;
+  word-break: normal;
+  line-height: 1.5;
+  tab-size: 4;
+  hyphens: none;
+}
+
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+  @apply text-base-content/50 italic;
+}
+
+.token.punctuation {
+  @apply text-base-content/50;
+}
+
+.token.namespace {
+  opacity: 0.7;
+}
+
+.token.property,
+.token.tag,
+.token.boolean,
+.token.number,
+.token.constant,
+.token.symbol,
+.token.deleted {
+  @apply text-error;
+}
+
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin,
+.token.inserted {
+  @apply text-success;
+}
+
+.token.operator,
+.token.entity,
+.token.url,
+.language-css .token.string,
+.style .token.string {
+  @apply text-accent;
+}
+
+.token.atrule,
+.token.attr-value,
+.token.keyword {
+  @apply text-primary;
+}
+
+.token.function,
+.token.class-name {
+  @apply text-info;
+}
+
+.token.regex,
+.token.important,
+.token.variable {
+  @apply text-warning;
 }
 
 /* Loading Component Styles */

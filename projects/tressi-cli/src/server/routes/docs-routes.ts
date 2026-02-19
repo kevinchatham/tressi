@@ -123,7 +123,7 @@ const docs = new Hono()
     }
 
     try {
-      const docsPath = join(__dirname, 'browser', 'public', 'docs');
+      const docsPath = join(__dirname, 'browser', 'docs');
       const structuredDocs = await scanDocs(docsPath);
 
       const allDocs: {
@@ -143,7 +143,14 @@ const docs = new Hono()
             content,
             slug: doc.slug,
             section: sectionName,
-            path: section.path ? `${section.path}/${doc.slug}` : doc.slug,
+            // If it's an index file, the path is just the section path
+            // Otherwise, append the slug to the section path (if it exists)
+            path:
+              doc.slug === 'index'
+                ? section.path
+                : section.path
+                  ? `${section.path}/${doc.slug}`
+                  : doc.slug,
           });
         }
       }

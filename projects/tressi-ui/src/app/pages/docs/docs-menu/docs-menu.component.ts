@@ -60,18 +60,18 @@ export class DocsMenuComponent {
       }
 
       // Otherwise, find which section contains the current URL
+      let matchedSection: string | null = null;
       for (const [sectionKey, sectionValue] of Object.entries(docs)) {
         const sectionPath = sectionValue.path;
-        if (sectionPath && url.includes(`/${AppRoutes.DOCS}}/${sectionPath}`)) {
-          this.expandedSection.set(sectionKey);
-          return;
+        if (sectionPath && url.includes(`/${AppRoutes.DOCS}/${sectionPath}`)) {
+          matchedSection = sectionKey;
+          break;
         }
       }
 
-      // Default to Home if nothing else matches
-      if (!this.expandedSection()) {
-        this.expandedSection.set('Home');
-      }
+      // Set the matched section, or default to 'Home' if no match is found
+      // This ensures root-level docs correctly highlight the Home header
+      this.expandedSection.set(matchedSection ?? 'Home');
     });
 
     // Search effect
