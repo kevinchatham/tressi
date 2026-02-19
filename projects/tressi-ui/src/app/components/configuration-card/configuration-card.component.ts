@@ -14,6 +14,7 @@ import { FormatRpsDirective } from '../../directives/format/format-rps.directive
 import { ConfigDocument } from '../../services/rpc.service';
 import { TimeService } from '../../services/time.service';
 import { ButtonComponent } from '../button/button.component';
+import { CollapsibleCardComponent } from '../collapsible-card/collapsible-card.component';
 import { ExportConfigButtonComponent } from '../export-config-button/export-config-button.component';
 
 @Component({
@@ -24,6 +25,7 @@ import { ExportConfigButtonComponent } from '../export-config-button/export-conf
     FormatNumberDirective,
     FormatRpsDirective,
     FormatDurationDirective,
+    CollapsibleCardComponent,
   ],
   templateUrl: './configuration-card.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -43,19 +45,19 @@ export class ConfigurationCardComponent {
   /** Expand/collapse state */
   readonly collapsed = signal(true);
 
-  /** Toggle expand/collapse state */
-  toggleCollapsed(): void {
-    this.collapsed.update((value) => !value);
-  }
+  /**
+   * Toggles the collapsed state of the card.
+   * Uses the View Transitions API if available for smooth layout changes.
+   */
+  toggleCollapsed(isCollapsed: boolean): void {
+    if (!document.startViewTransition) {
+      this.collapsed.set(isCollapsed);
+      return;
+    }
 
-  /** Expand the card */
-  expand(): void {
-    this.collapsed.set(false);
-  }
-
-  /** Collapse the card */
-  collapse(): void {
-    this.collapsed.set(true);
+    document.startViewTransition(() => {
+      this.collapsed.set(isCollapsed);
+    });
   }
 
   /** Check if request has payload */

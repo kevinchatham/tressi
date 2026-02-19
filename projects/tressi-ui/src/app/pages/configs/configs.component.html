@@ -34,15 +34,18 @@
         />
       </div>
 
-      <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div class="columns-1 gap-4 space-y-4 md:columns-3">
         @for (config of filteredConfigs(); track config.id) {
-          <app-configuration-card
-            [input]="config"
-            (edit)="startEdit($event)"
-            (duplicate)="startDuplicate($event)"
-            (delete)="showDeleteConfirm($event)"
-            (navigate)="appRouter.toDashboard($event.id)"
-          />
+          <div class="break-inside-avoid">
+            <app-configuration-card
+              [style.view-transition-name]="'card-' + config.id"
+              [input]="config"
+              (edit)="startEdit($event)"
+              (duplicate)="startDuplicate($event)"
+              (delete)="showDeleteConfirm($event)"
+              (navigate)="appRouter.toDashboard($event.id)"
+            />
+          </div>
         }
       </div>
 

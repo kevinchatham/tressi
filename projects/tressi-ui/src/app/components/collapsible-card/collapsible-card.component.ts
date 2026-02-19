@@ -17,6 +17,7 @@ import { ButtonComponent } from '../button/button.component';
 })
 export class CollapsibleCardComponent {
   readonly title = input.required<string>();
+  readonly subtitle = input<string>();
   readonly collapsed = input.required<boolean>();
   readonly collapsedChange = output<boolean>();
 

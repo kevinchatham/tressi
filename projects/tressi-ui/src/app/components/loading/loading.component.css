@@ -1,4 +1,5 @@
-@import 'tailwindcss';
+@reference "tailwindcss";
+@plugin 'daisyui';
 
 .loading-overlay {
   @apply bg-base-100 fixed top-0 left-0 z-50 flex h-screen w-screen flex-col items-center justify-center;

@@ -43,8 +43,8 @@
 }
 
 /* Ensure icons inside rainbow buttons inherit the gradient and clipping */
-.btn-rainbow-outline app-icon span,
-.btn-rainbow-ghost app-icon span {
+.btn-rainbow-outline ::ng-deep app-icon span,
+.btn-rainbow-ghost ::ng-deep app-icon span {
   background-image: linear-gradient(
     90deg,
     var(--color-primary) 0%,
@@ -62,8 +62,8 @@
 }
 
 /* Reset icon color on hover for rainbow buttons */
-.btn-rainbow-outline:hover app-icon span,
-.btn-rainbow-ghost:hover app-icon span {
+.btn-rainbow-outline:hover ::ng-deep app-icon span,
+.btn-rainbow-ghost:hover ::ng-deep app-icon span {
   background-image: none !important;
   -webkit-background-clip: initial !important;
   background-clip: initial !important;

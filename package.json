@@ -35,7 +35,7 @@
     "cli:build": "npm run build -w projects/tressi-cli",
     "cli:run": "npm run run -w projects/tressi-cli",
     "cli:serve": "nodemon --watch projects/tressi-cli/src --ext ts --exec \"npm run build && cd dist && node cli.js serve\"",
-    "format:watch": "chokidar \"**/*.{ts,json,md}\" -c \"npm run format\" --ignore \"**/node_modules/**\" --ignore \"**/dist/**\"",
+    "format:watch": "chokidar \"**/*.{ts,json,md,html,yml,css}\" -c \"npm run format\" --ignore \"**/node_modules/**\" --ignore \"**/dist/**\"",
     "format": "prettier --write . --config .prettierrc --ignore-path .prettierignore",
     "lint:inspect": "eslint --inspect-config",
     "lint:watch": "chokidar \"**/*.ts\" -c \"npm run lint\" --ignore \"**/node_modules/**\" --ignore \"**/dist/**\"",

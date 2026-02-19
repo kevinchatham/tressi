@@ -1,4 +1,5 @@
-@import 'tailwindcss';
+@reference "tailwindcss";
+@plugin 'daisyui';
 
 :host ::ng-deep {
   /* GitHub-like Markdown Styles */
