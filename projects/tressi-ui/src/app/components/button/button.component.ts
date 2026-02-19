@@ -21,6 +21,7 @@ export type ButtonColor = (typeof BUTTON_COLORS)[number];
   selector: 'app-button',
   imports: [IconComponent],
   templateUrl: './button.component.html',
+  styleUrl: './button.component.css',
   host: {
     '[style.pointer-events]': 'disabled() ? "none" : "auto"',
     class: 'contents',

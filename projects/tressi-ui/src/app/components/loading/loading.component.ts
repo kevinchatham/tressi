@@ -12,6 +12,7 @@ import { logoSrc } from '../../constants';
   selector: 'app-loading',
   imports: [],
   templateUrl: './loading.component.html',
+  styleUrl: './loading.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LoadingComponent {

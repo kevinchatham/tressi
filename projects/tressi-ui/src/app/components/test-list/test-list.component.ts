@@ -47,6 +47,7 @@ import { TestTableComponent } from './test-table/test-table.component';
     ButtonComponent,
   ],
   templateUrl: './test-list.component.html',
+  styleUrl: './test-list.component.css',
 })
 export class TestListComponent implements OnChanges, OnInit, OnDestroy {
   readonly appRouter = inject(AppRouterService);

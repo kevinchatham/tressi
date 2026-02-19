@@ -21,6 +21,7 @@ import { DocsMenuComponent } from './docs-menu/docs-menu.component';
     DocsMenuComponent,
   ],
   templateUrl: './docs.component.html',
+  styleUrl: './docs.component.css',
 })
 export class DocsComponent implements OnInit {
   private readonly _route = inject(ActivatedRoute);
