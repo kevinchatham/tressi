@@ -33,7 +33,7 @@
               {
                 "glob": "**/*.md",
                 "input": "../../docs",
-                "output": "public/docs"
+                "output": "docs"
               }
             ],
             "styles": [

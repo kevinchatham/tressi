@@ -6,6 +6,8 @@ import {
   signal,
 } from '@angular/core';
 
+import { logoSrc } from '../../constants';
+
 @Component({
   selector: 'app-loading',
   imports: [],
@@ -13,9 +15,10 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LoadingComponent {
-  navigating = input<boolean>(false);
-  isFadingOut = signal(false);
-  shouldRender = signal(false);
+  readonly navigating = input<boolean>(false);
+  readonly isFadingOut = signal(false);
+  readonly shouldRender = signal(false);
+  readonly logoSrc = logoSrc;
 
   constructor() {
     effect(() => {

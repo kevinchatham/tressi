@@ -93,7 +93,7 @@ export class DocsComponent implements OnInit {
         : `${realPath}.md`;
 
       // Use root-relative path to ensure it works regardless of current route depth
-      this.markdownSrc.set(`/public/docs/${safeFilename}`);
+      this.markdownSrc.set(`/docs/${safeFilename}`);
     }, 150);
   }
 

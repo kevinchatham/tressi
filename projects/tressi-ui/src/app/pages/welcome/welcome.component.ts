@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { ButtonComponent } from 'src/app/components/button/button.component';
 
+import { logoSrc } from '../../constants';
 import { AppRouterService } from '../../services/router.service';
 
 @Component({
@@ -12,4 +13,5 @@ import { AppRouterService } from '../../services/router.service';
 })
 export class WelcomeComponent {
   readonly appRouter = inject(AppRouterService);
+  readonly logoSrc = logoSrc;
 }

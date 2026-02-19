@@ -99,8 +99,8 @@ const docs = new Hono()
   .get('/list', async (c) => {
     try {
       // Path relative to the server's execution context (dist/server)
-      // The browser assets are in dist/browser/public/docs
-      const docsPath = join(__dirname, 'browser', 'public', 'docs');
+      // The browser assets are in dist/browser/docs
+      const docsPath = join(__dirname, 'browser', 'docs');
       const structuredDocs = await scanDocs(docsPath);
 
       return c.json(structuredDocs);
