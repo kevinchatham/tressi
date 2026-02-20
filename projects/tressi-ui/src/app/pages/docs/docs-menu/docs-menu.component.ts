@@ -16,7 +16,6 @@ import {
 
 @Component({
   selector: 'app-docs-menu',
-  standalone: true,
   imports: [RouterModule, KeyValuePipe, SearchBarComponent, IconComponent],
   templateUrl: './docs-menu.component.html',
   styleUrl: './docs-menu.component.css',

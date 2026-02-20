@@ -80,6 +80,7 @@ export class PerformanceOverTimeComponent {
    * Handle chart type selection change
    */
   onChartTypeChange(event: Event): void {
+    event.stopPropagation();
     const target = event.target as HTMLSelectElement;
     const value = target.value as ChartType;
     this.chartTypeChange.emit(value);
@@ -89,6 +90,7 @@ export class PerformanceOverTimeComponent {
    * Handle polling interval selection change
    */
   onPollingIntervalChange(event: Event): void {
+    event.stopPropagation();
     const target = event.target as HTMLSelectElement;
     const value = parseInt(target.value, 10) as PollingInterval;
     this.pollingIntervalChange.emit(value);
@@ -97,7 +99,8 @@ export class PerformanceOverTimeComponent {
   /**
    * Handle manual refresh click
    */
-  onRefresh(): void {
+  onRefresh(event: Event): void {
+    event.stopPropagation();
     this.refresh.emit();
   }
 

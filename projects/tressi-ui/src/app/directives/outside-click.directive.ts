@@ -14,7 +14,6 @@ import { fromEvent } from 'rxjs';
  */
 @Directive({
   selector: '[appOutsideClick]',
-  standalone: true,
 })
 export class OutsideClickDirective {
   readonly outsideClick = output<void>();

@@ -11,7 +11,7 @@
           @if (isRunning()) {
             <app-button
               class="mr-2"
-              (click)="onRefresh()"
+              (click)="onRefresh($event)"
               title="Refresh Data"
               [icon]="'autorenew'"
               [ghost]="true"
@@ -22,6 +22,7 @@
               class="select select-neutral w-auto"
               [value]="pollingInterval()"
               (change)="onPollingIntervalChange($event)"
+              (click)="$event.stopPropagation()"
               title="Polling Interval"
             >
               @for (option of pollingOptions(); track option.value) {
@@ -42,6 +43,7 @@
             class="select select-neutral w-auto"
             [value]="selectedChartType()"
             (change)="onChartTypeChange($event)"
+            (click)="$event.stopPropagation()"
             title="Chart Type"
           >
             @for (option of chartOptions(); track option.value) {

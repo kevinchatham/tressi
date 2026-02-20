@@ -1,6 +1,21 @@
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import {
+  Component,
+  computed,
+  inject,
+  OnInit,
+  SecurityContext,
+  signal,
+  ViewEncapsulation,
+} from '@angular/core';
 import { ActivatedRoute, RouterModule } from '@angular/router';
-import { MarkdownModule } from 'ngx-markdown';
+import {
+  CLIPBOARD_OPTIONS,
+  MarkdownModule,
+  MARKED_OPTIONS,
+  MERMAID_OPTIONS,
+  provideMarkdown,
+  SANITIZE,
+} from 'ngx-markdown';
 
 import { ButtonComponent } from '../../components/button/button.component';
 import { HeaderComponent } from '../../components/header/header.component';
@@ -11,7 +26,6 @@ import { DocsMenuComponent } from './docs-menu/docs-menu.component';
 
 @Component({
   selector: 'app-docs',
-  standalone: true,
   imports: [
     RouterModule,
     MarkdownModule,
@@ -20,8 +34,38 @@ import { DocsMenuComponent } from './docs-menu/docs-menu.component';
     IconComponent,
     DocsMenuComponent,
   ],
+  providers: [
+    provideMarkdown({
+      sanitize: {
+        provide: SANITIZE,
+        useValue: SecurityContext.NONE,
+      },
+      clipboardOptions: {
+        provide: CLIPBOARD_OPTIONS,
+        useValue: {
+          buttonComponent: undefined,
+        },
+      },
+      mermaidOptions: {
+        provide: MERMAID_OPTIONS,
+        useValue: {
+          startOnLoad: false,
+          theme: 'dark',
+        },
+      },
+      markedOptions: {
+        provide: MARKED_OPTIONS,
+        useValue: {
+          gfm: true,
+          breaks: false,
+          pedantic: false,
+        },
+      },
+    }),
+  ],
   templateUrl: './docs.component.html',
   styleUrl: './docs.component.css',
+  encapsulation: ViewEncapsulation.None,
 })
 export class DocsComponent implements OnInit {
   private readonly _route = inject(ActivatedRoute);
