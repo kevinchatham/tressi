@@ -173,7 +173,7 @@ export const routes: Routes = [
       import('./pages/docs/docs.component').then((m) => m.DocsComponent),
     canActivate: [healthCheckGuard],
     resolve: { availableDocs: docsResolver },
-    data: { title: 'Docs' },
+    data: { title: 'Documentation' },
   },
   {
     path: AppRoutes.DOCS_WITH_FILENAME,
@@ -181,7 +181,7 @@ export const routes: Routes = [
       import('./pages/docs/docs.component').then((m) => m.DocsComponent),
     canActivate: [healthCheckGuard],
     resolve: { availableDocs: docsResolver },
-    data: { title: 'Docs' },
+    data: { title: 'Documentation' },
   },
   {
     path: AppRoutes.DOCS_WITH_SECTION,
@@ -189,7 +189,7 @@ export const routes: Routes = [
       import('./pages/docs/docs.component').then((m) => m.DocsComponent),
     canActivate: [healthCheckGuard],
     resolve: { availableDocs: docsResolver },
-    data: { title: 'Docs' },
+    data: { title: 'Documentation' },
   },
   {
     path: AppRoutes.HOME,
