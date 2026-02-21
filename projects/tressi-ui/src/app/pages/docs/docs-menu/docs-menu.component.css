@@ -1,14 +1,19 @@
+@reference "tailwindcss";
+@plugin 'daisyui';
+
+:host {
+  font-family: 'Roboto Mono', monospace;
+}
+
 .collapse-transition {
-  transition:
-    max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-    opacity 0.2s ease-in-out;
-  overflow: hidden;
+  @apply overflow-hidden transition-[max-height,opacity] duration-300 ease-in-out;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
+
 .collapse-collapsed {
-  max-height: 0;
-  opacity: 0;
+  @apply max-h-0 opacity-0;
 }
+
 .collapse-expanded {
-  max-height: 500px; /* Sufficient for menu items */
-  opacity: 1;
+  @apply max-h-125 opacity-100;
 }

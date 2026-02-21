@@ -1,8 +1,9 @@
-@reference "../../../styles.css";
+@reference "tailwindcss";
+@plugin 'daisyui';
 
-/* GitHub-like Markdown Styles */
 .markdown-body {
   @apply text-base-content leading-relaxed;
+  font-family: 'Roboto Mono', monospace;
 }
 
 .markdown-body h1 {
@@ -43,7 +44,8 @@
 }
 
 .markdown-body code {
-  @apply bg-base-300 rounded px-1.5 py-0.5 font-mono text-sm;
+  @apply bg-base-300 rounded px-1.5 py-0.5 text-sm;
+  font-family: 'Roboto Mono', monospace;
 }
 
 .markdown-body pre {
@@ -87,7 +89,8 @@
 
 .markdown-body code[class*='language-'],
 .markdown-body pre[class*='language-'] {
-  @apply text-base-content font-mono;
+  @apply text-base-content;
+  font-family: 'Roboto Mono', monospace;
   direction: ltr;
   text-align: left;
   white-space: pre;

@@ -157,7 +157,7 @@ export class DocsComponent implements OnInit {
   }
 
   onLoad(): void {
-    this._fixImagePaths();
+    this._fixRelativePaths();
 
     // Small delay to ensure the markdown is fully rendered
     setTimeout(() => {
@@ -166,22 +166,51 @@ export class DocsComponent implements OnInit {
   }
 
   /**
-   * Fixes image paths in the rendered markdown to point to the correct section images folder.
+   * Fixes relative paths for both images and links in the rendered markdown.
+   * Handles ./ and ../ paths correctly using native URL resolution.
    */
-  private _fixImagePaths(): void {
+  private _fixRelativePaths(): void {
     const section = this.currentSectionFolder();
     if (!section) return;
 
     const container = document.querySelector('.markdown-body');
     if (!container) return;
 
-    const images = container.querySelectorAll('img');
-    images.forEach((img: HTMLImageElement) => {
+    // 1. Fix Images
+    container.querySelectorAll('img').forEach((img: HTMLImageElement) => {
       const src = img.getAttribute('src');
       if (src && !src.startsWith('http') && !src.startsWith('/')) {
-        img.src = `/docs/${section}/${src}`;
+        // Resolve relative path (e.g., ./images/logo.png -> /docs/section/images/logo.png)
+        img.src = new URL(src, `http://x/docs/${section}/`).pathname;
         img.style.cssText =
           'max-height: 350px; display: block; margin: 0 auto;';
+      }
+    });
+
+    // 2. Fix Links
+    container.querySelectorAll('a').forEach((link: HTMLAnchorElement) => {
+      const href = link.getAttribute('href');
+      if (
+        href &&
+        !href.startsWith('http') &&
+        !href.startsWith('/') &&
+        !href.startsWith('#')
+      ) {
+        // Resolve path and remove .md extension
+        const resolved = new URL(href, `http://x/docs/${section}/`).pathname;
+        const cleanPath = resolved.replace(/\.md$/, '');
+
+        link.href = cleanPath;
+        link.onclick = (event: MouseEvent): void => {
+          event.preventDefault();
+
+          // Extract segments for Angular navigation: /docs/section/file -> [section, file]
+          const [targetSection, targetFile = 'index'] = cleanPath
+            .split('/')
+            .filter((p) => !!p && p !== 'docs');
+
+          this.appRouter.toDocs(targetSection, targetFile);
+        };
       }
     });
   }
