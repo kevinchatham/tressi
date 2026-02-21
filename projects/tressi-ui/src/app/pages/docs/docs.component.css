@@ -18,7 +18,7 @@
 }
 
 .markdown-body p {
-  @apply mb-4;
+  @apply mb-4 block;
 }
 
 .markdown-body a {

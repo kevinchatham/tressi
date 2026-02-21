@@ -52,25 +52,20 @@ export class DocsMenuComponent {
       const docs = this.availableDocs();
       const url = this._currentUrl();
 
-      // If we're at the root docs page, expand Home
-      if (url.endsWith(AppRoutes.DOCS)) {
-        this.expandedSection.set('Home');
-        return;
-      }
-
-      // Otherwise, find which section contains the current URL
+      // Find which section contains the current URL
       let matchedSection: string | null = null;
       for (const [sectionKey, sectionValue] of Object.entries(docs)) {
-        const sectionPath = sectionValue.path;
+        const section = sectionValue as { path: string };
+        const sectionPath = section.path;
         if (sectionPath && url.includes(`/${AppRoutes.DOCS}/${sectionPath}`)) {
           matchedSection = sectionKey;
           break;
         }
       }
 
-      // Set the matched section, or default to 'Home' if no match is found
-      // This ensures root-level docs correctly highlight the Home header
-      this.expandedSection.set(matchedSection ?? 'Home');
+      // Set the matched section, or default to the first section if no match is found
+      const firstSectionKey = Object.keys(docs)[0];
+      this.expandedSection.set(matchedSection ?? firstSectionKey ?? null);
     });
 
     // Search effect
@@ -84,7 +79,7 @@ export class DocsMenuComponent {
 
       this.isSearching.set(true);
       try {
-        const response = await this._rpc.client.docs.search.$get({
+        const response = await this._rpc.client.docs['search']['$get']({
           query: { q: query },
         });
         if (response.ok) {

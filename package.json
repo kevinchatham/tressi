@@ -34,7 +34,7 @@
     "clean": "npx rimraf --glob \"**/package-lock.json\" \"**/dist\" \"**/node_modules\" \"**/.angular\"",
     "cli:build": "npm run build -w projects/tressi-cli",
     "cli:run": "npm run run -w projects/tressi-cli",
-    "cli:serve": "nodemon --watch projects/tressi-cli/src --ext ts --exec \"npm run build && cd dist && node cli.js serve\"",
+    "cli:serve": "nodemon --watch projects/tressi-cli/src --watch docs --ext ts,md --exec \"npm run build && cd dist && node cli.js serve\"",
     "format:watch": "chokidar \"**/*.{ts,json,md,html,yml,css}\" -c \"npm run format\" --ignore \"**/node_modules/**\" --ignore \"**/dist/**\"",
     "format": "prettier --write . --config .prettierrc --ignore-path .prettierignore",
     "lint:inspect": "eslint --inspect-config",

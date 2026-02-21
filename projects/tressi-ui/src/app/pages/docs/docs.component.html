@@ -34,7 +34,7 @@
       <div
         [class.hidden]="error()"
         [class.opacity-0]="isTransitioning()"
-        class="markdown-body bg-base-300 border-base-content/5 max-w-none rounded-xl border-2 p-8 transition-opacity duration-200 ease-in-out"
+        class="markdown-body bg-base-300 border-base-content/5 max-w-none rounded-xl border-2 p-8 transition-opacity duration-100 ease-in-out"
       >
         <markdown [src]="markdownSrc()" (load)="onLoad()" (error)="onError()" />
       </div>

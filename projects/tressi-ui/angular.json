@@ -31,7 +31,7 @@
                 "input": "public"
               },
               {
-                "glob": "**/*.md",
+                "glob": "**/*",
                 "input": "../../docs",
                 "output": "docs"
               }

@@ -75,14 +75,28 @@ export class DocsComponent implements OnInit {
   readonly availableDocs = signal<GetDocsResponseSuccess>({});
   readonly isTransitioning = signal(false);
   readonly isBaseUrl = computed<boolean>(() => this.appRouter.isOnDocs());
+  readonly currentSectionFolder = signal<string | null>(null);
 
   ngOnInit(): void {
     this._initializeFromResolvedData();
     this._route.params.subscribe((params) => {
       const section = params['section'];
-      const filename = params['filename'] || 'index';
-      const fullPath = section ? `${section}/${filename}` : filename;
-      this.loadDocs(fullPath);
+      const filename = params['filename'];
+
+      if (!section && !filename) {
+        // Default to the first section's index
+        const docs = this.availableDocs();
+        const firstSection = Object.values(docs)[0];
+        if (firstSection) {
+          this.loadDocs(firstSection.path);
+        }
+      } else {
+        const effectiveFilename = filename || 'index';
+        const fullPath = section
+          ? `${section}/${effectiveFilename}`
+          : effectiveFilename;
+        this.loadDocs(fullPath);
+      }
     });
   }
 
@@ -107,6 +121,7 @@ export class DocsComponent implements OnInit {
 
       let realPath = slug;
       const docs = this.availableDocs();
+      this.currentSectionFolder.set(null);
 
       // Find the real path from the nice slug
       for (const section of Object.values(docs)) {
@@ -116,19 +131,18 @@ export class DocsComponent implements OnInit {
           const indexDoc = section.docs.find((d) => d.slug === 'index');
           if (indexDoc) {
             realPath = indexDoc.realPath;
+            this.currentSectionFolder.set(section.realPath);
             break;
           }
         }
 
-        const docMatch = section.docs.find((d) => {
-          const fullSlug = d.sectionSlug
-            ? `${d.sectionSlug}/${d.slug}`
-            : d.slug;
-          return fullSlug === slug;
-        });
+        const docMatch = section.docs.find(
+          (d) => `${d.sectionSlug}/${d.slug}` === slug,
+        );
 
         if (docMatch) {
           realPath = docMatch.realPath;
+          this.currentSectionFolder.set(section.realPath);
           break;
         }
       }
@@ -143,10 +157,33 @@ export class DocsComponent implements OnInit {
   }
 
   onLoad(): void {
+    this._fixImagePaths();
+
     // Small delay to ensure the markdown is fully rendered
     setTimeout(() => {
       this.isTransitioning.set(false);
     }, 100);
+  }
+
+  /**
+   * Fixes image paths in the rendered markdown to point to the correct section images folder.
+   */
+  private _fixImagePaths(): void {
+    const section = this.currentSectionFolder();
+    if (!section) return;
+
+    const container = document.querySelector('.markdown-body');
+    if (!container) return;
+
+    const images = container.querySelectorAll('img');
+    images.forEach((img: HTMLImageElement) => {
+      const src = img.getAttribute('src');
+      if (src && !src.startsWith('http') && !src.startsWith('/')) {
+        img.src = `/docs/${section}/${src}`;
+        img.style.cssText =
+          'max-height: 350px; display: block; margin: 0 auto;';
+      }
+    });
   }
 
   onError(): void {

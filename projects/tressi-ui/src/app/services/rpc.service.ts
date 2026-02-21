@@ -166,7 +166,7 @@ export type GetDocsResponseSuccess = Extract<
     {
       path: string;
       realPath: string;
-      docs: { slug: string; sectionSlug?: string; realPath: string }[];
+      docs: { slug: string; sectionSlug: string; realPath: string }[];
     }
   >
 >;

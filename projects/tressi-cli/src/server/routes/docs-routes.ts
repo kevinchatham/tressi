@@ -6,18 +6,12 @@ import { Hono } from 'hono';
 
 import { createApiErrorResponse } from '../utils/error-response-generator';
 
-/**
- * The default section name used for root-level documentation files and the primary landing section.
- * This corresponds to the directory named '01-home' or similar in the docs folder.
- */
-const DEFAULT_SECTION_NAME = 'Home' as const;
-
 type MarkdownSlugs = Record<
   string,
   {
     path: string;
     realPath: string;
-    docs: { slug: string; sectionSlug?: string; realPath: string }[];
+    docs: { slug: string; sectionSlug: string; realPath: string }[];
   }
 >;
 
@@ -69,20 +63,6 @@ async function scanDocs(dir: string): Promise<MarkdownSlugs> {
         }
         results[sectionName].docs.push(...docs);
       }
-    } else if (entry.isFile() && entry.name.endsWith('.md')) {
-      const name = entry.name.replace('.md', '');
-      if (!results[DEFAULT_SECTION_NAME]) {
-        results[DEFAULT_SECTION_NAME] = {
-          path: '',
-          realPath: '',
-          docs: [],
-        };
-      }
-      results[DEFAULT_SECTION_NAME].docs.push({
-        slug: getNiceName(name),
-        sectionSlug: undefined, // Root files don't have a section slug
-        realPath: name,
-      });
     }
   }
 
@@ -144,13 +124,11 @@ const docs = new Hono()
             slug: doc.slug,
             section: sectionName,
             // If it's an index file, the path is just the section path
-            // Otherwise, append the slug to the section path (if it exists)
+            // Otherwise, append the slug to the section path
             path:
               doc.slug === 'index'
                 ? section.path
-                : section.path
-                  ? `${section.path}/${doc.slug}`
-                  : doc.slug,
+                : `${section.path}/${doc.slug}`,
           });
         }
       }
