@@ -1,5 +1,12 @@
-import { KeyValuePipe } from '@angular/common';
-import { Component, effect, inject, input, signal } from '@angular/core';
+import { KeyValuePipe, NgClass } from '@angular/common';
+import {
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { filter } from 'rxjs';
@@ -16,7 +23,13 @@ import {
 
 @Component({
   selector: 'app-docs-menu',
-  imports: [RouterModule, KeyValuePipe, SearchBarComponent, IconComponent],
+  imports: [
+    RouterModule,
+    KeyValuePipe,
+    SearchBarComponent,
+    IconComponent,
+    NgClass,
+  ],
   templateUrl: './docs-menu.component.html',
   styleUrl: './docs-menu.component.css',
 })
@@ -94,10 +107,16 @@ export class DocsMenuComponent {
     });
   }
 
+  readonly getWrapperClass = computed(() => {
+    if (this.isCollapsed()) {
+      return 'bg-base-300/70 border-base-content/5 flex justify-center items-center rounded-xl w-8';
+    } else {
+      return 'bg-base-300/70 border-base-content/5 flex flex-col gap-4 rounded-xl border-2 p-4';
+    }
+  });
+
   // Custom comparator to preserve the order from the server
-  preserveOrder = (): number => {
-    return 0;
-  };
+  readonly preserveOrder = computed(() => 0);
 
   toggleSection(sectionKey: string): void {
     const section = this.availableDocs()[sectionKey];

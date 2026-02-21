@@ -1,13 +1,11 @@
 <div
   class="shrink-0 transition-all duration-300 ease-in-out"
   [class.w-64]="!isCollapsed()"
-  [class.w-16]="isCollapsed()"
+  [class.w-8]="isCollapsed()"
 >
-  <div
-    class="bg-base-300/70 border-base-content/5 flex flex-col gap-4 rounded-xl border-2 p-4"
-  >
+  <div [ngClass]="getWrapperClass()">
     <!-- Header with Search and Collapse -->
-    <div class="flex items-center gap-2">
+    <div class="flex items-center gap-4">
       @if (!isCollapsed()) {
         <div class="flex-1">
           <app-search-bar
@@ -18,7 +16,7 @@
       }
       <button
         (click)="toggleCollapse()"
-        class="btn btn-ghost btn-square btn-sm"
+        class="btn btn-ghost btn-primary btn-square btn-sm"
         [title]="isCollapsed() ? 'Expand Menu' : 'Collapse Menu'"
       >
         <app-icon [name]="isCollapsed() ? 'chevron_right' : 'chevron_left'" />
@@ -90,9 +88,10 @@
                               ? ['/docs', section.value.path, doc.slug]
                               : ['/docs', doc.slug]
                           "
-                          routerLinkActive="text-primary active"
+                          routerLinkActive="text-secondary active"
+                          class="text-base-content/70"
                         >
-                          ⬩ {{ formatTitle(doc.slug) }}
+                          {{ formatTitle(doc.slug) }}
                         </a>
                       </li>
                     }

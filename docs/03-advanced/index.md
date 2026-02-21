@@ -1,24 +1,9 @@
 # Advanced Usage
 
-Take your load testing to the next level.
+This section covers advanced topics and specialized use cases for Tressi, including early exit criteria and CI/CD integration.
 
-## Early Exit Criteria
+- [Placeholder](./01-placeholder.md): Temporary file for future advanced documentation.
 
-Stop tests automatically if performance degrades beyond a certain point.
+## Next Section
 
-```json
-{
-  "earlyExit": {
-    "errorRateThreshold": 0.05,
-    "latencyP99ThresholdMs": 1000
-  }
-}
-```
-
-## CI/CD Integration
-
-Run Tressi as part of your GitHub Actions or GitLab CI pipelines.
-
-## Custom Exporters
-
-Export your results to JSON, XLSX, or Markdown for custom reporting.
+- [Reference](../04-reference/index.md): Technical reference documentation for the Tressi CLI and the configuration schema.

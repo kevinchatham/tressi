@@ -1,9 +1,6 @@
-# Community & Project
+# Community
 
-This section contains information about the Tressi project, how to contribute, and licensing.
+Information about the Tressi project, its current status, and how you can get involved.
 
-## 📚 In this section
-
-- [About Tressi](/docs/community/about): Learn about the project's history and goals.
-- [Contributing](/docs/community/contributing): Find out how you can help improve Tressi.
-- [License](/docs/community/license): Information about the Tressi license.
+- [Contributing](./01-contributing.md): Guidelines for reporting bugs and suggesting features.
+- [License](./02-license.md): Licensing information for Tressi.

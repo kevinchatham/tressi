@@ -2,20 +2,20 @@
 @plugin 'daisyui';
 
 .markdown-body {
-  @apply text-base-content leading-relaxed;
+  @apply text-base-content/70 leading-relaxed;
   font-family: 'Roboto Mono', monospace;
 }
 
 .markdown-body h1 {
-  @apply border-base-content/5 mb-4 border-b pb-2 text-3xl font-semibold;
+  @apply text-primary/80 border-base-content/5 mb-4 border-b-2 pb-1 text-3xl font-semibold;
 }
 
 .markdown-body h2 {
-  @apply border-base-content/5 mt-6 mb-4 border-b pb-2 text-2xl font-semibold;
+  @apply text-primary/80 border-base-content/5 mb-4 border-b-2 pb-1 text-2xl font-semibold;
 }
 
 .markdown-body h3 {
-  @apply mt-6 mb-4 text-xl font-semibold;
+  @apply text-primary/80 mb-4 text-xl font-semibold;
 }
 
 .markdown-body p {
@@ -23,7 +23,7 @@
 }
 
 .markdown-body a {
-  @apply text-primary hover:underline;
+  @apply text-info hover:underline;
 }
 
 .markdown-body ul,
@@ -44,7 +44,7 @@
 }
 
 .markdown-body code {
-  @apply bg-base-300 rounded px-1.5 py-0.5 text-sm;
+  @apply bg-base-100 rounded px-1 py-0.5 align-middle;
   font-family: 'Roboto Mono', monospace;
 }
 
@@ -66,7 +66,7 @@
 
 .markdown-body th,
 .markdown-body td {
-  @apply border-base-content/5 border p-2;
+  @apply border-base-content/70 border p-2;
 }
 
 .markdown-body th {
@@ -74,7 +74,11 @@
 }
 
 .markdown-body hr {
-  @apply border-base-content/5 my-8 border-t;
+  @apply border-base-content/70 my-8 border-t;
+}
+
+.markdown-body strong {
+  @apply text-base-content;
 }
 
 .markdown-body img {

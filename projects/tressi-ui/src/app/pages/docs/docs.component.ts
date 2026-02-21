@@ -16,6 +16,7 @@ import {
   provideMarkdown,
   SANITIZE,
 } from 'ngx-markdown';
+import { ThemeSwitcherComponent } from 'src/app/components/theme-switcher/theme-switcher.component';
 
 import { ButtonComponent } from '../../components/button/button.component';
 import { HeaderComponent } from '../../components/header/header.component';
@@ -33,6 +34,7 @@ import { DocsMenuComponent } from './docs-menu/docs-menu.component';
     ButtonComponent,
     IconComponent,
     DocsMenuComponent,
+    ThemeSwitcherComponent,
   ],
   providers: [
     provideMarkdown({
@@ -179,11 +181,24 @@ export class DocsComponent implements OnInit {
     // 1. Fix Images
     container.querySelectorAll('img').forEach((img: HTMLImageElement) => {
       const src = img.getAttribute('src');
+
       if (src && !src.startsWith('http') && !src.startsWith('/')) {
-        // Resolve relative path (e.g., ./images/logo.png -> /docs/section/images/logo.png)
+        // Resolve relative path
         img.src = new URL(src, `http://x/docs/${section}/`).pathname;
-        img.style.cssText =
-          'max-height: 350px; display: block; margin: 0 auto;';
+
+        // Default size to 350, override if pattern like "-512.png" is found
+        let size = 350;
+        const sizeMatch = src.match(/-(\d+)\.[^.]+$/);
+
+        if (sizeMatch) {
+          const parsed = parseInt(sizeMatch[1], 10);
+          if (!isNaN(parsed)) {
+            size = parsed;
+          }
+        }
+
+        // Apply styles
+        img.style.cssText = `max-height: ${size}px; display: block; margin: 0 auto;`;
       }
     });
 
@@ -200,12 +215,18 @@ export class DocsComponent implements OnInit {
         const resolved = new URL(href, `http://x/docs/${section}/`).pathname;
         const cleanPath = resolved.replace(/\.md$/, '');
 
-        link.href = cleanPath;
+        // Strip number prefixes (e.g., 01-) from each segment for the final route
+        const slugPath = cleanPath
+          .split('/')
+          .map((segment) => segment.replace(/^\d+-/, ''))
+          .join('/');
+
+        link.href = slugPath;
         link.onclick = (event: MouseEvent): void => {
           event.preventDefault();
 
           // Extract segments for Angular navigation: /docs/section/file -> [section, file]
-          const [targetSection, targetFile = 'index'] = cleanPath
+          const [targetSection, targetFile = 'index'] = slugPath
             .split('/')
             .filter((p) => !!p && p !== 'docs');
 

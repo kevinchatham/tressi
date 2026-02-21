@@ -1,6 +1,4 @@
-![Tressi Logo](./images/tressi-logo-512.png)
-
-# Introduction
+![Tressi Logo](./images/tressi-logo-200.png)
 
 Tressi is a local load testing tool designed for API performance analysis. It provides a web-based interface for configuring tests, executing them in real-time, and analyzing the results with high precision.
 
