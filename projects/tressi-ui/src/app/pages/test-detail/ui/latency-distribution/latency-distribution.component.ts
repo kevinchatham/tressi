@@ -1,9 +1,10 @@
-import { Component, input } from '@angular/core';
+import { Component, input, output } from '@angular/core';
 import { LatencyHistogramBucket } from 'tressi-cli/src/reporting/types';
 
-import { IconComponent } from '../../../components/icon/icon.component';
-import { FormatLatencyDirective } from '../../../directives/format/format-latency.directive';
-import { LatencyHistogram } from '../../../services/rpc.service';
+import { CollapsibleCardComponent } from '../../../../components/collapsible-card/collapsible-card.component';
+import { IconComponent } from '../../../../components/icon/icon.component';
+import { FormatLatencyDirective } from '../../../../directives/format/format-latency.directive';
+import { LatencyHistogram } from '../../../../services/rpc.service';
 
 interface HistogramPercentile {
   percentile: number;
@@ -12,16 +13,30 @@ interface HistogramPercentile {
 }
 
 /**
- * Component for displaying latency histogram data
- * Shows percentile distribution and summary statistics
+ * Component for displaying latency distribution data
+ * Shows percentile distribution and summary statistics in a collapsible card
  */
 @Component({
-  selector: 'app-latency-histogram',
-  imports: [IconComponent, FormatLatencyDirective],
-  templateUrl: './latency-histogram.component.html',
+  selector: 'app-latency-distribution',
+  imports: [CollapsibleCardComponent, IconComponent, FormatLatencyDirective],
+  templateUrl: './latency-distribution.component.html',
 })
-export class LatencyHistogramComponent {
-  histogram = input<LatencyHistogram>();
+export class LatencyDistributionComponent {
+  /** Histogram data */
+  readonly histogram = input<LatencyHistogram | undefined>();
+
+  /** Whether the card is collapsed */
+  readonly collapsed = input<boolean>(false);
+
+  /** Emits when collapsed state changes */
+  readonly collapsedChange = output<boolean>();
+
+  /**
+   * Handle collapsed state change from collapsible card
+   */
+  onCollapsedChange(collapsed: boolean): void {
+    this.collapsedChange.emit(collapsed);
+  }
 
   /**
    * Get bucket data for histogram visualization
@@ -72,7 +87,9 @@ export class LatencyHistogramComponent {
 
     const percentage = ((bucket.count / histogram.totalCount) * 100).toFixed(1);
 
-    return `${this.formatLatency(bucket.lowerBound)} - ${this.formatLatency(bucket.upperBound)}: ${bucket.count.toLocaleString()} requests (${percentage}%)`;
+    return `${this.formatLatency(bucket.lowerBound)} - ${this.formatLatency(
+      bucket.upperBound,
+    )}: ${bucket.count.toLocaleString()} requests (${percentage}%)`;
   }
 
   /**

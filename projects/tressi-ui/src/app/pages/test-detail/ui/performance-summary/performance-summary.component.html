@@ -1,0 +1,392 @@
+<section class="bg-base-100 mt-2 rounded-xl px-6">
+  <app-collapsible-card
+    title="Performance Summary"
+    [collapsed]="collapsed()"
+    (collapsedChange)="onCollapsedChange($event)"
+  >
+    <div class="mt-6 space-y-6">
+      <!-- Throughput Section -->
+      <section>
+        <h3
+          class="text-base-content/80 mb-3 flex items-center gap-2 text-sm font-semibold tracking-wide uppercase"
+          [attr.title]="'Request throughput metrics'"
+        >
+          <span class="bg-secondary/10 rounded-full p-1.5">
+            <app-icon name="speed" class="text-secondary" />
+          </span>
+          Throughput
+        </h3>
+        <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-5">
+          <!-- Average RPS -->
+          <div class="bg-base-100 rounded-xl p-4">
+            <div
+              class="text-base-content/70 mb-1 text-sm"
+              [attr.title]="tooltips['avgRps']"
+            >
+              Average RPS
+            </div>
+            <div
+              class="text-2xl font-bold"
+              [appFormatRps]="selectedSummary()?.averageRequestsPerSecond"
+            ></div>
+            <div class="text-base-content/60 mt-1 text-xs">
+              requests per sec
+            </div>
+          </div>
+
+          <!-- Peak RPS -->
+          <div
+            class="bg-base-100 rounded-xl p-4"
+            [class.bg-base-300]="!selectedSummary()?.peakRequestsPerSecond"
+          >
+            <div
+              class="text-base-content/70 mb-1 text-sm"
+              [attr.title]="tooltips['peakRps']"
+            >
+              Peak RPS
+            </div>
+            <div
+              class="text-2xl font-bold"
+              [appFormatRps]="selectedSummary()?.peakRequestsPerSecond"
+            ></div>
+            <div class="text-base-content/60 mt-1 text-xs">highest window</div>
+          </div>
+
+          <!-- Global view: Test Duration -->
+          @if (globalSummary()?.finalDurationSec) {
+            <div class="bg-base-100 rounded-xl p-4">
+              <div
+                class="text-base-content/70 mb-1 text-sm"
+                [attr.title]="tooltips['duration']"
+              >
+                Duration
+              </div>
+              <div
+                class="text-2xl font-bold"
+                [appFormatDuration]="globalSummary()?.finalDurationSec"
+              ></div>
+              <div class="text-base-content/60 mt-1 text-xs">total time</div>
+            </div>
+          }
+
+          <!-- Global view: Endpoints Tested -->
+          @if (globalSummary()?.totalEndpoints) {
+            <div class="bg-base-100 rounded-xl p-4">
+              <div
+                class="text-base-content/70 mb-1 text-sm"
+                [attr.title]="tooltips['endpoints']"
+              >
+                Endpoints
+              </div>
+              <div
+                class="text-2xl font-bold"
+                [appFormatNumber]="globalSummary()?.totalEndpoints"
+              ></div>
+              <div class="text-base-content/60 mt-1 text-xs">tested</div>
+            </div>
+          }
+
+          <!-- Endpoint view: Target Achieved -->
+          @if (endpointSummary()?.targetAchieved) {
+            <div class="bg-base-100 rounded-xl p-4">
+              <div
+                class="text-base-content/70 mb-1 text-sm"
+                [attr.title]="tooltips['targetAchieved']"
+              >
+                Target Achieved
+              </div>
+              <div
+                class="text-2xl font-bold"
+                [appFormatPercentage]="endpointSummary()?.targetAchieved"
+              ></div>
+              <div class="text-base-content/60 mt-1 text-xs">of target RPS</div>
+            </div>
+          }
+
+          <!-- Endpoint view: Theoretical Max RPS -->
+          @if (endpointSummary()?.theoreticalMaxRps) {
+            <div class="bg-base-100 rounded-xl p-4">
+              <div
+                class="text-base-content/70 mb-1 text-sm"
+                [attr.title]="tooltips['maxThroughput']"
+              >
+                Max Throughput
+              </div>
+              <div
+                class="text-2xl font-bold"
+                [appFormatRps]="endpointSummary()?.theoreticalMaxRps"
+              ></div>
+              <div class="text-base-content/60 mt-1 text-xs">theoretical</div>
+            </div>
+          }
+
+          <!-- Total Requests -->
+          <div class="bg-base-100 rounded-xl p-4">
+            <div
+              class="text-base-content/70 mb-1 text-sm"
+              [attr.title]="tooltips['totalRequests']"
+            >
+              Total Requests
+            </div>
+            <div
+              class="text-2xl font-bold"
+              [appFormatNumber]="selectedSummary()?.totalRequests"
+            ></div>
+            <div class="text-base-content/60 mt-1 text-xs">completed</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Latency Section -->
+      <section>
+        <h3
+          class="text-base-content/80 mb-3 flex items-center gap-2 text-sm font-semibold tracking-wide uppercase"
+          [attr.title]="'Response time percentiles'"
+        >
+          <span class="bg-primary/10 rounded-full p-1">
+            <app-icon name="timer" class="text-primary" />
+          </span>
+          Latency
+        </h3>
+        <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-5">
+          <!-- Min Latency -->
+          <div class="bg-base-100 rounded-xl p-4">
+            <div
+              class="text-base-content/70 mb-1 text-sm"
+              [attr.title]="tooltips['minLatency']"
+            >
+              Min
+            </div>
+            <div
+              class="text-2xl font-bold"
+              [appFormatLatency]="selectedSummary()?.minLatencyMs"
+            ></div>
+            <div class="text-base-content/60 mt-1 text-xs">fastest</div>
+          </div>
+
+          <!-- P50 Latency -->
+          <div class="bg-base-100 rounded-xl p-4">
+            <div
+              class="text-base-content/70 mb-1 text-sm"
+              [attr.title]="tooltips['p50Latency']"
+            >
+              P50 (Median)
+            </div>
+            <div
+              class="text-2xl font-bold"
+              [appFormatLatency]="selectedSummary()?.p50LatencyMs"
+            ></div>
+            <div class="text-base-content/60 mt-1 text-xs">median</div>
+          </div>
+
+          <!-- P95 Latency -->
+          <div class="bg-base-100 rounded-xl p-4">
+            <div
+              class="text-base-content/70 mb-1 text-sm"
+              [attr.title]="tooltips['p95Latency']"
+            >
+              P95
+            </div>
+            <div
+              class="text-2xl font-bold"
+              [appFormatLatency]="selectedSummary()?.p95LatencyMs"
+            ></div>
+            <div class="text-base-content/60 mt-1 text-xs">95th percentile</div>
+          </div>
+
+          <!-- P99 Latency -->
+          <div class="bg-base-100 rounded-xl p-4">
+            <div
+              class="text-base-content/70 mb-1 text-sm"
+              [attr.title]="tooltips['p99Latency']"
+            >
+              P99
+            </div>
+            <div
+              class="text-2xl font-bold"
+              [appFormatLatency]="selectedSummary()?.p99LatencyMs"
+            ></div>
+            <div class="text-base-content/60 mt-1 text-xs">99th percentile</div>
+          </div>
+
+          <!-- Max Latency -->
+          <div class="bg-base-100 rounded-xl p-4">
+            <div
+              class="text-base-content/70 mb-1 text-sm"
+              [attr.title]="tooltips['maxLatency']"
+            >
+              Max
+            </div>
+            <div
+              class="text-2xl font-bold"
+              [appFormatLatency]="selectedSummary()?.maxLatencyMs"
+            ></div>
+            <div class="text-base-content/60 mt-1 text-xs">slowest</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Reliability & Network Section -->
+      <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+        <!-- Reliability -->
+        <section>
+          <h3
+            class="text-base-content/80 mb-3 flex items-center gap-2 text-sm font-semibold tracking-wide uppercase"
+            [attr.title]="'Success and error metrics'"
+          >
+            <span class="bg-success/10 rounded-full p-1">
+              <app-icon name="speed" class="text-success" />
+            </span>
+            Reliability
+          </h3>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="bg-base-100 rounded-xl p-4">
+              <div class="text-base-content/70 mb-1 text-sm">Success Rate</div>
+              <div
+                class="text-2xl font-bold"
+                [class.text-success]="(selectedSummary()?.errorRate || 0) === 0"
+                [appFormatPercentage]="1 - (selectedSummary()?.errorRate || 0)"
+              ></div>
+              <div class="text-base-content/60 mt-1 text-xs">of total</div>
+            </div>
+            <div class="bg-base-100 rounded-xl p-4">
+              <div
+                class="text-base-content/70 mb-1 text-sm"
+                [attr.title]="tooltips['errorRate']"
+              >
+                Error Rate
+              </div>
+              <div
+                class="text-2xl font-bold"
+                [class.text-error]="(selectedSummary()?.errorRate || 0) > 0"
+                [appFormatPercentage]="selectedSummary()?.errorRate"
+              ></div>
+              <div class="text-base-content/60 mt-1 text-xs">of total</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Network -->
+        <section>
+          <h3
+            class="text-base-content/80 mb-3 flex items-center gap-2 text-sm font-semibold tracking-wide uppercase"
+            [attr.title]="'Data transfer metrics'"
+          >
+            <span class="bg-info/10 rounded-full p-1">
+              <app-icon name="lan" class="text-info" />
+            </span>
+            Network
+          </h3>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="bg-base-100 rounded-xl p-4">
+              <div
+                class="text-base-content/70 mb-1 text-sm"
+                [attr.title]="tooltips['networkThroughput']"
+              >
+                Throughput
+              </div>
+              <div
+                class="text-2xl font-bold"
+                [appFormatNetwork]="globalSummary()?.networkBytesPerSec"
+              ></div>
+              <div class="text-base-content/60 mt-1 text-xs">avg transfer</div>
+            </div>
+            <div class="bg-base-100 rounded-xl p-4">
+              <div class="text-base-content/70 mb-1 text-sm">Total Data</div>
+              <div
+                class="text-2xl font-bold"
+                [appFormatBytes]="
+                  (globalSummary()?.networkBytesSent || 0) +
+                  (globalSummary()?.networkBytesReceived || 0)
+                "
+              ></div>
+              <div class="text-base-content/60 mt-1 text-xs">sent + recvd</div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- System Resources (Global Only) -->
+      @if (globalSummary()) {
+        <section>
+          <h3
+            class="text-base-content/80 mb-3 flex items-center gap-2 text-sm font-semibold tracking-wide uppercase"
+            [attr.title]="'System resource utilization'"
+          >
+            <span class="bg-warning/10 rounded-full p-1">
+              <app-icon name="memory" class="text-warning" />
+            </span>
+            System Resources
+          </h3>
+          <div class="grid grid-cols-2 gap-4">
+            <!-- CPU Usage -->
+            <div class="bg-base-100 rounded-xl p-4">
+              <div
+                class="text-base-content/70 mb-1 text-sm"
+                [attr.title]="tooltips['cpuUsage']"
+              >
+                CPU Usage
+              </div>
+              <div class="flex items-baseline gap-2">
+                <div
+                  class="text-2xl font-bold"
+                  [appFormatCpu]="globalSummary()?.avgSystemCpuUsagePercent"
+                ></div>
+                <div
+                  class="badge badge-sm border-none font-medium"
+                  [ngClass]="
+                    getStateClasses(
+                      getCpuState(globalSummary()?.avgSystemCpuUsagePercent)
+                    ).bg +
+                    ' ' +
+                    getStateClasses(
+                      getCpuState(globalSummary()?.avgSystemCpuUsagePercent)
+                    ).text
+                  "
+                >
+                  {{ getCpuState(globalSummary()?.avgSystemCpuUsagePercent) }}
+                </div>
+              </div>
+              <div class="text-base-content/60 mt-1 text-xs">
+                avg utilization
+              </div>
+            </div>
+
+            <!-- Memory Usage -->
+            <div class="bg-base-100 rounded-xl p-4">
+              <div
+                class="text-base-content/70 mb-1 text-sm"
+                [attr.title]="tooltips['memoryUsage']"
+              >
+                Memory Usage
+              </div>
+              <div class="flex items-baseline gap-2">
+                <div
+                  class="text-2xl font-bold"
+                  [appFormatMemory]="globalSummary()?.avgProcessMemoryUsageMB"
+                ></div>
+                <div
+                  class="badge badge-sm border-none font-medium"
+                  [ngClass]="
+                    getStateClasses(
+                      getMemoryState(globalSummary()?.avgProcessMemoryUsageMB)
+                    ).bg +
+                    ' ' +
+                    getStateClasses(
+                      getMemoryState(globalSummary()?.avgProcessMemoryUsageMB)
+                    ).text
+                  "
+                >
+                  {{ getMemoryState(globalSummary()?.avgProcessMemoryUsageMB) }}
+                </div>
+              </div>
+              <div class="text-base-content/60 mt-1 text-xs">
+                avg consumption
+              </div>
+            </div>
+          </div>
+        </section>
+      }
+    </div>
+  </app-collapsible-card>
+</section>

@@ -1,12 +1,13 @@
-import { Component, input, signal } from '@angular/core';
+import { Component, input, output, signal } from '@angular/core';
 
+import { CollapsibleCardComponent } from '../../../../components/collapsible-card/collapsible-card.component';
 import {
   IconComponent,
   type IconName,
-} from '../../../components/icon/icon.component';
-import { JsonTextareaComponent } from '../../../components/json-textarea/json-textarea.component';
-import { FormatNumberDirective } from '../../../directives/format/format-number.directive';
-import { FormatPercentageDirective } from '../../../directives/format/format-percentage.directive';
+} from '../../../../components/icon/icon.component';
+import { JsonTextareaComponent } from '../../../../components/json-textarea/json-textarea.component';
+import { FormatNumberDirective } from '../../../../directives/format/format-number.directive';
+import { FormatPercentageDirective } from '../../../../directives/format/format-percentage.directive';
 
 export type ResponseSample = {
   statusCode: number;
@@ -18,11 +19,12 @@ type StatusCategory = 'success' | 'redirect' | 'client-error' | 'server-error';
 
 /**
  * Component for displaying response samples captured during the test
- * Allows filtering by status code and displays headers and body
+ * Allows filtering by status code and displays headers and body in a collapsible card
  */
 @Component({
   selector: 'app-response-samples',
   imports: [
+    CollapsibleCardComponent,
     IconComponent,
     JsonTextareaComponent,
     FormatNumberDirective,
@@ -31,12 +33,30 @@ type StatusCategory = 'success' | 'redirect' | 'client-error' | 'server-error';
   templateUrl: './response-samples.component.html',
 })
 export class ResponseSamplesComponent {
-  readonly responseSamples = input<ResponseSample[]>();
-  readonly statusCodeDistribution = input<Record<string, number>>();
-  readonly totalRequests = input<number>();
+  /** Response samples data */
+  readonly responseSamples = input<ResponseSample[] | undefined>();
+
+  /** Status code distribution data */
+  readonly statusCodeDistribution = input<Record<string, number> | undefined>();
+
+  /** Total requests count */
+  readonly totalRequests = input<number | undefined>();
+
+  /** Whether the card is collapsed */
+  readonly collapsed = input<boolean>(false);
+
+  /** Emits when collapsed state changes */
+  readonly collapsedChange = output<boolean>();
 
   readonly selectedStatusCode = signal<string>('all');
   readonly maxSamplesPerCode = 3;
+
+  /**
+   * Handle collapsed state change from collapsible card
+   */
+  onCollapsedChange(collapsed: boolean): void {
+    this.collapsedChange.emit(collapsed);
+  }
 
   /**
    * Gets available status codes for filtering, including 'all' option

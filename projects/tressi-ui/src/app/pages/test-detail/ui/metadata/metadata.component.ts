@@ -1,15 +1,15 @@
 import { Component, inject, input, output, signal } from '@angular/core';
 
-import { ButtonComponent } from '../../../components/button/button.component';
-import { CollapsibleCardComponent } from '../../../components/collapsible-card/collapsible-card.component';
-import { IconComponent } from '../../../components/icon/icon.component';
-import { JsonTextareaComponent } from '../../../components/json-textarea/json-textarea.component';
-import { FormatDateDirective } from '../../../directives/format/format-date.directive';
-import { TestDocument } from '../../../services/rpc.service';
-import { ToastService } from '../../../services/toast.service';
+import { ButtonComponent } from '../../../../components/button/button.component';
+import { CollapsibleCardComponent } from '../../../../components/collapsible-card/collapsible-card.component';
+import { IconComponent } from '../../../../components/icon/icon.component';
+import { JsonTextareaComponent } from '../../../../components/json-textarea/json-textarea.component';
+import { FormatDateDirective } from '../../../../directives/format/format-date.directive';
+import { TestDocument } from '../../../../services/rpc.service';
+import { ToastService } from '../../../../services/toast.service';
 
 @Component({
-  selector: 'app-test-metadata',
+  selector: 'app-metadata',
   imports: [
     ButtonComponent,
     CollapsibleCardComponent,
@@ -17,9 +17,9 @@ import { ToastService } from '../../../services/toast.service';
     JsonTextareaComponent,
     FormatDateDirective,
   ],
-  templateUrl: './test-metadata.component.html',
+  templateUrl: './metadata.component.html',
 })
-export class TestMetadataComponent {
+export class MetadataComponent {
   private readonly _toastService = inject(ToastService);
 
   /** Test data document */

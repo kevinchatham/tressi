@@ -14,59 +14,6 @@ export type EndpointChartDataCache = Map<string, Map<string, ChartData>>;
 export type MetricState = 'good' | 'warning' | 'error';
 
 /**
- * DaisyUI color classes for metric states
- */
-export interface MetricStateClasses {
-  /** Background color class (e.g., 'bg-success/20') */
-  bg: string;
-  /** Text color class (e.g., 'text-success') */
-  text: string;
-}
-
-/**
- * Tooltip content mapping for all metric labels
- * Keys correspond to metric identifiers used in the metrics-summary component
- */
-export interface MetricTooltips {
-  /** Minimum latency tooltip */
-  minLatency: string;
-  /** P50 (median) latency tooltip */
-  p50Latency: string;
-  /** P95 latency tooltip */
-  p95Latency: string;
-  /** P99 latency tooltip */
-  p99Latency: string;
-  /** Maximum latency tooltip */
-  maxLatency: string;
-  /** Test duration tooltip */
-  duration: string;
-  /** Endpoints tested tooltip */
-  endpoints: string;
-  /** Target achieved percentage tooltip */
-  targetAchieved: string;
-  /** Theoretical max throughput tooltip */
-  maxThroughput: string;
-  /** Average RPS tooltip */
-  avgRps: string;
-  /** Peak RPS tooltip */
-  peakRps: string;
-  /** Total requests tooltip */
-  totalRequests: string;
-  /** Error rate tooltip */
-  errorRate: string;
-  /** Network throughput tooltip */
-  networkThroughput: string;
-  /** Network bytes sent tooltip */
-  networkSent: string;
-  /** Network bytes received tooltip */
-  networkReceived: string;
-  /** CPU usage tooltip with threshold info */
-  cpuUsage: string;
-  /** Memory usage tooltip with threshold info */
-  memoryUsage: string;
-}
-
-/**
  * Threshold configuration for metric state determination
  */
 export interface MetricThresholds {
@@ -85,20 +32,6 @@ export interface MetricThresholds {
     error: number;
   };
 }
-
-/**
- * Default threshold values for metric state determination
- */
-export const DEFAULT_METRIC_THRESHOLDS: MetricThresholds = {
-  cpu: {
-    warning: 70,
-    error: 85,
-  },
-  memory: {
-    warning: 500,
-    error: 1000,
-  },
-};
 
 /**
  * CPU threshold state with human-readable descriptions

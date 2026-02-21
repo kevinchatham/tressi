@@ -2,9 +2,9 @@ import { NgClass } from '@angular/common';
 import { Component, input, output } from '@angular/core';
 import { ButtonComponent } from 'src/app/components/button/button.component';
 
-import { IconComponent } from '../../../components/icon/icon.component';
-import { FormatDateDirective } from '../../../directives/format/format-date.directive';
-import { TestDocument } from '../../../services/rpc.service';
+import { IconComponent } from '../../../../components/icon/icon.component';
+import { FormatDateDirective } from '../../../../directives/format/format-date.directive';
+import { TestDocument } from '../../../../services/rpc.service';
 
 @Component({
   selector: 'app-delete-confirmation-modal',

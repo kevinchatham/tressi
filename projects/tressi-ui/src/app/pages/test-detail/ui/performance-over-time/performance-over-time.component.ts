@@ -1,15 +1,15 @@
 import { Component, input, output } from '@angular/core';
 
-import { ButtonComponent } from '../../../components/button/button.component';
-import { CollapsibleCardComponent } from '../../../components/collapsible-card/collapsible-card.component';
-import { IconComponent } from '../../../components/icon/icon.component';
-import { LineChartComponent } from '../../../components/line-chart/line-chart.component';
+import { ButtonComponent } from '../../../../components/button/button.component';
+import { CollapsibleCardComponent } from '../../../../components/collapsible-card/collapsible-card.component';
+import { IconComponent } from '../../../../components/icon/icon.component';
+import { LineChartComponent } from '../../../../components/line-chart/line-chart.component';
 import {
   ChartData,
   ChartOption,
   ChartType,
   PollingInterval,
-} from '../../../types/chart.types';
+} from '../../../../types/chart.types';
 
 /**
  * Component for displaying performance metrics over time with charts

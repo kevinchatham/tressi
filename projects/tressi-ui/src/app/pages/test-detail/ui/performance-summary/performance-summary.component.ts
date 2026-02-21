@@ -1,16 +1,22 @@
-import { Component, computed, input } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { Component, computed, input, output } from '@angular/core';
 
-import { IconComponent } from '../../../components/icon/icon.component';
-import { FormatBytesDirective } from '../../../directives/format/format-bytes.directive';
-import { FormatCpuUsageDirective } from '../../../directives/format/format-cpu.directive';
-import { FormatDurationDirective } from '../../../directives/format/format-duration.directive';
-import { FormatLatencyDirective } from '../../../directives/format/format-latency.directive';
-import { FormatMemoryDirective } from '../../../directives/format/format-memory.directive';
-import { FormatNetworkThroughputDirective } from '../../../directives/format/format-network.directive';
-import { FormatNumberDirective } from '../../../directives/format/format-number.directive';
-import { FormatPercentageDirective } from '../../../directives/format/format-percentage.directive';
-import { FormatRpsDirective } from '../../../directives/format/format-rps.directive';
-import { EndpointSummary, GlobalSummary } from '../../../services/rpc.service';
+import { CollapsibleCardComponent } from '../../../../components/collapsible-card/collapsible-card.component';
+import { IconComponent } from '../../../../components/icon/icon.component';
+import { FormatBytesDirective } from '../../../../directives/format/format-bytes.directive';
+import { FormatCpuUsageDirective } from '../../../../directives/format/format-cpu.directive';
+import { FormatDurationDirective } from '../../../../directives/format/format-duration.directive';
+import { FormatLatencyDirective } from '../../../../directives/format/format-latency.directive';
+import { FormatMemoryDirective } from '../../../../directives/format/format-memory.directive';
+import { FormatNetworkThroughputDirective } from '../../../../directives/format/format-network.directive';
+import { FormatNumberDirective } from '../../../../directives/format/format-number.directive';
+import { FormatPercentageDirective } from '../../../../directives/format/format-percentage.directive';
+import { FormatRpsDirective } from '../../../../directives/format/format-rps.directive';
+import {
+  EndpointSummary,
+  GlobalSummary,
+  TestDocument,
+} from '../../../../services/rpc.service';
 
 /**
  * Color state for performance metrics
@@ -46,8 +52,10 @@ export const METRIC_TOOLTIPS: Record<string, string> = {
 };
 
 @Component({
-  selector: 'app-metrics-summary',
+  selector: 'app-performance-summary',
   imports: [
+    CommonModule,
+    CollapsibleCardComponent,
     IconComponent,
     FormatDurationDirective,
     FormatPercentageDirective,
@@ -59,27 +67,46 @@ export const METRIC_TOOLTIPS: Record<string, string> = {
     FormatMemoryDirective,
     FormatLatencyDirective,
   ],
-  templateUrl: './metrics-summary.component.html',
+  templateUrl: './performance-summary.component.html',
 })
-export class MetricsSummaryComponent {
-  summary = input<GlobalSummary | EndpointSummary | null>();
+export class PerformanceSummaryComponent {
+  /** Selected summary (global or endpoint) */
+  readonly selectedSummary = input<
+    GlobalSummary | EndpointSummary | null | undefined
+  >(null);
+
+  /** Test data document */
+  readonly testData = input<TestDocument | null>(null);
+
+  /** Whether the card is collapsed */
+  readonly collapsed = input<boolean>(false);
+
+  /** Emits when collapsed state changes */
+  readonly collapsedChange = output<boolean>();
 
   /** Tooltip content mapping */
   tooltips = METRIC_TOOLTIPS;
 
   endpointSummary = computed<EndpointSummary | null>(() => {
-    const s = this.summary();
+    const s = this.selectedSummary();
     if (s && 'statusCodeDistribution' in s)
       return s as unknown as EndpointSummary;
     else return null;
   });
 
   globalSummary = computed<GlobalSummary | null>(() => {
-    const s = this.summary();
+    const s = this.selectedSummary();
     if (s && !('statusCodeDistribution' in s))
       return s as unknown as GlobalSummary;
     else return null;
   });
+
+  /**
+   * Handle collapsed state change from collapsible card
+   */
+  onCollapsedChange(collapsed: boolean): void {
+    this.collapsedChange.emit(collapsed);
+  }
 
   /**
    * Determines CPU usage state based on percentage thresholds

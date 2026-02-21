@@ -1,27 +1,27 @@
 import { Component, computed, inject, input } from '@angular/core';
 
-import { FormatDurationDirective } from '../../../directives/format/format-duration.directive';
-import { FormatLatencyDirective } from '../../../directives/format/format-latency.directive';
-import { FormatPercentageDirective } from '../../../directives/format/format-percentage.directive';
-import { FormatRpsDirective } from '../../../directives/format/format-rps.directive';
+import { FormatDurationDirective } from '../../../../directives/format/format-duration.directive';
+import { FormatLatencyDirective } from '../../../../directives/format/format-latency.directive';
+import { FormatPercentageDirective } from '../../../../directives/format/format-percentage.directive';
+import { FormatRpsDirective } from '../../../../directives/format/format-rps.directive';
 import {
   EndpointSummary,
   GlobalSummary,
   TestDocument,
-} from '../../../services/rpc.service';
-import { TestService } from '../../../services/test.service';
+} from '../../../../services/rpc.service';
+import { TestService } from '../../../../services/test.service';
 
 @Component({
-  selector: 'app-test-hero-stats',
+  selector: 'app-hero-stats',
   imports: [
     FormatDurationDirective,
     FormatPercentageDirective,
     FormatRpsDirective,
     FormatLatencyDirective,
   ],
-  templateUrl: './test-hero-stats.component.html',
+  templateUrl: './hero-stats.component.html',
 })
-export class TestHeroStatsComponent {
+export class HeroStatsComponent {
   private readonly _testService = inject(TestService);
 
   /** Test data document */

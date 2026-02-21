@@ -4,7 +4,7 @@
       (click)="deleteTest()"
       [color]="'error'"
       [icon]="'delete'"
-      [disabled]="testData()?.status === 'running'"
+      [disabled]="service.test()?.status === 'running'"
       [title]="'Delete'"
     />
     <div class="dropdown dropdown-center">
@@ -21,7 +21,7 @@
         <li>
           <button
             class="btn btn-ghost w-full justify-center"
-            (click)="exportResults('json')"
+            (click)="service.exportResults('json')"
           >
             JSON
           </button>
@@ -29,7 +29,7 @@
         <li>
           <button
             class="btn btn-ghost w-full justify-center"
-            (click)="exportResults('xlsx')"
+            (click)="service.exportResults('xlsx')"
           >
             XLSX
           </button>
@@ -37,7 +37,7 @@
         <li>
           <button
             class="btn btn-ghost w-full justify-center"
-            (click)="exportResults('md')"
+            (click)="service.exportResults('md')"
           >
             Markdown
           </button>
@@ -54,26 +54,26 @@
 
   <div class="px-8">
     <!-- Error State -->
-    @if (hasError()) {
+    @if (service.hasError()) {
       <div class="flex min-h-100 items-center justify-center p-8">
         <div class="max-w-md text-center">
           <app-icon name="warning" class="text-warning mb-4" />
           <h2 class="text-base-content mb-2 text-xl font-semibold">
             Failed to Load Test Details
           </h2>
-          <p class="text-base-content/70 mb-4">{{ errorMessage() }}</p>
+          <p class="text-base-content/70 mb-4">{{ service.errorMessage() }}</p>
         </div>
       </div>
     }
 
     <!-- Test Details -->
-    @if (!hasError() && testData()) {
+    @if (!service.hasError() && service.test()) {
       <div class="flex flex-col gap-4">
         <!-- Toolbar Row -->
         <div class="flex items-center justify-between px-8">
           <app-status-badge
-            [status]="testData()?.status ?? null"
-            [showPulse]="isRealTime()"
+            [status]="service.test()?.status ?? null"
+            [showPulse]="service.isRealTime()"
           />
           <div class="flex items-center gap-4">
             <div class="dropdown dropdown-bottom dropdown-end">
@@ -84,9 +84,9 @@
               >
                 <span>
                   {{
-                    selectedEndpoint() === 'global'
+                    service.selectedEndpoint() === 'global'
                       ? 'Global Metrics'
-                      : selectedEndpoint()
+                      : service.selectedEndpoint()
                   }}
                 </span>
                 <app-icon
@@ -101,7 +101,7 @@
                 <li>
                   <a
                     (click)="onEndpointChangeValue('global')"
-                    [class.active]="selectedEndpoint() === 'global'"
+                    [class.active]="service.selectedEndpoint() === 'global'"
                     class="flex items-center gap-2"
                   >
                     <app-icon name="analytics" />
@@ -110,13 +110,15 @@
                 </li>
                 <div class="divider my-1"></div>
                 @for (
-                  endpoint of testData()?.summary?.endpoints || [];
+                  endpoint of service.test()?.summary?.endpoints || [];
                   track endpoint.url
                 ) {
                   <li>
                     <a
                       (click)="onEndpointChangeValue(endpoint.url)"
-                      [class.active]="selectedEndpoint() === endpoint.url"
+                      [class.active]="
+                        service.selectedEndpoint() === endpoint.url
+                      "
                       class="flex items-center gap-2"
                     >
                       <app-icon name="lan" />
@@ -131,67 +133,69 @@
 
         <!-- Hero Stats Row -->
         <div class="px-6">
-          <app-test-hero-stats
-            [testData]="testData()"
-            [selectedSummary]="selectedSummary()"
-            [isRealTime]="isRealTime()"
-            [selectedEndpoint]="selectedEndpoint()"
+          <app-hero-stats
+            [testData]="service.test()"
+            [selectedSummary]="service.selectedSummary()"
+            [isRealTime]="service.isRealTime()"
+            [selectedEndpoint]="service.selectedEndpoint()"
           />
         </div>
 
         <!-- Performance Over Time -->
         <app-performance-over-time
-          [selectedChartType]="selectedChartType()"
-          [selectedEndpoint]="selectedEndpoint()"
-          [chartOptions]="availableChartOptions()"
-          [testTimeRange]="testTimeRange()"
-          [hasChartData]="hasChartData()"
+          [selectedChartType]="service.selectedChartType()"
+          [selectedEndpoint]="service.selectedEndpoint()"
+          [chartOptions]="chartOptions"
+          [testTimeRange]="service.testTimeRange()"
+          [hasChartData]="service.hasChartData()"
           [yAxisLabel]="getYAxisLabel()"
           [chartId]="getChartId()"
-          [chartData]="currentChartData()"
-          [isRunning]="isRealTime()"
+          [chartData]="service.currentChartData()"
+          [isRunning]="service.isRealTime()"
           [collapsed]="performanceOverTimeCollapsed()"
-          [pollingInterval]="selectedPollingInterval()"
+          [pollingInterval]="service.selectedPollingInterval()"
           [pollingOptions]="pollingOptions"
-          (chartTypeChange)="selectedChartType.set($event)"
+          (chartTypeChange)="service.selectedChartType.set($event)"
           (collapsedChange)="performanceOverTimeCollapsed.set($event)"
-          (pollingIntervalChange)="selectedPollingInterval.set($event)"
-          (refresh)="refreshMetrics()"
+          (pollingIntervalChange)="service.selectedPollingInterval.set($event)"
+          (refresh)="service.refreshMetrics()"
         />
 
         <!-- Performance Summary (Metrics Grid) -->
         <app-performance-summary
-          [selectedSummary]="selectedSummary()"
-          [testData]="testData()"
+          [selectedSummary]="service.selectedSummary()"
+          [testData]="service.test()"
           [collapsed]="performanceSummaryCollapsed()"
           (collapsedChange)="performanceSummaryCollapsed.set($event)"
         />
 
         <!-- Latency Distribution -->
-        @if (histogram()) {
+        @if (service.histogram()) {
           <app-latency-distribution
-            [histogram]="histogram()"
+            [histogram]="service.histogram()"
             [collapsed]="latencyDistributionCollapsed()"
             (collapsedChange)="latencyDistributionCollapsed.set($event)"
           />
         }
 
         <!-- Response Samples -->
-        @if (endpointSummary()?.responseSamples) {
-          <app-response-samples-card
-            [responseSamples]="endpointSummary()?.responseSamples"
-            [statusCodeDistribution]="endpointSummary()?.statusCodeDistribution"
-            [totalRequests]="endpointSummary()?.totalRequests"
+        @if (service.endpointSummary()?.responseSamples) {
+          <app-response-samples
+            [responseSamples]="service.endpointSummary()?.responseSamples"
+            [statusCodeDistribution]="
+              service.endpointSummary()?.statusCodeDistribution
+            "
+            [totalRequests]="service.endpointSummary()?.totalRequests"
             [collapsed]="responseSamplesCollapsed()"
             (collapsedChange)="responseSamplesCollapsed.set($event)"
           />
         }
 
         <!-- Test Metadata & Configuration -->
-        <app-test-metadata
-          [testData]="testData()"
-          [configName]="displayConfigName()"
-          [configSnapshot]="testData()?.summary?.configSnapshot"
+        <app-metadata
+          [testData]="service.test()"
+          [configName]="service.displayConfigName()"
+          [configSnapshot]="service.test()?.summary?.configSnapshot"
           [collapsed]="configCollapsed()"
           (collapsedChange)="configCollapsed.set($event)"
         />
@@ -202,7 +206,7 @@
   <!-- Delete Confirmation Modal -->
   <app-delete-confirmation-modal
     [isOpen]="showDeleteModal()"
-    [test]="testData()!"
+    [test]="service.test()!"
     (confirmed)="handleDeleteConfirm()"
     (closed)="handleDeleteCancel()"
   />
