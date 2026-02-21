@@ -34,6 +34,7 @@ export type IconName =
   | 'lan'
   | 'light_mode'
   | 'list_alt'
+  | 'menu'
   | 'memory'
   | 'network_check'
   | 'palette'
