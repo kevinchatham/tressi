@@ -55,9 +55,11 @@ The Tressi CLI is designed for automated environments and CI/CD pipelines. You c
 # Run with local config and export results
 tressi run ./tressi-config.json --export my-report
 
-# Run with remote config
-tressi run https://raw.githubusercontent.com/user/repo/main/config.json
+# Run with remote config (e.g., via signed URL)
+tressi run "https://storage.provider.com/configs/test.json?sig=..."
 ```
+
+> ⚠️ WARNING: Remote configurations may contain sensitive information like access tokens. Ensure remote URLs are secured (e.g., using Blob Storage with SAS tokens or signed URLs) and avoid using public repositories for configurations containing credentials.
 
 ## Next Steps
 
