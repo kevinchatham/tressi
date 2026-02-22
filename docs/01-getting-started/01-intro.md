@@ -17,6 +17,6 @@ Tressi is a local-first load testing platform for API performance analysis. It u
 - **Headless Execution**: Run tests via CLI for integration with DevOps tooling.
 - **Export & Import**: Move configurations and results between environments using JSON, XLSX, or Markdown.
 
-## Next Steps
+### Next Steps
 
 Follow the [Quickstart Guide](./02-quickstart.md) to run your first test.

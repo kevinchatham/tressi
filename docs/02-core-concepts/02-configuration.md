@@ -103,3 +103,7 @@ For users managing configurations as code, Tressi provides a versioned JSON Sche
   }
 }
 ```
+
+### Next Steps
+
+Review the [Execution Lifecycle](./03-execution-lifecycle.md) to understand how Tressi runs your tests.

@@ -27,3 +27,7 @@ Tressi maintains a constant request rate throughout the test duration. This prov
 ### Local Performance Analysis
 
 By running tests from a local environment or a controlled internal network, Tressi minimizes external network noise. This ensures that performance metrics reflect the actual capabilities of the application and its immediate infrastructure rather than internet-wide latency fluctuations.
+
+### Next Steps
+
+Review the [Configuration Guide](./02-configuration.md) to learn how to define your load tests.

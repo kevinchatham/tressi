@@ -49,7 +49,7 @@ The **Test Details** page provides telemetry and statistical breakdowns.
 
 ### 7. CLI Execution
 
-The Tressi CLI is designed for automated environments and CI/CD pipelines. You can execute load tests by providing a local configuration file or a remote URL. Results are exported to a timestamped directory containing JSON, XLSX, and Markdown reports:
+The Tressi CLI is designed for automated environments and CI/CD pipelines. You can execute load tests by providing a local configuration file or a remote URL. Results are exported to a timestamped directory containing JSON, XLSX, and Markdown reports simultaneously:
 
 ```bash
 # Run with local config and export results
@@ -61,6 +61,6 @@ tressi run "https://storage.provider.com/configs/test.json?sig=..."
 
 > ⚠️ WARNING: Remote configurations may contain sensitive information like access tokens. Ensure remote URLs are secured (e.g., using Blob Storage with SAS tokens or signed URLs) and avoid using public repositories for configurations containing credentials.
 
-## Next Steps
+### Next Steps
 
 Review the [Core Concepts](../02-core-concepts/index.md) to continue learning about the fundamentals of Tressi.

@@ -29,3 +29,7 @@ Shows how RPS and Latency fluctuate during the test duration.
 ### Latency Distribution
 
 A histogram showing the frequency of different response times.
+
+### Next Steps
+
+Review the [Advanced Concepts](../03-advanced/index.md) to explore advanced features and CI/CD integration.
