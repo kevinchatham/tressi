@@ -276,6 +276,7 @@ export class MarkdownExporter {
     md += `| Network Sent | ${formatBytes(global.networkBytesSent)} |\n`;
     md += `| Network Received | ${formatBytes(global.networkBytesReceived)} |\n`;
     md += `| Network Throughput | ${formatBytes(global.networkBytesPerSec)}/s |\n`;
+    md += `| Target Achieved | ${(global.targetAchieved * 100).toFixed(1)}% |\n`;
     md += `| CPU Usage | ${global.avgSystemCpuUsagePercent.toFixed(1)}% |\n`;
     md += `| Memory Usage | ${global.avgProcessMemoryUsageMB.toFixed(1)} MB |\n`;
     md += `| Test Started | ${new Date(global.epochStartedAt).toLocaleString()} |\n`;

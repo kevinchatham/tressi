@@ -17,22 +17,22 @@
           Throughput
         </h3>
         <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-5">
-          <!-- Average RPS -->
-          <div class="bg-base-100 rounded-xl p-4">
-            <div
-              class="text-base-content/70 mb-1 text-sm"
-              [attr.title]="tooltips['avgRps']"
-            >
-              Average RPS
+          <!-- Target Achieved (Global or Endpoint) -->
+          @if (selectedSummary()?.targetAchieved) {
+            <div class="bg-base-100 rounded-xl p-4">
+              <div
+                class="text-base-content/70 mb-1 text-sm"
+                [attr.title]="tooltips['targetAchieved']"
+              >
+                Target Achieved
+              </div>
+              <div
+                class="text-2xl font-bold"
+                [appFormatPercentage]="selectedSummary()?.targetAchieved"
+              ></div>
+              <div class="text-base-content/60 mt-1 text-xs">of target RPS</div>
             </div>
-            <div
-              class="text-2xl font-bold"
-              [appFormatRps]="selectedSummary()?.averageRequestsPerSecond"
-            ></div>
-            <div class="text-base-content/60 mt-1 text-xs">
-              requests per sec
-            </div>
-          </div>
+          }
 
           <!-- Peak RPS -->
           <div
@@ -52,56 +52,22 @@
             <div class="text-base-content/60 mt-1 text-xs">highest window</div>
           </div>
 
-          <!-- Global view: Test Duration -->
-          @if (globalSummary()?.finalDurationSec) {
-            <div class="bg-base-100 rounded-xl p-4">
-              <div
-                class="text-base-content/70 mb-1 text-sm"
-                [attr.title]="tooltips['duration']"
-              >
-                Duration
-              </div>
-              <div
-                class="text-2xl font-bold"
-                [appFormatDuration]="globalSummary()?.finalDurationSec"
-              ></div>
-              <div class="text-base-content/60 mt-1 text-xs">total time</div>
+          <!-- Average RPS -->
+          <div class="bg-base-100 rounded-xl p-4">
+            <div
+              class="text-base-content/70 mb-1 text-sm"
+              [attr.title]="tooltips['avgRps']"
+            >
+              Average RPS
             </div>
-          }
-
-          <!-- Global view: Endpoints Tested -->
-          @if (globalSummary()?.totalEndpoints) {
-            <div class="bg-base-100 rounded-xl p-4">
-              <div
-                class="text-base-content/70 mb-1 text-sm"
-                [attr.title]="tooltips['endpoints']"
-              >
-                Endpoints
-              </div>
-              <div
-                class="text-2xl font-bold"
-                [appFormatNumber]="globalSummary()?.totalEndpoints"
-              ></div>
-              <div class="text-base-content/60 mt-1 text-xs">tested</div>
+            <div
+              class="text-2xl font-bold"
+              [appFormatRps]="selectedSummary()?.averageRequestsPerSecond"
+            ></div>
+            <div class="text-base-content/60 mt-1 text-xs">
+              requests per sec
             </div>
-          }
-
-          <!-- Endpoint view: Target Achieved -->
-          @if (endpointSummary()?.targetAchieved) {
-            <div class="bg-base-100 rounded-xl p-4">
-              <div
-                class="text-base-content/70 mb-1 text-sm"
-                [attr.title]="tooltips['targetAchieved']"
-              >
-                Target Achieved
-              </div>
-              <div
-                class="text-2xl font-bold"
-                [appFormatPercentage]="endpointSummary()?.targetAchieved"
-              ></div>
-              <div class="text-base-content/60 mt-1 text-xs">of target RPS</div>
-            </div>
-          }
+          </div>
 
           <!-- Endpoint view: Theoretical Max RPS -->
           @if (endpointSummary()?.theoreticalMaxRps) {

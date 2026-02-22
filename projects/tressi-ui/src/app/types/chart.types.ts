@@ -7,7 +7,7 @@
  * Available chart types for displaying test metrics
  */
 export const CHART_TYPES = [
-  // Existing
+  'target_achieved',
   'peak_throughput',
   'average_throughput',
   'latency',
@@ -46,6 +46,7 @@ export interface ChartOption {
  */
 export const CHART_OPTIONS: ChartOption[] = [
   // Throughput Category
+  { value: 'target_achieved', label: 'Target Achieved' },
   { value: 'peak_throughput', label: 'Peak RPS' },
   { value: 'average_throughput', label: 'Average RPS' },
 
@@ -55,8 +56,8 @@ export const CHART_OPTIONS: ChartOption[] = [
   { value: 'latency_p99', label: 'P99 Latency' },
 
   // Reliability Category
-  { value: 'success_rate', label: 'Success Rate %' },
-  { value: 'error_rate', label: 'Error Rate %' },
+  { value: 'success_rate', label: 'Success Rate' },
+  { value: 'error_rate', label: 'Error Rate' },
   { value: 'failed_requests', label: 'Failed Requests' },
 
   // Network Category

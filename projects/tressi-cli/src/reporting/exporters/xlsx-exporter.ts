@@ -100,6 +100,7 @@ export class XlsxExporter {
       { Metric: 'Network Bytes Sent', Value: g.networkBytesSent },
       { Metric: 'Network Bytes Received', Value: g.networkBytesReceived },
       { Metric: 'Network Throughput (B/s)', Value: g.networkBytesPerSec },
+      { Metric: 'Target Achieved (%)', Value: g.targetAchieved },
       { Metric: 'CPU Usage (%)', Value: g.avgSystemCpuUsagePercent },
       { Metric: 'Memory Usage (MB)', Value: g.avgProcessMemoryUsageMB },
       { Metric: 'Test Started (epoch)', Value: g.epochStartedAt },

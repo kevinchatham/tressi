@@ -14,6 +14,7 @@ export type Metric = {
   statusCodeDistribution: Record<number, number>;
   successfulRequests: number;
   totalRequests: number;
+  targetAchieved: number;
 };
 
 /**

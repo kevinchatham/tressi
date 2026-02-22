@@ -39,12 +39,12 @@ export class HeroStatsComponent {
   readonly selectedEndpoint = input<string>('global');
 
   /**
-   * Computed success rate percentage
+   * Computed target achieved percentage
    */
-  readonly successRate = computed(() => {
+  readonly targetAchievedPercentage = computed(() => {
     const summary = this.selectedSummary();
     if (!summary) return 0;
-    return 100 - (summary.errorRate || 0) * 100;
+    return summary.targetAchieved;
   });
 
   /**

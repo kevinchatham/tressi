@@ -552,8 +552,22 @@ export class MetricsAggregator implements IMetricsAggregator {
         networkBytesReceived: endpointBytesReceived,
         networkBytesPerSec: endpointBytesPerSec,
         errorRate: endpointFailureRequests / endpointTotalRequests,
+        targetAchieved: 0, // Will be calculated below
       };
     });
+
+    // Calculate targetAchieved for each endpoint
+    if (this._config) {
+      endpoints.forEach((url) => {
+        const requestConfig = this._config!.requests.find(
+          (req) => req.url === url,
+        );
+        if (requestConfig && endpointMetrics[url]) {
+          endpointMetrics[url].targetAchieved =
+            endpointMetrics[url].peakRequestsPerSecond / requestConfig.rps;
+        }
+      });
+    }
 
     // Calculate global peak RPS
     let globalPeakRpsDiff = 0;
@@ -648,7 +662,19 @@ export class MetricsAggregator implements IMetricsAggregator {
       networkBytesReceived: totalBytesReceived,
       networkBytesPerSec: globalBytesPerSec,
       errorRate: totalFailure / totalRequests,
+      targetAchieved: 0, // Will be calculated below
     };
+
+    // Calculate global targetAchieved as average of all endpoints
+    const endpointValues = Object.values(endpointMetrics);
+    if (endpointValues.length > 0) {
+      const totalTargetAchieved = endpointValues.reduce(
+        (sum, m) => sum + (m.targetAchieved || 0),
+        0,
+      );
+      globalMetrics.targetAchieved =
+        totalTargetAchieved / endpointValues.length;
+    }
 
     return {
       epoch: currentTime,

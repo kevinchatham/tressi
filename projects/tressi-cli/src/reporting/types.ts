@@ -128,6 +128,8 @@ export type GlobalSummary = {
   avgSystemCpuUsagePercent: number;
   /** Average process heap memory usage in MB during the test */
   avgProcessMemoryUsageMB: number;
+  /** Average percentage of configured RPS achieved across all endpoints */
+  targetAchieved: number;
   /** The aggregated histogram of the test */
   histogram: LatencyHistogram;
 };

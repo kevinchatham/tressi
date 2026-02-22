@@ -1,21 +1,12 @@
 <div
   class="stats stats-vertical md:stats-horizontal bg-base-300 border-base-content/5 flex w-full border shadow-sm"
 >
-  <!-- Success Rate Stat -->
+  <!-- Target Achieved Stat -->
   <div class="stat place-items-center">
-    <div class="stat-title">Success Rate</div>
+    <div class="stat-title">Target Achieved</div>
     <div
       class="stat-value text-success"
-      [appFormatPercentage]="successRate() / 100"
-    ></div>
-  </div>
-
-  <!-- Average RPS Stat -->
-  <div class="stat place-items-center">
-    <div class="stat-title">Average RPS</div>
-    <div
-      class="stat-value text-primary"
-      [appFormatRps]="selectedSummary()?.averageRequestsPerSecond"
+      [appFormatPercentage]="targetAchievedPercentage()"
     ></div>
   </div>
 
@@ -25,6 +16,15 @@
     <div
       class="stat-value text-secondary"
       [appFormatRps]="selectedSummary()?.peakRequestsPerSecond"
+    ></div>
+  </div>
+
+  <!-- Average RPS Stat -->
+  <div class="stat place-items-center">
+    <div class="stat-title">Average RPS</div>
+    <div
+      class="stat-value text-primary"
+      [appFormatRps]="selectedSummary()?.averageRequestsPerSecond"
     ></div>
   </div>
 

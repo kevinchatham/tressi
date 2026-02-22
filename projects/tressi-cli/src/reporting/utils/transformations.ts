@@ -205,6 +205,7 @@ export function transformAggregatedMetricToTestSummary(
     networkBytesPerSec: global.networkBytesPerSec || 0,
     avgSystemCpuUsagePercent: metrics.cpuUsagePercent,
     avgProcessMemoryUsageMB: metrics.memoryUsageMB,
+    targetAchieved: 0, // Will be calculated below
     histogram: {} as LatencyHistogram, // Will be populated below
   };
 
@@ -244,6 +245,16 @@ export function transformAggregatedMetricToTestSummary(
 
     return summary;
   });
+
+  // Calculate global target achieved as average of all endpoints
+  const totalTargetAchieved = endpointSummaries.reduce(
+    (sum, e) => sum + e.targetAchieved,
+    0,
+  );
+  globalSummary.targetAchieved =
+    endpointSummaries.length > 0
+      ? totalTargetAchieved / endpointSummaries.length
+      : 0;
 
   // Build histogram data if provided
   if (histogramData) {

@@ -5,7 +5,6 @@ import { CollapsibleCardComponent } from '../../../../components/collapsible-car
 import { IconComponent } from '../../../../components/icon/icon.component';
 import { FormatBytesDirective } from '../../../../directives/format/format-bytes.directive';
 import { FormatCpuUsageDirective } from '../../../../directives/format/format-cpu.directive';
-import { FormatDurationDirective } from '../../../../directives/format/format-duration.directive';
 import { FormatLatencyDirective } from '../../../../directives/format/format-latency.directive';
 import { FormatMemoryDirective } from '../../../../directives/format/format-memory.directive';
 import { FormatNetworkThroughputDirective } from '../../../../directives/format/format-network.directive';
@@ -57,7 +56,6 @@ export const METRIC_TOOLTIPS: Record<string, string> = {
     CommonModule,
     CollapsibleCardComponent,
     IconComponent,
-    FormatDurationDirective,
     FormatPercentageDirective,
     FormatRpsDirective,
     FormatNumberDirective,

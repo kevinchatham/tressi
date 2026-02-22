@@ -132,7 +132,7 @@ export class TestDetailComponent {
     const selected = this.service.selectedChartType();
     if (selected.includes('throughput')) return 'Req/sec';
     if (selected.includes('latency')) return 'ms';
-    if (selected.includes('rate')) return '%';
+    if (selected.includes('rate') || selected === 'target_achieved') return '%';
     if (selected.includes('network_throughput')) return 'Bytes/sec';
     if (selected.includes('network_bytes')) return 'Bytes';
     if (selected === 'failed_requests') return 'requests';

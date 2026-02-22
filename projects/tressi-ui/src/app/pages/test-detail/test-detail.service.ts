@@ -295,6 +295,8 @@ export class TestDetailService implements OnDestroy {
         return metrics.map((m) => m.metric?.networkBytesSent || 0);
       case 'network_bytes_received':
         return metrics.map((m) => m.metric?.networkBytesReceived || 0);
+      case 'target_achieved':
+        return metrics.map((m) => (m.metric?.targetAchieved || 0) * 100);
       default:
         return [];
     }
