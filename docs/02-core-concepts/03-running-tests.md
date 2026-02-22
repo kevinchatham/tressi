@@ -12,8 +12,8 @@ tressi run <config-file>
 
 ### Options
 
-- `--ui`: Start the web dashboard automatically.
-- `--port`: Specify a custom port for the dashboard.
+- `-e, --export <path>`: Export test results to specified path (supports .json, .xlsx, .md formats).
+- `-s, --silent`: Run in silent mode without TUI or progress output.
 
 ## Using the Web UI
 

@@ -57,7 +57,7 @@ describe('Tressi CLI Commands E2E Tests', () => {
 
     it('should execute a basic load test', async () => {
       const { stdout, stderr } = await execAsync(
-        `node dist/cli.js --config ${configPath}`,
+        `node dist/cli.js run ${configPath}`,
         {
           cwd: process.cwd(),
           timeout: 30000, // 30 second timeout for slower systems
@@ -90,7 +90,7 @@ describe('Tressi CLI Commands E2E Tests', () => {
 
       try {
         const { stdout, stderr } = await execAsync(
-          `node dist/cli.js --config ${customConfigPath}`,
+          `node dist/cli.js run ${customConfigPath}`,
           {
             cwd: process.cwd(),
             timeout: 30000, // 30 second timeout
@@ -117,7 +117,7 @@ describe('Tressi CLI Commands E2E Tests', () => {
       writeFileSync(configPath, JSON.stringify(invalidConfig, null, 2));
 
       try {
-        await execAsync(`node dist/cli.js --config ${configPath}`, {
+        await execAsync(`node dist/cli.js run ${configPath}`, {
           cwd: process.cwd(),
           timeout: 5000,
         });

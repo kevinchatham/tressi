@@ -6,9 +6,12 @@ Tressi uses several interesting calculations to provide accurate performance met
 
 To avoid noise and provide a realistic "peak" throughput, Tressi calculates RPS over a 5-second sliding window. This prevents momentary spikes from skewing the results while still capturing the sustained maximum capacity of your system.
 
-## Target Achieved
+## Target Achievement
 
-The "Target Achieved" metric represents the percentage of the requested RPS that Tressi was actually able to deliver. If you request 100 RPS but the system only delivers 80 RPS, the Target Achieved will be 80%. This is a critical indicator of whether your load generator or the target system is the bottleneck.
+The **Target Achieved** metric represents the percentage of requested RPS successfully delivered during the peak request window. It identifies whether the target system or the testing environment reached saturation.
+
+- **100% Achievement**: The target infrastructure successfully processed the full requested load.
+- **<100% Achievement**: Indicates a performance bottleneck. Failure to reach the target RPS typically results from target saturation, network constraints, or load generator resource exhaustion.
 
 ## Latency Percentiles
 

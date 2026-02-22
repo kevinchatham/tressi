@@ -31,10 +31,6 @@ class TressiCLI {
       .version(pkg.version);
 
     this._program.option(
-      '-c, --config [path]',
-      'Path or URL to JSON configuration file (local file path or remote URL). Defaults to ./tressi.config.json',
-    );
-    this._program.option(
       '-e, --export [path]',
       'Export test results to specified path (supports .json, .xlsx, .md formats)',
     );
@@ -49,6 +45,17 @@ class TressiCLI {
    * Sets up all CLI commands.
    */
   private _setupCommands(): void {
+    // Run command
+    this._program
+      .command('run')
+      .argument('<config>', 'Path or URL to JSON configuration file')
+      .summary('Run a load test')
+      .description(RunCommand.getDescription())
+      .action(async (config, options) => {
+        const command = new RunCommand();
+        await command.execute(config, options.export, options.silent);
+      });
+
     // Serve command
     this._program
       .command('serve')
@@ -70,12 +77,6 @@ class TressiCLI {
         const command = new ResetCommand();
         await command.execute();
       });
-
-    // Default run command (when no specific command is provided)
-    this._program.action(async (opts) => {
-      const command = new RunCommand();
-      await command.execute(opts.config, opts.export, opts.silent);
-    });
   }
 
   /**
@@ -86,33 +87,26 @@ class TressiCLI {
       'after',
       `
 Commands:
-  serve   Start a Hono server with healthcheck endpoint
-  reset   Completely reset Tressi database
+  run <config>  Run a load test using the specified configuration file
+  serve         Start a Hono server with healthcheck endpoint
+  reset         Completely reset Tressi database
 
 Options:
-  -c, --config <path>  Path or URL to JSON configuration file (local file path or remote URL)
-                        Defaults to ./tressi.config.json if not specified
   -e, --export <path>  Export test results to specified path (supports .json, .xlsx, .md formats)
   -s, --silent         Run in silent mode without TUI or progress output
 
 Examples:
-  # Run a load test using default tressi.config.json in current directory
-  $ tressi
-
   # Run a load test with a specific local configuration file
-  $ tressi --config ./path/to/your/tressi.config.json
+  $ tressi run ./my-config.json
 
   # Run a load test with a remote configuration file
-  $ tressi --config https://example.com/tressi.config.json
+  $ tressi run https://example.com/tressi.config.json
 
   # Run a load test and export results to JSON
-  $ tressi --export ./results/test-results.json
+  $ tressi run ./my-config.json --export ./results/test-results.json
 
   # Run a load test silently and export to XLSX
-  $ tressi --silent --export ./results/test-results.xlsx
-
-  # Run a load test with custom config, silent mode, and export
-  $ tressi --config ./my-config.json --silent --export ./results/report.xlsx
+  $ tressi run ./my-config.json --silent --export ./results/test-results.xlsx
 
   # Start the Tressi server on default port (3108 - the speed of light in m/s)
   $ tressi serve
