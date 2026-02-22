@@ -65,7 +65,7 @@
                 form().config.requests[$index].url().touched() &&
                 form().config.requests[$index].url().invalid()
               ) {
-                <p class="label text-error">
+                <p class="label text-error ml-2">
                   @for (
                     error of form().config.requests[$index].url().errors();
                     track error
@@ -81,7 +81,7 @@
               <legend
                 class="fieldset-legend text-xs font-bold uppercase opacity-70"
               >
-                RPS
+                Target
               </legend>
               <input
                 type="number"
@@ -89,12 +89,14 @@
                 [field]="form().config.requests[$index].rps"
                 placeholder="Requests per second"
               />
-              <p class="label py-0 text-xs opacity-60">Requests per second</p>
+              <p class="label ml-2 py-0 text-xs opacity-60">
+                Requests per second
+              </p>
               @if (
                 form().config.requests[$index].rps().touched() &&
                 form().config.requests[$index].rps().invalid()
               ) {
-                <p class="label text-error">
+                <p class="label text-error ml-2">
                   @for (
                     error of form().config.requests[$index].rps().errors();
                     track error
@@ -110,7 +112,7 @@
               <legend
                 class="fieldset-legend text-xs font-bold uppercase opacity-70"
               >
-                Ramp Up Time (seconds)
+                Ramp Up Time
               </legend>
               <input
                 type="number"
@@ -118,12 +120,12 @@
                 [field]="form().config.requests[$index].rampUpDurationSec"
                 placeholder="Time to reach target RPS"
               />
-              <p class="label py-0 text-xs opacity-60">Per endpoint</p>
+              <p class="label ml-2 py-0 text-xs opacity-60">In seconds</p>
               @if (
                 form().config.requests[$index].rampUpDurationSec().touched() &&
                 form().config.requests[$index].rampUpDurationSec().invalid()
               ) {
-                <p class="label text-error">
+                <p class="label text-error ml-2">
                   @for (
                     error of form()
                       .config.requests[$index].rampUpDurationSec()
@@ -141,7 +143,7 @@
               <legend
                 class="fieldset-legend text-xs font-bold uppercase opacity-70"
               >
-                Headers (JSON)
+                Headers
               </legend>
               <app-json-textarea
                 [(value)]="model().config.requests[$index].headers"
@@ -149,8 +151,8 @@
                 (valueChange)="onJsonTextareaValueChange()"
                 placeholder='{"Content-Type": "application/json", "Authorization": "Bearer token"}'
               />
-              <p class="label py-0 text-xs text-wrap opacity-60">
-                Overrides global
+              <p class="label ml-2 py-0 text-xs text-wrap opacity-60">
+                Merged with global headers; request headers take precedence
               </p>
             </fieldset>
 
@@ -192,6 +194,9 @@
                   })
                 "
               />
+              <p class="label ml-2 py-0 text-xs text-wrap opacity-60">
+                Overrides global configuration
+              </p>
             </div>
           </div>
         </app-collapsible-card>

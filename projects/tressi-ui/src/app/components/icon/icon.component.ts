@@ -26,6 +26,7 @@ export type IconName =
   | 'error'
   | 'expand_all'
   | 'file_save'
+  | 'health_and_safety'
   | 'help_outline'
   | 'inbox'
   | 'info'

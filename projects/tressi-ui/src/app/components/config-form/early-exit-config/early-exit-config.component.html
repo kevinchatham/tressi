@@ -28,12 +28,12 @@
             placeholder="0.0 - 1.0"
             step="0.01"
           />
-          <p class="label py-0 text-xs opacity-60">Range: 0.0 - 1.0</p>
+          <p class="label ml-2 py-0 text-xs opacity-60">Range: 0.0 - 1.0</p>
           @if (
             form().errorRateThreshold().touched() &&
             form().errorRateThreshold().invalid()
           ) {
-            <p class="label text-error">
+            <p class="label text-error ml-2">
               @for (
                 error of form().errorRateThreshold().errors();
                 track error
@@ -57,14 +57,14 @@
             [field]="form().monitoringWindowMs"
             placeholder="Monitoring duration in milliseconds"
           />
-          <p class="label py-0 text-xs opacity-60">
+          <p class="label ml-2 py-0 text-xs opacity-60">
             Duration to monitor for errors (milliseconds)
           </p>
           @if (
             form().monitoringWindowMs().touched() &&
             form().monitoringWindowMs().invalid()
           ) {
-            <p class="label text-error">
+            <p class="label text-error ml-2">
               @for (
                 error of form().monitoringWindowMs().errors();
                 track error
@@ -108,7 +108,7 @@
                 form().exitStatusCodes[$index]().touched() &&
                 form().exitStatusCodes[$index]().invalid()
               ) {
-                <p class="label text-error">
+                <p class="label text-error ml-2">
                   @for (
                     error of form().exitStatusCodes[$index]().errors();
                     track error

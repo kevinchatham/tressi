@@ -33,7 +33,7 @@ export class WorkerRateLimiter {
     // Initialize to 0 so that elapsed time is calculated from testTimeElapsed
     this._lastRefill = new Array(_endpoints.length).fill(0);
 
-    // Calculate effective ramp-up duration for each endpoint
+    // Calculate effective ramp up duration for each endpoint
     // If endpoint value is 0, use global value
     this._rampUpDurationsSec = _endpoints.map(
       (endpoint) => endpoint.rampUpDurationSec || globalRampUpDurationSec,

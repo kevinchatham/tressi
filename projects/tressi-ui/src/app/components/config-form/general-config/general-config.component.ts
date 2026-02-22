@@ -1,7 +1,8 @@
-import { Component, input, output } from '@angular/core';
+import { Component, input, output, signal } from '@angular/core';
 import { Field } from '@angular/forms/signals';
 
 import { ModifyConfigRequest } from '../../../services/rpc.service';
+import { CollapsibleCardComponent } from '../../collapsible-card/collapsible-card.component';
 import { IconComponent } from '../../icon/icon.component';
 import { JsonTextareaComponent } from '../../json-textarea/json-textarea.component';
 import { ModifyConfigRequestFormType } from '../config-form.component';
@@ -14,6 +15,7 @@ import { EarlyExitConfigComponent } from '../early-exit-config/early-exit-config
     IconComponent,
     EarlyExitConfigComponent,
     JsonTextareaComponent,
+    CollapsibleCardComponent,
   ],
   templateUrl: './general-config.component.html',
 })
@@ -32,6 +34,12 @@ export class GeneralConfigComponent {
 
   /** Event emitted when JSON textarea value changes */
   readonly jsonTextareaChange = output<void>();
+
+  /** Collapsed state for engine settings */
+  readonly engineSettingsCollapsed = signal(true);
+
+  /** Collapsed state for global defaults */
+  readonly globalDefaultsCollapsed = signal(true);
 
   /** Handle JSON textarea value changes */
   onJsonTextareaValueChange(): void {

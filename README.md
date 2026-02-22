@@ -251,7 +251,7 @@ Run with:
 npx tressi run ./tressi.config.json
 ```
 
-#### Ramp-up Load Test
+#### Ramp up Load Test
 
 Gradually increases the load to your target requests per second over a specified duration:
 

@@ -65,7 +65,7 @@ function printRunConfiguration(
   configTable.push(['Workers', `${threads || 'auto'}`]);
 
   if (rampUpDurationSec) {
-    configTable.push(['Ramp-up Time', `${rampUpDurationSec}s`]);
+    configTable.push(['ramp up Time', `${rampUpDurationSec}s`]);
   }
 
   terminal.print('\n' + chalk.bold('Run Configuration'));
