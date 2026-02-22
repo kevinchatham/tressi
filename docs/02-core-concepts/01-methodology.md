@@ -12,6 +12,14 @@ The **Target Achieved** metric measures the percentage of requested Requests Per
   - **Network Constraints**: Latency or bandwidth limitations between the generator and target.
   - **Generator Bottlenecks**: Local system resource exhaustion (CPU, memory, or network I/O).
 
+### Multi-Endpoint Achievement
+
+Tressi evaluates achievement at both the global and individual endpoint levels to provide a complete performance profile during parallel execution.
+
+- **Global Achievement**: The aggregate percentage of total requested targets delivered across the entire configuration.
+- **Endpoint Achievement**: The specific achievement rate for each target URL, ensuring that performance regressions in secondary endpoints are not obscured by high volume primary endpoints.
+- **Contention Analysis**: Parallel testing identifies how endpoints compete for shared infrastructure resources, such as connection pools or internal bandwidth, which isolated tests may fail to trigger.
+
 ### Constant Load Execution
 
 Tressi maintains a constant request rate throughout the test duration. This provides a stable environment for observing system behavior under sustained pressure, making it easier to identify memory leaks, connection pool exhaustion, or garbage collection issues that may not appear during short bursts or variable-rate tests.

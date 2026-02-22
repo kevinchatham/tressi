@@ -36,7 +36,7 @@ export class ImportConfigButtonComponent {
       const validation = validateConfig(parsed);
 
       if (!validation.success) {
-        this.importError.emit('Invalid configuration file format');
+        this.importError.emit(`Invalid configuration file`);
         return;
       }
 
