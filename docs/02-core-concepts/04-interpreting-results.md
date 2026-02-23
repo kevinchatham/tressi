@@ -14,7 +14,7 @@ Tressi provides two levels of granularity for performance data:
 Throughput measures the volume of requests processed by the target system.
 
 - **Target Achieved**: The percentage of the configured target that was successfully executed. Values below 100% indicate the runner or target system could not maintain the requested load.
-- **Peak RPS**: The highest throughput achieved within any 1-second measurement window.
+- **Peak RPS**: The highest throughput achieved within a measurement window.
 - **Average RPS**: The mean number of requests per second completed throughout the test duration.
 - **Max Throughput**: A theoretical maximum calculated based on median (P50) latency and a single concurrent request (1000 / P50).
 - **Total Requests**: The absolute count of completed requests.

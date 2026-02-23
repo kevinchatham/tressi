@@ -18,6 +18,10 @@
   @apply text-primary/80 mb-4 text-xl font-semibold;
 }
 
+.markdown-body h4 {
+  @apply text-primary/80 text-lg font-semibold;
+}
+
 .markdown-body p {
   @apply mb-4 block;
 }
