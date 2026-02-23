@@ -30,12 +30,20 @@ export const AppRoutes = {
 export type AppRoute = (typeof AppRoutes)[keyof typeof AppRoutes];
 
 // Health check guard using the centralized service
-const healthCheckGuard = (): boolean => {
+const healthCheckGuard = async (): Promise<boolean> => {
   const health = inject(HealthService);
   const appRouter = inject(AppRouterService);
 
   // If already known to be unhealthy, navigate to error page
   if (!health.isHealthy()) {
+    appRouter.toServerUnavailable();
+    return false;
+  }
+
+  // Otherwise probe the server once to ensure it is online
+  const isHealthy = await health.check();
+
+  if (!isHealthy) {
     appRouter.toServerUnavailable();
     return false;
   }

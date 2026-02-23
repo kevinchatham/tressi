@@ -32,6 +32,12 @@ export function createApp(sseManager: ISSEClientManager, port: number) {
       });
       return middleware(c, next);
     })
+    .get('/api/health', (c) => {
+      return c.json({
+        status: 'healthy',
+        timestamp: Date.now(),
+      });
+    })
     .route('/api/config', configs)
     .route('/api/docs', docs)
     .route('/api/test', tests)

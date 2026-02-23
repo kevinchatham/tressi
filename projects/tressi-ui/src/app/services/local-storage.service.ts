@@ -44,6 +44,7 @@ export const UserPreferencesSchema = z.object({
   selectedTheme: z.custom<Theme>(),
   lastSelectedConfig: z.custom<ConfigDocument | null>(),
   columnPreferences: z.array(ColumnConfigSchema).nullable(),
+  lastRoute: z.string().nullable(),
 });
 
 export type UserPreferences = z.infer<typeof UserPreferencesSchema>;
@@ -69,6 +70,7 @@ export class LocalStorageService {
       selectedTheme: prefersDark ? 'storm' : 'shine',
       lastSelectedConfig: null,
       columnPreferences: DEFAULT_COLUMN_CONFIGS,
+      lastRoute: null,
     };
   });
 
@@ -87,6 +89,14 @@ export class LocalStorageService {
     const validated = UserPreferencesSchema.parse(preferences);
     localStorage.setItem(this._storageKey, JSON.stringify(validated));
     this._preferences.set(validated);
+  }
+
+  /**
+   * Saves the last known route to localStorage
+   */
+  saveLastRoute(route: string): void {
+    const current = this._preferences();
+    this.savePreferences({ ...current, lastRoute: route });
   }
 
   /**

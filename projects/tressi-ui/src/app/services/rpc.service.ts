@@ -185,3 +185,6 @@ export type SearchDocsResponseError = Extract<
 >;
 
 export type SearchResult = SearchDocsResponseSuccess[number];
+
+// ! Health
+export type GetHealthResponse = InferResponseType<typeof client.health.$get>;

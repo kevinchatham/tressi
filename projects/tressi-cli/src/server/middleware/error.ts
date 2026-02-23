@@ -18,7 +18,7 @@ export function createErrorHandler(): MiddlewareHandler {
             error instanceof Error && 'code' in error
               ? String(error.code)
               : undefined,
-          timestamp: new Date().toISOString(),
+          timestamp: Date.now(),
           path: c.req.path,
         },
       };

@@ -15,7 +15,7 @@ import { HealthService } from '../../services/health.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ServerUnavailableComponent {
-  readonly retryMessage = computed(() => this._health.getRetryMessage());
   private readonly _health = inject(HealthService);
+  readonly retryMessage = computed(() => this._health.getRetryMessage());
   readonly logoSrc = logoSrc;
 }

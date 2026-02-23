@@ -5,6 +5,7 @@ import { AppRoutes } from '../app.routes';
 import { EventService } from './event.service';
 import { LogService } from './log.service';
 import { AppRouterService } from './router.service';
+import { RPCService } from './rpc.service';
 
 /**
  * Service responsible for monitoring the health of the backend server using the unified event stream
@@ -30,6 +31,7 @@ export class HealthService {
   private readonly _log = inject(LogService);
   private readonly _appRouter = inject(AppRouterService);
   private readonly _eventService = inject(EventService);
+  private readonly _rpc = inject(RPCService);
 
   /** Timeout for heartbeat in milliseconds (5 seconds) */
   private readonly _heartbeatTimeout = 5000;
@@ -65,6 +67,41 @@ export class HealthService {
   }
 
   /**
+   * Manually checks the health of the backend server
+   * @returns Promise resolving to true if healthy, false otherwise
+   */
+  async check(): Promise<boolean> {
+    try {
+      const response = await this._rpc.client.health.$get();
+
+      if (!response.ok) {
+        throw new Error('Health check failed');
+      }
+
+      const data = await response.json();
+
+      this._state.update((current) => ({
+        ...current,
+        isHealthy: true,
+        lastCheck: new Date(data.timestamp),
+        error: null,
+      }));
+
+      // If we were unhealthy and now we're healthy, trigger recovery
+      this._handleRecovery();
+
+      return true;
+    } catch (error) {
+      this._state.update((current) => ({
+        ...current,
+        isHealthy: false,
+        error: error instanceof Error ? error : new Error('Unknown error'),
+      }));
+      return false;
+    }
+  }
+
+  /**
    * Subscribes to connected events from the unified event stream
    * @private
    */
@@ -79,30 +116,33 @@ export class HealthService {
           error: null,
         }));
 
-        // If we were on the server-unavailable page and just reconnected
-        if (
-          this._appRouter.getCurrentUrl().includes(AppRoutes.SERVER_UNAVAILABLE)
-        ) {
-          this._log.info('Server recovered, redirecting to dashboard');
-          this._appRouter.toHome();
-          // Stop retrying if we were in a retry loop
-          this._stopRetryTimer();
-          // Reset heartbeat timeout
-          this._resetHeartbeatTimeout();
-          return;
-        }
-
-        // Stop retrying if we were in a retry loop
-        this._stopRetryTimer();
-
-        // Reset heartbeat timeout
-        this._resetHeartbeatTimeout();
+        this._handleRecovery();
       },
       error: (error) => {
         this._log.error('Health monitoring subscription error', error);
         this._handleConnectionLoss();
       },
     });
+  }
+
+  /**
+   * Handles recovery when the server becomes available again
+   * @private
+   */
+  private _handleRecovery(): void {
+    if (!this.isHealthy()) return;
+
+    // Stop retrying if we were in a retry loop
+    this._stopRetryTimer();
+
+    // Reset heartbeat timeout
+    this._resetHeartbeatTimeout();
+
+    // Only redirect if we are currently on the server unavailable page
+    if (window.location.href.includes('server-unavailable')) {
+      this._log.info('Server recovered, resuming last session');
+      this._appRouter.toLastRoute();
+    }
   }
 
   /**
@@ -148,14 +188,15 @@ export class HealthService {
    * @private
    */
   private _startRetryTimer(): void {
-    if (this._retryIntervalId) {
-      return;
-    }
+    if (this._retryIntervalId) return;
 
     this._log.info('Starting reconnection retry timer');
-    this._retryIntervalId = setInterval(() => {
+    this._retryIntervalId = setInterval(async () => {
       this._log.info('Attempting to reconnect to event stream...');
       this._eventService.connectToEventStream();
+
+      // Fallback: also check health via HTTP in case SSE is stuck
+      await this.check();
     }, this._retryInterval);
   }
 
