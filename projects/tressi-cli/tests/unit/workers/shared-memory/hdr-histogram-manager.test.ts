@@ -317,11 +317,11 @@ describe('HdrHistogramManager', () => {
 
       // Access private method for testing
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const getValueFromIndex = (manager as any).getValueFromIndex.bind(
+      const getValueFromIndex = (manager as any)._getValueFromIndex.bind(
         manager,
       );
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const subBucketHalfCount = (manager as any).subBucketHalfCount;
+      const subBucketHalfCount = (manager as any)._subBucketHalfCount;
 
       const valAtBoundaryMinus1 = getValueFromIndex(subBucketHalfCount - 1);
       const valAtBoundary = getValueFromIndex(subBucketHalfCount);

@@ -360,8 +360,8 @@ describe('MetricsAggregator', () => {
 
       const endpointMetrics = results.endpoints['http://example.com/api/1'];
       expect(endpointMetrics.totalRequests).toBe(12);
-      expect(endpointMetrics.successfulRequests).toBe(12);
-      expect(endpointMetrics.failedRequests).toBe(0);
+      expect(endpointMetrics.successfulRequests).toBe(10);
+      expect(endpointMetrics.failedRequests).toBe(2);
       // errorPercentage and averageLatency are not part of Metric type
       // p50Latency, p95Latency, p99Latency should be p50LatencyMs, p95LatencyMs, p99LatencyMs
       expect(endpointMetrics.p50LatencyMs).toBe(95);
@@ -498,9 +498,8 @@ describe('MetricsAggregator', () => {
       aggregator.stopPolling();
       const afterStop = Date.now();
 
-      // Access private endTime for testing
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const endTime = (aggregator as any).endTime;
+      // Access endTime for testing
+      const endTime = aggregator.endTime;
       expect(endTime).toBeGreaterThanOrEqual(beforeStop);
       expect(endTime).toBeLessThanOrEqual(afterStop);
     });

@@ -62,6 +62,10 @@ export class MetricsAggregator implements IMetricsAggregator {
   }> = [];
   private _metricsSamplingInterval: NodeJS.Timeout | null = null;
 
+  public get endTime(): number {
+    return this._endTime;
+  }
+
   constructor(
     private _hdrHistogramManagers: IHdrHistogramManager[],
     private _statsCounterManagers: IStatsCounterManager[],
@@ -263,7 +267,7 @@ export class MetricsAggregator implements IMetricsAggregator {
       clearInterval(this._pollingInterval);
       this._pollingInterval = null;
     }
-    this._endTime = Date.now(); // ← Capture end time
+    this._endTime = Date.now();
   }
 
   /**
