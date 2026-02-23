@@ -1,9 +1,10 @@
 /* eslint-disable no-console */
 class Terminal {
   print(message?: unknown, ...optionalParams: unknown[]): void {
-    const hasOptional = optionalParams && optionalParams.length > 0;
-    if (hasOptional) console.log(message, optionalParams);
-    else console.log(message);
+    console.log(message, ...optionalParams);
+  }
+  error(message?: unknown, ...optionalParams: unknown[]): void {
+    console.error(message, ...optionalParams);
   }
   clear(): void {
     process.stdout.write('\x1B[2J\x1B[3J\x1B[H');

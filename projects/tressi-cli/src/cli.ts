@@ -131,7 +131,7 @@ Examples:
       await initializeDatabase();
       await this._program.parseAsync(process.argv);
     } catch (error) {
-      terminal.print(chalk.red(`CLI Error: ${(error as Error).message}`));
+      terminal.error(chalk.red(`CLI Error: ${(error as Error).message}`));
       process.exit(1);
     }
   }
@@ -143,6 +143,6 @@ async function runCLI(): Promise<void> {
 }
 
 runCLI().catch((error) => {
-  terminal.print('CLI Error:', error);
+  terminal.error('CLI Error:', error);
   process.exit(1);
 });
