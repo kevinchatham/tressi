@@ -61,9 +61,12 @@ export class HealthService {
   private _heartbeatTimeoutId: ReturnType<typeof setTimeout> | null = null;
   private _retryIntervalId: ReturnType<typeof setInterval> | null = null;
   private _subscription: Subscription | null = null;
+  private _errorSubscription: Subscription | null = null;
 
   constructor() {
     this._subscribeToConnectedEvents();
+    // Initial check to kickstart health monitoring
+    this.check();
   }
 
   /**
@@ -92,11 +95,9 @@ export class HealthService {
 
       return true;
     } catch (error) {
-      this._state.update((current) => ({
-        ...current,
-        isHealthy: false,
-        error: error instanceof Error ? error : new Error('Unknown error'),
-      }));
+      this._handleConnectionLoss(
+        error instanceof Error ? error : new Error('Unknown error'),
+      );
       return false;
     }
   }
@@ -123,6 +124,12 @@ export class HealthService {
         this._handleConnectionLoss();
       },
     });
+
+    this._errorSubscription = this._eventService.getErrorStream().subscribe({
+      next: () => {
+        this._handleConnectionLoss(new Error('Event stream connection lost'));
+      },
+    });
   }
 
   /**
@@ -139,7 +146,7 @@ export class HealthService {
     this._resetHeartbeatTimeout();
 
     // Only redirect if we are currently on the server unavailable page
-    if (window.location.href.includes('server-unavailable')) {
+    if (window.location.href.includes(AppRoutes.SERVER_UNAVAILABLE)) {
       this._log.info('Server recovered, resuming last session');
       this._appRouter.toLastRoute();
     }
@@ -161,14 +168,15 @@ export class HealthService {
 
   /**
    * Handles connection loss and initiates reconnection
+   * @param error Optional error that caused the connection loss
    * @private
    */
-  private _handleConnectionLoss(): void {
+  private _handleConnectionLoss(error?: Error): void {
     // Update health state
     this._state.update((current) => ({
       ...current,
       isHealthy: false,
-      error: new Error('Server connection lost'),
+      error: error || new Error('Server connection lost'),
     }));
 
     // Navigate to server unavailable page if not already there
@@ -240,6 +248,11 @@ export class HealthService {
     if (this._subscription) {
       this._subscription.unsubscribe();
       this._subscription = null;
+    }
+
+    if (this._errorSubscription) {
+      this._errorSubscription.unsubscribe();
+      this._errorSubscription = null;
     }
 
     if (this._heartbeatTimeoutId) {

@@ -13,6 +13,7 @@ export class EventService {
   private readonly _metricsSubject = new Subject<TestSummaryData>();
   private readonly _testEventsSubject = new Subject<TestEventData>();
   private readonly _connectedSubject = new Subject<ConnectedEventData>();
+  private readonly _errorSubject = new Subject<Event>();
 
   /**
    * Get metrics stream with unified event format
@@ -36,6 +37,13 @@ export class EventService {
   getConnectedStream(): Observable<ConnectedEventData> {
     this._ensureConnected();
     return this._connectedSubject.asObservable();
+  }
+
+  /**
+   * Get error stream for connection issues
+   */
+  getErrorStream(): Observable<Event> {
+    return this._errorSubject.asObservable();
   }
 
   /**
@@ -84,6 +92,7 @@ export class EventService {
     this._eventSource.onerror = (error): void => {
       // eslint-disable-next-line no-console
       console.error('EventSource error:', error);
+      this._errorSubject.next(error);
       // Close the failed connection to allow for a clean retry
       this.disconnectFromEventStream();
     };
