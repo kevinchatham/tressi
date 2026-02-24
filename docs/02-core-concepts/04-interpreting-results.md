@@ -1,6 +1,6 @@
 # Interpreting Results
 
-Analyze test performance using global and per-endpoint metrics, visualizations, and system resource utilization data.
+Analyze test performance using global and per endpoint metrics, visualizations, and system resource utilization data.
 
 ### Metric Scopes
 
@@ -33,7 +33,7 @@ Latency represents the round-trip time for requests, measured in milliseconds (m
 Monitor the stability and data transfer efficiency of the test execution.
 
 - **Success Rate**: The ratio of successful (2xx) responses to total requests.
-- **Error Rate**: The percentage of requests that resulted in non-2xx status codes or network-level failures.
+- **Error Rate**: The percentage of requests that resulted in non 2xx status codes or network level failures.
 - **Network Throughput**: The average rate of data transfer (bytes/sec) during the test.
 - **Total Data**: The sum of all bytes sent in request bodies and received in response bodies.
 
@@ -80,8 +80,8 @@ A breakdown of all HTTP status codes returned by the target system. Essential fo
 
 Tressi captures representative response data, including headers and bodies, to assist in debugging unexpected behavior or validation failures.
 
-To optimize memory usage during high-concurrency tests, Tressi employs a "first seen" sampling strategy. The runner captures the first occurrence of each unique HTTP status code for every endpoint. Subsequent responses with the same status code for that endpoint are not stored. This ensures comprehensive coverage of different response types (e.g., 200 OK, 404 Not Found, 500 Internal Server Error) without the overhead of storing every response body.
+To optimize memory usage during high concurrency tests, Tressi employs a "first seen" sampling strategy. The runner captures the first occurrence of each unique HTTP status code for every endpoint. Subsequent responses with the same status code for that endpoint are not stored. This ensures coverage of different response types (e.g., 200 OK, 404 Not Found, 500 Internal Server Error) without the overhead of storing every response body.
 
 ### Next Steps
 
-Review the [Advanced Concepts](../03-advanced/index.md) to explore advanced features and CI/CD integration.
+Review the [Advanced Concepts](../03-advanced/index.md) to explore advanced features and automated pipelines.

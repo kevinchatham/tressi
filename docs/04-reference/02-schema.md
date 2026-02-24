@@ -38,7 +38,7 @@ Define specific endpoints to target within the `requests` array.
 | `payload`           | object  | Request body for POST/PUT/PATCH methods.                                  |
 | `headers`           | object  | Endpoint-specific headers. Merged with global headers.                    |
 | `rps`               | integer | Target requests per second for this endpoint.                             |
-| `rampUpDurationSec` | integer | Seconds to reach target RPS. Overrides global ramp-up if non-zero.        |
+| `rampUpDurationSec` | integer | Seconds to reach target RPS. Overrides global ramp up if non zero.        |
 | `earlyExit`         | object  | [Early Exit Configuration](#automate-test-termination) for this endpoint. |
 
 ### Automate Test Termination

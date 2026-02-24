@@ -28,10 +28,10 @@ Each target endpoint can be configured with its own performance profile.
 
 Tressi uses a hierarchical model for settings. This allows for broad defaults with specific overrides.
 
-- **Headers**: Endpoint-specific headers are merged with global headers. If a key exists in both, the endpoint-specific header takes precedence.
+- **Headers**: Endpoint specific headers are merged with global headers. If a key exists in both, the endpoint specific header takes precedence.
 - **Early Exit**: Worker early exit settings act as the default for all endpoints. If an endpoint defines its own `earlyExit` configuration, it overrides the global settings for that specific target. The entire test only terminates early if all endpoints have been stopped.
 
-## ramp up Dynamics
+## Ramp Up Dynamics
 
 To ensure system stability and accurate telemetry, Tressi supports a linear ramp up period.
 
@@ -39,7 +39,7 @@ To ensure system stability and accurate telemetry, Tressi supports a linear ramp
 - **Metric Accuracy**: For the most reliable performance analysis, the ramp up period should not exceed **25% (one quarter)** of the total test duration. This ensures a sufficient window of "Constant Load" to validate sustained performance.
 - **RPS Constraints**: When a global ramp up is active, all endpoints must have a target of at least **5 RPS** to ensure smooth linear progression.
 
-## Type Safety & Validation
+## Validate Configurations
 
 For users managing configurations as code, Tressi provides a versioned JSON Schema hosted on GitHub. This ensures that your configuration remains compatible with the specific version of the Tressi CLI you have installed.
 
@@ -47,7 +47,7 @@ For users managing configurations as code, Tressi provides a versioned JSON Sche
 - **IDE Integration**: Provides autocompletion and documentation tooltips in editors like VS Code when the `$schema` property is defined.
 - **Versioning**: Always use the schema version that matches your Tressi installation to ensure access to the correct features and constraints.
 
-## Example Configuration
+## Configuration Example
 
 ```json
 {

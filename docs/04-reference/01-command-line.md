@@ -13,7 +13,7 @@ Execute a load test based on a JSON configuration schema.
 **Options:**
 
 - `-e --export <path>`: Generate shareable reports to a specified directory.
-- `-s --silent`: Suppress TUI and progress output. Optimized for CI/CD pipelines and automated environments.
+- `-s --silent`: Suppress TUI and progress output. Optimized for automated pipelines and environments.
 
 ### Start Server
 
@@ -38,7 +38,7 @@ Purge all stored data from the local database.
 - This command deletes all local data.
 - Requires manual confirmation before execution.
 
-### Examples
+### CLI Examples
 
 #### Execute Local Test
 
@@ -52,7 +52,7 @@ tressi run ./load-test.config.json
 tressi run https://api.example.com/configs/perf.json --export ./reports/results
 ```
 
-#### Headless Execution for CI/CD
+#### Headless Execution
 
 ```bash
 tressi run ./config.json --silent --export ./reports/results

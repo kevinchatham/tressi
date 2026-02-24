@@ -1,12 +1,12 @@
 # Introduction
 
-Tressi is a local-first load testing platform for API performance analysis. It utilizes a high-performance execution engine paired with a web-based interface to manage the testing lifecycle.
+Tressi is a local first load testing platform for API performance analysis. It utilizes a high performance execution engine paired with a web based interface to manage the testing lifecycle.
 
 ### The Tressi Workflow
 
 1.  **Define**: Configure tests via the UI or import JSON schemas.
-2.  **Execute**: Run tests locally with real-time performance monitoring.
-3.  **Analyze**: Review comprehensive performance metrics and response samples.
+2.  **Execute**: Run tests locally with realtime performance monitoring.
+3.  **Analyze**: Review performance metrics and response samples.
 4.  **Share**: Export results or share configurations for collaboration.
 
 ### Core Capabilities

@@ -1,4 +1,4 @@
-# CI/CD Integration
+# Automated Pipelines
 
 Automate performance regression testing by integrating Tressi into deployment pipelines.
 
@@ -7,7 +7,7 @@ Automate performance regression testing by integrating Tressi into deployment pi
 Run the Tressi CLI in environments without a TTY (e.g., GitHub Actions, GitLab CI, Jenkins) using the `--silent` flag.
 
 - **Flag**: `-s` or `--silent`
-- **Effect**: Suppresses the Terminal User Interface (TUI), real-time progress updates, and the final summary printout.
+- **Effect**: Suppresses the Terminal User Interface (TUI), realtime progress updates, and the final summary printout.
 - **Outcome**: Reduces log noise and prevents issues in environments that do not support interactive terminal features.
 
 ```bash
@@ -24,7 +24,7 @@ Tressi uses standard POSIX exit codes to signal the outcome of a test run to the
   - A runtime error occurs (e.g., worker thread failure).
   - **Early Exit**: Configured error thresholds (rate, count, or status codes) are exceeded, causing the test to terminate prematurely.
 
-Pipelines should be configured to fail if Tressi returns a non-zero exit code.
+Pipelines should be configured to fail if Tressi returns a non zero exit code.
 
 ### Artifact Management
 
@@ -33,8 +33,8 @@ Automate the generation and storage of test results for historical analysis or p
 - **Flag**: `-e <path>` or `--export <path>`
 - **Behavior**: Creates a timestamped directory containing multiple report formats.
 - **Generated Files**:
-  - `summary.json`: Complete machine-readable metrics for automated parsing or custom dashboards.
-  - `results.xlsx`: Tabular data for manual review and spreadsheet-based analysis.
+  - `summary.json`: Machine readable metrics for automated parsing or custom dashboards.
+  - `results.xlsx`: Tabular data for manual review and spreadsheet based analysis.
   - `report.md`: A concise Markdown summary suitable for posting as a comment on pull requests.
 
 ```bash
@@ -61,4 +61,4 @@ steps:
 
 ### Next Steps
 
-Review [Performance Tuning](./04-performance-tuning.md) to optimize the Tressi runner for high-scale tests.
+Review [Performance Tuning](./04-performance-tuning.md) to optimize the Tressi runner for high scale tests.

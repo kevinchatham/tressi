@@ -8,7 +8,7 @@ Define test parameters by creating a new configuration.
 
 1.  Navigate to the [Configs](/configs/create) page.
 2.  Click the **Create button** to open the configuration form.
-    - Center of the page for first time users, or in the header if configurations already exist.
+    - Located in the page center or header (if configurations exist).
 3.  **General Options**: Set the name and test duration. All other settings in this section are optional.
 4.  **Requests Options**: Add target URLs and configure request parameters for each endpoint.
 5.  Click **Save** in the header to persist the configuration.
@@ -22,7 +22,8 @@ Navigate to the [Dashboard](/dashboard) page using one of the following methods:
 
 ### 3. Execute Test
 
-1.  Click the **Start Test** button (located in the center of the page for first-time executions, or in the header if test history exists).
+1.  Click the **Start Test** button.
+    - Located in the page center or header (if tests exist).
 2.  The test initializes and appears in the **Test List** table.
 3.  Status transitions from `running` as worker threads spawn.
 4.  Once a test is active or history exists, the **Start Test** button moves to the header for subsequent executions.
@@ -49,7 +50,7 @@ The **Test Details** page provides telemetry and statistical breakdowns.
 
 ### 7. CLI Execution
 
-The Tressi CLI is designed for automated environments and CI/CD pipelines. You can execute load tests by providing a local configuration file or a remote URL. Results are exported to a timestamped directory containing JSON, XLSX, and Markdown reports simultaneously:
+The Tressi CLI is designed for automated environments and automated pipelines. You can execute load tests by providing a local configuration file or a remote URL. Results are exported to a timestamped directory containing JSON, XLSX, and Markdown reports simultaneously:
 
 ```bash
 # Run with local config and export results

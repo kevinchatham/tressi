@@ -2,7 +2,7 @@
 
 Protect target infrastructure and accelerate feedback loops by configuring test termination.
 
-### Overview
+### Early Exit Overview
 
 Early Exit monitors test execution and stops individual endpoints or the entire test when performance degrades beyond acceptable limits. This prevents system wide outages and ensures metrics remain representative of healthy system behavior.
 
@@ -17,7 +17,7 @@ This document covers:
 Early Exit can be configured globally or per endpoint. Request level configurations always override global settings.
 
 - **Global**: Defined in `options.workerEarlyExit`.
-- **Per-Endpoint**: Defined in `requests[].earlyExit`.
+- **Per endpoint**: Defined in `requests[].earlyExit`.
 
 ### Configuring Error Thresholds
 
@@ -72,4 +72,4 @@ The `EarlyExitCoordinator` runs a background interval based on the `monitoringWi
 
 ### Next Steps
 
-Review [CI/CD Integration](./03-cicd-integration.md) to learn how to automate performance testing with early exit safety nets.
+Review [Automated Pipelines](./03-cicd-integration.md) to learn how to automate performance testing with early exit safety nets.

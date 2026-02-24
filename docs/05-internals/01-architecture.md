@@ -52,14 +52,14 @@ The aggregation layer consolidates data from shared memory for realtime monitori
 - **Sliding Window RPS**: Calculates peak RPS using a 5 second sliding window to provide an accurate representation of sustained throughput.
 - **Learn More**: See [Metrics and Calculations](./04-metrics-and-calculations.md) for statistical analysis details.
 
-### Persistence Layer
+### Data Persistence
 
 Tressi uses SQLite for persistent storage of test data and metrics.
 
 - **Schema Management**: The database schema is managed by Kysely.
-- **Timeseries Data**: Stores timeseries metrics for both global and per-endpoint data, enabling historical analysis and trend visualization in the dashboard.
+- **Timeseries Data**: Stores timeseries metrics for both global and per endpoint data, enabling historical analysis and trend visualization in the dashboard.
 
-### Execution Lifecycle
+### Lifecycle Management
 
 ```mermaid
 sequenceDiagram

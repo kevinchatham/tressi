@@ -1,4 +1,4 @@
-# Advanced Features
+# Advanced Operations
 
 This section covers operational strategies for using Tressi in production environments and high throughput testing scenarios.
 

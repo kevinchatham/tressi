@@ -2,13 +2,13 @@
 
 Prevent runner bottlenecks during high concurrency tests.
 
-### Overview
+### Performance Tuning Overview
 
 This document covers:
 
 - **Scaling Workers**: Calculating the optimal number of `threads` based on endpoint distribution.
 - **Connection Management**: Reviewing built-in connection limits for high concurrency scenarios.
-- **Monitor Resources**: Interpreting system metrics to identify generator saturation.
+- **Monitor System Resources**: Interpreting system metrics to identify generator saturation.
 
 ### Scale Workers
 
@@ -40,12 +40,12 @@ Tressi utilizes `undici` for HTTP execution. The `AgentManager` coordinates conn
 The default connection pool is configured for general use and is not configurable:
 
 - **Max Connections**: 256 per origin.
-- **Keep-Alive Timeout**: 10,000ms.
+- **Keep Alive Timeout**: 10,000ms.
 - **Headers/Body Timeout**: 30,000ms.
 
 If the generator reaches the connection limit, requests will queue, causing artificial latency. Monitor for queuing effects in scenarios with high concurrency or many unique origins.
 
-### Monitor Resources
+### Monitor System Resources
 
 Monitor resource consumption to ensure test validity. If the generator is saturated, reported metrics may reflect runner limitations rather than target system performance.
 

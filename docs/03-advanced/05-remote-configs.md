@@ -2,7 +2,7 @@
 
 Centralize and share test definitions across teams using remote URLs and secure access methods.
 
-### Capabilities
+### Remote Configuration Capabilities
 
 This document covers:
 
@@ -24,9 +24,9 @@ The CLI performs an HTTP GET request to retrieve the JSON payload. The response 
 
 ### Secure Remote Access
 
-For configurations stored in private cloud storage (e.g., AWS S3, Google Cloud Storage, or Azure Blob Storage), use pre-signed URLs or Shared Access Signature (SAS) tokens to grant temporary, secure access.
+For configurations stored in private cloud storage (e.g., AWS S3, Google Cloud Storage, or Azure Blob Storage), use presigned URLs or Shared Access Signature (SAS) tokens to grant temporary, secure access.
 
-**Example using a pre-signed URL:**
+**Example using a presigned URL:**
 
 ```bash
 tressi run "https://s3.amazonaws.com/my-bucket/test.json?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=..."
@@ -51,7 +51,7 @@ If validation fails, the CLI terminates with a report identifying the incompatib
 
 Remote configurations enable several operational workflows:
 
-- **CI/CD Integration**: Pipelines pull validated test definitions from a central repository.
+- **Automated Pipelines**: Pipelines pull validated test definitions from a central repository.
 - **Environment Management**: Maintain distinct configuration URLs for staging, canary, and production environments.
 - **Team Collaboration**: Share test scenarios via URL instead of local files.
 
