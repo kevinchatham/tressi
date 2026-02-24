@@ -12,10 +12,10 @@
 
 ## 🚀 Features
 
-- 📝 **Declarative JSON Config** — Define tests in a simple JSON file with version-aligned JSON schema for validation.
-- ⚡️ **Target-based Load Testing** - Always uses dynamic worker scaling to meet your target load.
-- 📊 **Interactive Terminal UI** — View live requests per second, latency stats, and status codes.
-- 📁 **Comprehensive Reporting** — Export results to Markdown and XLSX for analysis.
+- **Declarative JSON Config** — Define tests in a simple JSON file with version-aligned JSON schema for validation.
+- **Target-based Load Testing** - Always uses dynamic worker scaling to meet your target load.
+- **Interactive Terminal UI** — View live requests per second, latency stats, and status codes.
+- **Comprehensive Reporting** — Export results to Markdown and XLSX for analysis.
 
 ## 📦 Installation
 
