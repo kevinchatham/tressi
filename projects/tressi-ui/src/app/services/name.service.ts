@@ -10,7 +10,7 @@ import {
   providedIn: 'root',
 })
 export class NameService {
-  private readonly config: Config = {
+  private readonly _config: Config = {
     dictionaries: [colors, animals],
     separator: ' ',
     length: 2,
@@ -21,6 +21,6 @@ export class NameService {
    * Generates a fun random name.
    */
   generate(): string {
-    return uniqueNamesGenerator(this.config);
+    return uniqueNamesGenerator(this._config);
   }
 }

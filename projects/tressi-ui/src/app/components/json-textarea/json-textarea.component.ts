@@ -31,7 +31,7 @@ export class JsonTextareaComponent<T> implements FormValueControl<T> {
 
   error = signal<string | null>(null);
 
-  private readonly themeService = inject(ThemeService);
+  private readonly _themeService = inject(ThemeService);
 
   displayValue = computed(() => {
     const val = this.value();
@@ -51,38 +51,42 @@ export class JsonTextareaComponent<T> implements FormValueControl<T> {
     EditorView.theme(
       {
         '&.cm-editor': {
-          backgroundColor: this.themeService.base300(),
-          color: this.themeService.baseContent(),
+          backgroundColor: this._themeService.base100(),
+          color: this._themeService.neutralContent(),
           height: 'auto',
           borderRadius: '8px',
           padding: '8px',
         },
         '.cm-content': {},
+        '.cm-cursor': {
+          borderLeftColor: this._themeService.primary(),
+          borderLeftWidth: '2px',
+        },
         '.cm-gutters': {
-          backgroundColor: this.themeService.base300(),
-          color: this.themeService.neutral(),
+          backgroundColor: this._themeService.base100(),
+          color: this._themeService.neutralContent(),
           border: 'none',
         },
       },
-      { dark: true },
+      { dark: this._themeService.isDark() },
     ),
   );
 
   daisyHighlightStyle = computed(() =>
     HighlightStyle.define([
-      { tag: tags.string, color: this.themeService.secondaryColor() },
-      { tag: tags.number, color: this.themeService.success() },
-      { tag: tags.keyword, color: this.themeService.primaryColor() },
-      { tag: tags.operator, color: this.themeService.baseContent() },
-      { tag: tags.brace, color: this.themeService.warning() },
+      { tag: tags.string, color: this._themeService.secondary() },
+      { tag: tags.number, color: this._themeService.success() },
+      { tag: tags.keyword, color: this._themeService.primary() },
+      { tag: tags.operator, color: this._themeService.baseContent() },
+      { tag: tags.brace, color: this._themeService.warning() },
       {
         tag: tags.null,
-        color: this.themeService.primaryColor(),
+        color: this._themeService.primary(),
         fontStyle: 'italic',
       },
-      { tag: tags.bool, color: this.themeService.primaryColor() },
-      { tag: tags.propertyName, color: this.themeService.info() },
-      { tag: tags.comment, color: this.themeService.neutral() + 'aa' }, // Add transparency
+      { tag: tags.bool, color: this._themeService.primary() },
+      { tag: tags.propertyName, color: this._themeService.info() },
+      { tag: tags.comment, color: this._themeService.neutral() + 'aa' },
     ]),
   );
 

@@ -32,6 +32,16 @@ export default [
       '@typescript-eslint/explicit-function-return-type': 'error',
       eqeqeq: ['error', 'smart'],
       'simple-import-sort/imports': ['warn'],
+      // Add the naming convention rule here
+      '@typescript-eslint/naming-convention': [
+        'error',
+        {
+          selector: 'memberLike',
+          modifiers: ['private'],
+          format: ['camelCase'],
+          leadingUnderscore: 'require',
+        },
+      ],
     },
   },
 ];

@@ -1,5 +1,11 @@
 import { TressiRequestConfig } from '../common/config/types';
 
+// Re-export latency histogram types from reporting module (single source of truth)
+export type {
+  LatencyHistogram,
+  LatencyHistogramBucket,
+} from '../reporting/types';
+
 /**
  * Endpoint counters for tracking request statistics
  */
@@ -19,18 +25,6 @@ export type EndpointCounters = {
 export type BodySample = {
   sampleIndex: number;
   statusCode: number;
-};
-
-/**
- * HDR histogram data structure for latency tracking
- */
-export type LatencyHistogram = {
-  min: number;
-  max: number;
-  mean: number;
-  stdDev: number;
-  percentiles: Record<number, number>;
-  totalCount: number;
 };
 
 export type SharedMemoryOptions = {

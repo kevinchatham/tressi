@@ -8,10 +8,10 @@ import type { TestDocument } from '../../services/rpc.service';
  */
 @Injectable({ providedIn: 'root' })
 export class TestListSelectionService {
-  private readonly selectedTests = signal<Set<string>>(new Set());
+  private readonly _selectedTests = signal<Set<string>>(new Set());
 
   /** Read-only signal containing the set of selected test IDs */
-  readonly selectedTestsSet = this.selectedTests.asReadonly();
+  readonly selectedTestsSet = this._selectedTests.asReadonly();
 
   /**
    * Toggles the selection state of a single test.
@@ -20,7 +20,7 @@ export class TestListSelectionService {
    */
   toggleTestSelection(testId: string, event: Event): void {
     event.stopPropagation();
-    this.selectedTests.update((selected) => {
+    this._selectedTests.update((selected) => {
       const newSelected = new Set(selected);
       if (newSelected.has(testId)) {
         newSelected.delete(testId);
@@ -38,7 +38,7 @@ export class TestListSelectionService {
    */
   toggleAllTests(allTestIds: string[], event: Event): void {
     event.stopPropagation();
-    this.selectedTests.update(() => {
+    this._selectedTests.update(() => {
       if (this.isAllSelected(allTestIds)) {
         return new Set();
       } else {
@@ -55,7 +55,7 @@ export class TestListSelectionService {
   isAllSelected(allTestIds: string[]): boolean {
     return (
       allTestIds.length > 0 &&
-      allTestIds.every((id) => this.selectedTests().has(id))
+      allTestIds.every((id) => this._selectedTests().has(id))
     );
   }
 
@@ -64,7 +64,7 @@ export class TestListSelectionService {
    * @returns true if at least one test is selected, false otherwise
    */
   isSomeSelected(): boolean {
-    return this.selectedTests().size > 0;
+    return this._selectedTests().size > 0;
   }
 
   /**
@@ -73,7 +73,7 @@ export class TestListSelectionService {
    * @returns true if any running tests are selected, false otherwise
    */
   hasRunningTestsSelected(tests: TestDocument[]): boolean {
-    const selectedIds = this.selectedTests();
+    const selectedIds = this._selectedTests();
     return tests.some(
       (test) => selectedIds.has(test.id) && test.status === 'running',
     );
@@ -83,7 +83,7 @@ export class TestListSelectionService {
    * Clears all test selections.
    */
   clearSelection(): void {
-    this.selectedTests.set(new Set());
+    this._selectedTests.set(new Set());
   }
 
   /**
@@ -91,7 +91,7 @@ export class TestListSelectionService {
    * @returns The number of selected tests
    */
   getSelectedCount(): number {
-    return this.selectedTests().size;
+    return this._selectedTests().size;
   }
 
   /**
@@ -99,7 +99,7 @@ export class TestListSelectionService {
    * @returns A Set of selected test IDs
    */
   getSelectedIds(): Set<string> {
-    return new Set(this.selectedTests());
+    return new Set(this._selectedTests());
   }
 
   /**
@@ -107,6 +107,6 @@ export class TestListSelectionService {
    * @param tests - Array of test documents to set as selected
    */
   setSelectedTests(tests: TestDocument[]): void {
-    this.selectedTests.set(new Set(tests.map((t) => t.id)));
+    this._selectedTests.set(new Set(tests.map((t) => t.id)));
   }
 }

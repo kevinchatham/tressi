@@ -1,0 +1,86 @@
+<section class="bg-base-100 mt-2 rounded-xl px-6">
+  <app-collapsible-card
+    title="Performance Over Time"
+    [collapsed]="collapsed()"
+    (collapsedChange)="onCollapsedChange($event)"
+  >
+    <!-- Header controls projection -->
+    <ng-template>
+      <div class="flex items-center gap-2">
+        @if (!collapsed()) {
+          @if (isRunning()) {
+            <app-button
+              class="mr-2"
+              (click)="onRefresh($event)"
+              title="Refresh Data"
+              [icon]="'autorenew'"
+              [ghost]="true"
+            />
+
+            <select
+              id="polling-interval-select"
+              class="select select-neutral w-auto"
+              [value]="pollingInterval()"
+              (change)="onPollingIntervalChange($event)"
+              (click)="$event.stopPropagation()"
+              title="Polling Interval"
+            >
+              @for (option of pollingOptions(); track option.value) {
+                <option
+                  [value]="option.value"
+                  [selected]="pollingInterval() === option.value"
+                >
+                  {{ option.label }}
+                </option>
+              }
+            </select>
+
+            <div class="divider divider-horizontal mx-0"></div>
+          }
+
+          <select
+            id="chart-type-select"
+            class="select select-neutral w-auto"
+            [value]="selectedChartType()"
+            (change)="onChartTypeChange($event)"
+            (click)="$event.stopPropagation()"
+            title="Chart Type"
+          >
+            @for (option of chartOptions(); track option.value) {
+              <option [value]="option.value">{{ option.label }}</option>
+            }
+          </select>
+        }
+      </div>
+    </ng-template>
+
+    <!-- Main content projection -->
+    <!-- Unified Chart Container -->
+    <div>
+      @if (hasChartData()) {
+        <div class="mt-6">
+          <app-line-chart
+            [data]="chartData().data"
+            [labels]="chartData().labels"
+            [height]="400"
+            [yAxisLabel]="yAxisLabel()"
+            [chartId]="chartId()"
+            [testTimeRange]="testTimeRange()"
+          />
+        </div>
+      } @else {
+        <div class="text-base-content/50 py-12 text-center">
+          <app-icon name="stat_1" class="mx-auto mb-4 block text-4xl" />
+          <p class="mb-2">No {{ selectedChartType() }} data available</p>
+          <p class="text-sm">
+            @if (selectedEndpoint() === 'global') {
+              Global metrics will appear here once the test generates data
+            } @else {
+              Endpoint metrics for {{ selectedEndpoint() }} will appear here
+            }
+          </p>
+        </div>
+      }
+    </div>
+  </app-collapsible-card>
+</section>

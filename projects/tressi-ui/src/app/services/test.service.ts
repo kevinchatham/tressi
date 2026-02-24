@@ -12,10 +12,10 @@ import { RPCService } from './rpc.service';
   providedIn: 'root',
 })
 export class TestService {
-  private readonly rpc = inject(RPCService);
-  private readonly logService = inject(LogService);
-  private readonly testClient = this.rpc.client.tests;
-  private readonly metricsClient = this.rpc.client.metrics;
+  private readonly _rpc = inject(RPCService);
+  private readonly _logService = inject(LogService);
+  private readonly _testClient = this._rpc.client.tests;
+  private readonly _metricsClient = this._rpc.client.metrics;
 
   /**
    * Get all tests and filter by config ID
@@ -24,7 +24,7 @@ export class TestService {
    */
   async getTestsByConfigId(configId: string): Promise<TestDocument[]> {
     try {
-      const response = await this.testClient.$get();
+      const response = await this._testClient.$get();
 
       if (!response.ok) {
         throw new Error(`Failed to load tests: ${response.statusText}`);
@@ -38,7 +38,7 @@ export class TestService {
       // Sort by creation time, most recent first
       return filteredTests.sort((a, b) => b.epochCreatedAt - a.epochCreatedAt);
     } catch (error) {
-      this.logService.error('Failed to load tests:', error);
+      this._logService.error('Failed to load tests:', error);
       throw error;
     }
   }
@@ -50,7 +50,7 @@ export class TestService {
    */
   async getTestById(id: string): Promise<TestDocument> {
     try {
-      const response = await this.testClient[':id'].$get({
+      const response = await this._testClient[':id'].$get({
         param: { id },
       });
 
@@ -60,7 +60,7 @@ export class TestService {
 
       return await response.json();
     } catch (error) {
-      this.logService.error('Failed to load test:', error);
+      this._logService.error('Failed to load test:', error);
       throw error;
     }
   }
@@ -72,7 +72,7 @@ export class TestService {
    */
   async deleteTest(id: string): Promise<DeleteTestResponseSuccess> {
     try {
-      const response = await this.testClient[':id'].$delete({
+      const response = await this._testClient[':id'].$delete({
         param: { id },
       });
 
@@ -82,7 +82,7 @@ export class TestService {
 
       return await response.json();
     } catch (error) {
-      this.logService.error('Failed to delete test:', error);
+      this._logService.error('Failed to delete test:', error);
       throw error;
     }
   }
@@ -94,11 +94,11 @@ export class TestService {
    */
   async getTestMetrics(id: string): Promise<TestMetrics> {
     try {
-      const globalMetricsPromise = this.metricsClient.global[':testId'].$get({
+      const globalMetricsPromise = this._metricsClient.global[':testId'].$get({
         param: { testId: id },
       });
 
-      const endpointMetricsPromise = this.metricsClient.endpoints[
+      const endpointMetricsPromise = this._metricsClient.endpoints[
         ':testId'
       ].$get({
         param: { testId: id },
@@ -133,7 +133,7 @@ export class TestService {
         endpoints: endpointMetrics,
       };
     } catch (error) {
-      this.logService.error('Failed to load test metrics:', error);
+      this._logService.error('Failed to load test metrics:', error);
       throw error;
     }
   }
@@ -151,30 +151,5 @@ export class TestService {
     }
 
     return 0;
-  }
-
-  /**
-   * Format test duration as human-readable string
-   * @param durationMs Duration in milliseconds
-   * @returns string Formatted duration (e.g., "2m 30s")
-   */
-  formatDuration(durationMs: number): string {
-    if (durationMs < 1000) {
-      return `${durationMs}ms`;
-    }
-
-    const seconds = Math.floor(durationMs / 1000);
-    const minutes = Math.floor(seconds / 60);
-    const hours = Math.floor(minutes / 60);
-
-    if (hours > 0) {
-      return `${hours}h ${minutes % 60}m ${seconds % 60}s`;
-    }
-
-    if (minutes > 0) {
-      return `${minutes}m ${seconds % 60}s`;
-    }
-
-    return `${seconds}s`;
   }
 }

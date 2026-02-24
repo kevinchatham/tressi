@@ -29,9 +29,7 @@ export const createTestConfig = (
   options: {
     durationSec: 5,
     rampUpDurationSec: 0,
-    silent: true,
     headers: {},
-    exportPath: '',
     threads: 4,
     workerMemoryLimit: 128,
     workerEarlyExit: {
@@ -87,9 +85,7 @@ export const createMinimalTestConfig = (
   options: {
     durationSec: 1,
     rampUpDurationSec: 0,
-    silent: true,
     headers: {},
-    exportPath: '',
     threads: 4,
     workerMemoryLimit: 64,
     workerEarlyExit: {

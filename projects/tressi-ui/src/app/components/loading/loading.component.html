@@ -1,10 +1,13 @@
-@if (isVisible()) {
+@if (shouldRender()) {
   <div
-    class="bg-base-100 fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm transition-opacity duration-300 ease-out"
-    [class.opacity-0]="isFadingOut()"
-    [class.opacity-100]="!isFadingOut()"
+    class="loading-overlay"
+    [class.opacity-0]="isFadingOut() || !navigating()"
+    [class.opacity-100]="!isFadingOut() && navigating()"
     role="status"
     aria-live="polite"
-    [attr.aria-busy]="!isFadingOut()"
-  ></div>
+    [attr.aria-busy]="navigating()"
+  >
+    <img [src]="logoSrc" alt="Tressi Logo" class="mb-4 size-20" />
+    <span class="text-base-content/50 loading loading-infinity size-12"></span>
+  </div>
 }

@@ -1,4 +1,4 @@
-import { inject, Injectable, signal } from '@angular/core';
+import { computed, inject, Injectable, signal } from '@angular/core';
 import { z } from 'zod';
 
 import { DEFAULT_COLUMN_CONFIGS } from '../components/test-list/column-config.constants';
@@ -44,6 +44,7 @@ export const UserPreferencesSchema = z.object({
   selectedTheme: z.custom<Theme>(),
   lastSelectedConfig: z.custom<ConfigDocument | null>(),
   columnPreferences: z.array(ColumnConfigSchema).nullable(),
+  lastRoute: z.string().nullable(),
 });
 
 export type UserPreferences = z.infer<typeof UserPreferencesSchema>;
@@ -52,66 +53,33 @@ export type UserPreferences = z.infer<typeof UserPreferencesSchema>;
   providedIn: 'root',
 })
 export class LocalStorageService {
-  private readonly STORAGE_KEY = 'tressi-user-preferences';
-  private readonly logService = inject(LogService);
+  /**
+   * Returns a signal with current preferences
+   */
+  preferences = computed(() => this._preferences());
 
-  private readonly preferences = signal<UserPreferences>(
-    this.getDefaultPreferences(),
+  private readonly _logService = inject(LogService);
+
+  private readonly _storageKey = 'tressi-user-preferences';
+
+  private readonly _defaultPreferences = computed<UserPreferences>(() => {
+    const prefersDark = window.matchMedia(
+      '(prefers-color-scheme: dark)',
+    ).matches;
+    return {
+      selectedTheme: prefersDark ? 'storm' : 'shine',
+      lastSelectedConfig: null,
+      columnPreferences: DEFAULT_COLUMN_CONFIGS,
+      lastRoute: null,
+    };
+  });
+
+  private readonly _preferences = signal<UserPreferences>(
+    this._defaultPreferences(),
   );
 
   constructor() {
-    this.loadPreferences();
-  }
-
-  /**
-   * Loads and validates user preferences from localStorage
-   */
-  private loadPreferences(): void {
-    try {
-      const stored = localStorage.getItem(this.STORAGE_KEY);
-
-      if (!stored) {
-        this.resetPreferences();
-        return;
-      }
-
-      const parsed = JSON.parse(stored);
-      const result = UserPreferencesSchema.safeParse(parsed);
-
-      if (!result.success) {
-        this.logService.error(
-          'Invalid user preferences in localStorage: resetting...',
-          result.error,
-        );
-        this.resetPreferences();
-        return;
-      }
-
-      this.preferences.set(result.data);
-    } catch (error) {
-      this.logService.error(
-        'Failed to load user preferences: resetting...',
-        error,
-      );
-      this.resetPreferences();
-    }
-  }
-
-  private resetPreferences(): void {
-    const stored = localStorage.getItem(this.STORAGE_KEY);
-    if (stored) localStorage.removeItem(this.STORAGE_KEY);
-    this.savePreferences(this.getDefaultPreferences());
-  }
-
-  /**
-   * Gets default user preferences
-   */
-  private getDefaultPreferences(): UserPreferences {
-    return {
-      selectedTheme: 'dark',
-      lastSelectedConfig: null,
-      columnPreferences: DEFAULT_COLUMN_CONFIGS,
-    };
+    this._loadPreferences();
   }
 
   /**
@@ -119,14 +87,55 @@ export class LocalStorageService {
    */
   savePreferences(preferences: UserPreferences): void {
     const validated = UserPreferencesSchema.parse(preferences);
-    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(validated));
-    this.preferences.set(validated);
+    localStorage.setItem(this._storageKey, JSON.stringify(validated));
+    this._preferences.set(validated);
   }
 
   /**
-   * Returns a signal with current preferences
+   * Saves the last known route to localStorage
    */
-  getPreferences(): UserPreferences {
-    return this.preferences();
+  saveLastRoute(route: string): void {
+    const current = this._preferences();
+    this.savePreferences({ ...current, lastRoute: route });
+  }
+
+  /**
+   * Loads and validates user preferences from localStorage
+   */
+  private _loadPreferences(): void {
+    try {
+      const stored = localStorage.getItem(this._storageKey);
+
+      if (!stored) {
+        this._resetPreferences();
+        return;
+      }
+
+      const parsed = JSON.parse(stored);
+      const result = UserPreferencesSchema.safeParse(parsed);
+
+      if (!result.success) {
+        this._logService.error(
+          'Invalid user preferences in localStorage: resetting...',
+          result.error,
+        );
+        this._resetPreferences();
+        return;
+      }
+
+      this._preferences.set(result.data);
+    } catch (error) {
+      this._logService.error(
+        'Failed to load user preferences: resetting...',
+        error,
+      );
+      this._resetPreferences();
+    }
+  }
+
+  private _resetPreferences(): void {
+    const stored = localStorage.getItem(this._storageKey);
+    if (stored) localStorage.removeItem(this._storageKey);
+    this.savePreferences(this._defaultPreferences());
   }
 }

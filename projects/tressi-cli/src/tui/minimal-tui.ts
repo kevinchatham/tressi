@@ -3,22 +3,20 @@ import { performance } from 'perf_hooks';
 
 import { TressiConfig } from '../common/config/types';
 import type { Runner } from '../core/runner';
-import { roundToDecimals } from '../utils/math-utils';
 
 /**
  * Enhanced minimal UI for Tressi load testing
  */
 export class MinimalTUI {
-  private spinner: ReturnType<typeof ora>;
-  private interval: NodeJS.Timeout | undefined;
-  private config: TressiConfig;
-
-  private silent: boolean;
+  private _spinner: ReturnType<typeof ora>;
+  private _interval: NodeJS.Timeout | undefined;
+  private _config: TressiConfig;
+  private _silent: boolean;
 
   constructor(config: TressiConfig, silent?: boolean) {
-    this.config = config;
-    this.silent = silent ?? false;
-    this.spinner = ora({ text: 'Test starting...' });
+    this._config = config;
+    this._silent = silent ?? false;
+    this._spinner = ora({ text: 'Test starting...' });
   }
 
   /**
@@ -40,12 +38,12 @@ export class MinimalTUI {
    * Uses a non-blocking approach with setInterval to avoid impacting test performance.
    */
   start(runner: Runner): void {
-    if (this.silent) return;
+    if (this._silent) return;
 
-    this.spinner.start();
+    this._spinner.start();
 
-    this.interval = setInterval(() => {
-      this.updateDisplay(runner);
+    this._interval = setInterval(() => {
+      this._updateDisplay(runner);
     }, 500);
   }
 
@@ -58,13 +56,13 @@ export class MinimalTUI {
    * confirmation that the test has finished and summary generation is beginning.
    */
   stop(): void {
-    if (this.silent) return;
+    if (this._silent) return;
 
-    if (this.interval) {
-      clearInterval(this.interval);
-      this.interval = undefined;
+    if (this._interval) {
+      clearInterval(this._interval);
+      this._interval = undefined;
     }
-    this.spinner.succeed('Test finished. Generating summary...');
+    this._spinner.succeed('Test finished. Generating summary...');
   }
 
   /**
@@ -82,14 +80,16 @@ export class MinimalTUI {
    *
    * The display format is optimized for readability: "rps | avg_latency | memory | cpu%".
    */
-  private updateDisplay(runner: Runner): void {
-    if (this.silent) return;
+  private _updateDisplay(runner: Runner): void {
+    if (this._silent) return;
 
     const startTime = runner.getStartTime();
-    const durationSec = this.config.options.durationSec || 10;
-    const elapsedSec = Math.min(
-      startTime > 0 ? (performance.now() - startTime) / 1000 : 0,
-      durationSec,
+    const durationSec = this._config.options.durationSec || 10;
+    const elapsedSec = Math.trunc(
+      Math.min(
+        startTime > 0 ? (performance.now() - startTime) / 1000 : 0,
+        durationSec,
+      ),
     );
 
     // Get real-time metrics
@@ -109,11 +109,11 @@ export class MinimalTUI {
       // Fallback to basic display if metrics unavailable
     }
 
-    const timeText = `[${roundToDecimals(elapsedSec)}s/${durationSec}s]`;
+    const timeText = `[${elapsedSec}s/${durationSec}s]`;
     const spinnerText = metricsText
       ? `${timeText} ${metricsText}`
       : `${timeText} Test running...`;
 
-    this.spinner.text = spinnerText;
+    this._spinner.text = spinnerText;
   }
 }

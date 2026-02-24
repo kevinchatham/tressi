@@ -5,6 +5,7 @@ import {
   inject,
 } from '@angular/core';
 
+import { logoSrc } from '../../constants';
 import { HealthService } from '../../services/health.service';
 
 @Component({
@@ -14,6 +15,7 @@ import { HealthService } from '../../services/health.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ServerUnavailableComponent {
-  private readonly health = inject(HealthService);
-  public readonly retryMessage = computed(() => this.health.getRetryMessage());
+  private readonly _health = inject(HealthService);
+  readonly retryMessage = computed(() => this._health.getRetryMessage());
+  readonly logoSrc = logoSrc;
 }

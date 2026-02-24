@@ -1,16 +1,23 @@
 <div class="p-8">
-  <h1 class="mb-8 text-2xl font-bold">Button Showcase</h1>
+  <div class="mb-8 flex items-center justify-between">
+    <h1 class="text-2xl font-bold">Button Showcase</h1>
+    <app-theme-switcher />
+  </div>
 
   <div class="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-5">
     @for (color of buttonColors; track color) {
-      <div class="border-base-content/5 bg-base-200 rounded-xl border-2 p-4">
+      <div class="border-base-content/5 bg-base-300 rounded-xl border-2 p-4">
         <h2 class="mb-4 text-lg font-semibold capitalize">{{ color }}</h2>
-
         <div class="space-y-4">
           <!-- Normal State -->
           <div class="flex items-center justify-between">
             <span class="text-base-content/70 text-sm">Base</span>
-            <app-button [color]="color" [title]="color" [icon]="'sdk'" />
+            <app-button
+              [color]="color"
+              [title]="color"
+              [icon]="'sdk'"
+              (click)="logMessage()"
+            />
           </div>
 
           <!-- Disabled State -->
@@ -21,6 +28,7 @@
               [title]="color"
               [icon]="'sdk'"
               [disabled]="true"
+              (click)="logMessage()"
             />
           </div>
 
@@ -32,6 +40,7 @@
               [title]="color"
               [icon]="'sdk'"
               [ghost]="true"
+              (click)="logMessage()"
             />
           </div>
 
@@ -44,6 +53,7 @@
               [icon]="'sdk'"
               [ghost]="true"
               [disabled]="true"
+              (click)="logMessage()"
             />
           </div>
         </div>

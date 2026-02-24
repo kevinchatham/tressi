@@ -4,7 +4,7 @@
  * storing every response, which could be memory-intensive.
  */
 export class ResponseSampler {
-  private responseSamplingSets: Map<string, Set<number>> = new Map();
+  private _responseSamplingSets: Map<string, Set<number>> = new Map();
 
   /**
    * Determines if a response body should be sampled for debugging purposes.
@@ -35,8 +35,8 @@ export class ResponseSampler {
     url: string,
     statusCode: number,
   ): boolean {
-    const endpointKey = this.getEndpointKey(method, url);
-    const sampledCodesForEndpoint = this.getResponseSamplingSet(endpointKey);
+    const endpointKey = this._getEndpointKey(method, url);
+    const sampledCodesForEndpoint = this._getResponseSamplingSet(endpointKey);
 
     // Sample if we haven't seen this status code for this endpoint yet
     if (!sampledCodesForEndpoint.has(statusCode)) {
@@ -58,11 +58,11 @@ export class ResponseSampler {
    * that are actually encountered during testing. This optimizes memory usage
    * by avoiding pre-allocation for unused endpoints.
    */
-  private getResponseSamplingSet(endpointKey: string): Set<number> {
-    let set = this.responseSamplingSets.get(endpointKey);
+  private _getResponseSamplingSet(endpointKey: string): Set<number> {
+    let set = this._responseSamplingSets.get(endpointKey);
     if (!set) {
       set = new Set();
-      this.responseSamplingSets.set(endpointKey, set);
+      this._responseSamplingSets.set(endpointKey, set);
     }
     return set;
   }
@@ -80,7 +80,7 @@ export class ResponseSampler {
    * different methods (GET, POST, etc.) may have different response patterns
    * and should be tracked separately for sampling purposes.
    */
-  private getEndpointKey(method: string, url: string): string {
+  private _getEndpointKey(method: string, url: string): string {
     return `${method} ${url}`;
   }
 }

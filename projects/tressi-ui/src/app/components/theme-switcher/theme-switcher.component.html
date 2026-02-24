@@ -1,26 +1,8 @@
-<div class="dropdown dropdown-center">
-  <app-button
-    [color]="'rainbow'"
-    [title]="'Theme'"
-    [tabindex]="0"
-    [icon]="'palette'"
-  />
-  <ul
-    tabindex="0"
-    class="dropdown-content bg-base-300 rounded-box z-1 max-h-96 w-52 overflow-y-auto p-2 shadow-2xl"
-  >
-    @for (theme of themes; track theme) {
-      <li>
-        <input
-          type="radio"
-          name="theme-dropdown"
-          class="theme-controller btn btn-ghost w-full justify-start"
-          [attr.aria-label]="theme | titlecase"
-          [value]="theme"
-          [checked]="currentTheme === theme"
-          (change)="changeTheme(theme)"
-        />
-      </li>
-    }
-  </ul>
-</div>
+<app-button
+  (click)="themeService.toggleTheme()"
+  [color]="'rainbow'"
+  [title]="'Toggle Theme'"
+  [icon]="'light_mode'"
+  [secondaryIcon]="'thunderstorm'"
+  [toggled]="themeService.isDark()"
+/>

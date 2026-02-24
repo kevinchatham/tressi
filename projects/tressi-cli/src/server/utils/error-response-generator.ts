@@ -14,7 +14,7 @@ export function createApiErrorResponse(
       message,
       code,
       details,
-      timestamp: new Date().toISOString(),
+      timestamp: Date.now(),
       path,
     },
   };

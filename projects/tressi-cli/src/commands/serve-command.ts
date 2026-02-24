@@ -4,7 +4,7 @@ import { TressiServer } from '../server';
  * Handles the 'serve' command for starting a Hono server with healthcheck endpoint.
  */
 export class ServeCommand {
-  private server: TressiServer | null = null;
+  private _server: TressiServer | null = null;
 
   /**
    * Executes the serve command.
@@ -14,12 +14,12 @@ export class ServeCommand {
    */
   async execute(options: { port?: number }): Promise<void> {
     try {
-      this.server = new TressiServer(options.port);
+      this._server = new TressiServer(options.port);
 
       // Handle graceful shutdown
       const handleShutdown = async (): Promise<void> => {
-        if (this.server) {
-          await this.server.stop();
+        if (this._server) {
+          await this._server.stop();
           process.exit(0);
         }
       };
@@ -28,7 +28,7 @@ export class ServeCommand {
       process.on('SIGTERM', handleShutdown);
 
       // Start the server
-      await this.server.start();
+      await this._server.start();
     } catch (error) {
       throw new Error(`Failed to start server: ${(error as Error).message}`);
     }

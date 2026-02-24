@@ -7,12 +7,12 @@ import { IWorkerStateManager } from '../interfaces';
 import { WorkerState } from '../types';
 
 export class WorkerStateManager implements IWorkerStateManager {
-  private readonly sab: SharedArrayBuffer;
-  private readonly states: Int32Array;
-  private readonly maxWorkers: number;
+  private readonly _sab: SharedArrayBuffer;
+  private readonly _states: Int32Array;
+  private readonly _maxWorkers: number;
 
   constructor(maxWorkers: number, externalBuffer?: SharedArrayBuffer) {
-    this.maxWorkers = maxWorkers;
+    this._maxWorkers = maxWorkers;
 
     // Calculate required buffer size
     const requiredSize = maxWorkers * 4;
@@ -24,19 +24,19 @@ export class WorkerStateManager implements IWorkerStateManager {
           `Buffer too small: expected ${requiredSize}, got ${externalBuffer.byteLength}`,
         );
       }
-      this.sab = externalBuffer;
+      this._sab = externalBuffer;
     } else {
       // Allocate 4 bytes per worker state (Int32)
-      this.sab = new SharedArrayBuffer(requiredSize);
+      this._sab = new SharedArrayBuffer(requiredSize);
     }
 
-    this.states = new Int32Array(this.sab);
+    this._states = new Int32Array(this._sab);
 
     // Only initialize if we created the buffer
     if (!externalBuffer) {
       // Initialize all workers to INITIALIZING state
       for (let i = 0; i < maxWorkers; i++) {
-        Atomics.store(this.states, i, WorkerState.INITIALIZING);
+        Atomics.store(this._states, i, WorkerState.INITIALIZING);
       }
     }
   }
@@ -45,25 +45,25 @@ export class WorkerStateManager implements IWorkerStateManager {
    * Set worker state atomically
    */
   setWorkerState(workerId: number, state: WorkerState): void {
-    if (workerId < 0 || workerId >= this.maxWorkers) {
+    if (workerId < 0 || workerId >= this._maxWorkers) {
       throw new Error(`Invalid worker ID: ${workerId}`);
     }
 
-    Atomics.store(this.states, workerId, state);
+    Atomics.store(this._states, workerId, state);
 
     // Notify any waiters that the state has changed
-    Atomics.notify(this.states, workerId, 1);
+    Atomics.notify(this._states, workerId, 1);
   }
 
   /**
    * Get worker state atomically
    */
   getWorkerState(workerId: number): WorkerState {
-    if (workerId < 0 || workerId >= this.maxWorkers) {
+    if (workerId < 0 || workerId >= this._maxWorkers) {
       throw new Error(`Invalid worker ID: ${workerId}`);
     }
 
-    return Atomics.load(this.states, workerId) as WorkerState;
+    return Atomics.load(this._states, workerId) as WorkerState;
   }
 
   /**
@@ -76,7 +76,7 @@ export class WorkerStateManager implements IWorkerStateManager {
     targetState: WorkerState,
     timeoutMs: number,
   ): boolean {
-    if (workerId < 0 || workerId >= this.maxWorkers) {
+    if (workerId < 0 || workerId >= this._maxWorkers) {
       throw new Error(`Invalid worker ID: ${workerId}`);
     }
 
@@ -84,7 +84,7 @@ export class WorkerStateManager implements IWorkerStateManager {
     const timeoutTime = startTime + timeoutMs;
 
     while (Date.now() < timeoutTime) {
-      const currentState = Atomics.load(this.states, workerId);
+      const currentState = Atomics.load(this._states, workerId);
       if (currentState === targetState) {
         return true;
       }
@@ -98,7 +98,7 @@ export class WorkerStateManager implements IWorkerStateManager {
 
       // Use Atomics.wait for efficient blocking
       const waitResult = Atomics.wait(
-        this.states,
+        this._states,
         workerId,
         currentState,
         remainingMs,
@@ -111,13 +111,13 @@ export class WorkerStateManager implements IWorkerStateManager {
     }
 
     // Final check in case we timed out but state changed
-    return Atomics.load(this.states, workerId) === targetState;
+    return Atomics.load(this._states, workerId) === targetState;
   }
 
   /**
    * Get the underlying SharedArrayBuffer
    */
   getSharedBuffer(): SharedArrayBuffer {
-    return this.sab;
+    return this._sab;
   }
 }

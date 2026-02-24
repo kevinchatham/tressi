@@ -16,29 +16,29 @@ export class XlsxExporter {
   async export(summary: TestSummary, path?: string): Promise<void | Buffer> {
     try {
       const { summary: processedSummary, statusCodeMap } =
-        this.processData(summary);
+        this._processData(summary);
 
       const wb = xlsx.utils.book_new();
 
       // Test Summary Sheet
-      this.addTestSummarySheet(wb, processedSummary);
+      this._addTestSummarySheet(wb, processedSummary);
 
       // Endpoint Summary Sheet
       if (processedSummary.endpoints.length > 0) {
-        this.addEndpointSummarySheet(wb, processedSummary.endpoints);
+        this._addEndpointSummarySheet(wb, processedSummary.endpoints);
       }
 
       // Status Code Distribution Sheet
-      this.addStatusCodeDistributionSheet(wb, statusCodeMap);
+      this._addStatusCodeDistributionSheet(wb, statusCodeMap);
 
       // Configuration Sheet
-      this.addConfigurationSheet(wb, processedSummary.configSnapshot);
+      this._addConfigurationSheet(wb, processedSummary.configSnapshot);
 
       // Latency Distribution Sheet
-      this.addLatencyDistributionSheet(wb, processedSummary);
+      this._addLatencyDistributionSheet(wb, processedSummary);
 
       // Sampled Responses Sheet
-      this.addSampledResponsesSheet(wb, processedSummary.endpoints);
+      this._addSampledResponsesSheet(wb, processedSummary.endpoints);
 
       if (path) {
         validatePath(path);
@@ -58,7 +58,7 @@ export class XlsxExporter {
   /**
    * Process data to extract status code map from summary
    */
-  private processData(summary: TestSummary): {
+  private _processData(summary: TestSummary): {
     summary: TestSummary;
     statusCodeMap: StatusCodeMap;
   } {
@@ -77,7 +77,7 @@ export class XlsxExporter {
     return { summary, statusCodeMap };
   }
 
-  private addTestSummarySheet(wb: xlsx.WorkBook, summary: TestSummary): void {
+  private _addTestSummarySheet(wb: xlsx.WorkBook, summary: TestSummary): void {
     const { global: g } = summary;
 
     const summaryData = [
@@ -100,6 +100,7 @@ export class XlsxExporter {
       { Metric: 'Network Bytes Sent', Value: g.networkBytesSent },
       { Metric: 'Network Bytes Received', Value: g.networkBytesReceived },
       { Metric: 'Network Throughput (B/s)', Value: g.networkBytesPerSec },
+      { Metric: 'Target Achieved (%)', Value: g.targetAchieved },
       { Metric: 'CPU Usage (%)', Value: g.avgSystemCpuUsagePercent },
       { Metric: 'Memory Usage (MB)', Value: g.avgProcessMemoryUsageMB },
       { Metric: 'Test Started (epoch)', Value: g.epochStartedAt },
@@ -110,7 +111,7 @@ export class XlsxExporter {
     xlsx.utils.book_append_sheet(wb, wsSummary, 'Test Summary');
   }
 
-  private addEndpointSummarySheet(
+  private _addEndpointSummarySheet(
     wb: xlsx.WorkBook,
     endpoints: EndpointSummary[],
   ): void {
@@ -143,12 +144,12 @@ export class XlsxExporter {
     xlsx.utils.book_append_sheet(wb, wsEndpoints, 'Endpoint Summary');
   }
 
-  private addStatusCodeDistributionSheet(
+  private _addStatusCodeDistributionSheet(
     wb: xlsx.WorkBook,
     statusCodeMap: Record<number, number>,
   ): void {
     const statusCodeDistribution =
-      this.getStatusCodeDistribution(statusCodeMap);
+      this._getStatusCodeDistribution(statusCodeMap);
 
     const formattedStatusCodeDistribution = Object.entries(
       statusCodeDistribution,
@@ -163,7 +164,7 @@ export class XlsxExporter {
     xlsx.utils.book_append_sheet(wb, wsStatusCode, 'Status Code Distribution');
   }
 
-  private addLatencyDistributionSheet(
+  private _addLatencyDistributionSheet(
     wb: xlsx.WorkBook,
     summary: TestSummary,
   ): void {
@@ -173,74 +174,86 @@ export class XlsxExporter {
       return;
     }
 
-    const latencyData = [
+    const h = g.histogram;
+
+    // Sheet 1: Percentile Distribution
+    const percentileData = [
       {
         Percentile: 'Min',
-        'Latency (ms)': g.histogram.min,
-        'Total Requests': g.histogram.totalCount,
+        'Latency (ms)': h.min,
+        'Total Requests': h.totalCount,
       },
       {
         Percentile: '1st',
-        'Latency (ms)': g.histogram.percentiles[1],
-        'Total Requests': g.histogram.totalCount,
+        'Latency (ms)': h.percentiles[1] || 0,
+        'Total Requests': h.totalCount,
       },
       {
         Percentile: '5th',
-        'Latency (ms)': g.histogram.percentiles[5],
-        'Total Requests': g.histogram.totalCount,
+        'Latency (ms)': h.percentiles[5] || 0,
+        'Total Requests': h.totalCount,
       },
       {
         Percentile: '10th',
-        'Latency (ms)': g.histogram.percentiles[10],
-        'Total Requests': g.histogram.totalCount,
+        'Latency (ms)': h.percentiles[10] || 0,
+        'Total Requests': h.totalCount,
       },
       {
         Percentile: '25th',
-        'Latency (ms)': g.histogram.percentiles[25],
-        'Total Requests': g.histogram.totalCount,
+        'Latency (ms)': h.percentiles[25] || 0,
+        'Total Requests': h.totalCount,
       },
       {
         Percentile: '50th',
-        'Latency (ms)': g.histogram.percentiles[50],
-        'Total Requests': g.histogram.totalCount,
+        'Latency (ms)': h.percentiles[50] || 0,
+        'Total Requests': h.totalCount,
       },
       {
         Percentile: '75th',
-        'Latency (ms)': g.histogram.percentiles[75],
-        'Total Requests': g.histogram.totalCount,
+        'Latency (ms)': h.percentiles[75] || 0,
+        'Total Requests': h.totalCount,
       },
       {
         Percentile: '90th',
-        'Latency (ms)': g.histogram.percentiles[90],
-        'Total Requests': g.histogram.totalCount,
+        'Latency (ms)': h.percentiles[90] || 0,
+        'Total Requests': h.totalCount,
       },
       {
         Percentile: '95th',
-        'Latency (ms)': g.histogram.percentiles[95],
-        'Total Requests': g.histogram.totalCount,
+        'Latency (ms)': h.percentiles[95] || 0,
+        'Total Requests': h.totalCount,
       },
       {
         Percentile: '99th',
-        'Latency (ms)': g.histogram.percentiles[99],
-        'Total Requests': g.histogram.totalCount,
-      },
-      {
-        Percentile: '99.9th',
-        'Latency (ms)': g.histogram.percentiles[99.9],
-        'Total Requests': g.histogram.totalCount,
+        'Latency (ms)': h.percentiles[99] || 0,
+        'Total Requests': h.totalCount,
       },
       {
         Percentile: 'Max',
-        'Latency (ms)': g.histogram.max,
-        'Total Requests': g.histogram.totalCount,
+        'Latency (ms)': h.max,
+        'Total Requests': h.totalCount,
       },
     ];
 
-    const wsLatency = xlsx.utils.json_to_sheet(latencyData);
-    xlsx.utils.book_append_sheet(wb, wsLatency, 'Latency Distribution');
+    const wsPercentiles = xlsx.utils.json_to_sheet(percentileData);
+    xlsx.utils.book_append_sheet(wb, wsPercentiles, 'Latency Percentiles');
+
+    // NEW: Sheet 2: Bucket Distribution
+    if (h.buckets.length > 0) {
+      const bucketData = h.buckets.map((bucket, index) => ({
+        'Bucket #': index + 1,
+        'Lower Bound (ms)': bucket.lowerBound,
+        'Upper Bound (ms)': bucket.upperBound,
+        Count: bucket.count,
+        Percentage: ((bucket.count / h.totalCount) * 100).toFixed(1) + '%',
+      }));
+
+      const wsBuckets = xlsx.utils.json_to_sheet(bucketData);
+      xlsx.utils.book_append_sheet(wb, wsBuckets, 'Latency Buckets');
+    }
   }
 
-  private addSampledResponsesSheet(
+  private _addSampledResponsesSheet(
     wb: xlsx.WorkBook,
     endpoints: EndpointSummary[],
   ): void {
@@ -289,7 +302,7 @@ export class XlsxExporter {
     }
   }
 
-  private addConfigurationSheet(
+  private _addConfigurationSheet(
     wb: xlsx.WorkBook,
     config: TestSummary['configSnapshot'],
   ): void {
@@ -302,7 +315,7 @@ export class XlsxExporter {
     xlsx.utils.book_append_sheet(wb, wsConfig, 'Configuration');
   }
 
-  private getStatusCodeDistribution(
+  private _getStatusCodeDistribution(
     statusCodeMap: Record<number, number>,
   ): Record<string, number> {
     const distribution: Record<string, number> = {

@@ -1,16 +1,24 @@
-<div class="p-16">
+<div class="p-12">
   <app-header>
+    @if (hasTestHistory() || !selectedConfigId()) {
+      <app-start-button
+        [config]="selectedConfig()"
+        (testStarted)="onTestStarted()"
+        (testStartFailed)="onTestStartFailed($event)"
+      />
+    }
+
     <!-- Configuration Selector -->
     <div class="dropdown dropdown-center">
       <app-button
-        [title]="'Select Configuration'"
+        [title]="'Select Config'"
         [tabindex]="0"
         [color]="'secondary'"
         [icon]="'text_snippet'"
       />
       <ul
         tabindex="0"
-        class="dropdown-content bg-base-300 rounded-box z-1 max-h-96 w-52 overflow-y-auto p-2 shadow-2xl"
+        class="dropdown-content bg-base-200 rounded-box z-9999 mt-2 max-h-96 w-52 overflow-y-auto p-2 shadow-2xl"
       >
         @for (config of configs(); track config.id) {
           <li>
@@ -28,41 +36,20 @@
       </ul>
     </div>
 
-    @if (hasTestHistory() || !selectedConfigId()) {
-      <app-start-button
-        [config]="selectedConfig()"
-        (testStarted)="onTestStarted()"
-        (testStartFailed)="onTestStartFailed($event)"
-      />
-    }
-
     <app-button
-      (click)="navigateToSettings()"
-      [title]="'Settings'"
+      (click)="appRouter.toConfigs()"
+      [title]="'View Configs'"
       [color]="'info'"
       [icon]="'sdk'"
     />
   </app-header>
 
-  <!-- Test List Component -->
-  @if (selectedConfigId()) {
-    <div class="mt-8">
+  @if (selectedConfig()) {
+    <div class="mt-8 px-8">
       <app-test-list
         [config]="selectedConfig()!"
         (testHistoryUpdate)="onTestHistoryUpdate($event)"
       />
-    </div>
-  } @else {
-    <!-- Empty State -->
-    <div class="hero bg-base-200 mt-8 min-h-125 rounded-xl">
-      <div class="hero-content text-center">
-        <div class="max-w-md">
-          <h1 class="text-2xl font-bold">Select a Configuration</h1>
-          <p class="py-6 text-neutral-600">
-            Choose a configuration from the dropdown to view test history
-          </p>
-        </div>
-      </div>
     </div>
   }
 </div>

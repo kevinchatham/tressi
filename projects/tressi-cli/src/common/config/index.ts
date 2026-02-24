@@ -60,7 +60,7 @@ export type ErrorApiResponse = {
     message: string;
     code?: string;
     details?: string[];
-    timestamp: string;
+    timestamp: number;
     path?: string;
   };
 };

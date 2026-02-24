@@ -77,7 +77,54 @@ async function executeLoadTest(
 
   runner.cleanupResponseSamples();
 
+  // Check for threshold violations in CLI mode
+  if (options.enableTUI && checkThresholds(summary)) {
+    throw new Error('Test failed: One or more error thresholds were exceeded.');
+  }
+
   return summary;
+}
+
+/**
+ * Checks if any configured error thresholds were exceeded during the test.
+ */
+function checkThresholds(summary: TestSummary): boolean {
+  const { configSnapshot, endpoints } = summary;
+  const globalExitConfig = configSnapshot.options.workerEarlyExit;
+
+  for (const endpoint of endpoints) {
+    const requestConfig = configSnapshot.requests.find(
+      (r) => r.url === endpoint.url,
+    );
+    if (!requestConfig) continue;
+
+    // Determine effective early exit config for this endpoint
+    const earlyExit =
+      requestConfig.earlyExit !== undefined
+        ? requestConfig.earlyExit
+        : globalExitConfig;
+
+    if (earlyExit && earlyExit.enabled) {
+      // Check error rate threshold
+      if (
+        earlyExit.errorRateThreshold > 0 &&
+        endpoint.errorRate >= earlyExit.errorRateThreshold
+      ) {
+        return true;
+      }
+
+      // Check status code thresholds
+      if (earlyExit.exitStatusCodes && earlyExit.exitStatusCodes.length > 0) {
+        for (const code of earlyExit.exitStatusCodes) {
+          if (endpoint.statusCodeDistribution[code] > 0) {
+            return true;
+          }
+        }
+      }
+    }
+  }
+
+  return false;
 }
 
 /**

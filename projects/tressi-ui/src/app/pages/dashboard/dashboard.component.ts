@@ -2,23 +2,23 @@ import {
   Component,
   computed,
   inject,
+  input,
   OnDestroy,
   OnInit,
   signal,
   viewChild,
 } from '@angular/core';
-import { Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 import { ButtonComponent } from 'src/app/components/button/button.component';
 
 import { HeaderComponent } from '../../components/header/header.component';
 import { StartButtonComponent } from '../../components/start-button/start-button.component';
 import { TestListComponent } from '../../components/test-list/test-list.component';
-import { ConfigService } from '../../services/config.service';
 import { EventService } from '../../services/event.service';
-import { LoadingService } from '../../services/loading.service';
 import { LocalStorageService } from '../../services/local-storage.service';
 import { LogService } from '../../services/log.service';
+import { AppRouterService } from '../../services/router.service';
 import { ConfigDocument } from '../../services/rpc.service';
 
 @Component({
@@ -33,12 +33,14 @@ import { ConfigDocument } from '../../services/rpc.service';
 })
 export class DashboardComponent implements OnInit, OnDestroy {
   /** Service injection */
-  private readonly configService = inject(ConfigService);
-  private readonly logService = inject(LogService);
-  private readonly router = inject(Router);
-  private readonly localStorageService = inject(LocalStorageService);
-  private readonly loadingService = inject(LoadingService);
-  private readonly eventService = inject(EventService);
+  readonly appRouter = inject(AppRouterService);
+  private readonly _logService = inject(LogService);
+  private readonly _route = inject(ActivatedRoute);
+  private readonly _localStorageService = inject(LocalStorageService);
+  private readonly _eventService = inject(EventService);
+
+  /** Route parameter for config ID */
+  readonly configId = input<string>();
 
   /** Reactive signal holding available configurations. */
   readonly configs = signal<ConfigDocument[]>([]);
@@ -63,57 +65,67 @@ export class DashboardComponent implements OnInit, OnDestroy {
   readonly isTestRunning = signal<boolean>(false);
 
   /** Subject for managing subscription cleanup */
-  private readonly destroy$ = new Subject<void>();
+  private readonly _destroy$ = new Subject<void>();
 
   ngOnInit(): void {
-    this.loadingService.registerPage('dashboard');
-    this.loadConfigurations();
-    this.subscribeToTestEvents();
+    this._initializeFromResolvedData();
+    this._subscribeToTestEvents();
   }
 
   ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
+    this._destroy$.next();
+    this._destroy$.complete();
   }
 
   /**
-   * Loads all available configurations from the server.
+   * Initializes the component using data pre-resolved by the router.
    */
-  private async loadConfigurations(): Promise<void> {
-    this.loadingService.setPageLoading('dashboard', true);
-
-    const configs = await this.configService.getAll();
+  private _initializeFromResolvedData(): void {
+    const configs = this._route.snapshot.data['configs'] as ConfigDocument[];
 
     this.configs.set(configs);
 
     if (configs.length === 0) {
-      this.router.navigate(['welcome']);
-      this.loadingService.setPageLoading('dashboard', false);
+      this.appRouter.toWelcome();
       return;
     }
 
+    const routeConfigId = this.configId();
     const lastSelectedConfig =
-      this.localStorageService.getPreferences().lastSelectedConfig;
+      this._localStorageService.preferences().lastSelectedConfig;
 
+    if (routeConfigId) {
+      const configFromRoute = configs.find((c) => c.id === routeConfigId);
+      if (configFromRoute) {
+        this.onConfigSelect(configFromRoute.id);
+      } else {
+        this._selectFallbackConfig(configs, lastSelectedConfig);
+      }
+    } else {
+      this._selectFallbackConfig(configs, lastSelectedConfig);
+    }
+  }
+
+  /**
+   * Selects a fallback configuration based on last selected or first available.
+   */
+  private _selectFallbackConfig(
+    configs: ConfigDocument[],
+    lastSelectedConfig: ConfigDocument | null | undefined,
+  ): void {
     if (lastSelectedConfig) {
-      // Check if the last selected config still exists
       const existingConfig = configs.find(
         (c) => c.id === lastSelectedConfig.id,
       );
       if (existingConfig) {
         this.onConfigSelect(existingConfig.id);
-      } else {
-        // Config no longer exists, select first available
-        const firstConfig = configs[0];
-        this.onConfigSelect(firstConfig.id);
+        return;
       }
-    } else {
-      // No last selected config, select first available
-      const firstConfig = configs[0];
-      this.onConfigSelect(firstConfig.id);
     }
 
-    this.loadingService.setPageLoading('dashboard', false);
+    // Fallback to first available
+    const firstConfig = configs[0];
+    this.onConfigSelect(firstConfig.id);
   }
 
   /**
@@ -124,10 +136,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
     if (!config) return;
     this.selectedConfig.set(config);
     // Save the selected config to localStorage
-    this.localStorageService.savePreferences({
-      ...this.localStorageService.getPreferences(),
+    this._localStorageService.savePreferences({
+      ...this._localStorageService.preferences(),
       lastSelectedConfig: config,
     });
+
+    this.appRouter.updateDashboardUrl(configId);
   }
 
   /**
@@ -144,13 +158,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Navigates to the settings page.
-   */
-  navigateToSettings(): void {
-    this.router.navigate(['/settings']);
-  }
-
-  /**
    * Handles test started event from StartButtonComponent
    */
   onTestStarted(): void {
@@ -164,7 +171,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
    * Handles test start failed event from StartButtonComponent
    */
   onTestStartFailed(error: Error): void {
-    this.logService.error('Failed to start test:', error);
+    this._logService.error('Failed to start test:', error);
   }
 
   /**
@@ -177,10 +184,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
   /**
    * Sets up test event listeners to track test execution state
    */
-  private subscribeToTestEvents(): void {
-    this.eventService
+  private _subscribeToTestEvents(): void {
+    this._eventService
       .getTestEventsStream()
-      .pipe(takeUntil(this.destroy$))
+      .pipe(takeUntil(this._destroy$))
       .subscribe({
         next: (event) => {
           if (event.status === 'running') {
@@ -193,7 +200,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
           }
         },
         error: (error) => {
-          this.logService.error('Failed to handle test event:', error);
+          this._logService.error('Failed to handle test event:', error);
         },
       });
   }

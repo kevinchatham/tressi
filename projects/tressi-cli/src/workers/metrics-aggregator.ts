@@ -8,7 +8,6 @@ import { ServerEvents } from '../events/event-types';
 import { globalEventEmitter } from '../events/global-event-emitter';
 import type { TestSummary } from '../reporting/types';
 import { transformAggregatedMetricToTestSummary } from '../reporting/utils/transformations';
-import { roundToDecimals } from '../utils/math-utils';
 import {
   IHdrHistogramManager,
   IMetricsAggregator,
@@ -30,33 +29,48 @@ const responseSamplesStore = new Map<
 >();
 
 export class MetricsAggregator implements IMetricsAggregator {
-  private pollingInterval: NodeJS.Timeout | null = null;
-  private startTime: number = 0;
-  private endTime: number = 0;
-  private endpoints: string[] = [];
-  private config: TressiConfig | null = null;
-  private testId?: string; // Optional for server persistence
-  private previousEndpointCounts: Record<
+  private _pollingInterval: NodeJS.Timeout | null = null;
+  private _startTime: number = 0;
+  private _endTime: number = 0;
+  private _endpoints: string[] = [];
+  private _config: TressiConfig | null = null;
+  private _testId?: string; // Optional for server persistence
+  private _previousEndpointCounts: Record<
     string,
     { success: number; failure: number; timestamp: number }
   > = {};
-  private peakGlobalInstantRps: number = 0;
-  private peakEndpointInstantRps: Record<string, number> = {};
-  private cpuUsageSamples: Array<{
+  private _rpsWindowSamples: Record<
+    string,
+    Array<{ timestamp: number; rps: number }>
+  > = {};
+  private _previousGlobalCounts: {
+    success: number;
+    failure: number;
+    timestamp: number;
+  } = {
+    success: 0,
+    failure: 0,
+    timestamp: 0,
+  };
+  private _cpuUsageSamples: Array<{
     timestamp: number;
     cpuUsagePercent: number;
   }> = [];
-  private memoryUsageSamples: Array<{
+  private _memoryUsageSamples: Array<{
     timestamp: number;
     memoryUsageMB: number;
   }> = [];
-  private metricsSamplingInterval: NodeJS.Timeout | null = null;
+  private _metricsSamplingInterval: NodeJS.Timeout | null = null;
+
+  public get endTime(): number {
+    return this._endTime;
+  }
 
   constructor(
-    private hdrHistogramManagers: IHdrHistogramManager[],
-    private statsCounterManagers: IStatsCounterManager[],
-    private endpointMethodMap: Record<string, string> = {},
-    private runId: string,
+    private _hdrHistogramManagers: IHdrHistogramManager[],
+    private _statsCounterManagers: IStatsCounterManager[],
+    private _endpointMethodMap: Record<string, string> = {},
+    private _runId: string,
   ) {}
 
   /**
@@ -64,7 +78,7 @@ export class MetricsAggregator implements IMetricsAggregator {
    * @param testId The test ID from database
    */
   setTestId(testId: string): void {
-    this.testId = testId;
+    this._testId = testId;
   }
 
   /**
@@ -72,8 +86,16 @@ export class MetricsAggregator implements IMetricsAggregator {
    * @param startTime Unix timestamp in milliseconds
    */
   public setStartTime(startTime: number): void {
-    this.startTime = startTime;
-    this.startMetricsSampling();
+    this._startTime = startTime;
+    // Reset RPS window samples for new test
+    this._rpsWindowSamples = {};
+    // Initialize previous global counts with zero values to ensure proper peak RPS calculation
+    this._previousGlobalCounts = {
+      success: 0,
+      failure: 0,
+      timestamp: startTime,
+    };
+    this._startMetricsSampling();
   }
 
   /**
@@ -81,38 +103,38 @@ export class MetricsAggregator implements IMetricsAggregator {
    * @param endTime Unix timestamp in milliseconds
    */
   public setEndTime(endTime: number): void {
-    this.endTime = endTime;
-    this.stopMetricsSampling();
+    this._endTime = endTime;
+    this._stopMetricsSampling();
   }
 
   /**
    * Start collecting resource usage samples at regular intervals
    */
-  private startMetricsSampling(): void {
-    if (this.metricsSamplingInterval) {
-      clearInterval(this.metricsSamplingInterval);
+  private _startMetricsSampling(): void {
+    if (this._metricsSamplingInterval) {
+      clearInterval(this._metricsSamplingInterval);
     }
 
     // Sample every 2 seconds during the test
-    this.metricsSamplingInterval = setInterval(() => {
-      this.collectResourceUsageSample();
+    this._metricsSamplingInterval = setInterval(() => {
+      this._collectResourceUsageSample();
     }, 2000);
   }
 
   /**
    * Stop collecting resource usage samples
    */
-  private stopMetricsSampling(): void {
-    if (this.metricsSamplingInterval) {
-      clearInterval(this.metricsSamplingInterval);
-      this.metricsSamplingInterval = null;
+  private _stopMetricsSampling(): void {
+    if (this._metricsSamplingInterval) {
+      clearInterval(this._metricsSamplingInterval);
+      this._metricsSamplingInterval = null;
     }
   }
 
   /**
    * Collect a single resource usage sample
    */
-  private collectResourceUsageSample(): void {
+  private _collectResourceUsageSample(): void {
     const timestamp = Date.now();
 
     // Calculate CPU usage percentage based on system load average
@@ -128,17 +150,71 @@ export class MetricsAggregator implements IMetricsAggregator {
       process.memoryUsage().heapUsed / 1024 / 1024,
     );
 
-    this.cpuUsageSamples.push({ timestamp, cpuUsagePercent });
-    this.memoryUsageSamples.push({ timestamp, memoryUsageMB });
+    this._cpuUsageSamples.push({ timestamp, cpuUsagePercent });
+    this._memoryUsageSamples.push({ timestamp, memoryUsageMB });
   }
 
   /**
    * Calculate average from samples
    */
-  private calculateAverage(values: number[]): number {
+  private _calculateAverage(values: number[]): number {
     if (values.length === 0) return 0;
     const sum = values.reduce((acc, value) => acc + value, 0);
     return Math.round(sum / values.length);
+  }
+
+  /**
+   * Calculate the peak RPS window size based on test duration
+   * Uses test duration minus one second with a maximum of 5 seconds
+   * @param testDurationMs - Test duration in milliseconds
+   * @returns Window size in milliseconds
+   */
+  private _calculatePeakRpsWindowMs(testDurationMs: number): number {
+    return Math.min(testDurationMs - 1_000, 5_000);
+  }
+
+  /**
+   * Calculate peak RPS over a sliding window for a specific key
+   * @param key - The key to track samples for ('global' or endpoint URL)
+   * @param currentTime - Current timestamp in milliseconds
+   * @param windowMs - Window size in milliseconds
+   * @returns RPS value over the window
+   */
+  private _calculateWindowedPeakRps(
+    key: string,
+    currentTime: number,
+    windowMs: number,
+  ): number {
+    // Initialize samples array for this key if it doesn't exist
+    if (!this._rpsWindowSamples[key]) {
+      this._rpsWindowSamples[key] = [];
+    }
+
+    // Prevent unbounded growth - remove samples older than window
+    this._rpsWindowSamples[key] = this._rpsWindowSamples[key].filter(
+      (sample) =>
+        currentTime - sample.timestamp <= windowMs && sample.rps !== 0,
+    );
+
+    // Extract RPS values
+    const rpsValues = this._rpsWindowSamples[key].map((s) => s.rps);
+
+    // Return 0 if no samples
+    if (rpsValues.length === 0) {
+      return 0;
+    }
+
+    // Sort RPS values
+    const sortedRps = rpsValues.sort((a, b) => a - b);
+
+    const percentile = 0.5;
+
+    const index = Math.min(
+      Math.floor(sortedRps.length * percentile),
+      sortedRps.length - 1,
+    );
+
+    return sortedRps[index];
   }
 
   /**
@@ -146,7 +222,7 @@ export class MetricsAggregator implements IMetricsAggregator {
    * @param config The Tressi configuration
    */
   setConfig(config: TressiConfig): void {
-    this.config = config;
+    this._config = config;
   }
 
   /**
@@ -154,18 +230,16 @@ export class MetricsAggregator implements IMetricsAggregator {
    * @param endpoints Array of endpoint URLs
    */
   setEndpoints(endpoints: string[]): void {
-    this.endpoints = endpoints;
-    // Initialize previous endpoint counts
-    const startTime = this.startTime || Date.now();
-    this.previousEndpointCounts = {};
-    this.peakEndpointInstantRps = {};
+    this._endpoints = endpoints;
+    // Initialize previous endpoint counts with zero values to ensure proper peak RPS calculation
+    const startTime = this._startTime || Date.now();
+    this._previousEndpointCounts = {};
     endpoints.forEach((url) => {
-      this.previousEndpointCounts[url] = {
+      this._previousEndpointCounts[url] = {
         success: 0,
         failure: 0,
         timestamp: startTime,
       };
-      this.peakEndpointInstantRps[url] = 0;
     });
   }
 
@@ -174,14 +248,14 @@ export class MetricsAggregator implements IMetricsAggregator {
    * @param intervalMs Polling interval in milliseconds
    */
   startPolling(intervalMs: number = 1000): void {
-    if (this.pollingInterval) {
-      clearInterval(this.pollingInterval);
-      this.pollingInterval = null;
+    if (this._pollingInterval) {
+      clearInterval(this._pollingInterval);
+      this._pollingInterval = null;
     }
 
-    this.startTime = Date.now();
-    this.pollingInterval = setInterval(async () => {
-      await this.pollMetrics();
+    this._startTime = Date.now();
+    this._pollingInterval = setInterval(async () => {
+      await this._pollMetrics();
     }, intervalMs);
   }
 
@@ -189,11 +263,11 @@ export class MetricsAggregator implements IMetricsAggregator {
    * Stop polling for metrics updates
    */
   stopPolling(): void {
-    if (this.pollingInterval) {
-      clearInterval(this.pollingInterval);
-      this.pollingInterval = null;
+    if (this._pollingInterval) {
+      clearInterval(this._pollingInterval);
+      this._pollingInterval = null;
     }
-    this.endTime = Date.now(); // ← Capture end time
+    this._endTime = Date.now();
   }
 
   /**
@@ -207,30 +281,30 @@ export class MetricsAggregator implements IMetricsAggregator {
    * The polling approach ensures that metrics are updated frequently enough for real-time
    * monitoring while being efficient enough to not impact test performance.
    */
-  private async pollMetrics(): Promise<void> {
+  private async _pollMetrics(): Promise<void> {
     try {
       const metrics = this.getResults(
-        this.hdrHistogramManagers.length,
-        this.endpoints,
+        this._hdrHistogramManagers.length,
+        this._endpoints,
       );
 
       const testSummary = this.getTestSummary(
-        this.hdrHistogramManagers.length,
-        this.endpoints,
+        this._hdrHistogramManagers.length,
+        this._endpoints,
       );
 
       // ! terminal.clearAndPrint(metrics);
 
       globalEventEmitter.emit(ServerEvents.METRICS, {
-        testId: this.testId,
+        testId: this._testId,
         testSummary,
       });
 
       // Store metrics if testId is provided (server mode)
-      if (this.testId) {
+      if (this._testId) {
         // Store global metrics
         await globalMetricStorage.create({
-          testId: this.testId,
+          testId: this._testId,
           metric: metrics.global,
           epoch: metrics.epoch,
         });
@@ -238,7 +312,7 @@ export class MetricsAggregator implements IMetricsAggregator {
         // Store per-endpoint metrics
         for (const [url, endpointMetric] of Object.entries(metrics.endpoints)) {
           await endpointMetricStorage.create({
-            testId: this.testId,
+            testId: this._testId,
             url,
             metric: endpointMetric,
             epoch: metrics.epoch,
@@ -283,8 +357,8 @@ export class MetricsAggregator implements IMetricsAggregator {
     > = {};
 
     for (let workerId = 0; workerId < workersCount; workerId++) {
-      const statsManager = this.statsCounterManagers[workerId];
-      const histogramManager = this.hdrHistogramManagers[workerId];
+      const statsManager = this._statsCounterManagers[workerId];
+      const histogramManager = this._hdrHistogramManagers[workerId];
 
       if (!statsManager || !histogramManager) continue;
 
@@ -296,7 +370,7 @@ export class MetricsAggregator implements IMetricsAggregator {
 
       // Process each endpoint owned by this worker
       allCounters.forEach((counters, localEndpointIndex: number) => {
-        const globalEndpointIndex = this.getGlobalEndpointIndex(
+        const globalEndpointIndex = this._getGlobalEndpointIndex(
           workerId,
           localEndpointIndex,
         );
@@ -314,7 +388,7 @@ export class MetricsAggregator implements IMetricsAggregator {
         totalFailure += counters.failureCount;
         totalRequests += counters.successCount + counters.failureCount;
 
-        // Track current counts for instant RPS calculation
+        // Track current counts for peak RPS calculation
         currentEndpointCounts[endpointUrl].success += counters.successCount;
         currentEndpointCounts[endpointUrl].failure += counters.failureCount;
 
@@ -342,13 +416,24 @@ export class MetricsAggregator implements IMetricsAggregator {
 
     const currentTime = Date.now();
 
+    // Calculate test duration and window size
+    const testDurationMs =
+      this._endTime > 0
+        ? this._endTime - this._startTime
+        : currentTime - this._startTime;
+    const windowMs = this._calculatePeakRpsWindowMs(testDurationMs);
+
     // Calculate global metrics
-    const duration = this.startTime > 0 ? currentTime - this.startTime : 0;
-    const averageRequestsPerSecond =
-      duration > 0 ? totalRequests / (duration / 1000) : 0;
+    // Minimum 1 prevents truncation from hiding actual request activity
+    // (e.g., 59 requests in 60s was displaying as 0 due to decimal truncation)
+    const duration = this._startTime > 0 ? currentTime - this._startTime : 0;
+    const averageRequestsPerSecond = Math.max(
+      duration > 0 ? totalRequests / (duration / 1000) : 0,
+      1,
+    );
 
     // Calculate global latency statistics using weighted averages
-    const globalStats = this.calculateGlobalLatencyStats(endpointHistograms);
+    const globalStats = this._calculateGlobalLatencyStats(endpointHistograms);
 
     // Calculate global status code distribution
     const globalStatusCodeDistribution: Record<number, number> = {};
@@ -362,32 +447,28 @@ export class MetricsAggregator implements IMetricsAggregator {
 
     // Build per-endpoint metrics
     const endpointMetrics: AggregatedMetrics['endpoints'] = {};
+
     endpoints.forEach((url) => {
       const histograms = endpointHistograms[url];
       const statusCounts = endpointStatusCounts[url];
 
       // Calculate endpoint-level statistics
-      const endpointStats = this.calculateEndpointLatencyStats(histograms);
+      const endpointStats = this._calculateEndpointLatencyStats(histograms);
       const endpointTotalRequests = endpointStats.totalCount;
 
-      const endpointSuccessRequests = Object.values(statusCounts).reduce(
-        (sum, count) => sum + count,
-        0,
-      );
-      const endpointFailureRequests =
-        endpointTotalRequests - endpointSuccessRequests;
-
-      // Aggregate network metrics per endpoint
+      // Aggregate success/failure and network metrics per endpoint
+      let endpointSuccessRequests = 0;
+      let endpointFailureRequests = 0;
       let endpointBytesSent = 0;
       let endpointBytesReceived = 0;
 
       for (let workerId = 0; workerId < workersCount; workerId++) {
-        const statsManager = this.statsCounterManagers[workerId];
+        const statsManager = this._statsCounterManagers[workerId];
         if (!statsManager) continue;
 
         const allCounters = statsManager.getAllEndpointCounters();
         allCounters.forEach((counters, localEndpointIndex) => {
-          const globalEndpointIndex = this.getGlobalEndpointIndex(
+          const globalEndpointIndex = this._getGlobalEndpointIndex(
             workerId,
             localEndpointIndex,
           );
@@ -395,6 +476,8 @@ export class MetricsAggregator implements IMetricsAggregator {
 
           const endpointUrl = endpoints[globalEndpointIndex];
           if (endpointUrl === url) {
+            endpointSuccessRequests += counters.successCount;
+            endpointFailureRequests += counters.failureCount;
             endpointBytesSent += counters.bytesSent;
             endpointBytesReceived += counters.bytesReceived;
           }
@@ -406,19 +489,17 @@ export class MetricsAggregator implements IMetricsAggregator {
           ? (endpointBytesSent + endpointBytesReceived) / (duration / 1000)
           : 0;
 
-      // Calculate instant RPS based on difference from previous counts
+      // Calculate peak RPS based on difference from previous counts
       const currentCounts = currentEndpointCounts[url] || {
         success: 0,
         failure: 0,
       };
-      const previousCounts = this.previousEndpointCounts[url] || {
-        success: 0,
-        failure: 0,
-        timestamp: 0,
-      };
+
+      const previousCounts = this._previousEndpointCounts[url];
 
       let peakRequestsPerSecond = 0;
       if (
+        previousCounts &&
         previousCounts.timestamp > 0 &&
         currentTime > previousCounts.timestamp
       ) {
@@ -431,61 +512,104 @@ export class MetricsAggregator implements IMetricsAggregator {
         peakRequestsPerSecond = timeDiffSec > 0 ? requestDiff / timeDiffSec : 0;
       }
 
-      // Track peak instant RPS for this endpoint
-      this.peakEndpointInstantRps[url] = Math.max(
-        this.peakEndpointInstantRps[url] || 0,
-        peakRequestsPerSecond,
+      // Store sample for windowed peak calculation (per-endpoint)
+      if (!this._rpsWindowSamples[url]) {
+        this._rpsWindowSamples[url] = [];
+      }
+      this._rpsWindowSamples[url].push({
+        timestamp: currentTime,
+        rps: peakRequestsPerSecond,
+      });
+
+      // Calculate windowed peak RPS for this endpoint
+      const endpointPeakRps = this._calculateWindowedPeakRps(
+        url,
+        currentTime,
+        windowMs,
       );
 
       // Update previous counts for next calculation
-      this.previousEndpointCounts[url] = {
+      this._previousEndpointCounts[url] = {
         success: currentCounts.success,
         failure: currentCounts.failure,
         timestamp: currentTime,
       };
 
+      const endpointAverageRequestsPerSecond = Math.max(
+        duration > 0 ? endpointTotalRequests / (duration / 1000) : 0,
+        1,
+      );
+
       endpointMetrics[url] = {
         totalRequests: endpointTotalRequests,
         successfulRequests: endpointSuccessRequests,
         failedRequests: endpointFailureRequests,
-        minLatencyMs: roundToDecimals(endpointStats.minLatency),
-        maxLatencyMs: roundToDecimals(endpointStats.maxLatency),
-        p50LatencyMs: roundToDecimals(endpointStats.p50Latency),
-        p95LatencyMs: roundToDecimals(endpointStats.p95Latency),
-        p99LatencyMs: roundToDecimals(endpointStats.p99Latency),
-        averageRequestsPerSecond: roundToDecimals(
-          duration > 0 ? endpointTotalRequests / (duration / 1000) : 0,
-        ),
-        peakRequestsPerSecond: roundToDecimals(
-          this.endTime > 0 && this.peakEndpointInstantRps[url] > 0
-            ? this.peakEndpointInstantRps[url]
-            : Math.max(
-                peakRequestsPerSecond,
-                this.peakEndpointInstantRps[url] || 0,
-              ),
-        ),
+        minLatencyMs: endpointStats.minLatency,
+        maxLatencyMs: endpointStats.maxLatency,
+        p50LatencyMs: endpointStats.p50Latency,
+        p95LatencyMs: endpointStats.p95Latency,
+        p99LatencyMs: endpointStats.p99Latency,
+        averageRequestsPerSecond: endpointAverageRequestsPerSecond,
+        peakRequestsPerSecond: endpointPeakRps,
         statusCodeDistribution: statusCounts,
         networkBytesSent: endpointBytesSent,
         networkBytesReceived: endpointBytesReceived,
-        networkBytesPerSec: roundToDecimals(endpointBytesPerSec),
+        networkBytesPerSec: endpointBytesPerSec,
         errorRate: endpointFailureRequests / endpointTotalRequests,
+        targetAchieved: 0, // Will be calculated below
       };
     });
 
-    // Calculate global instant RPS as the sum of all endpoint instant RPS values
-    let globalInstantRequestsPerSecond = 0;
-    endpoints.forEach((url) => {
-      const endpointMetric = endpointMetrics[url];
-      if (endpointMetric) {
-        globalInstantRequestsPerSecond += endpointMetric.peakRequestsPerSecond;
-      }
+    // Calculate targetAchieved for each endpoint
+    if (this._config) {
+      endpoints.forEach((url) => {
+        const requestConfig = this._config!.requests.find(
+          (req) => req.url === url,
+        );
+        if (requestConfig && endpointMetrics[url]) {
+          endpointMetrics[url].targetAchieved =
+            endpointMetrics[url].peakRequestsPerSecond / requestConfig.rps;
+        }
+      });
+    }
+
+    // Calculate global peak RPS
+    let globalPeakRpsDiff = 0;
+    if (
+      this._previousGlobalCounts.timestamp > 0 &&
+      currentTime > this._previousGlobalCounts.timestamp
+    ) {
+      const timeDiffMs = currentTime - this._previousGlobalCounts.timestamp;
+      const timeDiffSec = timeDiffMs / 1000;
+      const requestDiff =
+        totalRequests -
+        (this._previousGlobalCounts.success +
+          this._previousGlobalCounts.failure);
+      globalPeakRpsDiff = timeDiffSec > 0 ? requestDiff / timeDiffSec : 0;
+    }
+
+    // Store sample for global windowed peak calculation
+    if (!this._rpsWindowSamples['global']) {
+      this._rpsWindowSamples['global'] = [];
+    }
+    this._rpsWindowSamples['global'].push({
+      timestamp: currentTime,
+      rps: globalPeakRpsDiff,
     });
 
-    // Track peak global instant RPS
-    this.peakGlobalInstantRps = Math.max(
-      this.peakGlobalInstantRps,
-      globalInstantRequestsPerSecond,
+    // Calculate global windowed peak RPS
+    const globalPeakRps = this._calculateWindowedPeakRps(
+      'global',
+      currentTime,
+      windowMs,
     );
+
+    // Update previous global counts for next calculation
+    this._previousGlobalCounts = {
+      success: totalSuccess,
+      failure: totalFailure,
+      timestamp: currentTime,
+    };
 
     // Calculate CPU usage percentage based on system load average
     const cpuCount = cpus().length;
@@ -501,23 +625,23 @@ export class MetricsAggregator implements IMetricsAggregator {
     );
 
     // Add final sample if test is still running
-    if (this.endTime === 0) {
-      this.cpuUsageSamples.push({
+    if (this._endTime === 0) {
+      this._cpuUsageSamples.push({
         timestamp: currentTime,
         cpuUsagePercent: currentCpuUsagePercent,
       });
-      this.memoryUsageSamples.push({
+      this._memoryUsageSamples.push({
         timestamp: currentTime,
         memoryUsageMB: currentMemoryUsageMB,
       });
     }
 
     // Calculate averages from samples
-    const cpuUsagePercent = this.calculateAverage(
-      this.cpuUsageSamples.map((s) => s.cpuUsagePercent),
+    const cpuUsagePercent = this._calculateAverage(
+      this._cpuUsageSamples.map((s) => s.cpuUsagePercent),
     );
-    const memoryUsageMB = this.calculateAverage(
-      this.memoryUsageSamples.map((s) => s.memoryUsageMB),
+    const memoryUsageMB = this._calculateAverage(
+      this._memoryUsageSamples.map((s) => s.memoryUsageMB),
     );
 
     // Calculate global network throughput
@@ -530,30 +654,38 @@ export class MetricsAggregator implements IMetricsAggregator {
       totalRequests,
       successfulRequests: totalSuccess,
       failedRequests: totalFailure,
-      minLatencyMs: roundToDecimals(globalStats.minLatency),
-      maxLatencyMs: roundToDecimals(globalStats.maxLatency),
-      p50LatencyMs: roundToDecimals(globalStats.p50Latency),
-      p95LatencyMs: roundToDecimals(globalStats.p95Latency),
-      p99LatencyMs: roundToDecimals(globalStats.p99Latency),
-      averageRequestsPerSecond: roundToDecimals(averageRequestsPerSecond),
-      peakRequestsPerSecond: roundToDecimals(
-        this.endTime > 0 && this.peakGlobalInstantRps > 0
-          ? this.peakGlobalInstantRps
-          : globalInstantRequestsPerSecond,
-      ),
+      minLatencyMs: globalStats.minLatency,
+      maxLatencyMs: globalStats.maxLatency,
+      p50LatencyMs: globalStats.p50Latency,
+      p95LatencyMs: globalStats.p95Latency,
+      p99LatencyMs: globalStats.p99Latency,
+      averageRequestsPerSecond: averageRequestsPerSecond,
+      peakRequestsPerSecond: globalPeakRps,
       statusCodeDistribution: globalStatusCodeDistribution,
       networkBytesSent: totalBytesSent,
       networkBytesReceived: totalBytesReceived,
-      networkBytesPerSec: roundToDecimals(globalBytesPerSec),
+      networkBytesPerSec: globalBytesPerSec,
       errorRate: totalFailure / totalRequests,
+      targetAchieved: 0, // Will be calculated below
     };
+
+    // Calculate global targetAchieved as average of all endpoints
+    const endpointValues = Object.values(endpointMetrics);
+    if (endpointValues.length > 0) {
+      const totalTargetAchieved = endpointValues.reduce(
+        (sum, m) => sum + (m.targetAchieved || 0),
+        0,
+      );
+      globalMetrics.targetAchieved =
+        totalTargetAchieved / endpointValues.length;
+    }
 
     return {
       epoch: currentTime,
       cpuUsagePercent,
       memoryUsageMB,
-      cpuUsageSamples: this.cpuUsageSamples,
-      memoryUsageSamples: this.memoryUsageSamples,
+      cpuUsageSamples: this._cpuUsageSamples,
+      memoryUsageSamples: this._memoryUsageSamples,
       global: globalMetrics,
       endpoints: endpointMetrics,
     };
@@ -571,13 +703,13 @@ export class MetricsAggregator implements IMetricsAggregator {
   ): TestSummary {
     const metrics = this.getResults(workersCount, endpoints);
     const duration =
-      this.startTime > 0 ? (Date.now() - this.startTime) / 1000 : 0;
+      this._startTime > 0 ? (Date.now() - this._startTime) / 1000 : 0;
 
-    if (!this.config) {
+    if (!this._config) {
       throw new Error('Config not set in MetricsAggregator');
     }
 
-    const responseSamplesMap = this.getCollectedResponseSamples(this.runId);
+    const responseSamplesMap = this.getCollectedResponseSamples(this._runId);
 
     // Convert Map to Record for TestSummary
     const responseSamples: Record<
@@ -604,14 +736,14 @@ export class MetricsAggregator implements IMetricsAggregator {
 
     // Aggregate histogram data from all workers
     for (let workerId = 0; workerId < workersCount; workerId++) {
-      const histogramManager = this.hdrHistogramManagers[workerId];
+      const histogramManager = this._hdrHistogramManagers[workerId];
       if (!histogramManager) continue;
 
       const allHistograms = histogramManager.getAllEndpointHistograms();
 
       // Process each endpoint
       allHistograms.forEach((histogram, localEndpointIndex) => {
-        const globalEndpointIndex = this.getGlobalEndpointIndex(
+        const globalEndpointIndex = this._getGlobalEndpointIndex(
           workerId,
           localEndpointIndex,
         );
@@ -630,14 +762,14 @@ export class MetricsAggregator implements IMetricsAggregator {
     }
 
     // Use stored times (endTime captured in stopPolling)
-    const epochStartedAt = this.startTime;
-    const epochEndedAt = this.endTime > 0 ? this.endTime : Date.now();
+    const epochStartedAt = this._startTime;
+    const epochEndedAt = this._endTime > 0 ? this._endTime : Date.now();
 
     return transformAggregatedMetricToTestSummary(
       metrics,
       duration,
-      this.endpointMethodMap,
-      this.config,
+      this._endpointMethodMap,
+      this._config,
       epochStartedAt,
       epochEndedAt,
       responseSamples,
@@ -738,7 +870,7 @@ export class MetricsAggregator implements IMetricsAggregator {
    * });
    * ```
    */
-  private calculateGlobalLatencyStats(
+  private _calculateGlobalLatencyStats(
     endpointHistograms: Record<string, LatencyHistogram[]>,
   ): {
     averageLatency: number;
@@ -831,7 +963,7 @@ export class MetricsAggregator implements IMetricsAggregator {
    * // Result: weighted average based on 2500 total requests
    * ```
    */
-  private calculateEndpointLatencyStats(histograms: LatencyHistogram[]): {
+  private _calculateEndpointLatencyStats(histograms: LatencyHistogram[]): {
     averageLatency: number;
     minLatency: number;
     maxLatency: number;
@@ -880,12 +1012,12 @@ export class MetricsAggregator implements IMetricsAggregator {
     });
 
     return {
-      averageLatency: roundToDecimals(averageLatency),
-      minLatency: roundToDecimals(minLatency === Infinity ? 0 : minLatency),
-      maxLatency: roundToDecimals(maxLatency),
-      p50Latency: roundToDecimals(weightedP50),
-      p95Latency: roundToDecimals(weightedP95),
-      p99Latency: roundToDecimals(weightedP99),
+      averageLatency,
+      minLatency: minLatency === Infinity ? 0 : minLatency,
+      maxLatency,
+      p50Latency: weightedP50,
+      p95Latency: weightedP95,
+      p99Latency: weightedP99,
       totalCount,
     };
   }
@@ -909,12 +1041,12 @@ export class MetricsAggregator implements IMetricsAggregator {
    * // Worker 1: local 0 -> global 1, local 1 -> global 3
    * ```
    */
-  private getGlobalEndpointIndex(
+  private _getGlobalEndpointIndex(
     workerId: number,
     localEndpointIndex: number,
   ): number {
     // Calculate based on round-robin distribution
-    const workersCount = this.hdrHistogramManagers.length;
+    const workersCount = this._hdrHistogramManagers.length;
     return workerId + localEndpointIndex * workersCount;
   }
 }

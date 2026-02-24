@@ -1,42 +1,71 @@
 import { serve } from '@hono/node-server';
+import chalk from 'chalk';
 import { Hono } from 'hono';
+import { homedir } from 'os';
+import { join } from 'path';
 
+import pkg from '../../../../package.json';
+import { testStorage } from '../collections/test-collection';
 import { ServerEvents } from '../events/event-types';
 import { terminal } from '../tui/terminal';
 import createApp from './routes';
 import { SSEManager } from './utils/sse-manager';
 
 export class TressiServer {
-  private app: Hono;
-  private server: ReturnType<typeof serve> | null = null;
-  private port: number;
-  private sseManager: SSEManager;
-  private heartbeatInterval: NodeJS.Timeout | null = null;
+  private _app: Hono;
+  private _server: ReturnType<typeof serve> | null = null;
+  private _port: number;
+  private _sseManager: SSEManager;
+  private _heartbeatInterval: NodeJS.Timeout | null = null;
 
   constructor(port: number = 3108) {
-    this.port = port;
-    this.sseManager = new SSEManager();
-    this.app = createApp(this.sseManager, port);
+    this._port = port;
+    this._sseManager = new SSEManager();
+    this._app = createApp(this._sseManager, port);
   }
 
   async start(): Promise<void> {
+    // Clean up any tests left in 'running' state from previous session
+    try {
+      const stoppedCount = await testStorage.stopAllRunningTests();
+      if (stoppedCount > 0) {
+        terminal.print(
+          `🧹 Cleaned up ${stoppedCount} test(s) that were left running.`,
+        );
+      }
+    } catch (error) {
+      terminal.print(
+        `⚠️ Warning: Failed to clean up running tests: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
+
     return new Promise((resolve, reject) => {
       try {
-        this.server = serve({
-          fetch: this.app.fetch,
-          port: this.port,
+        this._server = serve({
+          fetch: this._app.fetch,
+          port: this._port,
         });
-        this.server.on('listening', () => {
+        this._server.on('listening', () => {
+          const url = `http://localhost:${this._port}`;
+          const dbPath = join(homedir(), '.tressi', 'tressi.db');
+
+          terminal.print('');
           terminal.print(
-            `🚀 Tressi server is running on http://localhost:${this.port}`,
+            `  ${chalk.yellow.bold('⚡')} ${chalk.bold(`Tressi ${pkg.version}`)}`,
           );
+          terminal.print('');
+          terminal.print(`  ${chalk.bold('Local:')} ${chalk.cyan(url)}`);
+          terminal.print(`  ${chalk.bold('Store:')} ${chalk.magenta(dbPath)}`);
+          terminal.print('');
           terminal.print(
-            `📊 Health check available at http://localhost:${this.port}/api/health`,
+            `  ${chalk.dim('Press')} ${chalk.bold.dim('Ctrl+C')} ${chalk.dim('to stop the server')}`,
           );
-          this.startHeartbeat();
+          terminal.print('');
+
+          this._startHeartbeat();
           resolve();
         });
-        this.server.on('error', (error) => {
+        this._server.on('error', (error) => {
           reject(error as Error);
         });
       } catch (error) {
@@ -47,23 +76,23 @@ export class TressiServer {
 
   async stop(): Promise<void> {
     return new Promise((resolve) => {
-      if (this.heartbeatInterval) {
-        clearInterval(this.heartbeatInterval);
-        this.heartbeatInterval = null;
+      if (this._heartbeatInterval) {
+        clearInterval(this._heartbeatInterval);
+        this._heartbeatInterval = null;
       }
 
-      if (this.server) {
+      if (this._server) {
         // Force close all SSE connections first
-        this.sseManager.forceClose();
+        this._sseManager.forceClose();
 
         // Set a timeout to force exit if graceful shutdown takes too long
         const timeout = setTimeout(() => {
           process.exit(0);
         }, 500);
 
-        this.server.close(() => {
+        this._server.close(() => {
           clearTimeout(timeout);
-          this.sseManager.cleanup();
+          this._sseManager.cleanup();
           resolve();
         });
       } else {
@@ -76,15 +105,15 @@ export class TressiServer {
    * Starts the heartbeat interval for sending regular connected events
    * @private
    */
-  private startHeartbeat(): void {
-    this.heartbeatInterval = setInterval(() => {
+  private _startHeartbeat(): void {
+    this._heartbeatInterval = setInterval(() => {
       const message = {
         event: ServerEvents.CONNECTED,
         data: {
           timestamp: Date.now(),
         },
       };
-      this.sseManager.broadcast(message);
+      this._sseManager.broadcast(message);
     }, 1000); // Send heartbeat every 1 second
   }
 }

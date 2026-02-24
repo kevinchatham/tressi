@@ -27,6 +27,6 @@ export class RunCommand {
    * @returns Command description
    */
   static getDescription(): string {
-    return 'Run a load test using the specified configuration file. This is the default action when no specific command is provided.';
+    return 'Run a load test using the specified configuration file.';
   }
 }

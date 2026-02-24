@@ -310,4 +310,69 @@ describe('HdrHistogramManager', () => {
       expect(histogram.max).toBeGreaterThan(0);
     });
   });
+
+  describe('monotonicity and bucket integrity', () => {
+    it('should have monotonic getValueFromIndex around the subBucketHalfCount boundary', () => {
+      const manager = new HdrHistogramManager(1, 3, 1, 120_000_000);
+
+      // Access private method for testing
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const getValueFromIndex = (manager as any)._getValueFromIndex.bind(
+        manager,
+      );
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const subBucketHalfCount = (manager as any)._subBucketHalfCount;
+
+      const valAtBoundaryMinus1 = getValueFromIndex(subBucketHalfCount - 1);
+      const valAtBoundary = getValueFromIndex(subBucketHalfCount);
+      const valAtBoundaryPlus1 = getValueFromIndex(subBucketHalfCount + 1);
+
+      expect(valAtBoundary).toBeGreaterThanOrEqual(valAtBoundaryMinus1);
+      expect(valAtBoundaryPlus1).toBeGreaterThanOrEqual(valAtBoundary);
+    });
+
+    it('should calculate percentiles in increasing order', () => {
+      const manager = new HdrHistogramManager(1, 3, 1, 120_000_000);
+
+      // Record a distribution that spans the boundary
+      for (let i = 1; i <= 2000; i++) {
+        manager.recordLatency(0, i / 1000); // 0.001ms to 2ms
+      }
+
+      const histogram = manager.getLatencyHistogram(0);
+      const p = histogram.percentiles;
+      const sortedKeys = Object.keys(p)
+        .map(Number)
+        .sort((a, b) => a - b);
+
+      for (let i = 1; i < sortedKeys.length; i++) {
+        const prevKey = sortedKeys[i - 1];
+        const currKey = sortedKeys[i];
+        expect(
+          p[currKey],
+          `p${currKey} (${p[currKey]}) should be >= p${prevKey} (${p[prevKey]})`,
+        ).toBeGreaterThanOrEqual(p[prevKey]!);
+      }
+    });
+
+    it('should produce non-overlapping buckets', () => {
+      const manager = new HdrHistogramManager(1, 3, 1, 120_000_000);
+
+      for (let i = 1; i <= 2000; i++) {
+        manager.recordLatency(0, i / 1000);
+      }
+
+      const histogram = manager.getLatencyHistogram(0);
+      const buckets = histogram.buckets;
+
+      for (let i = 1; i < buckets.length; i++) {
+        const prev = buckets[i - 1];
+        const curr = buckets[i];
+        expect(
+          curr.lowerBound,
+          `Bucket ${i} lowerBound (${curr.lowerBound}) should be >= prev upperBound (${prev.upperBound})`,
+        ).toBeGreaterThanOrEqual(prev.upperBound);
+      }
+    });
+  });
 });

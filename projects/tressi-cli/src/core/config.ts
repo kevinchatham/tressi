@@ -31,8 +31,8 @@ class TressiConfigLoader {
     }
 
     // Handle URL input
-    if (this.isUrl(potentialConfig)) {
-      const rawContent = await this.fetchRemoteConfig(potentialConfig);
+    if (this._isUrl(potentialConfig)) {
+      const rawContent = await this._fetchRemoteConfig(potentialConfig);
       const result = validateConfig(rawContent);
       if (!result.success) {
         throw new Error(result.error.message);
@@ -44,7 +44,7 @@ class TressiConfigLoader {
     }
 
     // Handle file input
-    const rawContent = await this.loadFileConfig(potentialConfig);
+    const rawContent = await this._loadFileConfig(potentialConfig);
     const result = validateConfig(rawContent);
     if (!result.success) {
       throw new Error(result.error.message);
@@ -55,11 +55,11 @@ class TressiConfigLoader {
     };
   }
 
-  private isUrl(input: string): boolean {
+  private _isUrl(input: string): boolean {
     return input.startsWith('http://') || input.startsWith('https://');
   }
 
-  private async fetchRemoteConfig(url: string): Promise<unknown> {
+  private async _fetchRemoteConfig(url: string): Promise<unknown> {
     try {
       const { statusCode, body } = await request(url);
       if (statusCode >= 400) {
@@ -76,7 +76,7 @@ class TressiConfigLoader {
     }
   }
 
-  private async loadFileConfig(filePath: string): Promise<unknown> {
+  private async _loadFileConfig(filePath: string): Promise<unknown> {
     const absolutePath = path.resolve(filePath);
 
     // Check if file exists and is readable

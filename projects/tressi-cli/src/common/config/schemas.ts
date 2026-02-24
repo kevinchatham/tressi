@@ -38,7 +38,7 @@ export const optionsDefaults = {
   durationSec: 10,
   rampUpDurationSec: 0,
   headers: headerDefaults,
-  threads: 1,
+  threads: 4,
   workerMemoryLimit: 128,
   workerEarlyExit: earlyExitDefaults,
 };
@@ -93,26 +93,12 @@ export const TressiRequestConfigSchema = z
       .int()
       .nonnegative()
       .describe(
-        'Per-endpoint ramp-up time in seconds. If 0, uses global rampUpDurationSec. Defaults to 0.',
+        'Per-endpoint ramp up time in seconds. If 0, uses global rampUpDurationSec. Defaults to 0.',
       ),
     earlyExit: EarlyExitConfigSchema.describe(
       'Optional early exit configuration for this specific endpoint',
     ),
   })
-  .refine(
-    (data) => {
-      // If rampUpDurationSec is greater than zero, rps must be greater than or equal to 5
-      if (data.rampUpDurationSec > 0 && data.rps < 5) {
-        return false;
-      }
-      return true;
-    },
-    {
-      message:
-        'rps must be greater than or equal to 5 when rampUpDurationSec is greater than 0',
-      path: ['rps'],
-    },
-  )
   .default(requestDefaults);
 
 /**
@@ -124,6 +110,8 @@ export const TressiOptionsConfigSchema = z
       .number()
       .int()
       .positive()
+      .min(10)
+      .default(10)
       .describe('The total duration of the test in seconds. Defaults to 10.'),
     rampUpDurationSec: z
       .number()
@@ -164,7 +152,7 @@ export const TressiOptionsConfigSchema = z
     },
     {
       message:
-        'At least one threshold must be provided when workerEarlyExit is enabled',
+        'At least one exit code must be provided when Early Exit is enabled',
       path: ['workerEarlyExit'],
     },
   )
@@ -188,37 +176,20 @@ export const TressiConfigSchema = z
   })
   .refine(
     (data) => {
-      // Validate that global rampUpDurationSec is not more than half of durationSec
-      if (data.options.rampUpDurationSec > data.options.durationSec / 2) {
+      // Validate that global rampUpDurationSec is not more than a quarter of durationSec
+      if (data.options.rampUpDurationSec > data.options.durationSec / 4) {
         return false;
       }
 
-      // Validate that each endpoint's rampUpDurationSec is not more than half of durationSec
+      // Validate that each endpoint's rampUpDurationSec is not more than a quarter of durationSec
       return data.requests.every(
-        (request) => request.rampUpDurationSec <= data.options.durationSec / 2,
+        (request) => request.rampUpDurationSec <= data.options.durationSec / 4,
       );
     },
     {
-      message: 'rampUpDurationSec cannot exceed half of durationSec',
-      path: ['rampUpDurationSec'],
-    },
-  )
-  .refine(
-    (data) => {
-      // Validate worker early exit configuration
-      if (data.options.workerEarlyExit.enabled) {
-        const hasThreshold = !!(
-          data.options.workerEarlyExit.errorRateThreshold ||
-          data.options.workerEarlyExit.exitStatusCodes.length > 0
-        );
-        return hasThreshold;
-      }
-      return true;
-    },
-    {
       message:
-        'At least one threshold must be provided when workerEarlyExit is enabled',
-      path: ['workerEarlyExit'],
+        'Ramp Up Duration cannot exceed a quarter of the total test duration',
+      path: ['rampUpDurationSec'],
     },
   )
   .refine(
@@ -231,7 +202,7 @@ export const TressiConfigSchema = z
     },
     {
       message:
-        'All endpoints must have rps greater than or equal to 5 when global rampUpDurationSec is greater than 0',
+        'All requests must have a target greater than or equal to 5 when Global Ramp Up Duration is greater than 0',
       path: ['options', 'rampUpDurationSec'],
     },
   )

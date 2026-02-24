@@ -13,7 +13,13 @@
         "build": {
           "builder": "@angular/build:application",
           "options": {
-            "allowedCommonJsDependencies": ["human-number", "dayjs"],
+            "allowedCommonJsDependencies": [
+              "human-number",
+              "dayjs",
+              "mermaid",
+              "clipboard",
+              "emoji-toolkit"
+            ],
             "deleteOutputPath": false,
             "outputPath": "../tressi-cli/dist",
             "browser": "src/main.ts",
@@ -23,45 +29,47 @@
               {
                 "glob": "**/*",
                 "input": "public"
+              },
+              {
+                "glob": "**/*",
+                "input": "../../docs",
+                "output": "docs"
               }
             ],
-            "styles": ["src/styles.css"]
+            "styles": ["src/styles.css"],
+            "scripts": [
+              "../../node_modules/marked/lib/marked.umd.js",
+              "../../node_modules/prismjs/prism.js",
+              "../../node_modules/prismjs/components/prism-typescript.min.js",
+              "../../node_modules/prismjs/components/prism-javascript.min.js",
+              "../../node_modules/prismjs/components/prism-json.min.js",
+              "../../node_modules/prismjs/components/prism-bash.min.js",
+              "../../node_modules/prismjs/plugins/line-numbers/prism-line-numbers.min.js",
+              "../../node_modules/emoji-toolkit/lib/js/joypixels.min.js",
+              "../../node_modules/mermaid/dist/mermaid.min.js",
+              "../../node_modules/clipboard/dist/clipboard.min.js"
+            ]
           },
           "configurations": {
-            "production": {
-              "budgets": [
-                {
-                  "type": "initial",
-                  "maximumWarning": "5MB",
-                  "maximumError": "10MB"
-                },
-                {
-                  "type": "anyComponentStyle",
-                  "maximumWarning": "4kB",
-                  "maximumError": "8kB"
-                }
-              ],
-              "outputHashing": "all"
-            },
-            "development": {
+            "local": {
               "optimization": false,
-              "extractLicenses": false,
+              "extractLicenses": true,
               "sourceMap": true
             }
           },
-          "defaultConfiguration": "production"
+          "defaultConfiguration": "local"
         },
         "serve": {
           "builder": "@angular/build:dev-server",
+          "options": {
+            "proxyConfig": "proxy.conf.json"
+          },
           "configurations": {
-            "production": {
-              "buildTarget": "tressi-ui:build:production"
-            },
-            "development": {
-              "buildTarget": "tressi-ui:build:development"
+            "local": {
+              "buildTarget": "tressi-ui:build:local"
             }
           },
-          "defaultConfiguration": "development"
+          "defaultConfiguration": "local"
         },
         "extract-i18n": {
           "builder": "@angular/build:extract-i18n"
@@ -75,6 +83,11 @@
               {
                 "glob": "**/*",
                 "input": "public"
+              },
+              {
+                "glob": "**/*.md",
+                "input": "../../docs",
+                "output": "public/docs"
               }
             ],
             "styles": ["src/styles.css"]

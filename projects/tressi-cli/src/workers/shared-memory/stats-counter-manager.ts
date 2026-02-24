@@ -26,37 +26,37 @@ import { IStatsCounterManager } from '../interfaces';
 import { EndpointCounters } from '../types';
 
 export class StatsCounterManager implements IStatsCounterManager {
-  private readonly sab: SharedArrayBuffer;
-  private readonly counters: Int32Array;
-  private readonly endpointsCount: number;
-  private readonly ringBufferSize: number;
-  private readonly countersPerEndpoint: number;
-  private readonly statusCodeBitmap: Uint32Array;
+  private readonly _sab: SharedArrayBuffer;
+  private readonly _counters: Int32Array;
+  private readonly _endpointsCount: number;
+  private readonly _ringBufferSize: number;
+  private readonly _countersPerEndpoint: number;
+  private readonly _statusCodeBitmap: Uint32Array;
 
   // Memory layout constants per endpoint
-  private static readonly SUCCESS_OFFSET = 0;
-  private static readonly FAILURE_OFFSET = 1;
-  private static readonly BYTES_SENT_OFFSET = 2;
-  private static readonly BYTES_RECEIVED_OFFSET = 3;
-  private static readonly RING_BUFFER_HEAD_OFFSET = 6;
-  private static readonly SAMPLED_STATUS_COUNT_OFFSET = 7;
-  private static readonly STATUS_CODE_COUNTERS_OFFSET = 608; // 600 status codes + 8 header fields
-  private static readonly BODY_SAMPLE_INDICES_OFFSET = 1208; // 600 status codes + 600 counters + 8 header fields
+  private static readonly _successOffset = 0;
+  private static readonly _failureOffset = 1;
+  private static readonly _bytesSentOffset = 2;
+  private static readonly _bytesReceivedOffset = 3;
+  private static readonly _ringBufferHeadOffset = 6;
+  private static readonly _sampledStatusCountOffset = 7;
+  private static readonly _statusCodeCountersOffset = 608; // 600 status codes + 8 header fields
+  private static readonly _bodySampleIndicesOffset = 1208; // 600 status codes + 600 counters + 8 header fields
 
   constructor(
     endpointsCount: number,
     ringBufferSize: number = 100,
     externalBuffer?: SharedArrayBuffer,
   ) {
-    this.endpointsCount = endpointsCount;
-    this.ringBufferSize = ringBufferSize;
+    this._endpointsCount = endpointsCount;
+    this._ringBufferSize = ringBufferSize;
 
     // Calculate counters per endpoint: 8 header + 600 status codes + 600 counters + ring buffer
-    this.countersPerEndpoint = 8 + 600 + 600 + ringBufferSize;
+    this._countersPerEndpoint = 8 + 600 + 600 + ringBufferSize;
 
     // Total SAB size: 12 bytes header + (endpoints * counters per endpoint * 4 bytes)
     const headerSize = 12; // endpointCount + 2 reserved UInt32
-    const countersSize = endpointsCount * this.countersPerEndpoint * 4;
+    const countersSize = endpointsCount * this._countersPerEndpoint * 4;
     const bitmapSize = Math.ceil(600 / 32) * 4 * endpointsCount; // 19 Uint32 per endpoint for status code bitmap
     const totalSize = headerSize + countersSize + bitmapSize;
 
@@ -67,9 +67,9 @@ export class StatsCounterManager implements IStatsCounterManager {
           `Buffer too small: expected ${totalSize}, got ${externalBuffer.byteLength}`,
         );
       }
-      this.sab = externalBuffer;
+      this._sab = externalBuffer;
     } else {
-      this.sab = new SharedArrayBuffer(totalSize);
+      this._sab = new SharedArrayBuffer(totalSize);
     }
 
     // Calculate element counts (convert bytes to elements - 4 bytes per 32-bit element)
@@ -80,12 +80,12 @@ export class StatsCounterManager implements IStatsCounterManager {
 
     // Create non-overlapping views with explicit lengths
     // Int32Array view for counters (starts at byte offset 0, covers header + endpoint counters)
-    this.counters = new Int32Array(this.sab, 0, countersElementCount);
+    this._counters = new Int32Array(this._sab, 0, countersElementCount);
 
     // Uint32Array view for status code bitmap (starts immediately after counters)
     const bitmapStart = headerSize + countersSize;
-    this.statusCodeBitmap = new Uint32Array(
-      this.sab,
+    this._statusCodeBitmap = new Uint32Array(
+      this._sab,
       bitmapStart,
       bitmapElementCount,
     );
@@ -100,27 +100,27 @@ export class StatsCounterManager implements IStatsCounterManager {
 
     // Verify non-overlapping memory regions
     // counters should end exactly where bitmap starts
-    if (this.counters.byteLength !== bitmapStart) {
+    if (this._counters.byteLength !== bitmapStart) {
       throw new Error(
-        `Memory overlap detected: counters end at ${this.counters.byteLength}, bitmap starts at ${bitmapStart}`,
+        `Memory overlap detected: counters end at ${this._counters.byteLength}, bitmap starts at ${bitmapStart}`,
       );
     }
 
     // Only initialize if we created the buffer
     if (!externalBuffer) {
       // Initialize header
-      Atomics.store(this.counters, 0, endpointsCount);
-      Atomics.store(this.counters, 1, 0); // reserved
-      Atomics.store(this.counters, 2, 0); // reserved
+      Atomics.store(this._counters, 0, endpointsCount);
+      Atomics.store(this._counters, 1, 0); // reserved
+      Atomics.store(this._counters, 2, 0); // reserved
 
       // Initialize all counters to 0
       const startOffset = 3; // Skip header
-      for (let i = startOffset; i < this.counters.length; i++) {
-        Atomics.store(this.counters, i, 0);
+      for (let i = startOffset; i < this._counters.length; i++) {
+        Atomics.store(this._counters, i, 0);
       }
 
       // Initialize status code bitmap (one bit per status code)
-      this.statusCodeBitmap.fill(0);
+      this._statusCodeBitmap.fill(0);
     }
   }
 
@@ -128,22 +128,22 @@ export class StatsCounterManager implements IStatsCounterManager {
    * Record a request outcome (success/failure)
    */
   recordRequest(endpointIndex: number, success: boolean): void {
-    if (endpointIndex < 0 || endpointIndex >= this.endpointsCount) {
+    if (endpointIndex < 0 || endpointIndex >= this._endpointsCount) {
       throw new Error(`Invalid endpoint index: ${endpointIndex}`);
     }
 
-    const baseOffset = 3 + endpointIndex * this.countersPerEndpoint;
+    const baseOffset = 3 + endpointIndex * this._countersPerEndpoint;
 
     if (success) {
       Atomics.add(
-        this.counters,
-        baseOffset + StatsCounterManager.SUCCESS_OFFSET,
+        this._counters,
+        baseOffset + StatsCounterManager._successOffset,
         1,
       );
     } else {
       Atomics.add(
-        this.counters,
-        baseOffset + StatsCounterManager.FAILURE_OFFSET,
+        this._counters,
+        baseOffset + StatsCounterManager._failureOffset,
         1,
       );
     }
@@ -153,17 +153,17 @@ export class StatsCounterManager implements IStatsCounterManager {
    * Record bytes sent for a request
    */
   recordBytesSent(endpointIndex: number, bytes: number): void {
-    if (endpointIndex < 0 || endpointIndex >= this.endpointsCount) {
+    if (endpointIndex < 0 || endpointIndex >= this._endpointsCount) {
       throw new Error(`Invalid endpoint index: ${endpointIndex}`);
     }
     if (bytes < 0) {
       return; // Ignore negative byte counts
     }
 
-    const baseOffset = 3 + endpointIndex * this.countersPerEndpoint;
+    const baseOffset = 3 + endpointIndex * this._countersPerEndpoint;
     Atomics.add(
-      this.counters,
-      baseOffset + StatsCounterManager.BYTES_SENT_OFFSET,
+      this._counters,
+      baseOffset + StatsCounterManager._bytesSentOffset,
       bytes,
     );
   }
@@ -172,17 +172,17 @@ export class StatsCounterManager implements IStatsCounterManager {
    * Record bytes received for a response
    */
   recordBytesReceived(endpointIndex: number, bytes: number): void {
-    if (endpointIndex < 0 || endpointIndex >= this.endpointsCount) {
+    if (endpointIndex < 0 || endpointIndex >= this._endpointsCount) {
       throw new Error(`Invalid endpoint index: ${endpointIndex}`);
     }
     if (bytes < 0) {
       return; // Ignore negative byte counts
     }
 
-    const baseOffset = 3 + endpointIndex * this.countersPerEndpoint;
+    const baseOffset = 3 + endpointIndex * this._countersPerEndpoint;
     Atomics.add(
-      this.counters,
-      baseOffset + StatsCounterManager.BYTES_RECEIVED_OFFSET,
+      this._counters,
+      baseOffset + StatsCounterManager._bytesReceivedOffset,
       bytes,
     );
   }
@@ -191,7 +191,7 @@ export class StatsCounterManager implements IStatsCounterManager {
    * Record a status code for an endpoint with "one body per status code" enforcement
    */
   recordStatusCode(endpointIndex: number, statusCode: number): void {
-    if (endpointIndex < 0 || endpointIndex >= this.endpointsCount) {
+    if (endpointIndex < 0 || endpointIndex >= this._endpointsCount) {
       throw new Error(`Invalid endpoint index: ${endpointIndex}`);
     }
 
@@ -199,15 +199,15 @@ export class StatsCounterManager implements IStatsCounterManager {
       return; // Ignore invalid status codes
     }
 
-    const baseOffset = 3 + endpointIndex * this.countersPerEndpoint;
+    const baseOffset = 3 + endpointIndex * this._countersPerEndpoint;
     const statusIndex = statusCode - 100; // Map 100-699 to 0-599
 
     // Check if we've already recorded this status code using bitmap
-    const bitmapOffset = this.getBitmapOffset(endpointIndex, statusIndex);
+    const bitmapOffset = this._getBitmapOffset(endpointIndex, statusIndex);
     const bitMask = 1 << (statusIndex % 32);
 
     // Use compareExchange to enforce "one body per status code"
-    const current = Atomics.load(this.statusCodeBitmap, bitmapOffset);
+    const current = Atomics.load(this._statusCodeBitmap, bitmapOffset);
     if ((current & bitMask) === 0) {
       // Status code not seen before, try to set the bit
       const expected = current;
@@ -215,7 +215,7 @@ export class StatsCounterManager implements IStatsCounterManager {
 
       if (
         Atomics.compareExchange(
-          this.statusCodeBitmap,
+          this._statusCodeBitmap,
           bitmapOffset,
           expected,
           updated,
@@ -224,43 +224,43 @@ export class StatsCounterManager implements IStatsCounterManager {
         // Successfully set the bit - this is the first time we've seen this status code
         // Increment status code counter
         Atomics.add(
-          this.counters,
+          this._counters,
           baseOffset +
-            StatsCounterManager.STATUS_CODE_COUNTERS_OFFSET +
+            StatsCounterManager._statusCodeCountersOffset +
             statusIndex,
           1,
         );
 
         // Add to sampled status codes ring buffer
         const headIndex =
-          baseOffset + StatsCounterManager.RING_BUFFER_HEAD_OFFSET;
+          baseOffset + StatsCounterManager._ringBufferHeadOffset;
         const sampledCountIndex =
-          baseOffset + StatsCounterManager.SAMPLED_STATUS_COUNT_OFFSET;
+          baseOffset + StatsCounterManager._sampledStatusCountOffset;
 
         // Get current head position atomically
-        const head = Atomics.load(this.counters, headIndex);
-        const nextHead = (head + 1) % this.ringBufferSize;
+        const head = Atomics.load(this._counters, headIndex);
+        const nextHead = (head + 1) % this._ringBufferSize;
 
         // Update ring buffer head
-        Atomics.store(this.counters, headIndex, nextHead);
+        Atomics.store(this._counters, headIndex, nextHead);
 
         // Store status code in ring buffer
         const ringBufferOffset =
-          baseOffset + StatsCounterManager.BODY_SAMPLE_INDICES_OFFSET;
-        this.counters[ringBufferOffset + head] = statusCode;
+          baseOffset + StatsCounterManager._bodySampleIndicesOffset;
+        this._counters[ringBufferOffset + head] = statusCode;
 
         // Increment sampled count (capped at ring buffer size)
-        const currentCount = Atomics.load(this.counters, sampledCountIndex);
-        if (currentCount < this.ringBufferSize) {
-          Atomics.add(this.counters, sampledCountIndex, 1);
+        const currentCount = Atomics.load(this._counters, sampledCountIndex);
+        if (currentCount < this._ringBufferSize) {
+          Atomics.add(this._counters, sampledCountIndex, 1);
         }
       }
     } else {
       // Status code already seen, just increment the counter
       Atomics.add(
-        this.counters,
+        this._counters,
         baseOffset +
-          StatsCounterManager.STATUS_CODE_COUNTERS_OFFSET +
+          StatsCounterManager._statusCodeCountersOffset +
           statusIndex,
         1,
       );
@@ -271,35 +271,35 @@ export class StatsCounterManager implements IStatsCounterManager {
    * Get counters for a specific endpoint
    */
   getEndpointCounters(endpointIndex: number): EndpointCounters {
-    if (endpointIndex < 0 || endpointIndex >= this.endpointsCount) {
+    if (endpointIndex < 0 || endpointIndex >= this._endpointsCount) {
       throw new Error(`Invalid endpoint index: ${endpointIndex}`);
     }
 
-    const baseOffset = 3 + endpointIndex * this.countersPerEndpoint;
+    const baseOffset = 3 + endpointIndex * this._countersPerEndpoint;
 
     const successCount = Atomics.load(
-      this.counters,
-      baseOffset + StatsCounterManager.SUCCESS_OFFSET,
+      this._counters,
+      baseOffset + StatsCounterManager._successOffset,
     );
     const failureCount = Atomics.load(
-      this.counters,
-      baseOffset + StatsCounterManager.FAILURE_OFFSET,
+      this._counters,
+      baseOffset + StatsCounterManager._failureOffset,
     );
     const bytesSent = Atomics.load(
-      this.counters,
-      baseOffset + StatsCounterManager.BYTES_SENT_OFFSET,
+      this._counters,
+      baseOffset + StatsCounterManager._bytesSentOffset,
     );
     const bytesReceived = Atomics.load(
-      this.counters,
-      baseOffset + StatsCounterManager.BYTES_RECEIVED_OFFSET,
+      this._counters,
+      baseOffset + StatsCounterManager._bytesReceivedOffset,
     );
 
     // Read status code counts
     const statusCodeCounts: Record<number, number> = {};
     for (let i = 0; i < 600; i++) {
       const count = Atomics.load(
-        this.counters,
-        baseOffset + StatsCounterManager.STATUS_CODE_COUNTERS_OFFSET + i,
+        this._counters,
+        baseOffset + StatsCounterManager._statusCodeCountersOffset + i,
       );
       if (count > 0) {
         statusCodeCounts[i + 100] = count; // Map back to 100-699
@@ -309,17 +309,17 @@ export class StatsCounterManager implements IStatsCounterManager {
     // Read sampled status codes from ring buffer
     const sampledCount = Math.min(
       Atomics.load(
-        this.counters,
-        baseOffset + StatsCounterManager.SAMPLED_STATUS_COUNT_OFFSET,
+        this._counters,
+        baseOffset + StatsCounterManager._sampledStatusCountOffset,
       ),
-      this.ringBufferSize,
+      this._ringBufferSize,
     );
 
     const ringBufferOffset =
-      baseOffset + StatsCounterManager.BODY_SAMPLE_INDICES_OFFSET;
+      baseOffset + StatsCounterManager._bodySampleIndicesOffset;
     const sampledStatusCodes: number[] = [];
     for (let i = 0; i < sampledCount; i++) {
-      sampledStatusCodes.push(this.counters[ringBufferOffset + i]);
+      sampledStatusCodes.push(this._counters[ringBufferOffset + i]);
     }
 
     // Body sample indices are the same as sampled status codes in this implementation
@@ -341,7 +341,7 @@ export class StatsCounterManager implements IStatsCounterManager {
    */
   getAllEndpointCounters(): EndpointCounters[] {
     const counters: EndpointCounters[] = [];
-    for (let i = 0; i < this.endpointsCount; i++) {
+    for (let i = 0; i < this._endpointsCount; i++) {
       counters.push(this.getEndpointCounters(i));
     }
     return counters;
@@ -351,20 +351,20 @@ export class StatsCounterManager implements IStatsCounterManager {
    * Get the underlying SharedArrayBuffer
    */
   getSharedBuffer(): SharedArrayBuffer {
-    return this.sab;
+    return this._sab;
   }
 
   /**
    * Get endpoints count
    */
   getEndpointsCount(): number {
-    return this.endpointsCount;
+    return this._endpointsCount;
   }
 
   /**
    * Calculate bitmap offset for status code
    */
-  private getBitmapOffset(endpointIndex: number, statusIndex: number): number {
+  private _getBitmapOffset(endpointIndex: number, statusIndex: number): number {
     // Since statusCodeBitmap is a Uint32Array starting at the bitmap section,
     // we can use direct indexing within the bitmap array
     const bitmapEntriesPerEndpoint = 19; // 600 status codes / 32 bits per Uint32 = 18.75, rounded up to 19

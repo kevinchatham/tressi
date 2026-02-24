@@ -1,5 +1,4 @@
-import { CommonModule } from '@angular/common';
-import { Component, computed, input, output, signal } from '@angular/core';
+import { Component, computed, input, model, output } from '@angular/core';
 
 import { IconComponent, IconName } from '../icon/icon.component';
 
@@ -20,37 +19,44 @@ export type ButtonColor = (typeof BUTTON_COLORS)[number];
 
 @Component({
   selector: 'app-button',
-  imports: [IconComponent, CommonModule],
+  imports: [IconComponent],
   templateUrl: './button.component.html',
+  styleUrl: './button.component.css',
+  host: {
+    '[style.pointer-events]': 'disabled() ? "none" : "auto"',
+    class: 'contents',
+  },
 })
 export class ButtonComponent {
   color = input<ButtonColor>('default');
   disabled = input<boolean>(false);
   ghost = input<boolean>(false);
   icon = input<IconName>();
+  secondaryIcon = input<IconName>();
+  toggled = model<boolean>(false);
   tabindex = input<number>();
   title = input<string>();
   tooltip = input<string>();
   type = input<'submit' | 'button'>('button');
   click = output<Event>();
 
-  isHovered = signal(false);
-
   buttonTitle = computed(() => this.tooltip() || this.title() || '');
 
   baseButtonClasses = computed<string[]>(() => {
-    const classes = ['btn', 'transition-all', 'duration-500', 'ease-in-out'];
+    const classes = [
+      'btn',
+      'transition-all',
+      'duration-500',
+      'ease-in-out',
+      'rounded-full',
+      'p-2',
+      'hover:p-4',
+    ];
 
     if (this.ghost()) {
       classes.push('btn-ghost');
     } else {
       classes.push('btn-outline');
-    }
-
-    if (this.title() && this.isHovered()) {
-      classes.push('rounded-full');
-    } else {
-      classes.push('btn-circle');
     }
 
     return classes;
@@ -123,20 +129,12 @@ export class ButtonComponent {
     }
   });
 
-  titleClasses = computed<string[]>(() => {
-    return [
-      'duration-300',
-      'ease-in-out',
-      'transition-all',
-      this.title() && this.isHovered() ? 'mr-0' : '-mr-1.5',
-      this.title() && this.isHovered() ? 'opacity-100' : 'opacity-0',
-      this.title() && this.isHovered() ? 'w-auto' : 'w-0',
-    ];
-  });
-
   onClick(event: Event): void {
     event.stopPropagation();
     if (!this.disabled()) {
+      if (this.secondaryIcon()) {
+        this.toggled.set(!this.toggled());
+      }
       this.click.emit(event);
     }
   }

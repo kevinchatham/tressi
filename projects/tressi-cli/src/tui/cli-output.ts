@@ -31,6 +31,7 @@ export function printSummary(
  */
 function printReportInfo(
   summary: TestSummary,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _options: TressiOptionsConfig,
 ): void {
   const reportInfoTable = new Table({
@@ -64,7 +65,7 @@ function printRunConfiguration(
   configTable.push(['Workers', `${threads || 'auto'}`]);
 
   if (rampUpDurationSec) {
-    configTable.push(['Ramp-up Time', `${rampUpDurationSec}s`]);
+    configTable.push(['ramp up Time', `${rampUpDurationSec}s`]);
   }
 
   terminal.print('\n' + chalk.bold('Run Configuration'));

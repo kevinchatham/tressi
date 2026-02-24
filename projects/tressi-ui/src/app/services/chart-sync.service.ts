@@ -12,7 +12,7 @@ export interface ChartSyncState {
   providedIn: 'root',
 })
 export class ChartSyncService {
-  private readonly state = signal<ChartSyncState>({
+  private readonly _state = signal<ChartSyncState>({
     xAxisMin: null,
     xAxisMax: null,
     selectionStart: null,
@@ -21,45 +21,45 @@ export class ChartSyncService {
   });
 
   readonly lastInteractedChartId = (): string | null =>
-    this.state().lastInteractedChartId;
+    this._state().lastInteractedChartId;
 
-  private registeredCharts = new Set<string>();
+  private readonly _registeredCharts = new Set<string>();
 
   registerChart(chartId: string): void {
-    this.registeredCharts.add(chartId);
+    this._registeredCharts.add(chartId);
   }
 
   setAsMaster(chartId: string): void {
-    if (!this.registeredCharts.has(chartId)) {
+    if (!this._registeredCharts.has(chartId)) {
       // eslint-disable-next-line no-console
       console.warn(`Chart ${chartId} not registered`);
       return;
     }
 
-    this.state.update((current) => ({
+    this._state.update((current) => ({
       ...current,
       lastInteractedChartId: chartId,
     }));
   }
 
-  private batchMs = 16; // 60 frames per second
-  private lastUpdate = 0;
+  private _batchMs = 16; // 60 frames per second
+  private _lastUpdate = 0;
 
   broadcastState(
     updates: Partial<Omit<ChartSyncState, 'lastInteractedChartId'>>,
   ): void {
     const now = performance.now();
-    const span = now - this.lastUpdate;
-    if (span > this.batchMs) {
-      this.state.update((current) => ({
+    const span = now - this._lastUpdate;
+    if (span > this._batchMs) {
+      this._state.update((current) => ({
         ...current,
         ...updates,
       }));
-      this.lastUpdate = performance.now();
+      this._lastUpdate = performance.now();
     }
   }
 
   getState(): ChartSyncState {
-    return this.state();
+    return this._state();
   }
 }

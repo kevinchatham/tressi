@@ -3,8 +3,8 @@
   <br/>
   <em>Stress less, test more.</em>
   <br/><br/>
-  <a href="./docs/LICENSE">
-    <img src="https://img.shields.io/badge/license-Unlicense-blue" alt="Unlicense"/>
+  <a href="./docs/01-home/03-license.md">
+    <img src="https://img.shields.io/badge/license-MIT%20%2B%20Commons%20Clause-orange" alt="Source Available"/>
   </a>
 </p>
 
@@ -32,7 +32,7 @@ npm install tressi
 Run directly using `npx`:
 
 ```bash
-npx tressi
+npx tressi run ./tressi.config.json
 ```
 
 ### 3. Global Installation (for CLI use everywhere)
@@ -66,12 +66,12 @@ Create a `tressi.config.json` file in your project directory:
 With your configuration file in place, simply run:
 
 ```bash
-npx tressi
+npx tressi run ./tressi.config.json
 ```
 
 ## 📊 Live Terminal UI
 
-When you run `tressi` (without the `--no-ui` flag), it displays a live dashboard with four key sections:
+When you run `tressi`, it displays a live dashboard with four key sections:
 
 <p align="center">
   <img src="https://github.com/kevinchatham/tressi/blob/main/images/tressi-ui.png?raw=true" alt="tressi-ui" width="90%"/>
@@ -108,7 +108,7 @@ When you run `tressi` (without the `--no-ui` flag), it displays a live dashboard
 
 - **True parallel execution** across all CPU cores
 - **Precise RPS control** with per-worker rate limiting
-- **Zero-copy shared memory** for real-time metrics
+- **Zero copy shared memory** for real-time metrics
 - **Coordinated early exit** across all workers
 - **Deterministic timing** with sub-millisecond accuracy
 
@@ -248,10 +248,10 @@ A straightforward test with a fixed number of workers and a target load:
 Run with:
 
 ```bash
-npx tressi
+npx tressi run ./tressi.config.json
 ```
 
-#### Ramp-up Load Test
+#### Ramp up Load Test
 
 Gradually increases the load to your target requests per second over a specified duration:
 
@@ -582,11 +582,13 @@ When `exportPath` is set to `true` or a string value, tressi will generate a uni
 
 The directory will be named with a timestamp, such as `my-test-results-2025-07-06T10:00:00.000Z`.
 
-### CLI Options
+### CLI Commands
 
-| Option            | Alias | Description                                                                                              | Default |
-| ----------------- | ----- | -------------------------------------------------------------------------------------------------------- | ------- |
-| `--config <path>` | `-c`  | Path or URL to JSON configuration file (local file path or remote URL). Defaults to ./tressi.config.json |         |
+| Command        | Description                                                              |
+| -------------- | ------------------------------------------------------------------------ |
+| `run <config>` | Run a load test using the specified configuration file (local or remote) |
+| `serve`        | Start the Tressi Hono server (Web UI & API)                              |
+| `reset`        | Completely reset the Tressi database                                     |
 
 Starting in `0.0.13`, `tressi` now uses a simplified CLI interface. All configuration options have been moved to the JSON configuration file for better maintainability and validation.
 
@@ -739,7 +741,7 @@ await runLoadTest({
 
 This project was built during late-night hours as a way to deepen my understanding of Node.js performance and CLI architecture. Keeping it as a solo effort allows me to iterate rapidly, make breaking changes without constraint, and focus narrowly on my own use cases.
 
-That said, I'm grateful for the community's interest and may open it up in the future. For more details, see [CONTRIBUTING.md](docs/CONTRIBUTING.md).
+That said, I'm grateful for the community's interest and may open it up in the future. For more details, see [CONTRIBUTING.md](./docs/01-home/02-contributing.md).
 
 ## 🧭 Stability & Compatibility
 

@@ -53,11 +53,14 @@ export type LineChartOptions = {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LineChartComponent {
+  private readonly _themeService = inject(ThemeService);
+  private readonly _syncService = inject(ChartSyncService);
+
   readonly chart = viewChild<ChartComponent>('chart');
 
   readonly title = input<string>('');
   readonly yAxisLabel = input<string>('');
-  readonly data = input<number[]>([]);
+  readonly data = input<number[] | { [seriesName: string]: number[] }>([]);
   readonly labels = input<number[]>([]);
   readonly seriesName = input<string>('Series');
   readonly height = input<number>(350);
@@ -69,19 +72,16 @@ export class LineChartComponent {
   readonly chartClick = output<ChartEventData>();
   readonly chartMouseMove = output<ChartEventData>();
 
-  private readonly themeService = inject(ThemeService);
-  private readonly syncService = inject(ChartSyncService);
-
-  public readonly chartOptions = computed(() => this.createChartOptions());
-  public readonly isMaster = computed(
-    () => this.chartId() === this.syncService.lastInteractedChartId(),
+  readonly chartOptions = computed(() => this._createChartOptions());
+  readonly isMaster = computed(
+    () => this.chartId() === this._syncService.lastInteractedChartId(),
   );
 
   // State tracking for efficient updates
-  private lastDataLength = 0;
+  private _lastDataLength = 0;
 
   // Add computed property for effective initial state
-  private readonly effectiveInitialState = computed(() => {
+  private readonly _effectiveInitialState = computed(() => {
     const globalRange = this.testTimeRange();
     if (globalRange) {
       return globalRange;
@@ -104,7 +104,7 @@ export class LineChartComponent {
     effect(() => {
       const chartId = this.chartId();
       if (chartId) {
-        this.syncService.registerChart(chartId);
+        this._syncService.registerChart(chartId);
       }
     });
 
@@ -112,29 +112,29 @@ export class LineChartComponent {
     effect(() => {
       const chartId = this.chartId();
       const chart = this.chart();
-      const lastInteracted = this.syncService.lastInteractedChartId();
+      const lastInteracted = this._syncService.lastInteractedChartId();
 
       if (chartId && chart && chartId !== lastInteracted) {
-        this.syncToMasterState();
+        this._syncToMasterState();
       }
     });
 
     // Setup reset handler when chart is available
     effect(() => {
       if (this.chart()) {
-        this.setupCustomResetHandler();
+        this._setupCustomResetHandler();
       }
     });
 
     // Update chart when theme or data changes
     effect(() => {
-      this.themeService.getChartColors();
-      this.updateChart();
+      this._themeService.getChartColors();
+      this._updateChart();
     });
   }
 
-  private createChartOptions(): LineChartOptions {
-    const themeColors = this.themeService.getChartColors();
+  private _createChartOptions(): LineChartOptions {
+    const themeColors = this._themeService.getChartColors();
     const seriesName = this.seriesName();
     const data = this.data();
     const labels = this.labels();
@@ -145,15 +145,42 @@ export class LineChartComponent {
     const yAxisLabel = this.yAxisLabel();
 
     // Calculate data boundaries for x-axis constraints using effective initial state
-    const effectiveState = this.effectiveInitialState();
+    const effectiveState = this._effectiveInitialState();
     const minBoundary = effectiveState?.min;
     const maxBoundary = effectiveState?.max;
 
-    // Convert data and labels to proper format for datetime chart
-    const seriesData = data.map((value, index) => ({
-      x: labels[index] || Date.now() - (data.length - 1 - index) * 1000,
-      y: value,
-    }));
+    // Handle both single series and multi-series data
+    let series: ApexAxisChartSeries;
+    let dataLength = 0;
+
+    if (Array.isArray(data)) {
+      // Single series data
+      const seriesData = data.map((value, index) => ({
+        x: labels[index] || Date.now() - (data.length - 1 - index) * 1000,
+        y: value,
+      }));
+
+      series = [
+        {
+          name: seriesName,
+          data: seriesData,
+        },
+      ];
+      dataLength = data.length;
+    } else {
+      // Multi-series data
+      series = Object.entries(data).map(([name, values]) => {
+        const seriesData = values.map((value, index) => ({
+          x: labels[index] || Date.now() - (values.length - 1 - index) * 1000,
+          y: value,
+        }));
+        dataLength = Math.max(dataLength, values.length);
+        return {
+          name,
+          data: seriesData,
+        };
+      });
+    }
 
     const zoomInSvg = IconComponent.asHtml('zoom_in');
     const zoomOutSvg = IconComponent.asHtml('zoom_out');
@@ -162,12 +189,7 @@ export class LineChartComponent {
     const selectSvg = IconComponent.asHtml('select');
 
     return {
-      series: [
-        {
-          name: seriesName,
-          data: seriesData,
-        },
-      ],
+      series,
       chart: {
         offsetX: 4,
         height: height,
@@ -212,20 +234,20 @@ export class LineChartComponent {
         foreColor: themeColors.text,
         events: {
           click: (event, chartContext, config): void => {
-            this.handleChartClick();
+            this._handleChartClick();
             this.chartClick.emit({ event, chartContext, config });
           },
           mouseMove: (event, chartContext, config): void => {
             this.chartMouseMove.emit({ event, chartContext, config });
           },
           zoomed: (_chartContext, { xaxis }): void => {
-            this.handleZoomOrPan(xaxis);
+            this._handleZoomOrPan(xaxis);
           },
           selection: (_chartContext, { xaxis }): void => {
-            this.handleSelection(xaxis);
+            this._handleSelection(xaxis);
           },
           scrolled: (_chartContext, { xaxis }): void => {
-            this.handleZoomOrPan(xaxis);
+            this._handleZoomOrPan(xaxis);
           },
         },
       },
@@ -260,7 +282,10 @@ export class LineChartComponent {
         min: minBoundary, // Prevent zoom before data starts
         max: maxBoundary, // Prevent zoom after data ends
         labels: {
-          show: data.length > 1,
+          show:
+            (Array.isArray(data)
+              ? data.length
+              : Object.values(data)[0]?.length || 0) > 1,
           style: {
             colors: themeColors.text,
             fontFamily: 'Roboto Mono, monospace',
@@ -308,7 +333,7 @@ export class LineChartComponent {
             fontFamily: 'Roboto Mono, monospace',
             fontSize: '11px',
           },
-          formatter: this.getYAxisFormatter(),
+          formatter: this._getYAxisFormatter(),
         },
         axisBorder: {
           color: themeColors.border,
@@ -326,7 +351,12 @@ export class LineChartComponent {
         fillSeriesColor: false,
       },
       markers: {
-        size: 0,
+        size:
+          (Array.isArray(data)
+            ? data.length
+            : Object.values(data)[0]?.length || 0) > 1
+            ? 0
+            : 4,
         colors: [themeColors.primary],
         strokeColors: [themeColors.primary],
         strokeWidth: 2,
@@ -348,18 +378,18 @@ export class LineChartComponent {
     };
   }
 
-  private handleChartClick(): void {
+  private _handleChartClick(): void {
     const chartId = this.chartId();
     if (chartId) {
-      this.syncService.setAsMaster(chartId);
+      this._syncService.setAsMaster(chartId);
     }
   }
 
-  private handleZoomOrPan(xaxis: { min: number; max: number }): void {
+  private _handleZoomOrPan(xaxis: { min: number; max: number }): void {
     const chartId = this.chartId();
     if (chartId) {
-      this.syncService.setAsMaster(chartId);
-      this.syncService.broadcastState({
+      this._syncService.setAsMaster(chartId);
+      this._syncService.broadcastState({
         xAxisMin: xaxis.min,
         xAxisMax: xaxis.max,
         selectionStart: null,
@@ -368,11 +398,11 @@ export class LineChartComponent {
     }
   }
 
-  private handleSelection(xaxis: { min: number; max: number }): void {
+  private _handleSelection(xaxis: { min: number; max: number }): void {
     const chartId = this.chartId();
     if (chartId) {
-      this.syncService.setAsMaster(chartId);
-      this.syncService.broadcastState({
+      this._syncService.setAsMaster(chartId);
+      this._syncService.broadcastState({
         selectionStart: xaxis.min,
         selectionEnd: xaxis.max,
         xAxisMin: null,
@@ -381,11 +411,11 @@ export class LineChartComponent {
     }
   }
 
-  private syncToMasterState(): void {
+  private _syncToMasterState(): void {
     const chart = this.chart();
     if (!chart) return;
 
-    const state = this.syncService.getState();
+    const state = this._syncService.getState();
 
     // Add a small delay to ensure chart is fully initialized
     setTimeout(() => {
@@ -426,91 +456,71 @@ export class LineChartComponent {
     }, 100); // 100ms delay to ensure chart is ready
   }
 
-  private updateChart(): void {
-    const seriesName = this.seriesName();
+  private _updateChart(): void {
     const data = this.data();
     const labels = this.labels();
 
     const chart = this.chart();
     if (!chart) return;
 
+    // Get data length for change detection
+    const dataLength = Array.isArray(data)
+      ? data.length
+      : typeof data === 'object' && data !== null
+        ? Math.max(...Object.values(data).map((arr) => arr?.length || 0))
+        : 0;
+
     // Early exit if data hasn't changed
-    if (data.length === this.lastDataLength && data.length > 0) {
+    if (dataLength === this._lastDataLength && dataLength > 0) {
       return;
     }
 
     // Use requestAnimationFrame to avoid blocking UI
     requestAnimationFrame(() => {
-      // Convert data and labels to proper format for datetime chart
-      const seriesData = data.map((value, index) => ({
-        x: labels[index] || Date.now() - (data.length - 1 - index) * 1000,
-        y: value,
-      }));
+      let series: ApexAxisChartSeries = [];
 
-      // Determine if we should use incremental update
-      const shouldUseIncremental = this.shouldUseIncrementalUpdate(data);
+      if (Array.isArray(data)) {
+        // Single series data
+        const seriesData = data.map((value: number, index: number) => ({
+          x: labels[index] || Date.now() - (data.length - 1 - index) * 1000,
+          y: value,
+        }));
 
-      if (shouldUseIncremental && this.lastDataLength > 0) {
-        // Use appendData for incremental updates
-        const newDataPoints = this.getIncrementalDataPoints(seriesData);
-        if (newDataPoints.length > 0) {
-          chart.appendData([
-            {
-              name: seriesName,
-              data: newDataPoints,
-            },
-          ]);
-        }
-      } else {
-        // Use full update for initial load or major data changes
-        chart.updateSeries([
+        series = [
           {
-            name: seriesName,
+            name: this.seriesName(),
             data: seriesData,
           },
-        ]);
+        ];
+      } else if (typeof data === 'object' && data !== null) {
+        // Multi-series data
+        series = Object.entries(data).map(([seriesName, values]) => {
+          const seriesData = values.map((value: number, index: number) => ({
+            x: labels[index] || Date.now() - (values.length - 1 - index) * 1000,
+            y: value,
+          }));
+          return {
+            name: seriesName,
+            data: seriesData,
+          };
+        });
       }
 
+      // Always use full update for simplicity with multi-series
+      chart.updateSeries(series);
+
       // Update tracking state
-      this.lastDataLength = data.length;
+      this._lastDataLength = dataLength;
     });
   }
 
-  private shouldUseIncrementalUpdate(newData: number[]): boolean {
-    if (this.lastDataLength === 0) {
-      return false; // First load, use full update
-    }
-
-    if (newData.length < this.lastDataLength) {
-      return false; // Data reset, use full update
-    }
-
-    if (newData.length - this.lastDataLength > 20) {
-      return false; // Large batch, use full update
-    }
-
-    return newData.length > this.lastDataLength;
-  }
-
-  private getIncrementalDataPoints(
-    seriesData: { x: number; y: number }[],
-  ): { x: number; y: number }[] {
-    // Return only the new data points since last update
-    const expectedLength = this.lastDataLength;
-    if (seriesData.length <= expectedLength) {
-      return [];
-    }
-
-    return seriesData.slice(expectedLength);
-  }
-
-  private getYAxisFormatter(): (value: number) => string {
+  private _getYAxisFormatter(): (value: number) => string {
     return (value: number): string => {
       return humanNumber(Math.round(value));
     };
   }
 
-  private setupCustomResetHandler(): void {
+  private _setupCustomResetHandler(): void {
     const chart = this.chart();
     if (!chart) return;
 
@@ -521,11 +531,11 @@ export class LineChartComponent {
         return originalReset();
       }
 
-      const initialState = this.effectiveInitialState();
+      const initialState = this._effectiveInitialState();
 
       if (initialState) {
         // 1. Broadcast to sync service (for other charts)
-        this.syncService.broadcastState({
+        this._syncService.broadcastState({
           xAxisMin: initialState.min,
           xAxisMax: initialState.max,
           selectionStart: null,

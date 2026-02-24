@@ -1,10 +1,10 @@
-<div class="p-16">
+<div class="p-12">
   <app-header>
     <app-button
       (click)="deleteTest()"
       [color]="'error'"
       [icon]="'delete'"
-      [disabled]="testData()?.status === 'running'"
+      [disabled]="service.test()?.status === 'running'"
       [title]="'Delete'"
     />
     <div class="dropdown dropdown-center">
@@ -16,12 +16,12 @@
       />
       <ul
         tabindex="0"
-        class="dropdown-content bg-base-100 rounded-box ring-base-content/10 z-50 mt-4 w-34 p-2 shadow-lg ring-1"
+        class="dropdown-content bg-base-100 rounded-box ring-base-content/10 z-50 mt-2 mt-4 w-34 p-2 shadow-lg ring-1"
       >
         <li>
           <button
             class="btn btn-ghost w-full justify-center"
-            (click)="exportResults('json')"
+            (click)="service.exportResults('json')"
           >
             JSON
           </button>
@@ -29,7 +29,7 @@
         <li>
           <button
             class="btn btn-ghost w-full justify-center"
-            (click)="exportResults('xlsx')"
+            (click)="service.exportResults('xlsx')"
           >
             XLSX
           </button>
@@ -37,7 +37,7 @@
         <li>
           <button
             class="btn btn-ghost w-full justify-center"
-            (click)="exportResults('md')"
+            (click)="service.exportResults('md')"
           >
             Markdown
           </button>
@@ -45,252 +45,168 @@
       </ul>
     </div>
     <app-button
-      (click)="goBack()"
+      (click)="appRouter.toHome()"
       [color]="'info'"
       [title]="'Dashboard'"
       [icon]="'browse_activity'"
     />
   </app-header>
 
-  <!-- Error State -->
-  @if (hasError()) {
-    <div class="flex min-h-100 items-center justify-center p-8">
-      <div class="max-w-md text-center">
-        <app-icon name="warning" class="text-warning mb-4" />
-        <h2 class="text-base-content mb-2 text-xl font-semibold">
-          Failed to Load Test Details
-        </h2>
-        <p class="text-base-content/70 mb-4">{{ errorMessage() }}</p>
-        <app-button
-          (click)="loadTestDetails(testId())"
-          [title]="'Try Again'"
-          [color]="'primary'"
-          [icon]="'search'"
-        />
+  <div class="px-8">
+    <!-- Error State -->
+    @if (service.hasError()) {
+      <div class="flex min-h-100 items-center justify-center p-8">
+        <div class="max-w-md text-center">
+          <app-icon name="warning" class="text-warning mb-4" />
+          <h2 class="text-base-content mb-2 text-xl font-semibold">
+            Failed to Load Test Details
+          </h2>
+          <p class="text-base-content/70 mb-4">{{ service.errorMessage() }}</p>
+        </div>
       </div>
-    </div>
-  }
+    }
 
-  <!-- Test Details -->
-  @if (!hasError() && testData()) {
-    <div class="flex flex-col">
-      <!-- Test Information -->
-      <section class="bg-base-100 rounded-xl px-6">
-        <app-collapsible-card
-          [title]="'Test Summary'"
-          [collapsed]="testInfoCollapsed()"
-          (collapsedChange)="testInfoCollapsed.set($event)"
-        >
-          <!-- Header controls projection -->
-          <ng-template>
-            <app-status-badge
-              [status]="testData()!.status"
-              [showPulse]="isRealTime()"
-            />
-          </ng-template>
-
-          <!-- Main content projection -->
-          <div class="mt-4 space-y-4">
-            <!-- Test ID and Status -->
-            <div class="flex items-center justify-between">
-              <div>
-                <span class="text-base-content/70 text-sm">Test ID</span>
-                <p class="font-mono text-sm">{{ testData()!.id }}</p>
-              </div>
-            </div>
-
-            <!-- Timing -->
-            <div class="grid grid-cols-2 gap-4">
-              <div>
-                <span class="text-base-content/70 text-sm">Created</span>
-                <p class="font-medium">
-                  {{ formatDate(testData()!.epochCreatedAt) }}
-                </p>
-              </div>
-              <div>
-                <span class="text-base-content/70 text-sm">Started</span>
-                <p class="font-medium">
-                  {{ formatDate(testData()!.summary?.global?.epochStartedAt) }}
-                </p>
-              </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-4">
-              <div>
-                <span class="text-base-content/70 text-sm">Ended</span>
-                <p class="font-medium">
-                  {{ formatDate(testData()!.summary?.global?.epochEndedAt) }}
-                </p>
-              </div>
-              <div>
-                <span class="text-base-content/70 text-sm">Duration</span>
-                <p class="font-medium">{{ formatDuration() }}</p>
-              </div>
-            </div>
-
-            <!-- Test Parameters -->
-            <div>
-              <span class="text-base-content/70 text-sm">Total Requests</span>
-              <p class="font-medium">
-                {{ testData()!.summary?.global?.totalRequests || 'N/A' }}
-              </p>
-            </div>
-
-            <!-- Real-time Indicator -->
-            @if (isRealTime()) {
-              <div class="text-info flex items-center gap-2 text-sm">
-                <app-icon name="dynamic_form" class="animate-pulse" />
-                <span>Real-time updates active</span>
-              </div>
-            }
-
-            <!-- No Metrics Available Messages -->
-            @if (
-              !metricsData()?.global?.length &&
-              !testData()?.summary?.endpoints?.length
-            ) {
-              <div
-                class="text-base-content/50 flex items-center justify-center py-4"
-              >
-                <p class="italic">No metrics data available</p>
-              </div>
-            }
-          </div>
-        </app-collapsible-card>
-      </section>
-
-      <!-- Configuration Details -->
-      <section class="bg-base-100 mt-2 rounded-xl px-6">
-        <app-collapsible-card
-          [title]="'Test Configuration'"
-          [collapsed]="configCollapsed()"
-          (collapsedChange)="configCollapsed.set($event)"
-        >
-          <!-- Main content projection -->
-          <div class="mt-4 space-y-4">
-            <!-- Configuration Name -->
-            <div>
-              <span class="text-base-content/70 text-sm">Name</span>
-              <p class="font-medium">{{ displayConfigName() }}</p>
-            </div>
-
-            <!-- Config Snapshot -->
-            <div>
-              <span class="text-base-content/70 text-sm">Snapshot</span>
-              <app-json-textarea
-                [value]="testData()?.summary?.configSnapshot"
-                [rows]="15"
-                [disabled]="true"
-                class="mt-2"
-              />
-            </div>
-          </div>
-        </app-collapsible-card>
-      </section>
-
-      <!-- Performance Summary -->
-      <section class="bg-base-100 mt-2 rounded-xl px-6">
-        <app-collapsible-card
-          title="Performance Summary"
-          [collapsed]="performanceSummaryCollapsed()"
-          (collapsedChange)="performanceSummaryCollapsed.set($event)"
-        >
-          <!-- Header controls projection -->
-          <ng-template>
-            <select
-              id="endpoint-selector"
-              class="select select-sm select-neutral w-auto"
-              [value]="selectedEndpoint()"
-              (change)="onEndpointChange($event)"
-            >
-              <option value="global">Global Metrics</option>
-              @for (
-                endpoint of testData()?.summary?.endpoints || [];
-                track endpoint.url
-              ) {
-                <option [value]="endpoint.url">{{ endpoint.url }}</option>
-              }
-            </select>
-          </ng-template>
-
-          <!-- Main content projection -->
-          <app-metrics-summary
-            [summary]="selectedSummary()"
-            [endpointType]="
-              selectedEndpoint() === 'global' ? 'global' : 'endpoint'
-            "
+    <!-- Test Details -->
+    @if (!service.hasError() && service.test()) {
+      <div class="flex flex-col gap-4">
+        <!-- Toolbar Row -->
+        <div class="flex items-center justify-between px-8">
+          <app-status-badge
+            [status]="service.test()?.status ?? null"
+            [showPulse]="service.isRealTime()"
           />
-        </app-collapsible-card>
-      </section>
-
-      <!-- Performance Over Time -->
-      <section class="bg-base-100 mt-2 rounded-xl px-6">
-        <app-collapsible-card
-          title="Performance Over Time"
-          [collapsed]="performanceOverTimeCollapsed()"
-          (collapsedChange)="performanceOverTimeCollapsed.set($event)"
-        >
-          <!-- Header controls projection -->
-          <ng-template>
-            <select
-              id="chart-type-select"
-              class="select select-sm select-neutral w-auto"
-              [value]="selectedChartType()"
-              (change)="onChartTypeChange($event)"
-            >
-              @for (option of chartOptions; track option.value) {
-                <option [value]="option.value">{{ option.label }}</option>
-              }
-            </select>
-          </ng-template>
-
-          <!-- Main content projection -->
-          <!-- Unified Chart Container -->
-          <div>
-            @if (getCurrentChartData().data.length > 0) {
-              <div class="mt-6">
-                <app-line-chart
-                  [data]="getCurrentChartData().data"
-                  [labels]="getCurrentChartData().labels"
-                  [height]="400"
-                  [yAxisLabel]="getYAxisLabel()"
-                  [chartId]="getChartId()"
-                  [testTimeRange]="testTimeRange()"
+          <div class="flex items-center gap-4">
+            <div class="dropdown dropdown-bottom dropdown-end">
+              <div
+                tabindex="0"
+                role="button"
+                class="btn btn-ghost btn-sm flex items-center gap-2 py-4 pr-0 pl-2 text-lg font-bold normal-case"
+              >
+                <span>
+                  {{
+                    service.selectedEndpoint() === 'global'
+                      ? 'Global Metrics'
+                      : service.selectedEndpoint()
+                  }}
+                </span>
+                <app-icon
+                  name="keyboard_arrow_down"
+                  class="text-base-content/30"
                 />
               </div>
-
-              <!-- Chart Stats Footer -->
-              <div class="border-base-content/10 mt-6 border-t pt-4">
-                <div class="flex justify-between text-sm">
-                  <span>Min: {{ getChartStats().min | number }}</span>
-                  <span>Avg: {{ getChartStats().avg | number }}</span>
-                  <span>Max: {{ getChartStats().max | number }}</span>
-                </div>
-              </div>
-            } @else {
-              <div class="text-base-content/50 py-12 text-center">
-                <app-icon name="stat_1" class="mx-auto mb-4 block text-4xl" />
-                <p class="mb-2">No {{ selectedChartType() }} data available</p>
-                <p class="text-sm">
-                  @if (selectedEndpoint() === 'global') {
-                    Global metrics will appear here once the test generates data
-                  } @else {
-                    Endpoint metrics for {{ selectedEndpoint() }} will appear
-                    here
-                  }
-                </p>
-              </div>
-            }
+              <ul
+                tabindex="0"
+                class="dropdown-content menu bg-base-100 rounded-box ring-base-content/10 z-50 mt-2 w-80 p-2 shadow-xl ring-1"
+              >
+                <li>
+                  <a
+                    (click)="onEndpointChangeValue('global')"
+                    [class.active]="service.selectedEndpoint() === 'global'"
+                    class="flex items-center gap-2"
+                  >
+                    <app-icon name="analytics" />
+                    <span>Global Metrics</span>
+                  </a>
+                </li>
+                <div class="divider my-1"></div>
+                @for (
+                  endpoint of service.test()?.summary?.endpoints || [];
+                  track endpoint.url
+                ) {
+                  <li>
+                    <a
+                      (click)="onEndpointChangeValue(endpoint.url)"
+                      [class.active]="
+                        service.selectedEndpoint() === endpoint.url
+                      "
+                      class="flex items-center gap-2"
+                    >
+                      <app-icon name="lan" />
+                      <span class="truncate">{{ endpoint.url }}</span>
+                    </a>
+                  </li>
+                }
+              </ul>
+            </div>
           </div>
-        </app-collapsible-card>
-      </section>
-    </div>
-  }
+        </div>
+
+        <!-- Hero Stats Row -->
+        <div class="px-6">
+          <app-hero-stats
+            [testData]="service.test()"
+            [selectedSummary]="service.selectedSummary()"
+            [isRealTime]="service.isRealTime()"
+            [selectedEndpoint]="service.selectedEndpoint()"
+          />
+        </div>
+
+        <!-- Performance Over Time -->
+        <app-performance-over-time
+          [selectedChartType]="service.selectedChartType()"
+          [selectedEndpoint]="service.selectedEndpoint()"
+          [chartOptions]="chartOptions"
+          [testTimeRange]="service.testTimeRange()"
+          [hasChartData]="service.hasChartData()"
+          [yAxisLabel]="getYAxisLabel()"
+          [chartId]="getChartId()"
+          [chartData]="service.currentChartData()"
+          [isRunning]="service.isRealTime()"
+          [collapsed]="performanceOverTimeCollapsed()"
+          [pollingInterval]="service.selectedPollingInterval()"
+          [pollingOptions]="pollingOptions"
+          (chartTypeChange)="service.selectedChartType.set($event)"
+          (collapsedChange)="performanceOverTimeCollapsed.set($event)"
+          (pollingIntervalChange)="service.selectedPollingInterval.set($event)"
+          (refresh)="service.refreshMetrics()"
+        />
+
+        <!-- Performance Summary (Metrics Grid) -->
+        <app-performance-summary
+          [selectedSummary]="service.selectedSummary()"
+          [testData]="service.test()"
+          [collapsed]="performanceSummaryCollapsed()"
+          (collapsedChange)="performanceSummaryCollapsed.set($event)"
+        />
+
+        <!-- Latency Distribution -->
+        @if (service.histogram()) {
+          <app-latency-distribution
+            [histogram]="service.histogram()"
+            [collapsed]="latencyDistributionCollapsed()"
+            (collapsedChange)="latencyDistributionCollapsed.set($event)"
+          />
+        }
+
+        <!-- Response Samples -->
+        @if (service.endpointSummary()?.responseSamples) {
+          <app-response-samples
+            [responseSamples]="service.endpointSummary()?.responseSamples"
+            [statusCodeDistribution]="
+              service.endpointSummary()?.statusCodeDistribution
+            "
+            [totalRequests]="service.endpointSummary()?.totalRequests"
+            [collapsed]="responseSamplesCollapsed()"
+            (collapsedChange)="responseSamplesCollapsed.set($event)"
+          />
+        }
+
+        <!-- Test Metadata & Configuration -->
+        <app-metadata
+          [testData]="service.test()"
+          [configName]="service.displayConfigName()"
+          [configSnapshot]="service.test()?.summary?.configSnapshot"
+          [collapsed]="configCollapsed()"
+          (collapsedChange)="configCollapsed.set($event)"
+        />
+      </div>
+    }
+  </div>
 
   <!-- Delete Confirmation Modal -->
   <app-delete-confirmation-modal
     [isOpen]="showDeleteModal()"
-    [test]="testData()!"
+    [test]="service.test()!"
     (confirmed)="handleDeleteConfirm()"
     (closed)="handleDeleteCancel()"
   />

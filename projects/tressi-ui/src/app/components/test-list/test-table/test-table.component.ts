@@ -1,6 +1,14 @@
 import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
 import { Component, inject, input, output } from '@angular/core';
 
+import { FormatBytesDirective } from '../../../directives/format/format-bytes.directive';
+import { FormatDateDirective } from '../../../directives/format/format-date.directive';
+import { FormatDurationDirective } from '../../../directives/format/format-duration.directive';
+import { FormatLatencyDirective } from '../../../directives/format/format-latency.directive';
+import { FormatNetworkThroughputDirective } from '../../../directives/format/format-network.directive';
+import { FormatNumberDirective } from '../../../directives/format/format-number.directive';
+import { FormatPercentageDirective } from '../../../directives/format/format-percentage.directive';
+import { FormatRpsDirective } from '../../../directives/format/format-rps.directive';
 import { ColumnConfig } from '../../../services/local-storage.service';
 import type { TestDocument } from '../../../services/rpc.service';
 import { TestService } from '../../../services/test.service';
@@ -10,155 +18,111 @@ import { ColumnKey, FieldPath } from '../column-keys.enum';
 import type { SortConfig } from '../test-list-columns.service';
 
 // Define extractor function type
-type ValueExtractor = (test: TestDocument) => string;
+type ValueExtractor = (test: TestDocument) => unknown;
 
 @Component({
   selector: 'app-test-table',
-  imports: [IconComponent, DragDropModule, StatusBadgeComponent],
+  imports: [
+    IconComponent,
+    DragDropModule,
+    StatusBadgeComponent,
+    FormatDurationDirective,
+    FormatDateDirective,
+    FormatPercentageDirective,
+    FormatRpsDirective,
+    FormatNumberDirective,
+    FormatBytesDirective,
+    FormatNetworkThroughputDirective,
+    FormatLatencyDirective,
+  ],
   templateUrl: './test-table.component.html',
 })
 export class TestTableComponent {
-  tests = input.required<TestDocument[]>();
-  columns = input.required<ColumnConfig[]>();
-  selectedTests = input.required<Set<string>>();
-  isAllSelected = input.required<boolean>();
-  isSomeSelected = input.required<boolean>();
-  currentSort = input<SortConfig | null>(null);
+  readonly tests = input.required<TestDocument[]>();
+  readonly columns = input.required<ColumnConfig[]>();
+  readonly selectedTests = input.required<Set<string>>();
+  readonly isAllSelected = input.required<boolean>();
+  readonly isSomeSelected = input.required<boolean>();
+  readonly currentSort = input<SortConfig | null>(null);
 
-  viewTest = output<string>();
-  toggleSelection = output<{ testId: string; event: Event }>();
-  toggleAllSelection = output<Event>();
-  columnReorder = output<{ draggedKey: string; targetKey: string }>();
-  columnSort = output<string>();
+  readonly viewTest = output<string>();
+  readonly toggleSelection = output<{ testId: string; event: Event }>();
+  readonly toggleAllSelection = output<Event>();
+  readonly columnReorder = output<{ draggedKey: string; targetKey: string }>();
+  readonly columnSort = output<string>();
 
-  private readonly testService = inject(TestService);
+  private readonly _testService = inject(TestService);
 
   // Create complete mapping that TypeScript will type-check
-  private readonly VALUE_EXTRACTORS: Record<FieldPath, ValueExtractor> = {
+  private readonly _valueExtractors: Record<FieldPath, ValueExtractor> = {
     select: () => '',
     'test.status': (test) => test.status || 'unknown',
     'test.epochStartedAt': (test) =>
-      this.formatDate(
-        test.summary?.global.epochStartedAt || test.epochCreatedAt,
-      ),
-    'test.duration': (test) => this.getTestDuration(test),
-    'summary.global.totalRequests': (test) => {
-      if (!test.summary) return '—';
-      return test.summary.global.totalRequests.toLocaleString();
-    },
-    'summary.global.successfulRequests': (test) => {
-      if (!test.summary) return '—';
-      return test.summary.global.successfulRequests.toLocaleString();
-    },
-    'summary.global.failedRequests': (test) => {
-      if (!test.summary) return '—';
-      return test.summary.global.failedRequests.toLocaleString();
-    },
-    'summary.global.p50LatencyMs': (test) => {
-      if (!test.summary) return '—';
-      return `${test.summary.global.p50LatencyMs}ms`;
-    },
-    'summary.global.p95LatencyMs': (test) => {
-      if (!test.summary) return '—';
-      return `${test.summary.global.p95LatencyMs}ms`;
-    },
-    'summary.global.p99LatencyMs': (test) => {
-      if (!test.summary) return '—';
-      return `${test.summary.global.p99LatencyMs}ms`;
-    },
-    'summary.tressiVersion': (test) => {
-      if (!test.summary) return '—';
-      return test.summary.tressiVersion;
-    },
-    'summary.global.minLatencyMs': (test) => {
-      if (!test.summary) return '—';
-      return `${test.summary.global.minLatencyMs}ms`;
-    },
-    'summary.global.maxLatencyMs': (test) => {
-      if (!test.summary) return '—';
-      return `${test.summary.global.maxLatencyMs}ms`;
-    },
-    'summary.global.epochStartedAt': (test) => {
-      if (!test.summary) return '—';
-      return this.formatDate(test.summary.global.epochStartedAt);
-    },
-    'summary.global.epochEndedAt': (test) => {
-      if (!test.summary) return '—';
-      return this.formatDate(test.summary.global.epochEndedAt);
-    },
-    'summary.global.networkBytesSent': (test) => {
-      if (!test.summary) return '—';
-      return this.formatBytes(test.summary.global.networkBytesSent);
-    },
-    'summary.global.networkBytesReceived': (test) => {
-      if (!test.summary) return '—';
-      return this.formatBytes(test.summary.global.networkBytesReceived);
-    },
-    'summary.global.networkBytesPerSec': (test) => {
-      if (!test.summary) return '—';
-      return this.formatBytesPerSec(test.summary.global.networkBytesPerSec);
-    },
-    'summary.global.errorRate': (test) => {
-      if (!test.summary) return '—';
-      return this.formatPercentage(test.summary.global.errorRate);
-    },
-    'summary.global.averageRequestsPerSecond': (test) => {
-      if (!test.summary) return '—';
-      return test.summary.global.averageRequestsPerSecond.toLocaleString();
-    },
-    'summary.global.peakRequestsPerSecond': (test) => {
-      if (!test.summary) return '—';
-      return test.summary.global.peakRequestsPerSecond.toLocaleString();
-    },
-    'summary.global.finalDurationSec': (test) => {
-      if (!test.summary) return '—';
-      return this.testService.formatDuration(
-        test.summary.global.finalDurationSec * 1000,
-      );
-    },
-    'summary.configSnapshot.options.durationSec': (test) => {
-      if (!test.summary?.configSnapshot?.options) return '—';
-      return this.testService.formatDuration(
-        test.summary.configSnapshot.options.durationSec * 1000,
-      );
-    },
-    'summary.configSnapshot.options.threads': (test) => {
-      if (!test.summary?.configSnapshot?.options) return '—';
-      return test.summary.configSnapshot.options.threads.toLocaleString();
-    },
-    'summary.configSnapshot.options.workerMemoryLimit': (test) => {
-      if (!test.summary?.configSnapshot?.options) return '—';
-      return this.formatBytes(
-        test.summary.configSnapshot.options.workerMemoryLimit,
-      );
-    },
-    'summary.configSnapshot.options.rampUpDurationSec': (test) => {
-      if (!test.summary?.configSnapshot?.options) return '—';
-      return this.testService.formatDuration(
-        test.summary.configSnapshot.options.rampUpDurationSec * 1000,
-      );
-    },
+      test.summary?.global.epochStartedAt || test.epochCreatedAt,
+    'test.duration': (test) => this.getTestDurationRaw(test),
+    'summary.global.totalRequests': (test) =>
+      test.summary?.global.totalRequests ?? null,
+    'summary.global.successfulRequests': (test) =>
+      test.summary?.global.successfulRequests ?? null,
+    'summary.global.failedRequests': (test) =>
+      test.summary?.global.failedRequests ?? null,
+    'summary.global.p50LatencyMs': (test) =>
+      test.summary?.global.p50LatencyMs ?? null,
+    'summary.global.p95LatencyMs': (test) =>
+      test.summary?.global.p95LatencyMs ?? null,
+    'summary.global.p99LatencyMs': (test) =>
+      test.summary?.global.p99LatencyMs ?? null,
+    'summary.tressiVersion': (test) => test.summary?.tressiVersion ?? null,
+    'summary.global.minLatencyMs': (test) =>
+      test.summary?.global.minLatencyMs ?? null,
+    'summary.global.maxLatencyMs': (test) =>
+      test.summary?.global.maxLatencyMs ?? null,
+    'summary.global.epochStartedAt': (test) =>
+      test.summary?.global.epochStartedAt ?? null,
+    'summary.global.epochEndedAt': (test) =>
+      test.summary?.global.epochEndedAt ?? null,
+    'summary.global.networkBytesSent': (test) =>
+      test.summary?.global.networkBytesSent ?? null,
+    'summary.global.networkBytesReceived': (test) =>
+      test.summary?.global.networkBytesReceived ?? null,
+    'summary.global.networkBytesPerSec': (test) =>
+      test.summary?.global.networkBytesPerSec ?? null,
+    'summary.global.errorRate': (test) =>
+      test.summary?.global.errorRate ?? null,
+    'summary.global.averageRequestsPerSecond': (test) =>
+      test.summary?.global.averageRequestsPerSecond ?? null,
+    'summary.global.peakRequestsPerSecond': (test) =>
+      test.summary?.global.peakRequestsPerSecond ?? null,
+    'summary.global.finalDurationSec': (test) =>
+      test.summary?.global.finalDurationSec ?? null,
+    'summary.configSnapshot.options.durationSec': (test) =>
+      test.summary?.configSnapshot?.options?.durationSec ?? null,
+    'summary.configSnapshot.options.threads': (test) =>
+      test.summary?.configSnapshot?.options?.threads ?? null,
+    'summary.configSnapshot.options.workerMemoryLimit': (test) =>
+      test.summary?.configSnapshot?.options?.workerMemoryLimit ?? null,
+    'summary.configSnapshot.options.rampUpDurationSec': (test) =>
+      test.summary?.configSnapshot?.options?.rampUpDurationSec ?? null,
   };
 
-  getColumnValue(test: TestDocument, column: ColumnConfig): string {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  getColumnValue(test: TestDocument, column: ColumnConfig): any {
     // Handle special 'select' column which doesn't extract data
     if (column.field === 'select') {
       return '';
     }
 
-    const extractor = this.VALUE_EXTRACTORS[column.field];
+    const extractor = this._valueExtractors[column.field];
     if (!extractor) {
-      return '—'; // This should never happen with proper typing
+      return null; // This should never happen with proper typing
     }
     return extractor(test);
   }
 
-  getTestDuration(test: TestDocument): string {
-    // Use embedded summary duration first
+  getTestDurationRaw(test: TestDocument): number {
+    // Use embedded summary duration first (in seconds)
     if (test.summary?.global.finalDurationSec) {
-      return this.testService.formatDuration(
-        test.summary.global.finalDurationSec * 1000,
-      );
+      return test.summary.global.finalDurationSec;
     }
 
     // Fallback to timestamp calculation using embedded summary fields
@@ -167,66 +131,14 @@ export class TestTableComponent {
       test.summary?.global.epochStartedAt &&
       test.summary?.global.epochEndedAt
     ) {
-      const duration =
-        test.summary.global.epochEndedAt - test.summary.global.epochStartedAt;
-      return this.testService.formatDuration(duration);
+      return (
+        (test.summary.global.epochEndedAt -
+          test.summary.global.epochStartedAt) /
+        1000
+      );
     }
 
-    return this.testService.formatDuration(
-      this.testService.getTestDuration(test),
-    );
-  }
-
-  formatDate(timestamp: number): string {
-    return new Date(timestamp).toLocaleString();
-  }
-
-  formatBytes(bytes: number): string {
-    if (bytes === 0) return '0 B';
-
-    const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-
-    return `${(bytes / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`;
-  }
-
-  formatBytesPerSec(bytesPerSec: number): string {
-    if (bytesPerSec === 0) return '0 B/s';
-
-    const k = 1024;
-    const sizes = ['B/s', 'KB/s', 'MB/s', 'GB/s', 'TB/s'];
-    const i = Math.floor(Math.log(bytesPerSec) / Math.log(k));
-
-    return `${(bytesPerSec / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`;
-  }
-
-  formatPercentage(value: number): string {
-    if (value === null || value === undefined) return '0.0%';
-    return `${(value * 100).toFixed(1)}%`;
-  }
-
-  calculateErrorRate(test: TestDocument): string {
-    // Use embedded summary
-    if (test.summary) {
-      const { global: g } = test.summary;
-      const errorRate = (g.failedRequests / g.totalRequests) * 100;
-      return `${errorRate}%`;
-    }
-
-    // Failed tests without summary
-    if (test.status === 'failed') {
-      return '100.00%';
-    }
-    return test.error ? 'Error' : '0.00%';
-  }
-
-  getRequestCount(test: TestDocument): string {
-    // Use embedded summary
-    if (test.summary) {
-      return test.summary.global.totalRequests.toLocaleString();
-    }
-    return '0';
+    return this._testService.getTestDuration(test) / 1000;
   }
 
   onViewTest(testId: string): void {

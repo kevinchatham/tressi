@@ -64,8 +64,6 @@ describe('EarlyExitCoordinator', () => {
       options: {
         durationSec: 60,
         rampUpDurationSec: 0,
-        exportPath: '',
-        silent: false,
         headers: {},
         threads: 1,
         workerMemoryLimit: 512,
@@ -147,8 +145,6 @@ describe('EarlyExitCoordinator', () => {
           durationSec: 60,
           rampUpDurationSec: 0,
           headers: {},
-          exportPath: '',
-          silent: false,
           threads: 1,
           workerMemoryLimit: 512,
           workerEarlyExit: {
@@ -189,8 +185,6 @@ describe('EarlyExitCoordinator', () => {
           durationSec: 60,
           rampUpDurationSec: 0,
           headers: {},
-          exportPath: '',
-          silent: false,
           threads: 1,
           workerMemoryLimit: 512,
           workerEarlyExit: {
@@ -267,8 +261,6 @@ describe('EarlyExitCoordinator', () => {
           durationSec: 60,
           rampUpDurationSec: 0,
           headers: {},
-          exportPath: '',
-          silent: false,
           threads: 1,
           workerMemoryLimit: 512,
           workerEarlyExit: {
@@ -369,8 +361,6 @@ describe('EarlyExitCoordinator', () => {
           durationSec: 60,
           rampUpDurationSec: 0,
           headers: {},
-          exportPath: '',
-          silent: false,
           threads: 1,
           workerMemoryLimit: 512,
           workerEarlyExit: {
@@ -446,8 +436,6 @@ describe('EarlyExitCoordinator', () => {
           durationSec: 60,
           rampUpDurationSec: 0,
           headers: {},
-          exportPath: '',
-          silent: false,
           threads: 1,
           workerMemoryLimit: 512,
           workerEarlyExit: {
@@ -506,8 +494,6 @@ describe('EarlyExitCoordinator', () => {
           durationSec: 60,
           rampUpDurationSec: 0,
           headers: {},
-          exportPath: '',
-          silent: false,
           threads: 1,
           workerMemoryLimit: 512,
           workerEarlyExit: {
@@ -551,8 +537,6 @@ describe('EarlyExitCoordinator', () => {
           durationSec: 60,
           rampUpDurationSec: 0,
           headers: {},
-          exportPath: '',
-          silent: false,
           threads: 1,
           workerMemoryLimit: 512,
           workerEarlyExit: {
@@ -598,8 +582,6 @@ describe('EarlyExitCoordinator', () => {
           durationSec: 60,
           rampUpDurationSec: 0,
           headers: {},
-          exportPath: '',
-          silent: false,
           threads: 1,
           workerMemoryLimit: 512,
           workerEarlyExit: {

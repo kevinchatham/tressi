@@ -6,12 +6,12 @@ import { EndpointState } from '../types';
  * Provides atomic state management for individual endpoints across workers
  */
 export class EndpointStateManager implements IEndpointStateManager {
-  private readonly sab: SharedArrayBuffer;
-  private readonly states: Int32Array;
-  private readonly totalEndpoints: number;
+  private readonly _sab: SharedArrayBuffer;
+  private readonly _states: Int32Array;
+  private readonly _totalEndpoints: number;
 
   constructor(totalEndpoints: number, externalBuffer?: SharedArrayBuffer) {
-    this.totalEndpoints = totalEndpoints;
+    this._totalEndpoints = totalEndpoints;
 
     const requiredSize = totalEndpoints * 4; // 4 bytes per Int32 state
 
@@ -21,17 +21,17 @@ export class EndpointStateManager implements IEndpointStateManager {
           `Buffer too small: expected ${requiredSize}, got ${externalBuffer.byteLength}`,
         );
       }
-      this.sab = externalBuffer;
+      this._sab = externalBuffer;
     } else {
-      this.sab = new SharedArrayBuffer(requiredSize);
+      this._sab = new SharedArrayBuffer(requiredSize);
     }
 
-    this.states = new Int32Array(this.sab);
+    this._states = new Int32Array(this._sab);
 
     // Initialize all endpoints to RUNNING state
     if (!externalBuffer) {
       for (let i = 0; i < totalEndpoints; i++) {
-        Atomics.store(this.states, i, EndpointState.RUNNING);
+        Atomics.store(this._states, i, EndpointState.RUNNING);
       }
     }
   }
@@ -40,23 +40,23 @@ export class EndpointStateManager implements IEndpointStateManager {
    * Set endpoint state atomically
    */
   setEndpointState(endpointIndex: number, state: EndpointState): void {
-    if (endpointIndex < 0 || endpointIndex >= this.totalEndpoints) {
+    if (endpointIndex < 0 || endpointIndex >= this._totalEndpoints) {
       throw new Error(`Invalid endpoint index: ${endpointIndex}`);
     }
 
-    Atomics.store(this.states, endpointIndex, state);
-    Atomics.notify(this.states, endpointIndex, 1);
+    Atomics.store(this._states, endpointIndex, state);
+    Atomics.notify(this._states, endpointIndex, 1);
   }
 
   /**
    * Get endpoint state atomically
    */
   getEndpointState(endpointIndex: number): EndpointState {
-    if (endpointIndex < 0 || endpointIndex >= this.totalEndpoints) {
+    if (endpointIndex < 0 || endpointIndex >= this._totalEndpoints) {
       throw new Error(`Invalid endpoint index: ${endpointIndex}`);
     }
 
-    return Atomics.load(this.states, endpointIndex) as EndpointState;
+    return Atomics.load(this._states, endpointIndex) as EndpointState;
   }
 
   /**
@@ -78,7 +78,7 @@ export class EndpointStateManager implements IEndpointStateManager {
    */
   getRunningEndpointsCount(): number {
     let count = 0;
-    for (let i = 0; i < this.totalEndpoints; i++) {
+    for (let i = 0; i < this._totalEndpoints; i++) {
       if (this.isEndpointRunning(i)) {
         count++;
       }
@@ -90,13 +90,13 @@ export class EndpointStateManager implements IEndpointStateManager {
    * Get underlying SharedArrayBuffer
    */
   getSharedBuffer(): SharedArrayBuffer {
-    return this.sab;
+    return this._sab;
   }
 
   /**
    * Get total number of endpoints
    */
   getTotalEndpoints(): number {
-    return this.totalEndpoints;
+    return this._totalEndpoints;
   }
 }

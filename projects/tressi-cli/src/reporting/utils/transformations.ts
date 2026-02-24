@@ -1,8 +1,10 @@
 import pkg from '../../../../../package.json';
 import type { TressiConfig } from '../../common/config/types';
 import type { AggregatedMetrics } from '../../common/metrics';
-import { roundToDecimals } from '../../utils/math-utils';
-import type { LatencyHistogram as WorkerLatencyHistogram } from '../../workers/types';
+import type {
+  LatencyHistogram as WorkerLatencyHistogram,
+  LatencyHistogramBucket,
+} from '../../workers/types';
 import {
   EndpointSummary,
   GlobalSummary,
@@ -24,8 +26,10 @@ function convertWorkerHistogramToTestSummaryHistogram(
   let totalCount = 0;
   let min = Infinity;
   let max = 0;
+  let weightedMeanSum = 0;
+  let weightedStdDevSum = 0;
 
-  const percentiles = {
+  const percentiles: Record<number, number> = {
     1: 0,
     5: 0,
     10: 0,
@@ -35,10 +39,9 @@ function convertWorkerHistogramToTestSummaryHistogram(
     90: 0,
     95: 0,
     99: 0,
-    99.9: 0,
   };
 
-  // Calculate weighted percentiles
+  // Calculate weighted percentiles and aggregate stats
   histograms.forEach((histogram) => {
     totalCount += histogram.totalCount;
     min = Math.min(min, histogram.min);
@@ -49,7 +52,7 @@ function convertWorkerHistogramToTestSummaryHistogram(
     return undefined;
   }
 
-  // Calculate weighted percentiles
+  // Calculate weighted percentiles, mean, and stdDev
   Object.keys(percentiles).forEach((p) => {
     const percentile = parseFloat(p);
     let weightedValue = 0;
@@ -59,14 +62,103 @@ function convertWorkerHistogramToTestSummaryHistogram(
       weightedValue += (histogram.percentiles[percentile] || 0) * weight;
     });
 
-    percentiles[percentile as keyof typeof percentiles] = weightedValue;
+    percentiles[percentile] = weightedValue;
   });
+
+  // Calculate weighted mean and stdDev
+  histograms.forEach((histogram) => {
+    const weight = histogram.totalCount / totalCount;
+    weightedMeanSum += histogram.mean * weight;
+    weightedStdDevSum += histogram.stdDev * weight;
+  });
+
+  // Merge buckets from all histograms into 10 logarithmic buckets for visualization
+  // Logarithmic buckets are better for latency as they provide more detail for the majority
+  // of requests while still capturing the long tail without excessive empty space.
+  const numBuckets = 10;
+  const buckets: LatencyHistogramBucket[] = [];
+
+  if (totalCount > 0) {
+    if (max > min) {
+      // Use log scale for bucket boundaries
+      // We use log10(val + 1) to handle cases where min might be 0
+      const logMin = Math.log10(min + 1);
+      const logMax = Math.log10(max + 1);
+      const logRange = logMax - logMin;
+      const logBucketSize = logRange / numBuckets;
+
+      // Initialize 10 logarithmic buckets
+      for (let i = 0; i < numBuckets; i++) {
+        const lowerLog = logMin + i * logBucketSize;
+        const upperLog = logMin + (i + 1) * logBucketSize;
+
+        buckets.push({
+          lowerBound: Math.pow(10, lowerLog) - 1,
+          upperBound: Math.pow(10, upperLog) - 1,
+          count: 0,
+        });
+      }
+
+      // Distribute counts from all worker histograms into the new buckets
+      histograms.forEach((h) => {
+        h.buckets.forEach((b) => {
+          // Use the midpoint of the original bucket to decide which new bucket it belongs to
+          const midpoint = (b.lowerBound + b.upperBound) / 2;
+          const logMidpoint = Math.log10(midpoint + 1);
+          let bucketIndex = Math.floor((logMidpoint - logMin) / logBucketSize);
+
+          // Handle edge case for the very last value (max)
+          if (bucketIndex >= numBuckets) {
+            bucketIndex = numBuckets - 1;
+          }
+          if (bucketIndex < 0) {
+            bucketIndex = 0;
+          }
+
+          buckets[bucketIndex].count += b.count;
+        });
+      });
+
+      // Ensure the last bucket always represents the max value if it has samples
+      // This prevents the "0 count in upper bucket" discrepancy when max is an outlier
+      const totalBucketCount = buckets.reduce((sum, b) => sum + b.count, 0);
+      if (totalBucketCount < totalCount) {
+        // If we missed some samples due to rounding/midpoint math,
+        // they are almost certainly at the very top end
+        buckets[numBuckets - 1].count += totalCount - totalBucketCount;
+      } else if (buckets[numBuckets - 1].count === 0 && totalCount > 0) {
+        // Final fallback: if the last bucket is still empty but we have samples,
+        // move one sample from the largest bucket to the last bucket to ensure
+        // the 'max' value is visually represented.
+        let largestBucketIndex = 0;
+        for (let i = 1; i < numBuckets; i++) {
+          if (buckets[i].count > buckets[largestBucketIndex].count) {
+            largestBucketIndex = i;
+          }
+        }
+        if (buckets[largestBucketIndex].count > 0) {
+          buckets[largestBucketIndex].count--;
+          buckets[numBuckets - 1].count++;
+        }
+      }
+    } else {
+      // All samples have the same value (min === max)
+      buckets.push({
+        lowerBound: min,
+        upperBound: max,
+        count: totalCount,
+      });
+    }
+  }
 
   return {
     totalCount,
     min,
     max,
+    mean: weightedMeanSum,
+    stdDev: weightedStdDevSum,
     percentiles,
+    buckets,
   };
 }
 
@@ -105,7 +197,7 @@ export function transformAggregatedMetricToTestSummary(
     p95LatencyMs: global.p95LatencyMs,
     p99LatencyMs: global.p99LatencyMs,
     p50LatencyMs: global.p50LatencyMs,
-    finalDurationSec: roundToDecimals(finalDurationSec),
+    finalDurationSec: finalDurationSec,
     epochStartedAt: epochStartedAt,
     epochEndedAt: epochEndedAt,
     networkBytesSent: global.networkBytesSent || 0,
@@ -113,6 +205,7 @@ export function transformAggregatedMetricToTestSummary(
     networkBytesPerSec: global.networkBytesPerSec || 0,
     avgSystemCpuUsagePercent: metrics.cpuUsagePercent,
     avgProcessMemoryUsageMB: metrics.memoryUsageMB,
+    targetAchieved: 0, // Will be calculated below
     histogram: {} as LatencyHistogram, // Will be populated below
   };
 
@@ -127,9 +220,7 @@ export function transformAggregatedMetricToTestSummary(
     const requestConfig = config.requests.find((req) => req.url === url)!;
 
     // Calculate percentage of target RPS achieved
-    const targetAchieved = roundToDecimals(
-      (endpoint.averageRequestsPerSecond / requestConfig.rps) * 100,
-    );
+    const targetAchieved = endpoint.peakRequestsPerSecond / requestConfig.rps;
 
     const summary: EndpointSummary = {
       method: endpointMethodMap[url],
@@ -144,7 +235,7 @@ export function transformAggregatedMetricToTestSummary(
       p99LatencyMs: endpoint.p99LatencyMs,
       averageRequestsPerSecond: endpoint.averageRequestsPerSecond,
       peakRequestsPerSecond: endpoint.peakRequestsPerSecond,
-      theoreticalMaxRps: roundToDecimals(theoreticalMaxRps),
+      theoreticalMaxRps: theoreticalMaxRps,
       targetAchieved,
       responseSamples: endpointResponseSamples,
       statusCodeDistribution: endpoint.statusCodeDistribution,
@@ -154,6 +245,16 @@ export function transformAggregatedMetricToTestSummary(
 
     return summary;
   });
+
+  // Calculate global target achieved as average of all endpoints
+  const totalTargetAchieved = endpointSummaries.reduce(
+    (sum, e) => sum + e.targetAchieved,
+    0,
+  );
+  globalSummary.targetAchieved =
+    endpointSummaries.length > 0
+      ? totalTargetAchieved / endpointSummaries.length
+      : 0;
 
   // Build histogram data if provided
   if (histogramData) {

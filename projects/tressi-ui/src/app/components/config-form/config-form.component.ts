@@ -9,7 +9,6 @@ import {
 } from '@angular/core';
 import {
   applyEach,
-  Field,
   form,
   required,
   SchemaPathTree,
@@ -27,9 +26,8 @@ import {
 } from '../../services/rpc.service';
 import { ButtonComponent } from '../button/button.component';
 import { IconComponent } from '../icon/icon.component';
-import { AdvancedConfigComponent } from './advanced-config/advanced-config.component';
-import { BasicConfigComponent } from './basic-config/basic-config.component';
-import { GlobalConfigComponent } from './global-config/global-config.component';
+import { GeneralConfigComponent } from './general-config/general-config.component';
+import { RequestsConfigComponent } from './requests-config/requests-config.component';
 
 // Schema function for validating individual request configuration
 function RequestSchema(request: SchemaPathTree<TressiRequestConfig>): void {
@@ -44,16 +42,14 @@ export type ModifyConfigRequestFormType = ReturnType<
   selector: 'app-config-form',
   imports: [
     IconComponent,
-    AdvancedConfigComponent,
-    BasicConfigComponent,
-    GlobalConfigComponent,
-    Field,
+    GeneralConfigComponent,
+    RequestsConfigComponent,
     ButtonComponent,
   ],
   templateUrl: './config-form.component.html',
 })
 export class ConfigFormComponent {
-  private readonly nameService = inject(NameService);
+  private readonly _nameService = inject(NameService);
 
   /** Input configuration to edit */
   readonly input = input<ConfigDocument | null>(null);
@@ -65,7 +61,7 @@ export class ConfigFormComponent {
   readonly closed = output<void>();
 
   /** Form model with complete TressiConfig structure */
-  readonly model = signal<ModifyConfigRequest>(this.createEmptyConfig());
+  readonly model = signal<ModifyConfigRequest>(this._createEmptyConfig());
 
   constructor() {
     effect(() => {
@@ -73,7 +69,7 @@ export class ConfigFormComponent {
       if (input !== null) {
         this.model.set(input);
       } else {
-        this.model.set(this.createEmptyConfig());
+        this.model.set(this._createEmptyConfig());
       }
     });
   }
@@ -109,11 +105,21 @@ export class ConfigFormComponent {
   });
 
   /** Active tab state */
-  readonly activeTab = signal<'basic' | 'global' | 'advanced'>('basic');
+  readonly activeTab = signal<'general' | 'requests'>('general');
 
   /** Computed signal for form validity */
   readonly isFormValid = computed(() => {
     return this.form().valid();
+  });
+
+  readonly formErrors = computed<string[]>(() => {
+    return this.form()
+      .errors()
+      .flatMap((e) => e.message)
+      .filter((e): e is string => !!e)
+      .flatMap((e) => JSON.parse(e))
+      .map((e) => e.message)
+      .filter((e: string) => !e.includes('URL'));
   });
 
   onJsonTextAreaChange(): void {
@@ -128,13 +134,13 @@ export class ConfigFormComponent {
 
   onCancel(event: Event): void {
     event.preventDefault();
-    this.model.set(this.createEmptyConfig());
+    this.model.set(this._createEmptyConfig());
     this.form().reset();
     this.closed.emit();
   }
 
   /** Set active tab */
-  setActiveTab(tab: 'basic' | 'global' | 'advanced'): void {
+  setActiveTab(tab: 'general' | 'requests'): void {
     this.activeTab.set(tab);
   }
 
@@ -333,12 +339,12 @@ export class ConfigFormComponent {
   }
 
   /** Create an empty configuration structure */
-  private createEmptyConfig(): ModifyConfigRequest {
+  private _createEmptyConfig(): ModifyConfigRequest {
     const config = JSON.parse(JSON.stringify(defaultTressiConfig));
     config.requests = [{ ...requestDefaults }];
 
     const defaultConfig: ModifyConfigRequest = {
-      name: this.nameService.generate(),
+      name: this._nameService.generate(),
       config,
     };
     return defaultConfig;

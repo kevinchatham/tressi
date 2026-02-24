@@ -6,11 +6,7 @@ import type { AppType } from 'tressi-cli/src/server/routes/types';
   providedIn: 'root',
 })
 export class RPCService {
-  public readonly client = hc<AppType>('http://localhost:3108', {
-    init: {
-      credentials: 'include',
-    },
-  }).api;
+  public readonly client = hc<AppType>('/').api;
 
   /**
    * Retrieves the current test status from the backend
@@ -122,6 +118,16 @@ export type TestSummary = TestDocument['summary'];
 
 export type TestStatus = TestDocument['status'];
 
+export type LatencyHistogram = NonNullable<
+  NonNullable<TestSummary>['global']['histogram']
+>;
+
+export type GlobalSummary = NonNullable<NonNullable<TestSummary>['global']>;
+
+export type EndpointSummary = NonNullable<
+  NonNullable<TestSummary>['endpoints']
+>[number];
+
 export type DeleteTestResponse = InferResponseType<
   (typeof client.tests)[':id']['$delete']
 >;
@@ -149,3 +155,36 @@ export type ExportTestRequest = InferRequestType<
 export type GetTestStatusResponse = InferResponseType<
   typeof client.test.status.$get
 >;
+
+// ! Docs
+export type GetDocsResponse = InferResponseType<typeof client.docs.list.$get>;
+
+export type GetDocsResponseSuccess = Extract<
+  GetDocsResponse,
+  Record<
+    string,
+    {
+      path: string;
+      realPath: string;
+      docs: { slug: string; sectionSlug: string; realPath: string }[];
+    }
+  >
+>;
+
+export type GetDocsResponseError = Extract<GetDocsResponse, { error: object }>;
+
+export type SearchDocsResponse = InferResponseType<
+  typeof client.docs.search.$get
+>;
+
+export type SearchDocsResponseSuccess = Extract<SearchDocsResponse, unknown[]>;
+
+export type SearchDocsResponseError = Extract<
+  SearchDocsResponse,
+  { error: object }
+>;
+
+export type SearchResult = SearchDocsResponseSuccess[number];
+
+// ! Health
+export type GetHealthResponse = InferResponseType<typeof client.health.$get>;

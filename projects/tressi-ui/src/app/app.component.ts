@@ -8,7 +8,7 @@ import { RouterOutlet } from '@angular/router';
 
 import { LoadingComponent } from './components/loading/loading.component';
 import { ToastComponent } from './components/toast/toast.component';
-import { LoadingService } from './services/loading.service';
+import { AppRouterService } from './services/router.service';
 import { ThemeService } from './services/theme.service';
 import { TitleService } from './services/title.service';
 
@@ -19,12 +19,13 @@ import { TitleService } from './services/title.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AppComponent implements OnInit {
-  private titleService = inject(TitleService);
-  private themeService = inject(ThemeService);
-  protected loadingService = inject(LoadingService);
+  private readonly _titleService = inject(TitleService);
+  private readonly _themeService = inject(ThemeService);
+
+  readonly appRouter = inject(AppRouterService);
 
   ngOnInit(): void {
-    this.titleService.resetTitle();
-    this.themeService.loadInitialTheme();
+    this._titleService.resetTitle();
+    this._themeService.loadInitialTheme();
   }
 }

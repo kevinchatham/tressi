@@ -1,0 +1,48 @@
+<div
+  class="stats stats-vertical md:stats-horizontal bg-base-300 border-base-content/5 flex w-full border shadow-sm"
+>
+  <!-- Target Achieved Stat -->
+  <div class="stat place-items-center">
+    <div class="stat-title">Target Achieved</div>
+    <div
+      class="stat-value text-success"
+      [appFormatPercentage]="targetAchievedPercentage()"
+    ></div>
+  </div>
+
+  <!-- Peak RPS Stat -->
+  <div class="stat place-items-center">
+    <div class="stat-title">Peak RPS</div>
+    <div
+      class="stat-value text-secondary"
+      [appFormatRps]="selectedSummary()?.peakRequestsPerSecond"
+    ></div>
+  </div>
+
+  <!-- Average RPS Stat -->
+  <div class="stat place-items-center">
+    <div class="stat-title">Average RPS</div>
+    <div
+      class="stat-value text-primary"
+      [appFormatRps]="selectedSummary()?.averageRequestsPerSecond"
+    ></div>
+  </div>
+
+  <!-- P50/95/99 Latency Stat -->
+  <div class="stat place-items-center">
+    <div class="stat-title">P50 \ 95 \ 99 Latency</div>
+    <div class="stat-value text-info flex items-baseline gap-1">
+      <span [appFormatLatency]="selectedSummary()?.p50LatencyMs"></span>
+      <span class="text-base-content/30 text-sm font-normal">\</span>
+      <span [appFormatLatency]="selectedSummary()?.p95LatencyMs"></span>
+      <span class="text-base-content/30 text-sm font-normal">\</span>
+      <span [appFormatLatency]="selectedSummary()?.p99LatencyMs"></span>
+    </div>
+  </div>
+
+  <!-- Duration Stat -->
+  <div class="stat place-items-center">
+    <div class="stat-title">Duration</div>
+    <div class="stat-value" [appFormatDuration]="getDurationSec()"></div>
+  </div>
+</div>

@@ -21,21 +21,21 @@ import { TressiRequestConfig } from '../common/config/types';
  * high throughput in load testing scenarios.
  */
 export class WorkerRateLimiter {
-  private tokens: number[];
-  private lastRefill: number[];
-  private rampUpDurationsSec: number[];
+  private _tokens: number[];
+  private _lastRefill: number[];
+  private _rampUpDurationsSec: number[];
 
   constructor(
-    private endpoints: TressiRequestConfig[],
+    private _endpoints: TressiRequestConfig[],
     globalRampUpDurationSec: number = 0,
   ) {
-    this.tokens = new Array(endpoints.length).fill(0);
+    this._tokens = new Array(_endpoints.length).fill(0);
     // Initialize to 0 so that elapsed time is calculated from testTimeElapsed
-    this.lastRefill = new Array(endpoints.length).fill(0);
+    this._lastRefill = new Array(_endpoints.length).fill(0);
 
-    // Calculate effective ramp-up duration for each endpoint
+    // Calculate effective ramp up duration for each endpoint
     // If endpoint value is 0, use global value
-    this.rampUpDurationsSec = endpoints.map(
+    this._rampUpDurationsSec = _endpoints.map(
       (endpoint) => endpoint.rampUpDurationSec || globalRampUpDurationSec,
     );
   }
@@ -78,35 +78,35 @@ export class WorkerRateLimiter {
 
     for (
       let i = 0;
-      i < this.endpoints.length && available.length < batchSize;
+      i < this._endpoints.length && available.length < batchSize;
       i++
     ) {
       // Use testTimeElapsed for elapsed time calculation to support fake timers
-      const elapsed = testTimeElapsed - this.lastRefill[i];
+      const elapsed = testTimeElapsed - this._lastRefill[i];
 
-      const rps = this.calculateRps({
-        targetRps: this.endpoints[i].rps,
+      const rps = this._calculateRps({
+        targetRps: this._endpoints[i].rps,
         elapsedMs: testTimeElapsed,
-        rampUpDurationSec: this.rampUpDurationsSec[i],
+        rampUpDurationSec: this._rampUpDurationsSec[i],
       });
 
       const refill = Math.floor((elapsed / 1000) * rps);
 
       if (refill > 0) {
-        this.tokens[i] = Math.min(this.tokens[i] + refill, rps * 2); // Allow burst
-        this.lastRefill[i] = testTimeElapsed;
+        this._tokens[i] = Math.min(this._tokens[i] + refill, rps * 2); // Allow burst
+        this._lastRefill[i] = testTimeElapsed;
       }
 
-      while (this.tokens[i] >= 1 && available.length < batchSize) {
-        this.tokens[i] -= 1;
-        available.push(this.endpoints[i]);
+      while (this._tokens[i] >= 1 && available.length < batchSize) {
+        this._tokens[i] -= 1;
+        available.push(this._endpoints[i]);
       }
     }
 
     return available;
   }
 
-  private calculateRps(options: {
+  private _calculateRps(options: {
     targetRps: number;
     elapsedMs: number;
     rampUpDurationSec: number;

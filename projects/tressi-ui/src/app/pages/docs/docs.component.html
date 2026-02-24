@@ -1,0 +1,51 @@
+<div class="p-4 md:p-12">
+  <app-header>
+    <app-button
+      (click)="appRouter.back()"
+      [icon]="'arrow_back'"
+      [title]="'Back'"
+      [ghost]="true"
+      [disabled]="isBaseUrl()"
+    />
+
+    <app-theme-switcher />
+
+    <app-button
+      (click)="appRouter.toHome()"
+      [color]="'info'"
+      [title]="'Dashboard'"
+      [icon]="'browse_activity'"
+    />
+  </app-header>
+
+  <div class="mx-auto flex flex-col items-start gap-4 md:max-w-6xl md:flex-row">
+    <!-- Sidebar -->
+    <div class="z-10 w-full md:sticky md:top-4 md:block md:w-auto">
+      <app-docs-menu [availableDocs]="availableDocs()" />
+    </div>
+
+    <!-- Content -->
+    <div class="w-full flex-1">
+      @if (error()) {
+        <div class="alert alert-error">
+          <app-icon [name]="'error'" />
+          <span>{{ error() }}</span>
+        </div>
+      }
+
+      <div
+        [class.hidden]="error()"
+        [class.opacity-0]="isTransitioning()"
+        class="markdown-body bg-base-300/70 border-base-content/5 max-w-none rounded-xl border-2 p-4 transition-opacity duration-100 ease-in-out md:p-8"
+      >
+        <markdown
+          mermaid
+          [mermaidOptions]="mermaidOptions()"
+          [src]="markdownSrc()"
+          (load)="onLoad()"
+          (error)="onError()"
+        />
+      </div>
+    </div>
+  </div>
+</div>

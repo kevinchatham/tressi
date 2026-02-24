@@ -1,6 +1,9 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { Router, RouterModule } from '@angular/router';
+import { RouterModule } from '@angular/router';
 import { ButtonComponent } from 'src/app/components/button/button.component';
+
+import { logoSrc } from '../../constants';
+import { AppRouterService } from '../../services/router.service';
 
 @Component({
   selector: 'app-welcome',
@@ -9,12 +12,6 @@ import { ButtonComponent } from 'src/app/components/button/button.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class WelcomeComponent {
-  private readonly router = inject(Router);
-
-  /**
-   * Navigates to the settings page when the user clicks the CTA button.
-   */
-  navigateToSettings(): void {
-    this.router.navigate(['/settings']);
-  }
+  readonly appRouter = inject(AppRouterService);
+  readonly logoSrc = logoSrc;
 }
