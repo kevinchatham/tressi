@@ -11,22 +11,18 @@
 > **TL;DR**
 >
 > ```bash
-> npx tressi@latest serve
+> npx tressi serve
 > ```
 >
-> Then open http://localhost:3108 in your browser.
+> Then open `http://localhost:3108` in your browser.
 
-![./images/0.0.13-test-details.png](https://github.com/kevinchatham/tressi/blob/main/images/tressi-logo.png)
+![./images/0.0.13-test-details.png](https://github.com/kevinchatham/tressi/blob/main/images/0.0.13-test-details.png?raw=true)
 
 `tressi` is a **modern load testing tool** that brings professional API analysis to your workspace. It combines a **multithreaded execution engine** with a beautiful web interface, providing the power of **parallel execution** through both an interactive dashboard and a **headless CLI**.
 
 ## ⚡ Get Started
 
-Tressi makes it easy to validate API performance and identify bottlenecks. It is built to handle everything from simple health checks to complex, high concurrency stress tests.
-
-### Requirements
-
-To run `tressi`, you need **Node.js LTS** installed on one of the following supported operating systems:
+To run `tressi`, you need **[Node.js 20 LTS or higher](https://nodejs.org/en/download)** installed on one of the following supported operating systems:
 
 - **MacOS**
 - **Windows** (x64 only, ARM not supported)
