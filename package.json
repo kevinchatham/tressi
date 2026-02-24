@@ -1,7 +1,7 @@
 {
   "name": "tressi",
   "version": "0.0.13",
-  "description": "A lightweight, declarative stress testing CLI for modern developers.",
+  "description": "A modern load testing tool that brings professional API analysis to your workspace.",
   "license": "SEE LICENSE IN docs/01-home/03-license.md",
   "author": "kevinchatham",
   "repository": {
