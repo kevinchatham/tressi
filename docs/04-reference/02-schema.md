@@ -18,14 +18,14 @@ The schema is located at [`projects/tressi-cli/tressi.schema.json`](projects/tre
 
 Configure overall test runner behavior using the `options` object.
 
-| Property            | Type    | Description                                                                 |
-| ------------------- | ------- | --------------------------------------------------------------------------- |
-| `durationSec`       | integer | Total duration of the test in seconds.                                      |
-| `rampUpDurationSec` | integer | Global ramp-up time in seconds for all endpoints.                           |
-| `headers`           | object  | Global headers sent with every request.                                     |
-| `threads`           | integer | Number of worker threads to spawn. Defaults to CPU core count.              |
-| `workerMemoryLimit` | integer | Maximum memory allocation per worker in MB.                                 |
-| `workerEarlyExit`   | object  | Default [Early Exit Configuration](#automate-test-termination) for workers. |
+| Property            | Type    | Description                                                                         |
+| ------------------- | ------- | ----------------------------------------------------------------------------------- |
+| `durationSec`       | integer | Total duration of the test in seconds.                                              |
+| `rampUpDurationSec` | integer | Global ramp-up time in seconds for all endpoints.                                   |
+| `headers`           | object  | Global headers sent with every request.                                             |
+| `threads`           | integer | Number of worker threads to spawn. Min: `1`, Max: `os.cpus().length`, Default: `4`. |
+| `workerMemoryLimit` | integer | Maximum memory allocation per worker in MB. Min: `16`, Max: `512`, Default: `128`.  |
+| `workerEarlyExit`   | object  | Default [Early Exit Configuration](#automate-test-termination) for workers.         |
 
 ### Define Request Endpoints
 
@@ -43,7 +43,7 @@ Define specific endpoints to target within the `requests` array.
 
 ### Automate Test Termination
 
-Set thresholds to stop tests automatically when performance or stability degrades.
+Set thresholds to stop tests automatically when performance or stability degrades. Review [Automated Test Termination](../03-advanced/02-early-exit.md) for implementation details and best practices.
 
 | Property             | Type    | Description                                                         |
 | -------------------- | ------- | ------------------------------------------------------------------- |
@@ -54,4 +54,4 @@ Set thresholds to stop tests automatically when performance or stability degrade
 
 ### Next Steps
 
-Explore [Tressi Internals](../05-internals/index.md) to understand the execution engine and shared memory architecture.
+Explore [Tressi Architecture](../05-internals/01-architecture.md) to understand the high-performance execution engine and shared memory synchronization.

@@ -1,23 +1,13 @@
 # Methodology
 
-Tressi used a targeted load testing methodology designed to validate API performance against Service Level Objectives (SLOs). While stress testing identifies maximum capacity, Tressi validates the ability to sustain a predefined load.
+Tressi uses a targeted load testing methodology designed to validate API performance against Service Level Objectives (SLOs). While stress testing identifies maximum capacity, Tressi validates the ability to sustain a predefined load.
 
 ### Measure Target Achievement
 
-The **Target Achieved** metric measures the percentage of requested Requests Per Second (RPS) successfully delivered during the peak request window. It identifies whether the target system or the testing environment reached saturation.
-
-- **100% Achievement**: The target infrastructure successfully processed the full requested load.
-- **<100% Achievement**: Indicates a performance bottleneck. Failure to reach the target RPS typically results from:
-  - **Target Saturation**: Slow API response times or server side resource exhaustion.
-  - **Network Constraints**: Latency or bandwidth limitations between the generator and target.
-  - **Generator Bottlenecks**: Local system resource exhaustion (CPU, memory, or network I/O).
-
-### Endpoint Achievement Metrics
-
-Tressi evaluates achievement at both the global and individual endpoint levels to provide a complete performance profile during parallel execution.
+The **Target Achieved** metric measures the percentage of requested throughput successfully delivered. It identifies whether the target system or the testing environment reached saturation.
 
 - **Global Achievement**: The aggregate percentage of total requested targets delivered across the entire configuration.
-- **Endpoint Achievement**: The specific achievement rate for each target URL, ensuring that performance regressions in secondary endpoints are not obscured by high volume primary endpoints.
+- **Endpoint Achievement**: The specific achievement rate for each target URL.
 - **Contention Analysis**: Parallel testing identifies how endpoints compete for shared infrastructure resources, such as connection pools or internal bandwidth, which isolated tests may fail to trigger.
 
 ### Constant Load Execution

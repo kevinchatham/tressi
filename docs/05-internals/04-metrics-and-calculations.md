@@ -29,6 +29,7 @@ The **Target Achieved** metric quantifies the ratio of delivered throughput to r
 - **Endpoint Calculation**: Calculated as `Peak RPS / Configured RPS` for each endpoint.
 - **Global Aggregation**: The global target achievement is the arithmetic mean of all endpoint achievement percentages.
 - **Saturation Indicators**: Values below 100% indicate infrastructure saturation, network congestion, or load generator resource exhaustion.
+- **Failure Reasons**: Achievement below 100% typically indicates target system saturation, network bandwidth limits, or runner resource exhaustion (CPU/Memory).
 
 #### Estimating Theoretical Capacity
 
@@ -48,7 +49,7 @@ Tressi monitors network utilization by intercepting request and response streams
 Atomic counters track the distribution of HTTP response codes to identify error patterns.
 
 - **Full Range Tracking**: Dedicated counters for all status codes from 100 to 699.
-- **Status Code Bitmap**: A 600 bit bitmap per endpoint ensures that only the first instance of a unique status code triggers a full response body sample, minimizing memory and I/O overhead.
+- **Status Code Bitmap**: A 600 bit bitmap per endpoint ensures that only the first instance of a unique status code triggers a full response body sample, minimizing memory and I/O overhead. This "first seen" sampling strategy ensures coverage of different response types without the overhead of storing every response body.
 - **Error Rate**: Calculated as `Failed Requests / Total Requests`, where failures are defined by the execution engine validation logic.
 
 ### Monitoring System Resources

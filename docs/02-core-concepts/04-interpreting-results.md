@@ -21,7 +21,7 @@ Throughput measures the volume of requests processed by the target system.
 
 ### Latency Metrics
 
-Latency represents the round-trip time for requests, measured in milliseconds (ms). Tressi uses high-dynamic range (HDR) histograms to track percentiles accurately.
+Latency represents the round-trip time for requests, measured in milliseconds (ms).
 
 - **Min / Max**: The fastest and slowest individual response times recorded.
 - **P50 (Median)**: 50% of requests were faster than this value. Represents the typical user experience.
@@ -67,21 +67,19 @@ A time series chart displaying fluctuations in throughput, latency, or error rat
 
 The latency distribution visualization is divided into two primary views to help identify performance patterns and outliers.
 
-- **Distribution**: Displays how requests are spread across latency buckets. This view highlights concentrations and groupings of response times. Tressi generates up to 10 logarithmic buckets between the minimum and maximum latencies recorded. Logarithmic scaling provides higher resolution for the majority of requests while still capturing the long tail of outliers. Empty buckets are omitted from the visualization.
-- **Percentiles**: Illustrates time relativity and scale across the response spectrum. The width of each percentile bar is proportional to the maximum latency. For example, if the minimum latency is 100ms and the maximum is 1000ms, the 100ms bar will occupy 10% of the total width, providing a clear visual representation of the performance spread.
+- **Distribution**: Displays how requests are spread across latency buckets. This view highlights concentrations and groupings of response times.
+- **Percentiles**: Illustrates time relativity and scale across the response spectrum, providing a visual representation of the performance spread.
 
 ### Response Analysis
 
 #### Status Code Distribution
 
-A breakdown of all HTTP status codes returned by the target system. Essential for diagnosing the root cause of high error rates (e.g., 429 Too Many Requests vs. 500 Internal Server Error).
+A breakdown of all HTTP status codes returned by the target system. Essential for diagnosing the root cause of high error rates.
 
 #### Response Samples
 
 Tressi captures representative response data, including headers and bodies, to assist in debugging unexpected behavior or validation failures.
 
-To optimize memory usage during high concurrency tests, Tressi employs a "first seen" sampling strategy. The runner captures the first occurrence of each unique HTTP status code for every endpoint. Subsequent responses with the same status code for that endpoint are not stored. This ensures coverage of different response types (e.g., 200 OK, 404 Not Found, 500 Internal Server Error) without the overhead of storing every response body.
-
 ### Next Steps
 
-Review the [Advanced Concepts](../03-advanced/index.md) to explore advanced features and automated pipelines.
+Review [Advanced Operations](../03-advanced/01-ramp-up-dynamics.md) to explore production-grade testing and optimization strategies.

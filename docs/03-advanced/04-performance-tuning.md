@@ -12,38 +12,23 @@ This document covers:
 
 ### Scale Workers
 
-Tressi distributes load generation across CPU cores using a multithreaded architecture. Endpoints are assigned to worker threads using a round robin algorithm. Each worker thread manages its own subset of endpoints and maintains an independent request pipeline.
+Tressi distributes load generation across CPU cores using a multithreaded architecture. Each worker thread manages a subset of endpoints and maintains an independent request pipeline.
 
 #### Allocate Threads
 
-The `threads` option determines the number of worker threads. By default, Tressi uses 4 threads, capped by the number of logical CPU cores available.
-
-- **Minimum**: `1`
-- **Default**: `4`
-- **Maximum**: `os.cpus().length`
-- **Configuration**: `options.threads`
+The `threads` option determines the number of worker threads. Increasing the thread count allows Tressi to leverage more CPU cores, which is essential for high throughput tests.
 
 A single Tressi worker thread can maintain approximately 8,000 requests per second in optimal conditions.
 
-When tuning for high throughput scenarios, reducing endpoints per worker increases achievable throughput per endpoint.
+When tuning for high throughput scenarios, reducing the number of endpoints assigned to each worker increases the achievable throughput per endpoint. Review the [Configuration Schema](../04-reference/02-schema.md) for thread limits and defaults.
 
 #### Leverage Pipeline Architecture
 
-Each worker thread maintains an internal pipeline of 15 concurrent requests. This allows the worker to fire multiple requests without waiting for previous completions, maximizing throughput during high latency. This pipeline depth is designed for high throughput execution and is not configurable.
+Tressi workers use an internal asynchronous pipeline to maximize network utilization. This allows the runner to initiate multiple requests without waiting for previous responses, ensuring that network latency does not become a bottleneck for request generation.
 
 ### Connection Management
 
-Tressi utilizes `undici` for HTTP execution. The `AgentManager` coordinates connection pools per origin to optimize resource reuse.
-
-#### Review Connection Pool Limits
-
-The default connection pool is configured for general use and is not configurable:
-
-- **Max Connections**: 256 per origin.
-- **Keep Alive Timeout**: 10,000ms.
-- **Headers/Body Timeout**: 30,000ms.
-
-If the generator reaches the connection limit, requests will queue, causing artificial latency. Monitor for queuing effects in scenarios with high concurrency or many unique origins.
+Tressi manages connection pools automatically to optimize resource reuse. For details on the underlying networking implementation, see the [Execution Engine Internals](../05-internals/03-execution-engine.md).
 
 ### Monitor System Resources
 
@@ -58,17 +43,13 @@ Tressi calculates CPU usage based on system load average.
 
 #### Manage Worker Memory
 
-Each worker has a configurable memory limit.
+The `workerMemoryLimit` option defines the maximum memory allocation for each worker thread.
 
-- **Minimum**: `16MB`
-- **Default**: `128MB`
-- **Maximum**: `512MB`
-- **Configuration**: `options.workerMemoryLimit`
 - **Saturation Indicator**: Frequent garbage collection or workers reaching the memory limit.
 
-If a worker exceeds its memory limit, it exits and is marked as `ERROR`. Assigned endpoints will stop generating load, while the remaining test continues. Loss of target RPS may skew results.
+If a worker exceeds its memory limit, it terminates and is marked as `ERROR`. Assigned endpoints will stop generating load, while the remaining test continues. This loss of target RPS can skew aggregate results.
 
-To resolve memory issues, increase `workerMemoryLimit` or redistribute endpoints by increasing the `threads` count.
+To resolve memory issues, increase the memory limit or redistribute endpoints by increasing the thread count. Review the [Configuration Schema](../04-reference/02-schema.md) for memory constraints and defaults.
 
 ### Next Steps
 

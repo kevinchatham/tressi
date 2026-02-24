@@ -13,6 +13,12 @@ Tressi workers maintain a concurrent pipeline to maximize network utilization wi
 
 ### Throughput Control
 
+#### Endpoint Distribution
+
+The engine distributes target endpoints across available worker threads using a round robin algorithm. This ensures that load generation is balanced across CPU cores and that no single worker is overwhelmed by a high volume of endpoints.
+
+#### Rate Limiting
+
 Throughput is controlled via a Token Bucket algorithm implemented in the `WorkerRateLimiter`.
 
 - **Token Replenishment**: Tokens are generated based on the target RPS (Requests Per Second) and elapsed time.
@@ -22,9 +28,9 @@ Throughput is controlled via a Token Bucket algorithm implemented in the `Worker
 
 ### Request Execution
 
-The `RequestExecutor` manages internal HTTP lifecycle using the `undici` client for optimized networking.
+The `RequestExecutor` manages internal HTTP lifecycle using the `undici` client for optimized networking. The `AgentManager` coordinates connection pools per origin to optimize resource reuse.
 
-- **Connection Pooling**: The `AgentManager` maintains endpoint specific agents to optimize connection reuse and keep alive behavior.
+- **Connection Pooling**: The `AgentManager` maintains endpoint specific agents with a default limit of 256 connections per origin, a 10,000ms keep-alive timeout, and 30,000ms timeouts for headers and bodies.
 - **Object Pooling**: To minimize garbage collection overhead, the engine reuses header objects and result structures from a preallocated pool.
 - **High Resolution Timing**: Latency is measured using `performance.now()` for microsecond precision.
 - **Bandwidth Tracking**: The engine calculates `bytesSent` (request body) and `bytesReceived` (response body or `Content-Length` header) for network throughput metrics.
