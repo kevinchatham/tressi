@@ -22,7 +22,7 @@ Tressi uses `SharedArrayBuffer` to share metrics between worker threads and the 
 
 ### Execution Lifecycle Summary
 
-```
+```mermaid
 sequenceDiagram
     participant M as Main Thread
     participant WPM as WorkerPoolManager

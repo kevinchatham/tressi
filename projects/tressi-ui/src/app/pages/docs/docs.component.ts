@@ -13,6 +13,7 @@ import {
   MarkdownModule,
   MARKED_OPTIONS,
   MERMAID_OPTIONS,
+  MermaidAPI,
   provideMarkdown,
   SANITIZE,
 } from 'ngx-markdown';
@@ -23,6 +24,7 @@ import { HeaderComponent } from '../../components/header/header.component';
 import { IconComponent } from '../../components/icon/icon.component';
 import { AppRouterService } from '../../services/router.service';
 import { GetDocsResponseSuccess } from '../../services/rpc.service';
+import { ThemeService } from '../../services/theme.service';
 import { DocsMenuComponent } from './docs-menu/docs-menu.component';
 
 @Component({
@@ -51,7 +53,7 @@ import { DocsMenuComponent } from './docs-menu/docs-menu.component';
       mermaidOptions: {
         provide: MERMAID_OPTIONS,
         useValue: {
-          startOnLoad: false,
+          startOnLoad: true,
           theme: 'dark',
         },
       },
@@ -71,6 +73,7 @@ import { DocsMenuComponent } from './docs-menu/docs-menu.component';
 })
 export class DocsComponent implements OnInit {
   private readonly _route = inject(ActivatedRoute);
+  private readonly _themeService = inject(ThemeService);
   readonly appRouter = inject(AppRouterService);
   readonly markdownSrc = signal<string>('');
   readonly error = signal<string | null>(null);
@@ -78,6 +81,15 @@ export class DocsComponent implements OnInit {
   readonly isTransitioning = signal(false);
   readonly isBaseUrl = computed<boolean>(() => this.appRouter.isOnDocs());
   readonly currentSectionFolder = signal<string | null>(null);
+  readonly mermaidOptions = computed<MermaidAPI.MermaidConfig>(() => {
+    const theme = this._themeService.isDark()
+      ? ('dark' as const)
+      : ('default' as const);
+    return {
+      theme,
+      startOnLoad: true,
+    };
+  });
 
   ngOnInit(): void {
     this._initializeFromResolvedData();

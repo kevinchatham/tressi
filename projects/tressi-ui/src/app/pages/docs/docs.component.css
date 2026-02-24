@@ -109,6 +109,10 @@
   hyphens: none;
 }
 
+.markdown-body .mermaid {
+  @apply bg-base-content/20 rounded-xl py-4;
+}
+
 .token.comment,
 .token.prolog,
 .token.doctype,

@@ -38,7 +38,13 @@
         [class.opacity-0]="isTransitioning()"
         class="markdown-body bg-base-300/70 border-base-content/5 max-w-none rounded-xl border-2 p-4 transition-opacity duration-100 ease-in-out md:p-8"
       >
-        <markdown [src]="markdownSrc()" (load)="onLoad()" (error)="onError()" />
+        <markdown
+          mermaid
+          [mermaidOptions]="mermaidOptions()"
+          [src]="markdownSrc()"
+          (load)="onLoad()"
+          (error)="onError()"
+        />
       </div>
     </div>
   </div>
