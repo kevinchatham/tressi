@@ -65,12 +65,22 @@
 }
 
 .markdown-body table {
-  @apply mb-4 w-full border-collapse;
+  @apply mb-4 w-full border-separate border-spacing-0;
+  @apply border-base-content/30 overflow-hidden rounded-xl border;
 }
 
 .markdown-body th,
 .markdown-body td {
-  @apply border-base-content/70 border p-2;
+  @apply border-base-content/30 border-r border-b p-2;
+}
+
+.markdown-body th:last-child,
+.markdown-body td:last-child {
+  @apply border-r-0;
+}
+
+.markdown-body tr:last-child td {
+  @apply border-b-0;
 }
 
 .markdown-body th {
