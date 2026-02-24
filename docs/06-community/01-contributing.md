@@ -4,7 +4,7 @@ Thank you for your interest in Tressi. I sincerely appreciate you taking the tim
 
 ### Contribution Status
 
-At this time, I am not accepting external pull requests.
+I am not accepting external pull requests at this time.
 
 Tressi is currently maintained as a single author project to ensure stability, consistency, and long term direction. Managing external contributions responsibly requires time and structure that I am not yet prepared to provide.
 
@@ -16,7 +16,7 @@ Thoughtful and respectful feedback is always welcome. If you encounter issues or
 - **Feature Requests** – Practical suggestions that may improve Tressi
 - **General Feedback** – Constructive observations or ideas
 
-Well-documented reports are greatly appreciated.
+Well documented reports are greatly appreciated.
 
 ### Looking Ahead
 
