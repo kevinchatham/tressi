@@ -1,33 +1,25 @@
 # Contributing to Tressi
 
-Thanks for your interest in contributing!
+Thank you for your interest in Tressi. I sincerely appreciate you taking the time to explore the project. A great deal of care and effort has gone into building it, and I hope it serves you well.
 
-## 🚫 Current Status: Contributions Closed
+### Contribution Status
 
-**External contributions are not being accepted at this time.**
+At this time, I am not accepting external pull requests.
 
-Tressi is still in early, active development. Its core architecture, APIs, and internal design are evolving quickly — and sometimes drastically — as I refine ideas and experiment with implementation strategies.
+Tressi is currently maintained as a single author project to ensure stability, consistency, and long term direction. Managing external contributions responsibly requires time and structure that I am not yet prepared to provide.
 
-## 📌 Why Contributions Are Closed
+### Feedback & Issue Reporting
 
-- **Architectural Volatility**: The system design is in flux
-- **Frequent Breaking Changes**: Stability is not yet a priority
-- **Exploratory Phase**: Tressi is a learning project first
+Thoughtful and respectful feedback is always welcome. If you encounter issues or have suggestions, please report them in the [issue tracker](https://github.com/kevinchatham/tressi/issues):
 
-## 📬 You Can Still Help
+- **Bug Reports** – Clear, reproducible defects or unexpected behavior
+- **Feature Requests** – Practical suggestions that may improve Tressi
+- **General Feedback** – Constructive observations or ideas
 
-Even though pull requests are closed, I welcome:
+Well-documented reports are greatly appreciated.
 
-- 🐛 **Bug Reports** – Open an issue if something breaks
-- 💡 **Feature Ideas** – Suggestions are appreciated!
-- 🗣️ **Feedback** – General thoughts and encouragement are always welcome
+### Looking Ahead
 
-## 🔮 Looking Ahead
+If the project grows and develops an active community, I will revisit what external contributions might look like and establish appropriate guidelines at that time.
 
-Once the core stabilizes, I plan to reopen contributions with:
-
-- Clear setup instructions
-- Code style and linting rules
-- Guidance for writing tests and submitting PRs
-
-Thanks for your understanding and support!
+For now, your feedback and continued use of Tressi are genuinely appreciated.

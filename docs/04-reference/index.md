@@ -2,7 +2,7 @@
 
 Technical reference documentation for the Tressi CLI and the configuration schema.
 
-- [CLI Reference](./01-cli.md): Command line interface commands and options.
+- [CLI Reference](./01-command-line.md): Command line interface commands and options.
 - [Configuration Schema](./02-schema.md): JSON schema for configuration validation.
 
 ## Next Section

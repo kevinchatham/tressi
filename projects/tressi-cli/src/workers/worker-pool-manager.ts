@@ -35,7 +35,7 @@ import { WorkerState } from './types';
  * ```
  *
  * @remarks
- * The manager uses SharedArrayBuffer for zero-copy communication between the main thread
+ * The manager uses SharedArrayBuffer for zero copy communication between the main thread
  * and worker threads, enabling efficient metrics collection and state synchronization.
  * Each worker is assigned a subset of endpoints using round-robin distribution.
  */

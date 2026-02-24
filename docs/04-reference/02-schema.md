@@ -51,3 +51,7 @@ Set thresholds to stop tests automatically when performance or stability degrade
 | `errorRateThreshold` | number  | Error rate (0.0 to 1.0) that triggers a test stop.                  |
 | `exitStatusCodes`    | array   | List of HTTP status codes that trigger an immediate stop.           |
 | `monitoringWindowMs` | integer | Rolling time window in milliseconds for calculating the error rate. |
+
+### Next Steps
+
+Explore [Tressi Internals](../05-internals/index.md) to understand the execution engine and shared memory architecture.

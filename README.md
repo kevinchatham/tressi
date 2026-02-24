@@ -108,7 +108,7 @@ When you run `tressi`, it displays a live dashboard with four key sections:
 
 - **True parallel execution** across all CPU cores
 - **Precise RPS control** with per-worker rate limiting
-- **Zero-copy shared memory** for real-time metrics
+- **Zero copy shared memory** for real-time metrics
 - **Coordinated early exit** across all workers
 - **Deterministic timing** with sub-millisecond accuracy
 

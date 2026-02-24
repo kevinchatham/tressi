@@ -20,8 +20,8 @@
 
 **4. Developer-Centric Vocabulary**
 
-- **Avoid**: Hyphenated marketing terms (e.g., "Multi-Endpoint") when a cleaner technical alternative exists.
-- **Use**: Industry-standard terminology (e.g., "Headless," "Runtime," "Payload," "Schema").
+- **Avoid**: Hyphenated marketing terms (e.g., "Multi-Endpoint") when a cleaner technical alternative exists. Avoid hyphenated terms in general.
+- **Use**: Industry standard terminology (e.g., "Headless," "Runtime," "Payload," "Schema").
 - **Rule**: Speak to the user as a peer engineer. Assume they value precision and efficiency over "user-friendliness" buzzwords.
 
 **5. Outcome-Focused**

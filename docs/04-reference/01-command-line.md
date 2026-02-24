@@ -69,3 +69,7 @@ tressi serve --port 8080
 ```bash
 tressi reset
 ```
+
+### Next Steps
+
+Review the [Configuration Schema](./02-schema.md) to define request parameters and global runner options for CLI execution.
