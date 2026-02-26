@@ -111,19 +111,19 @@ export class EventService {
 }
 
 // Define UI-compatible event types
-export interface TestSummaryData {
+export type TestSummaryData = {
   testId?: string;
   testSummary: TestSummary;
-}
+};
 
-export interface TestEventData {
+export type TestEventData = {
   testId: string;
   timestamp: number;
   status: 'running' | 'completed' | 'failed' | 'cancelled';
   error?: string;
   configId?: string;
-}
+};
 
-export interface ConnectedEventData {
+export type ConnectedEventData = {
   timestamp: number;
-}
+};

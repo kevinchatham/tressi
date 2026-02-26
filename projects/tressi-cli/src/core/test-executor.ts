@@ -13,13 +13,13 @@ import { MinimalTUI } from '../tui/minimal-tui';
 import { FileUtils } from '../utils/file-utils';
 import { Runner } from './runner';
 
-export interface LoadTestOptions {
+export type LoadTestOptions = {
   enableTUI: boolean;
   setupSignalHandlers: boolean;
   exportPath?: string;
   silent?: boolean;
   testId?: string; // Only for server persistence
-}
+};
 
 /**
  * Module-level variable to track the currently active load test runner.

@@ -8,10 +8,10 @@ import { LogService } from '../../services/log.service';
 import { DEFAULT_COLUMN_CONFIGS } from './column-config.constants';
 import { ColumnKey } from './column-keys.enum';
 
-export interface SortConfig {
+export type SortConfig = {
   columnKey: string;
   direction: 'asc' | 'desc';
-}
+};
 
 @Injectable({ providedIn: 'root' })
 export class TestListColumnsService {

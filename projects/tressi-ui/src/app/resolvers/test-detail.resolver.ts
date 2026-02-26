@@ -4,10 +4,10 @@ import { ResolveFn } from '@angular/router';
 import { TestDocument, TestMetrics } from '../services/rpc.service';
 import { TestService } from '../services/test.service';
 
-export interface TestDetailResolvedData {
+export type TestDetailResolvedData = {
   test: TestDocument;
   metrics: TestMetrics;
-}
+};
 
 /**
  * Resolver that fetches test details and metrics for a specific test ID.

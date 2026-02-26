@@ -6,7 +6,7 @@ import { TestService } from '../../services/test.service';
 /**
  * Result of a delete operation containing success status and details.
  */
-export interface DeleteResult {
+export type DeleteResult = {
   /** Whether the entire operation was successful */
   success: boolean;
   /** Number of tests successfully deleted */
@@ -15,7 +15,7 @@ export interface DeleteResult {
   failedCount: number;
   /** Array of error messages for failed deletions */
   errors: string[];
-}
+};
 
 /**
  * Service for handling test deletion operations with loading states and error handling.

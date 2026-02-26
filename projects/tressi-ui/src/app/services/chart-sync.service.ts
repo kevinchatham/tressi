@@ -1,12 +1,12 @@
 import { Injectable, signal } from '@angular/core';
 
-export interface ChartSyncState {
+export type ChartSyncState = {
   xAxisMin: number | null;
   xAxisMax: number | null;
   selectionStart: number | null;
   selectionEnd: number | null;
   lastInteractedChartId: string | null;
-}
+};
 
 @Injectable({
   providedIn: 'root',

@@ -1,19 +1,19 @@
 import type { Generated, Selectable } from 'kysely';
 
-export interface Database {
+export type Database = {
   configs: ConfigsTable;
   tests: TestsTable;
   global_metrics: GlobalMetricsTable;
   endpoint_metrics: EndpointMetricsTable;
-}
+};
 
-export interface ConfigsTable {
+export type ConfigsTable = {
   id: Generated<string>;
   name: string;
   config: string; // JSON string of TressiConfig
   epoch_created_at: number;
   epoch_updated_at: number | null;
-}
+};
 
 export type TestStatus =
   | 'running'
@@ -22,29 +22,29 @@ export type TestStatus =
   | 'cancelled'
   | null;
 
-export interface TestsTable {
+export type TestsTable = {
   id: Generated<string>;
   config_id: string;
   status: TestStatus;
   epoch_created_at: number;
   error: string | null;
   summary: string | null; // JSON string of TestSummary
-}
+};
 
-export interface GlobalMetricsTable {
+export type GlobalMetricsTable = {
   id: Generated<string>;
   test_id: string;
   epoch: number;
   metric: string; // JSON string of Metric
-}
+};
 
-export interface EndpointMetricsTable {
+export type EndpointMetricsTable = {
   id: Generated<string>;
   test_id: string;
   url: string;
   epoch: number;
   metric: string; // JSON string of Metric
-}
+};
 
 export type ConfigRow = Selectable<ConfigsTable>;
 export type TestRow = Selectable<TestsTable>;

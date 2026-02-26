@@ -36,10 +36,10 @@ export type ChartType = (typeof CHART_TYPES)[number];
 /**
  * Chart option interface for UI components
  */
-export interface ChartOption {
+export type ChartOption = {
   value: ChartType;
   label: string;
-}
+};
 
 /**
  * Predefined chart options for UI select components
@@ -75,26 +75,10 @@ export const DEFAULT_CHART_TYPE: ChartType = 'peak_throughput';
  * Chart data structure for line charts
  * Supports both single series and multi-series data
  */
-export interface ChartData {
+export type ChartData = {
   data: number[] | { [seriesName: string]: number[] };
   labels: number[];
-}
-
-/**
- * Type guard to check if chart data is a single series (number array)
- */
-export function isSingleSeriesData(data: ChartData['data']): data is number[] {
-  return Array.isArray(data);
-}
-
-/**
- * Type guard to check if chart data is multi-series (object with series names)
- */
-export function isMultiSeriesData(
-  data: ChartData['data'],
-): data is { [seriesName: string]: number[] } {
-  return typeof data === 'object' && data !== null && !Array.isArray(data);
-}
+};
 
 /**
  * Polling interval options for real-time updates
