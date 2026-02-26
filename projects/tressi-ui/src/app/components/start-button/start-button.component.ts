@@ -105,6 +105,22 @@ export class StartButtonComponent implements OnDestroy {
   }
 
   /**
+   * Stops the currently running load test
+   */
+  async stop(): Promise<void> {
+    try {
+      const response = await this._rpc.client.test.stop.$post();
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error : new Error('Unknown error occurred');
+      this._logService.error('Failed to stop load test:', errorMessage);
+    }
+  }
+
+  /**
    * Sets up test event listeners to track test execution state
    */
   private _setupTestEventsListener(): void {
@@ -117,7 +133,8 @@ export class StartButtonComponent implements OnDestroy {
             this.isTestRunning.set(true);
           } else if (
             event.status === 'completed' ||
-            event.status === 'failed'
+            event.status === 'failed' ||
+            event.status === 'cancelled'
           ) {
             this.isTestRunning.set(false);
           }

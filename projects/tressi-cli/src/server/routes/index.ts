@@ -77,6 +77,14 @@ export function createApp(sseManager: ISSEClientManager, port: number) {
     sseManager.broadcast(message);
   });
 
+  globalEventEmitter.on(ServerEvents.TEST.CANCELLED, (data) => {
+    const message: ServerEventMessage = {
+      event: ServerEvents.TEST.CANCELLED,
+      data,
+    };
+    sseManager.broadcast(message);
+  });
+
   return app;
 }
 

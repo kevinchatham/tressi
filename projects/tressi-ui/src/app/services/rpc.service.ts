@@ -116,7 +116,7 @@ export type TestDocument = GetTestsResponseSuccess[number];
 
 export type TestSummary = TestDocument['summary'];
 
-export type TestStatus = TestDocument['status'];
+export type TestStatus = TestDocument['status'] | 'cancelled';
 
 export type LatencyHistogram = NonNullable<
   NonNullable<TestSummary>['global']['histogram']

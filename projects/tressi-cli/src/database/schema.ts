@@ -15,10 +15,17 @@ export interface ConfigsTable {
   epoch_updated_at: number | null;
 }
 
+export type TestStatus =
+  | 'running'
+  | 'completed'
+  | 'failed'
+  | 'cancelled'
+  | null;
+
 export interface TestsTable {
   id: Generated<string>;
   config_id: string;
-  status: 'running' | 'completed' | 'failed' | null;
+  status: TestStatus;
   epoch_created_at: number;
   error: string | null;
   summary: string | null; // JSON string of TestSummary

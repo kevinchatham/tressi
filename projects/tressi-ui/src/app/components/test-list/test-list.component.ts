@@ -304,7 +304,11 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
     status: string;
     configId?: string;
   }): Promise<void> {
-    if (event.status === 'completed' || event.status === 'failed') {
+    if (
+      event.status === 'completed' ||
+      event.status === 'failed' ||
+      event.status === 'cancelled'
+    ) {
       await this._refreshTest(event.testId);
     }
   }

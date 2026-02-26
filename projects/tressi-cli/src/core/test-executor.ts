@@ -22,14 +22,29 @@ export interface LoadTestOptions {
 }
 
 /**
+ * Module-level variable to track the currently active load test runner.
+ * This allows for external control (e.g., stopping the test) from the server.
+ */
+let activeRunner: Runner | null = null;
+
+/**
+ * Result of a load test execution, including the summary and whether it was stopped.
+ */
+export type LoadTestResult = {
+  summary: TestSummary;
+  isCanceled: boolean;
+};
+
+/**
  * Shared implementation for both load test entry points
  * Generates ephemeral runId for body sampling
  */
 async function executeLoadTest(
   config: TressiConfig,
   options: LoadTestOptions,
-): Promise<TestSummary> {
+): Promise<LoadTestResult> {
   const runner = new Runner(config);
+  activeRunner = runner;
 
   if (options.testId) runner.setTestId(options.testId);
 
@@ -51,7 +66,11 @@ async function executeLoadTest(
   }
 
   // Execute test
-  await runner.run();
+  try {
+    await runner.run();
+  } finally {
+    activeRunner = null;
+  }
 
   // Cleanup TUI
   if (minimalUI) {
@@ -63,8 +82,7 @@ async function executeLoadTest(
 
   // Generate summary
   const summary = runner.getTestSummary();
-
-  // const samples = runner.getResponseSamples();
+  const isCanceled = runner.isCanceled();
 
   // Handle export and printing only for CLI
   if (options.enableTUI) {
@@ -82,7 +100,7 @@ async function executeLoadTest(
     throw new Error('Test failed: One or more error thresholds were exceeded.');
   }
 
-  return summary;
+  return { summary, isCanceled };
 }
 
 /**
@@ -132,7 +150,6 @@ function checkThresholds(summary: TestSummary): boolean {
  */
 async function handleCLIExport(
   summary: TestSummary,
-  // samples: ResponseSamples,
   exportPath?: string,
   silent = false,
 ): Promise<void> {
@@ -191,7 +208,7 @@ export async function runLoadTest(
   config: TressiConfig,
   exportPath?: string,
   silent?: boolean,
-): Promise<TestSummary> {
+): Promise<LoadTestResult> {
   return executeLoadTest(config, {
     enableTUI: true,
     setupSignalHandlers: true,
@@ -206,7 +223,7 @@ export async function runLoadTest(
  */
 export async function runLoadTestForServer(
   testId: string,
-): Promise<TestSummary> {
+): Promise<LoadTestResult> {
   // Import here to avoid circular dependency
   const { testStorage } = await import('../collections/test-collection');
   const { configStorage } = await import('../collections/config-collection');
@@ -231,4 +248,14 @@ export async function runLoadTestForServer(
     setupSignalHandlers: false,
     testId, // For database persistence
   });
+}
+
+/**
+ * Stops the currently active load test if one is running.
+ */
+export async function stopLoadTest(): Promise<void> {
+  if (activeRunner) {
+    await activeRunner.stop();
+    activeRunner = null;
+  }
 }

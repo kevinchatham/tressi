@@ -22,6 +22,7 @@ export interface IGlobalServerEvents {
   [ServerEvents.TEST.STARTED]: (data: TestEventData) => void;
   [ServerEvents.TEST.COMPLETED]: (data: TestEventData) => void;
   [ServerEvents.TEST.FAILED]: (data: TestEventData) => void;
+  [ServerEvents.TEST.CANCELLED]: (data: TestEventData) => void;
 }
 
 export interface IRunnerEvents {

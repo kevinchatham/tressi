@@ -194,7 +194,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
             this.isTestRunning.set(true);
           } else if (
             event.status === 'completed' ||
-            event.status === 'failed'
+            event.status === 'failed' ||
+            event.status === 'cancelled'
           ) {
             this.isTestRunning.set(false);
           }

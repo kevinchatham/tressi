@@ -6,7 +6,7 @@ import { configStorage } from '../../collections/config-collection';
 import { endpointMetricStorage } from '../../collections/endpoint-metrics-collection';
 import { globalMetricStorage } from '../../collections/global-metrics-collection';
 import { testStorage } from '../../collections/test-collection';
-import { runLoadTestForServer } from '../../core/test-executor';
+import { runLoadTestForServer, stopLoadTest } from '../../core/test-executor';
 import { ServerEvents, TestEventData } from '../../events/event-types';
 import { globalEventEmitter } from '../../events/global-event-emitter';
 import { JsonExporter } from '../../reporting/exporters/json-exporter';
@@ -89,26 +89,30 @@ const app = new Hono()
         (async (): Promise<void> => {
           try {
             // runLoadTestForServer now returns the summary (looks up config from testId)
-            const summary = await runLoadTestForServer(id);
+            const { summary, isCanceled } = await runLoadTestForServer(id);
+
+            const status = isCanceled ? 'cancelled' : 'completed';
 
             // Update test to completed status WITH embedded summary
             // The summary now contains epochStartedAt and epochEndedAt
             await testStorage.edit({
               id,
               configId,
-              status: 'completed',
-              summary: summary, // ← EMBED SUMMARY DIRECTLY
+              status,
+              summary,
             });
 
             // Emit test completed event
             const completedEvent: TestEventData = {
               testId: id,
               timestamp: Date.now(),
-              status: 'completed',
-              configId: configId,
+              status,
+              configId,
             };
             globalEventEmitter.emit(
-              ServerEvents.TEST.COMPLETED,
+              isCanceled
+                ? ServerEvents.TEST.CANCELLED
+                : ServerEvents.TEST.COMPLETED,
               completedEvent,
             );
           } catch (error) {
@@ -152,6 +156,28 @@ const app = new Hono()
       }
     },
   )
+
+  /**
+   * POST /stop - Stops the currently running load test
+   * @returns {Promise<Response>} Stop confirmation response
+   */
+  .post('/stop', async (c) => {
+    try {
+      await stopLoadTest();
+      return c.json({
+        status: 'success' as const,
+        message: 'Load test stop requested',
+      });
+    } catch (error) {
+      return c.json(
+        createApiErrorResponse(
+          error instanceof Error ? error.message : 'Failed to stop test',
+          'INTERNAL_ERROR',
+        ),
+        500,
+      );
+    }
+  })
 
   /**
    * GET /status - Retrieves the current load test job status

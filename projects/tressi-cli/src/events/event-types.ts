@@ -1,3 +1,4 @@
+import { TestStatus } from '../database/schema';
 import type { TestSummary } from '../reporting/types';
 
 /**
@@ -10,6 +11,7 @@ export const ServerEvents = {
     STARTED: 'test:started',
     COMPLETED: 'test:completed',
     FAILED: 'test:failed',
+    CANCELLED: 'test:cancelled',
   },
   CONNECTED: 'connected',
 } as const;
@@ -22,6 +24,7 @@ export type ServerEventName =
   | typeof ServerEvents.TEST.STARTED
   | typeof ServerEvents.TEST.COMPLETED
   | typeof ServerEvents.TEST.FAILED
+  | typeof ServerEvents.TEST.CANCELLED
   | typeof ServerEvents.CONNECTED;
 
 export type ConnectedEventData = {
@@ -34,7 +37,7 @@ export type ConnectedEventData = {
 export type TestEventData = {
   testId: string;
   timestamp: number;
-  status: 'running' | 'completed' | 'failed';
+  status: TestStatus;
   error?: string;
   configId?: string;
 };
@@ -48,7 +51,8 @@ export type ServerEventMessage =
       event:
         | typeof ServerEvents.TEST.STARTED
         | typeof ServerEvents.TEST.COMPLETED
-        | typeof ServerEvents.TEST.FAILED;
+        | typeof ServerEvents.TEST.FAILED
+        | typeof ServerEvents.TEST.CANCELLED;
       data: TestEventData;
     }
   | {

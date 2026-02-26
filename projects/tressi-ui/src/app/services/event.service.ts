@@ -77,6 +77,7 @@ export class EventService {
           case 'test:started':
           case 'test:completed':
           case 'test:failed':
+          case 'test:cancelled':
             this._testEventsSubject.next(message.data as TestEventData);
             break;
           case 'connected':
@@ -118,7 +119,7 @@ export interface TestSummaryData {
 export interface TestEventData {
   testId: string;
   timestamp: number;
-  status: 'running' | 'completed' | 'failed';
+  status: 'running' | 'completed' | 'failed' | 'cancelled';
   error?: string;
   configId?: string;
 }

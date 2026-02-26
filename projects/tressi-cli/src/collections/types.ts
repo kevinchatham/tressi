@@ -29,7 +29,7 @@ export type TestDocument = {
   /** Reference to the configuration used for this test */
   configId: string;
   /** Current status of the test run */
-  status: 'running' | 'completed' | 'failed' | null;
+  status: 'running' | 'completed' | 'failed' | 'cancelled' | null;
   /** Timestamp when the document was created (milliseconds since epoch) */
   epochCreatedAt: number;
   /** Error of a failed test run */

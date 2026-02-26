@@ -208,7 +208,11 @@ export class TestDetailService implements OnDestroy {
             if (currentTest) {
               this.test.set({ ...currentTest, status: event.status });
             }
-            if (event.status === 'completed' || event.status === 'failed') {
+            if (
+              event.status === 'completed' ||
+              event.status === 'failed' ||
+              event.status === 'cancelled'
+            ) {
               this._cleanupSubscriptions();
             }
           }

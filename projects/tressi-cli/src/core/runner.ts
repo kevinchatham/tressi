@@ -14,6 +14,7 @@ import { WorkerPoolManager } from '../workers/worker-pool-manager';
 export class Runner extends EventEmitter<IRunnerEvents> {
   private _workerPool: WorkerPoolManager;
   private _startTime: number = 0;
+  private _isCanceled: boolean = false;
 
   /**
    * Creates a new CoreRunner instance.
@@ -61,7 +62,16 @@ export class Runner extends EventEmitter<IRunnerEvents> {
    * Stops the test execution.
    */
   public async stop(): Promise<void> {
+    this._isCanceled = true;
     await this._workerPool.stop();
+  }
+
+  /**
+   * Checks if the test was manually stopped.
+   * @returns True if the test was stopped, false otherwise
+   */
+  public isCanceled(): boolean {
+    return this._isCanceled;
   }
 
   /**

@@ -22,6 +22,8 @@ export class StatusBadgeComponent {
         return 'text-success bg-success/20';
       case 'failed':
         return 'text-error bg-error/20';
+      case 'cancelled':
+        return 'text-neutral bg-neutral/20';
       default:
         return 'text-neutral bg-neutral/20';
     }
@@ -35,6 +37,8 @@ export class StatusBadgeComponent {
         return 'check';
       case 'failed':
         return 'warning';
+      case 'cancelled':
+        return 'close';
       default:
         return 'info';
     }
