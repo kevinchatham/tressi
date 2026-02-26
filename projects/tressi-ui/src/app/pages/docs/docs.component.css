@@ -7,11 +7,11 @@
 }
 
 .markdown-body h1 {
-  @apply text-primary/80 border-base-content/5 mb-4 border-b-2 pb-1 text-2xl font-semibold md:text-3xl;
+  @apply text-primary/80 border-base-content/10 mb-4 border-b-2 pb-1 text-2xl font-semibold md:text-3xl;
 }
 
 .markdown-body h2 {
-  @apply text-primary/80 border-base-content/5 mb-4 border-b-2 pb-1 text-xl font-semibold md:text-2xl;
+  @apply text-primary/80 border-base-content/10 mb-4 border-b-2 pb-1 text-xl font-semibold md:text-2xl;
 }
 
 .markdown-body h3 {
@@ -101,7 +101,7 @@
 
 /* Custom Prism Theme Overrides */
 .markdown-body pre[class*='language-'] {
-  @apply bg-base-200 border-base-content/5 border;
+  @apply bg-base-200 border-base-content/10 border;
   text-shadow: none;
 }
 

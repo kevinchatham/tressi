@@ -109,9 +109,9 @@ export class DocsMenuComponent {
 
   readonly getWrapperClass = computed(() => {
     if (this.isCollapsed()) {
-      return 'bg-base-300/70 border-base-content/5 flex justify-center items-center rounded-xl w-8';
+      return 'bg-base-300/70 border-base-content/10 flex justify-center items-center rounded-xl w-8';
     } else {
-      return 'bg-base-300/70 border-base-content/5 flex flex-col gap-4 rounded-xl border-2 p-4';
+      return 'bg-base-300/70 border-base-content/10 flex flex-col gap-4 rounded-xl border-2 p-4';
     }
   });
 

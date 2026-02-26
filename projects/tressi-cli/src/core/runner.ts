@@ -62,6 +62,10 @@ export class Runner extends EventEmitter<IRunnerEvents> {
    * Stops the test execution.
    */
   public async stop(): Promise<void> {
+    await this._workerPool.stop();
+  }
+
+  public async cancel(): Promise<void> {
     this._isCanceled = true;
     await this._workerPool.stop();
   }

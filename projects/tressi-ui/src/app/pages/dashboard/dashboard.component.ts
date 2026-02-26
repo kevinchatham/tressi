@@ -1,6 +1,7 @@
 import {
   Component,
   computed,
+  effect,
   inject,
   input,
   OnDestroy,
@@ -8,7 +9,6 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 import { ButtonComponent } from 'src/app/components/button/button.component';
 
@@ -35,7 +35,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
   /** Service injection */
   readonly appRouter = inject(AppRouterService);
   private readonly _logService = inject(LogService);
-  private readonly _route = inject(ActivatedRoute);
   private readonly _localStorageService = inject(LocalStorageService);
   private readonly _eventService = inject(EventService);
 
@@ -43,7 +42,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   readonly configId = input<string>();
 
   /** Reactive signal holding available configurations. */
-  readonly configs = signal<ConfigDocument[]>([]);
+  readonly configs = input.required<ConfigDocument[]>();
 
   /** Reactive signal holding the selected configuration. */
   readonly selectedConfig = signal<ConfigDocument | null>(null);
@@ -67,8 +66,17 @@ export class DashboardComponent implements OnInit, OnDestroy {
   /** Subject for managing subscription cleanup */
   private readonly _destroy$ = new Subject<void>();
 
+  constructor() {
+    effect(() => {
+      const routeConfigId = this.configId();
+      if (routeConfigId && routeConfigId !== this.selectedConfigId()) {
+        this.onConfigSelect(routeConfigId);
+      }
+    });
+  }
+
   ngOnInit(): void {
-    this._initializeFromResolvedData();
+    this._initializeFromInputs();
     this._subscribeToTestEvents();
   }
 
@@ -78,12 +86,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Initializes the component using data pre-resolved by the router.
+   * Initializes the component using inputs provided by the router.
    */
-  private _initializeFromResolvedData(): void {
-    const configs = this._route.snapshot.data['configs'] as ConfigDocument[];
-
-    this.configs.set(configs);
+  private _initializeFromInputs(): void {
+    const configs = this.configs();
 
     if (configs.length === 0) {
       this.appRouter.toWelcome();

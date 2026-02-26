@@ -255,7 +255,7 @@ export async function runLoadTestForServer(
  */
 export async function stopLoadTest(): Promise<void> {
   if (activeRunner) {
-    await activeRunner.stop();
+    await activeRunner.cancel();
     activeRunner = null;
   }
 }

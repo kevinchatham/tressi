@@ -10,7 +10,7 @@ import { FormatNumberDirective } from '../../../directives/format/format-number.
 import { FormatPercentageDirective } from '../../../directives/format/format-percentage.directive';
 import { FormatRpsDirective } from '../../../directives/format/format-rps.directive';
 import { ColumnConfig } from '../../../services/local-storage.service';
-import type { TestDocument } from '../../../services/rpc.service';
+import type { TestDocument, TestStatus } from '../../../services/rpc.service';
 import { TestService } from '../../../services/test.service';
 import { IconComponent, IconName } from '../../icon/icon.component';
 import { StatusBadgeComponent } from '../../status-badge/status-badge.component';
@@ -151,6 +151,12 @@ export class TestTableComponent {
 
   onToggleAllSelection(event: Event): void {
     this.toggleAllSelection.emit(event);
+  }
+
+  onToggleStatus(status: TestStatus, event: Event): void {
+    this.tests()
+      .filter((t) => t.status === status)
+      .forEach((t) => this.toggleSelection.emit({ testId: t.id, event }));
   }
 
   onHeaderDragDrop(event: CdkDragDrop<ColumnConfig[]>): void {

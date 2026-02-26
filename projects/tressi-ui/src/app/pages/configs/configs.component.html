@@ -51,7 +51,7 @@
 
       @if (hasNoConfigs()) {
         <div
-          class="border-base-content/5 bg-base-300 mx-auto rounded-xl border-2 p-8"
+          class="border-base-content/10 bg-base-300 mx-auto rounded-xl border-2 p-8"
         >
           <div class="text-center">
             <p class="text-base-content/70 mb-4 text-lg">
@@ -71,7 +71,7 @@
     <!-- Edit/Create Form -->
     @if (showForm()) {
       <div class="mx-auto max-w-5xl">
-        <div class="border-base-content/5 bg-base-300 rounded-xl border-2 p-6">
+        <div class="border-base-content/10 bg-base-300 rounded-xl border-2 p-6">
           <h2 class="mb-4 text-xl font-semibold">
             {{ currentConfig()?.id ? 'Edit Existing' : 'Create New' }}
           </h2>
@@ -86,39 +86,11 @@
   </div>
 
   <!-- Delete Confirmation Modal -->
-  <div class="modal" [class.modal-open]="showDeleteModal()">
-    <div
-      class="border-base-content/5 bg-base-300 sm:max-w-[calc(100%-2rem) rounded-xl border-2 p-6 sm:m-4 md:max-w-lg"
-    >
-      <h3 class="text-lg font-semibold">Delete Configuration</h3>
-      <p class="py-4">
-        Are you sure you want to delete
-        <strong>
-          {{ getConfigToDeleteName() }}
-        </strong>
-        ?
-      </p>
-      <div class="alert alert-warning mt-4">
-        <app-icon name="warning" />
-        <span>
-          All tests and metrics linked to this configuration will be permanently
-          removed.
-        </span>
-      </div>
-      <div class="mt-6 flex justify-end gap-3">
-        <app-button
-          (click)="cancelDelete()"
-          [icon]="'close'"
-          [title]="'Cancel'"
-          [ghost]="true"
-        />
-        <app-button
-          (click)="deleteConfig()"
-          [icon]="'delete'"
-          [color]="'error'"
-          [title]="'Delete'"
-        />
-      </div>
-    </div>
-  </div>
+  <app-delete-confirmation-modal
+    [isOpen]="showDeleteModal()"
+    [id]="configToDelete()?.id || ''"
+    [itemLabel]="'Configuration'"
+    (confirmed)="deleteConfig()"
+    (closed)="cancelDelete()"
+  />
 </div>

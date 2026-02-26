@@ -15,17 +15,22 @@ export class StatusBadgeComponent {
   showPulse = input<boolean>(false);
 
   getStatusColor(): string {
+    const runningColor = 'text-info bg-info/25';
+    const completedColor = 'text-success bg-success/25';
+    const failedColor = 'text-error bg-error/25';
+    const cancelledColor = 'text-neutral-content bg-neutral/25';
+
     switch (this.status()) {
       case 'running':
-        return 'text-info bg-info/20';
+        return runningColor;
       case 'completed':
-        return 'text-success bg-success/20';
+        return completedColor;
       case 'failed':
-        return 'text-error bg-error/20';
+        return failedColor;
       case 'cancelled':
-        return 'text-neutral bg-neutral/20';
+        return cancelledColor;
       default:
-        return 'text-neutral bg-neutral/20';
+        return cancelledColor;
     }
   }
 

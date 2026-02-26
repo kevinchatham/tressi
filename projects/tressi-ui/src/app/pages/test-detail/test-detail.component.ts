@@ -1,7 +1,7 @@
-import { Component, effect, inject, signal } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { Component, effect, inject, input, signal } from '@angular/core';
 import { ButtonComponent } from 'src/app/components/button/button.component';
 
+import { DeleteConfirmationModalComponent } from '../../components/delete-confirmation-modal/delete-confirmation-modal.component';
 import { HeaderComponent } from '../../components/header/header.component';
 import { IconComponent } from '../../components/icon/icon.component';
 import { StatusBadgeComponent } from '../../components/status-badge/status-badge.component';
@@ -11,7 +11,6 @@ import { AppRouterService } from '../../services/router.service';
 import { TestService } from '../../services/test.service';
 import { CHART_OPTIONS, POLLING_OPTIONS } from '../../types/chart.types';
 import { TestDetailService } from './test-detail.service';
-import { DeleteConfirmationModalComponent } from './ui/delete-confirmation-modal/delete-confirmation-modal.component';
 import { HeroStatsComponent } from './ui/hero-stats/hero-stats.component';
 import { LatencyDistributionComponent } from './ui/latency-distribution/latency-distribution.component';
 import { MetadataComponent } from './ui/metadata/metadata.component';
@@ -41,7 +40,8 @@ export class TestDetailComponent {
   readonly appRouter = inject(AppRouterService);
   readonly service = inject(TestDetailService);
 
-  private readonly _route = inject(ActivatedRoute);
+  readonly data = input.required<TestDetailResolvedData>();
+  readonly testId = input<string>();
   private readonly _testService = inject(TestService);
   private readonly _logService = inject(LogService);
 
@@ -60,12 +60,12 @@ export class TestDetailComponent {
 
   constructor() {
     // Initialize from resolved data
-    const resolvedData = this._route.snapshot.data[
-      'data'
-    ] as TestDetailResolvedData;
-    if (resolvedData) {
-      this.service.initialize(resolvedData);
-    }
+    effect(() => {
+      const resolvedData = this.data();
+      if (resolvedData) {
+        this.service.initialize(resolvedData);
+      }
+    });
 
     // Effect to handle polling interval changes
     effect(() => {

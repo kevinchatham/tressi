@@ -66,7 +66,7 @@
 
 <!-- Empty State -->
 @if (!hasError() && !hasTests()) {
-  <div class="border-base-content/5 mx-auto rounded-xl border-2 p-8">
+  <div class="border-base-content/10 mx-auto rounded-xl border-2 p-8">
     <div class="text-center">
       <h2 class="text-base-content mb-2 text-xl font-semibold">
         No Test History
@@ -90,10 +90,10 @@
 
 <!-- Delete Confirmation Modal -->
 <app-delete-confirmation-modal
-  [showDeleteModal]="showDeleteModal()"
-  [isBulkDelete]="isBulkDelete()"
-  [testToDelete]="testToDelete()"
-  [selectedTestsCount]="selectedTestsCount()"
-  (confirmDelete)="deleteTestConfirmed()"
-  (cancelDelete)="cancelDelete()"
+  [isOpen]="showDeleteModal()"
+  [bulkCount]="isBulkDelete() ? selectedTestsCount() : null"
+  [id]="testToDelete()?.id || ''"
+  [itemLabel]="isBulkDelete() ? 'Tests' : 'Test'"
+  (confirmed)="deleteTestConfirmed()"
+  (closed)="cancelDelete()"
 />

@@ -23,10 +23,10 @@ import type {
 } from '../../services/rpc.service';
 import { TestService } from '../../services/test.service';
 import { ButtonComponent } from '../button/button.component';
+import { DeleteConfirmationModalComponent } from '../delete-confirmation-modal/delete-confirmation-modal.component';
 import { IconComponent } from '../icon/icon.component';
 import { StartButtonComponent } from '../start-button/start-button.component';
 import { ColumnSelectorComponent } from './column-selector/column-selector.component';
-import { DeleteConfirmationModalComponent } from './delete-confirmation-modal/delete-confirmation-modal.component';
 import { TestListColumnsService } from './test-list-columns.service';
 import {
   DeleteResult,
@@ -70,7 +70,6 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
   );
   readonly showDeleteModal = signal<boolean>(false);
   readonly testToDelete = signal<TestDocument | null>(null);
-  readonly isBulkDelete = signal<boolean>(false);
   readonly showColumnSelector = signal<boolean>(false);
 
   // Computed signals for derived state
@@ -97,6 +96,10 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
   readonly selectedTestsCount = computed(() =>
     this._selectionService.getSelectedCount(),
   );
+  readonly isBulkDelete = computed(
+    () => this._selectionService.getSelectedCount() > 1,
+  );
+
   readonly isAllSelected = computed(() => {
     const allTestIds = this._tests().map((test) => test.id);
     return this._selectionService.isAllSelected(allTestIds);
@@ -205,10 +208,8 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
   showDeleteConfirm(test: TestDocument | null, event: Event): void {
     event.stopPropagation();
     if (test) {
-      this.isBulkDelete.set(false);
       this.testToDelete.set(test);
     } else {
-      this.isBulkDelete.set(true);
       this.testToDelete.set(null);
     }
     this.showDeleteModal.set(true);
@@ -217,23 +218,13 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
   cancelDelete(): void {
     this.showDeleteModal.set(false);
     this.testToDelete.set(null);
-    this.isBulkDelete.set(false);
     this._selectionService.clearSelection();
   }
 
   async deleteTestConfirmed(): Promise<void> {
     this.showDeleteModal.set(false);
     this._error.set(null);
-
-    if (this.isBulkDelete()) {
-      await this.deleteSelectedTests();
-    } else {
-      const test = this.testToDelete();
-      if (!test) return;
-
-      const result = await this._deleteService.deleteTestWithLoading(test.id);
-      this._handleDeleteResult(result, [test.id]);
-    }
+    await this.deleteSelectedTests();
   }
 
   async deleteSelectedTests(): Promise<void> {

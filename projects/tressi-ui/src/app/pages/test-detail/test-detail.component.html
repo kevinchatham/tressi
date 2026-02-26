@@ -16,7 +16,7 @@
       />
       <ul
         tabindex="0"
-        class="dropdown-content bg-base-100 rounded-box ring-base-content/10 z-50 mt-2 mt-4 w-34 p-2 shadow-lg ring-1"
+        class="dropdown-content bg-base-100 rounded-box ring-base-content/10 z-50 mt-4 w-34 p-2 shadow-lg ring-1"
       >
         <li>
           <button
@@ -206,7 +206,8 @@
   <!-- Delete Confirmation Modal -->
   <app-delete-confirmation-modal
     [isOpen]="showDeleteModal()"
-    [test]="service.test()!"
+    [id]="service.test()?.id || ''"
+    [itemLabel]="'Test'"
     (confirmed)="handleDeleteConfirm()"
     (closed)="handleDeleteCancel()"
   />

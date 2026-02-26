@@ -1,4 +1,7 @@
-<span class="badge mx-auto gap-1" [ngClass]="getStatusColor()">
+<span
+  class="badge border-base-content/10 mx-auto gap-1 py-4 pr-4 pl-2"
+  [ngClass]="getStatusColor()"
+>
   @if (showIcon()) {
     <app-icon [name]="getStatusIcon()" />
   }

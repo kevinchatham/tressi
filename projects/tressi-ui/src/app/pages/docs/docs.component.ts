@@ -1,13 +1,15 @@
 import {
   Component,
   computed,
+  effect,
   inject,
+  input,
   OnInit,
   SecurityContext,
   signal,
   ViewEncapsulation,
 } from '@angular/core';
-import { ActivatedRoute, RouterModule } from '@angular/router';
+import { RouterModule } from '@angular/router';
 import {
   CLIPBOARD_OPTIONS,
   MarkdownModule,
@@ -72,12 +74,13 @@ import { DocsMenuComponent } from './docs-menu/docs-menu.component';
   encapsulation: ViewEncapsulation.None,
 })
 export class DocsComponent implements OnInit {
-  private readonly _route = inject(ActivatedRoute);
   private readonly _themeService = inject(ThemeService);
   readonly appRouter = inject(AppRouterService);
   readonly markdownSrc = signal<string>('');
   readonly error = signal<string | null>(null);
-  readonly availableDocs = signal<GetDocsResponseSuccess>({});
+  readonly availableDocs = input.required<GetDocsResponseSuccess>();
+  readonly section = input<string>();
+  readonly filename = input<string>();
   readonly isTransitioning = signal(false);
   readonly isBaseUrl = computed<boolean>(() => this.appRouter.isOnDocs());
   readonly currentSectionFolder = signal<string | null>(null);
@@ -91,15 +94,14 @@ export class DocsComponent implements OnInit {
     };
   });
 
-  ngOnInit(): void {
-    this._initializeFromResolvedData();
-    this._route.params.subscribe((params) => {
-      const section = params['section'];
-      const filename = params['filename'];
+  constructor() {
+    effect(() => {
+      const section = this.section();
+      const filename = this.filename();
+      const docs = this.availableDocs();
 
       if (!section && !filename) {
         // Default to the first section's index
-        const docs = this.availableDocs();
         const firstSection = Object.values(docs)[0];
         if (firstSection) {
           this.loadDocs(firstSection.path);
@@ -114,17 +116,7 @@ export class DocsComponent implements OnInit {
     });
   }
 
-  /**
-   * Initializes the component using data pre-resolved by the router.
-   */
-  private _initializeFromResolvedData(): void {
-    const data = this._route.snapshot.data[
-      'availableDocs'
-    ] as GetDocsResponseSuccess;
-    if (data) {
-      this.availableDocs.set(data);
-    }
-  }
+  ngOnInit(): void {}
 
   loadDocs(slug: string): void {
     this.isTransitioning.set(true);

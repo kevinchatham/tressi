@@ -2,19 +2,22 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  effect,
   inject,
+  input,
   OnInit,
   signal,
+  untracked,
 } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { Router } from '@angular/router';
 import { ButtonComponent } from 'src/app/components/button/button.component';
 import { ThemeSwitcherComponent } from 'src/app/components/theme-switcher/theme-switcher.component';
 
 import { AppRoutes } from '../../app.routes';
 import { ConfigFormComponent } from '../../components/config-form/config-form.component';
 import { ConfigurationCardComponent } from '../../components/configuration-card/configuration-card.component';
+import { DeleteConfirmationModalComponent } from '../../components/delete-confirmation-modal/delete-confirmation-modal.component';
 import { HeaderComponent } from '../../components/header/header.component';
-import { IconComponent } from '../../components/icon/icon.component';
 import { ImportConfigButtonComponent } from '../../components/import-config-button/import-config-button.component';
 import { SearchBarComponent } from '../../components/search-bar/search-bar.component';
 import { ConfigService } from '../../services/config.service';
@@ -29,12 +32,12 @@ import { ToastService } from '../../services/toast.service';
 @Component({
   selector: 'app-configs',
   imports: [
-    IconComponent,
     ThemeSwitcherComponent,
     ConfigFormComponent,
     HeaderComponent,
     ConfigurationCardComponent,
     SearchBarComponent,
+    DeleteConfirmationModalComponent,
     ImportConfigButtonComponent,
     ButtonComponent,
   ],
@@ -44,13 +47,16 @@ import { ToastService } from '../../services/toast.service';
 export class ConfigurationsComponent implements OnInit {
   /** Service injection */
   private readonly _configService = inject(ConfigService);
-  private readonly _route = inject(ActivatedRoute);
+  private readonly _router = inject(Router);
   private readonly _toastService = inject(ToastService);
 
   readonly appRouter = inject(AppRouterService);
   readonly timeService = inject(TimeService);
 
   /** Reactive signals for state management */
+  readonly configsInput = input.required<ConfigDocument[]>({
+    alias: 'configs',
+  });
   readonly configs = signal<ConfigDocument[]>([]);
   readonly showDeleteModal = signal<boolean>(false);
   readonly configToDelete = signal<ConfigDocument | null>(null);
@@ -86,21 +92,17 @@ export class ConfigurationsComponent implements OnInit {
     return this.configs().length === 0;
   });
 
-  ngOnInit(): void {
-    this._initializeFromResolvedData();
+  constructor() {
+    // Sync the input to our local writable signal
+    effect(() => {
+      const initialConfigs = this.configsInput();
+      untracked(() => this.configs.set(initialConfigs));
+    });
   }
 
-  /**
-   * Initializes the component using data pre-resolved by the router.
-   */
-  private _initializeFromResolvedData(): void {
-    const configs = this._route.snapshot.data['configs'] as ConfigDocument[];
-    this.configs.set(configs);
-
+  ngOnInit(): void {
     // Check if the current route is the 'create' route
-    const isCreateRoute = this._route.snapshot.url.some(
-      (segment) => segment.path === 'create',
-    );
+    const isCreateRoute = this._router.url.includes('/create');
 
     if (isCreateRoute) {
       this.startCreate();
