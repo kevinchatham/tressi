@@ -82,7 +82,7 @@ export const CHART_OPTIONS: ChartOption[] = [
 /**
  * Default chart type
  */
-export const DEFAULT_CHART_TYPE: ChartType = 'peak_throughput';
+export const DEFAULT_CHART_TYPE: ChartType = 'target_achieved';
 
 /**
  * Chart data structure for line charts

@@ -8,14 +8,9 @@ This document covers:
 - **Defining Exit Status Codes**: Stopping execution on critical failures by mapping terminal status codes.
 - **Adjusting Evaluation Intervals**: Configuring monitoring windows to balance responsiveness and stability.
 
-### Configuration Precedence
-
-Early Exit can be configured globally or per endpoint. Request level configurations take precedence over global settings.
-
-- **Global Configuration**: Defined in `options.workerEarlyExit`.
-- **Endpoint Configuration**: Defined in `requests[].earlyExit`.
-
 ### Configuring Error Thresholds
+
+![Early Exit Configuration](./images/0.0.13-early-exit-350.png)
 
 The `errorRateThreshold` (0.0 to 1.0) defines the percentage of failed requests allowed before an endpoint is stopped.
 
@@ -41,6 +36,13 @@ The `monitoringWindowMs` determines how often thresholds are evaluated.
 - **Long Windows (e.g., 10000ms)**: Offer greater stability and prevent premature termination from temporary spikes.
 
 > The default value is `1000ms`
+
+### Configuration Precedence
+
+Early Exit can be configured globally or per endpoint. Request level configurations take precedence over global settings.
+
+- **Global Configuration**: Defined in `options.workerEarlyExit`.
+- **Endpoint Configuration**: Defined in `requests[].earlyExit`.
 
 ### Next Steps
 

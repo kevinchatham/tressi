@@ -1,10 +1,14 @@
-# Introduction
+<p align="center" style="margin-bottom:0;">
+  <img src="./images/tressi-logo-200.png" alt="tressi-logo" width="200px" height="200px"/>
+  <em>Stress less, test more.</em>
+  <br/><br/>
+</p>
 
 Tressi is a local first load testing platform for API performance analysis. It utilizes a high performance execution engine paired with a web based interface to manage the testing lifecycle.
 
 This document covers:
 
-- **Workflow & Capabilities**: Overview of the four stage testing lifecycle and core platform features like parallel execution and optimized runtime.
+- **Workflow & Capabilities**: Overview of the testing lifecycle and core platform features like parallel execution and optimized runtime.
 
 ### The Tressi Workflow
 

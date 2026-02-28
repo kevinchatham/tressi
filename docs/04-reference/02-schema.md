@@ -47,17 +47,17 @@ Configure overall test runner behavior using the `options` object.
 
 Define specific endpoints to target within the `requests` array.
 
-| Property            | Type    | Description                                                                |
-| ------------------- | ------- | -------------------------------------------------------------------------- |
-| `url`               | string  | Target URI for the request.                                                |
-| `method`            | string  | HTTP method (GET, POST, PUT, PATCH, DELETE). Default: `GET`.               |
-| `payload`           | object  | Request body for POST/PUT/PATCH methods.                                   |
-| `headers`           | object  | Endpoint specific headers. Merged with global headers.                     |
-| `rps`               | integer | Target requests per second for this endpoint. Default: `1`.                |
-| `rampUpDurationSec` | integer | Seconds to reach target RPS. Overrides global ramp up if non-zero.         |
-| `earlyExit`         | object  | [Early Exit Configuration](#automated-test-termination) for this endpoint. |
+| Property            | Type    | Description                                                        |
+| ------------------- | ------- | ------------------------------------------------------------------ |
+| `url`               | string  | Target URI for the request.                                        |
+| `method`            | string  | HTTP method (GET, POST, PUT, PATCH, DELETE). Default: `GET`.       |
+| `payload`           | object  | Request body for POST/PUT/PATCH methods.                           |
+| `headers`           | object  | Endpoint specific headers. Merged with global headers.             |
+| `rps`               | integer | Target requests per second for this endpoint. Default: `1`.        |
+| `rampUpDurationSec` | integer | Seconds to reach target RPS. Overrides global ramp up if non-zero. |
+| `earlyExit`         | object  | [Early Exit Configuration](#early-exit) for this endpoint.         |
 
-### Automated Test Termination
+### Early Exit
 
 Set thresholds to stop tests automatically when performance or stability degrades. Review [Automated Test Termination](../03-advanced/01-early-exit.md) for implementation details and best practices.
 

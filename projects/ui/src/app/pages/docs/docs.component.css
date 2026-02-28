@@ -120,7 +120,7 @@
 }
 
 .markdown-body .mermaid {
-  @apply bg-base-content/20 mb-4 flex justify-center rounded-xl py-4;
+  @apply bg-base-content/20 mx-4 mb-4 flex justify-center rounded-xl py-4;
 }
 
 .token.comment,

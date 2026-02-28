@@ -10,6 +10,8 @@ This document covers:
 
 ### Create Configuration
 
+![General Configuration](./images/0.0.13-general-config-form-350.png)
+
 1.  Navigate to [Configs](/configs/create).
 2.  Click **Create** to open the configuration form.
 3.  **General Options**: Set the name and test duration.
@@ -19,25 +21,33 @@ This document covers:
 
 ### Select Configuration
 
+![Use Configuration](./images/0.0.13-use-config-350.png)
+
 Navigate to the [Dashboard](/dashboard) using one of the following methods:
 
 1.  **Configuration Card**: On the [Configs](/configs) page, expand the target configuration and click **Use**.
 2.  **Global Navigation**: Click **Dashboard** in the header, then use the **Select Config** dropdown.
 
-### Execute Test
+### Execute Tests
+
+![Running Test](./images/0.0.13-dashboard-running-test-350.png)
 
 1.  Click **Start Test**.
 2.  The test initializes and appears in the **Test List** table.
 3.  Test status transitions to `running` as worker threads spawn.
-4.  The **Start Test** button moves to the header after the first execution.
+4.  The **Start Test** button moves to the header after the first execution and transitions to **Stop Test** while a test is active.
 
 ### Monitor Metrics
+
+![Customize Columns](./images/0.0.13-customize-columns-350.png)
 
 1.  **Test List**: Review metrics in the table.
 2.  **Column Selector**: Toggle visible metrics using the column selector icon.
 3.  **Detailed View**: Click a running test to open the **Test Details** page.
 
 ### Analyze & Export Results
+
+![Test Details](./images/0.0.13-test-details-350.png)
 
 1.  **Realtime Charts**: Monitor performance over time as data aggregates from worker threads.
 2.  **Metric Scoping**: Toggle between **Global** and **Endpoint** views to analyze aggregate performance or individual endpoint behavior.

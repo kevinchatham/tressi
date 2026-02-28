@@ -6,6 +6,8 @@ This document covers:
 
 - **Ramp Up Dynamics**: Understanding the hierarchy between global and endpoint durations and the constraints that ensure statistical integrity.
 
+![Ramp Up Configuration](./images/0.0.13-ramp-up-450.png)
+
 ### Ensuring Statistical Integrity
 
 To maintain statistical integrity, Tressi enforces specific constraints on ramp up:

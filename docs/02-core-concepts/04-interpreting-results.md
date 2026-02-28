@@ -1,4 +1,4 @@
-# Analyze Results
+# Analyzing Results
 
 Analyze test performance using global and per endpoint metrics, visualizations, and system resource utilization data.
 
@@ -14,6 +14,25 @@ Performance data is available at two levels:
 
 - **Global Metrics**: Aggregated data across all endpoints defined in the test configuration. Includes system resource utilization and total network throughput.
 - **Endpoint Metrics**: Specific performance data for individual targets. Includes status code distributions and response samples.
+
+### Visualize Performance
+
+Use charts to identify patterns, degradation, and outliers that aggregate metrics may obscure.
+
+**Performance Over Time**: A timeseries chart tracking throughput, latency, and error rates. Use this to identify performance degradation or instability throughout the test duration.
+
+![Performance Over Time](./images/0.0.13-performance-over-time-400.png)
+
+**Latency Distribution**: Displays response time spread across buckets and percentiles. Use this to identify tail latency patterns and multi-modal distributions (e.g., requests hitting a cache vs. a database).
+
+- **Distribution**: Displays how requests are spread across latency buckets. This view highlights concentrations and groupings of response times.
+- **Percentiles**: Illustrates time relativity and scale across the response spectrum, providing a visual representation of the performance spread.
+
+![Latency Distribution](./images/0.0.13-latency-distribution-400.png)
+
+**Performance Summary**: Review aggregate performance telemetry and system resource utilization.
+
+![Performance Summary](./images/0.0.13-performance-summary-425.png)
 
 ### Monitor Throughput
 
@@ -45,6 +64,12 @@ Monitor stability and data transfer efficiency during test execution.
 - **Network Throughput**: The average rate of data transfer (bytes/sec) during the test.
 - **Total Data**: The sum of all bytes sent in request bodies and received in response bodies.
 
+### Analyze Responses
+
+**Status Code Distribution**: A breakdown of all HTTP status codes returned by the target system. Use this to diagnose the root cause of high error rates.
+
+**Response Samples**: Tressi captures representative response data, including headers and bodies, to assist in debugging validation failures.
+
 ### Monitor Runner Resources
 
 Monitor runner resource usage to ensure test integrity. Tressi's multithreaded architecture isolates request execution from metrics aggregation, but system wide exhaustion still impacts results.
@@ -52,23 +77,6 @@ Monitor runner resource usage to ensure test integrity. Tressi's multithreaded a
 - **CPU Usage**: If system CPU utilization exceeds **85%**, the runner may fail to maintain target RPS across all worker threads, leading to a "Target Achieved" value below 100%.
 - **Worker Memory**: Each worker thread has an isolated heap (default 128MB). If a worker approaches its limit, it may experience frequent garbage collection pauses that inflate latency measurements for its assigned endpoints.
 - **Main Thread Memory**: The global memory metric tracks the main thread. High utilization here can cause UI/CLI lag or delays in metrics aggregation, but typically does not impact request execution timing.
-
-### Visualize Performance
-
-Use charts to identify patterns, degradation, and outliers that aggregate metrics may obscure.
-
-**Performance Over Time**: A timeseries chart tracking throughput, latency, and error rates. Use this to identify performance degradation or instability throughout the test duration.
-
-**Latency Distribution**: Displays response time spread across buckets and percentiles. Use this to identify tail latency patterns and multi-modal distributions (e.g., requests hitting a cache vs. a database).
-
-- **Distribution**: Displays how requests are spread across latency buckets. This view highlights concentrations and groupings of response times.
-- **Percentiles**: Illustrates time relativity and scale across the response spectrum, providing a visual representation of the performance spread.
-
-### Analyze Responses
-
-**Status Code Distribution**: A breakdown of all HTTP status codes returned by the target system. Use this to diagnose the root cause of high error rates.
-
-**Response Samples**: Tressi captures representative response data, including headers and bodies, to assist in debugging validation failures.
 
 ### Explore Advanced Operations
 

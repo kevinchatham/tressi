@@ -22,7 +22,7 @@ Access system information and command assistance.
 
 Execute a load test based on a JSON configuration schema.
 
-`tressi run <config>`
+- `tressi run <config>`
 
 **Arguments:**
 
@@ -58,7 +58,7 @@ Execute a load test based on a JSON configuration schema.
 
 Start the Tressi Server to provide access to the web interface.
 
-`tressi serve`
+- `tressi serve`
 
 **Options:**
 
@@ -71,13 +71,11 @@ Start the Tressi Server to provide access to the web interface.
   tressi serve --port 8080
   ```
 
-> `3108` represents the speed of light, 3x10^8 m/s.
-
 ### Reset Database
 
 Purge all stored data from the local database.
 
-`tressi reset`
+- `tressi reset`
 
 **Details:**
 

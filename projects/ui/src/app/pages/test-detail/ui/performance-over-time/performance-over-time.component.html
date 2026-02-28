@@ -47,7 +47,12 @@
             title="Chart Type"
           >
             @for (option of chartOptions(); track option.value) {
-              <option [value]="option.value">{{ option.label }}</option>
+              <option
+                [value]="option.value"
+                [selected]="selectedChartType() === option.value"
+              >
+                {{ option.label }}
+              </option>
             }
           </select>
         }

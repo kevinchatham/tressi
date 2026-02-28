@@ -8,9 +8,9 @@ This document covers:
 - **Early Exit Monitoring**: Selective termination of endpoints based on error thresholds.
 - **Finalization & Export**: Graceful shutdown and data consolidation for final reporting.
 
-The following diagram illustrates the interaction between the runner, worker threads, and the target system during a standard execution run:
+### Tressi Lifecycle
 
-### Tressi Lifecycle Diagram
+The following diagram illustrates the interaction between the runner, worker threads, and the target system during a standard execution run:
 
 ```mermaid
 sequenceDiagram

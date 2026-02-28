@@ -159,6 +159,8 @@ export class DocsComponent implements OnInit {
 
       // Use root-relative path to ensure it works regardless of current route depth
       this.markdownSrc.set(`/docs/${safeFilename}`);
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }, 150);
   }
 

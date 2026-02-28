@@ -8,7 +8,7 @@ export default defineConfig([
     dts: true,
     sourcemap: true,
     clean: true,
-    tsconfig: 'tsconfig.json',
+    tsconfig: 'tsconfig.app.json',
   },
   {
     entry: ['src/cli.ts'],
@@ -19,7 +19,7 @@ export default defineConfig([
     banner: {
       js: '#!/usr/bin/env node',
     },
-    tsconfig: 'tsconfig.json',
+    tsconfig: 'tsconfig.app.json',
   },
   {
     entry: ['src/workers/worker-thread.ts'],
@@ -27,6 +27,6 @@ export default defineConfig([
     format: ['cjs'],
     sourcemap: true,
     clean: true,
-    tsconfig: 'tsconfig.json',
+    tsconfig: 'tsconfig.app.json',
   },
 ]);

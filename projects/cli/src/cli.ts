@@ -108,7 +108,7 @@ Examples:
   # Run a load test silently and export to XLSX
   $ tressi run ./my-config.json --silent --export ./results/test-results.xlsx
 
-  # Start the Tressi server on default port (3108 - the speed of light in m/s)
+  # Start the Tressi server on default port (3108 <-> c≈3x10^8 m/s)
   $ tressi serve
 
   # Start the Tressi server on a custom port
