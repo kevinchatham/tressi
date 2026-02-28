@@ -16,7 +16,6 @@ export class ServeCommand {
     try {
       this._server = new TressiServer(options.port);
 
-      // Handle graceful shutdown
       const handleShutdown = async (): Promise<void> => {
         if (this._server) {
           await this._server.stop();
@@ -27,7 +26,6 @@ export class ServeCommand {
       process.on('SIGINT', handleShutdown);
       process.on('SIGTERM', handleShutdown);
 
-      // Start the server
       await this._server.start();
     } catch (error) {
       throw new Error(`Failed to start server: ${(error as Error).message}`);
