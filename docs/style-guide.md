@@ -3,7 +3,7 @@
 **1. Technical & Objective (No Sales Pitches)**
 
 - **Avoid**: Subjective adjectives like "modern," "powerful," "effortless," "easy," or "beautiful."
-- **Use**: Descriptive technical terms like "optimized," "parallel," "low-overhead," or "multi-threaded."
+- **Use**: Descriptive technical terms like "optimized," "parallel," "low-overhead," or "multithreaded."
 - **Rule**: Let the features speak for themselves. Describe _what_ it does and _how_ it works, not how the user should feel about it.
 
 **2. Minimalist & Concise**

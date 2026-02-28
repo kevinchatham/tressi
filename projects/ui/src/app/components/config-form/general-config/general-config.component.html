@@ -1,0 +1,218 @@
+<div class="space-y-4">
+  <!-- Test Identity & Basic Execution -->
+  <div class="bg-base-200 border-base-300 rounded-xl border p-4">
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <!-- Configuration Name -->
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend text-xs font-bold uppercase opacity-70">
+          Name
+        </legend>
+        <input
+          id="config-name"
+          type="text"
+          class="input outline-none!"
+          placeholder="Enter configuration name"
+          [formField]="form().name"
+        />
+        <p class="label ml-2 py-0 text-xs opacity-60">
+          Display name for this test
+        </p>
+        @if (form().name().touched() && form().name().invalid()) {
+          <p class="label text-error ml-2 py-0 text-xs">
+            @for (error of form().name().errors(); track error) {
+              {{ error.message }}
+            }
+          </p>
+        }
+      </fieldset>
+
+      <!-- Duration -->
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend text-xs font-bold uppercase opacity-70">
+          Duration
+        </legend>
+        <input
+          type="number"
+          class="input outline-none!"
+          [formField]="form().config.options.durationSec"
+          placeholder="Total test duration"
+        />
+        <p class="label ml-2 py-0 text-xs opacity-60">In seconds</p>
+        @if (
+          form().config.options.durationSec().touched() &&
+          form().config.options.durationSec().invalid()
+        ) {
+          <p class="label text-error ml-2 py-0 text-xs">
+            @for (
+              error of form().config.options.durationSec().errors();
+              track error
+            ) {
+              {{ error.message }}
+            }
+          </p>
+        }
+      </fieldset>
+    </div>
+  </div>
+
+  <!-- Global Defaults -->
+  <div class="mb-4">
+    <app-collapsible-card
+      title="Global Defaults"
+      icon="lan"
+      [(collapsed)]="globalDefaultsCollapsed"
+    >
+      <div class="space-y-4">
+        <!-- Ramp Up Duration -->
+        <fieldset class="fieldset">
+          <legend
+            class="fieldset-legend text-xs font-bold uppercase opacity-70"
+          >
+            Ramp Up Time
+          </legend>
+          <input
+            type="number"
+            class="input outline-none!"
+            [formField]="form().config.options.rampUpDurationSec"
+            placeholder="Time to reach target RPS"
+          />
+          <p class="label ml-2 py-0 text-xs opacity-60">
+            In seconds; overrides request level ramp up
+          </p>
+          @if (
+            form().config.options.rampUpDurationSec().touched() &&
+            form().config.options.rampUpDurationSec().invalid()
+          ) {
+            <p class="label text-error ml-2 py-0 text-xs">
+              @for (
+                error of form().config.options.rampUpDurationSec().errors();
+                track error
+              ) {
+                {{ error.message }}
+              }
+            </p>
+          }
+        </fieldset>
+
+        <fieldset class="fieldset">
+          <legend
+            class="fieldset-legend text-xs font-bold uppercase opacity-70"
+          >
+            Global Headers
+          </legend>
+          <app-json-textarea
+            [(value)]="model().config.options.headers"
+            [rows]="3"
+            (valueChange)="onJsonTextareaValueChange()"
+            placeholder='{"User-Agent": "Tressi", "Accept": "application/json"}'
+          />
+          <p class="label ml-2 py-0 text-xs text-wrap opacity-60">
+            Overrides request level headers
+          </p>
+          @if (
+            form().config.options.headers().touched() &&
+            form().config.options.headers().invalid()
+          ) {
+            <p class="label text-error ml-2 py-0 text-xs">
+              @for (
+                error of form().config.options.headers().errors();
+                track error
+              ) {
+                {{ error.message }}
+              }
+            </p>
+          }
+        </fieldset>
+
+        <div>
+          <h3 class="text-md mb-4 flex items-center gap-2 font-semibold">
+            <app-icon name="warning" />
+            Early Exit
+          </h3>
+          <app-early-exit-config
+            [form]="form().config.options.workerEarlyExit"
+            [model]="model().config.options.workerEarlyExit"
+            (addExitStatusCode)="addExitStatusCode.emit()"
+            (removeExitStatusCode)="removeExitStatusCode.emit($event)"
+          />
+          <p class="label ml-2 py-0 text-xs text-wrap opacity-60">
+            Applies to all requests
+          </p>
+        </div>
+      </div>
+    </app-collapsible-card>
+  </div>
+
+  <!-- Engine Settings -->
+  <div>
+    <app-collapsible-card
+      title="Engine Settings"
+      icon="tune"
+      [(collapsed)]="engineSettingsCollapsed"
+    >
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <!-- Threads -->
+        <fieldset class="fieldset">
+          <legend
+            class="fieldset-legend text-xs font-bold uppercase opacity-70"
+          >
+            Worker Threads
+          </legend>
+          <input
+            type="number"
+            class="input outline-none!"
+            [formField]="form().config.options.threads"
+            placeholder="Auto-detect"
+          />
+          <p class="label ml-2 py-0 text-xs opacity-60">
+            Defaults to 4; limited by available system cores
+          </p>
+          @if (
+            form().config.options.threads().touched() &&
+            form().config.options.threads().invalid()
+          ) {
+            <p class="label text-error ml-2 py-0 text-xs">
+              @for (
+                error of form().config.options.threads().errors();
+                track error
+              ) {
+                {{ error.message }}
+              }
+            </p>
+          }
+        </fieldset>
+
+        <!-- Worker Memory Limit -->
+        <fieldset class="fieldset">
+          <legend
+            class="fieldset-legend text-xs font-bold uppercase opacity-70"
+          >
+            Worker Memory Limit
+          </legend>
+          <input
+            type="number"
+            class="input outline-none!"
+            [formField]="form().config.options.workerMemoryLimit"
+            placeholder="Memory per worker thread"
+          />
+          <p class="label ml-2 py-0 text-xs opacity-60">
+            In MB; memory per worker thread
+          </p>
+          @if (
+            form().config.options.workerMemoryLimit().touched() &&
+            form().config.options.workerMemoryLimit().invalid()
+          ) {
+            <p class="label text-error ml-2 py-0 text-xs">
+              @for (
+                error of form().config.options.workerMemoryLimit().errors();
+                track error
+              ) {
+                {{ error.message }}
+              }
+            </p>
+          }
+        </fieldset>
+      </div>
+    </app-collapsible-card>
+  </div>
+</div>

@@ -1,0 +1,126 @@
+<div class="space-y-4">
+  <!-- Enable Early Exit -->
+  <div class="form-control">
+    <label class="label cursor-pointer">
+      <span class="label-text mr-1 font-medium">Enable</span>
+      <input
+        type="checkbox"
+        class="checkbox checkbox-primary checkbox-sm"
+        [formField]="form().enabled"
+      />
+    </label>
+  </div>
+
+  @if (isEnabled()) {
+    <div class="mt-4 space-y-4">
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <!-- Error Rate Threshold -->
+        <fieldset class="fieldset">
+          <legend
+            class="fieldset-legend text-xs font-bold uppercase opacity-70"
+          >
+            Error Rate Threshold
+          </legend>
+          <input
+            type="number"
+            class="input outline-none!"
+            [formField]="form().errorRateThreshold"
+            placeholder="0.0 - 1.0"
+            step="0.01"
+          />
+          <p class="label ml-2 py-0 text-xs opacity-60">Range: 0.0 - 1.0</p>
+          @if (
+            form().errorRateThreshold().touched() &&
+            form().errorRateThreshold().invalid()
+          ) {
+            <p class="label text-error ml-2">
+              @for (
+                error of form().errorRateThreshold().errors();
+                track error
+              ) {
+                {{ error.message }}
+              }
+            </p>
+          }
+        </fieldset>
+
+        <!-- Monitoring Window -->
+        <fieldset class="fieldset">
+          <legend
+            class="fieldset-legend text-xs font-bold uppercase opacity-70"
+          >
+            Monitoring Window
+          </legend>
+          <input
+            type="number"
+            class="input outline-none!"
+            [formField]="form().monitoringWindowMs"
+            placeholder="Monitoring duration in milliseconds"
+          />
+          <p class="label ml-2 py-0 text-xs opacity-60">
+            Duration to monitor for errors (milliseconds)
+          </p>
+          @if (
+            form().monitoringWindowMs().touched() &&
+            form().monitoringWindowMs().invalid()
+          ) {
+            <p class="label text-error ml-2">
+              @for (
+                error of form().monitoringWindowMs().errors();
+                track error
+              ) {
+                {{ error.message }}
+              }
+            </p>
+          }
+        </fieldset>
+      </div>
+
+      <!-- Exit Status Codes -->
+      <div>
+        <div class="mb-2 flex items-center justify-between">
+          <label class="label-text font-medium">Exit Status Codes</label>
+          <app-button
+            (click)="addExitStatusCode.emit()"
+            [color]="'primary'"
+            [icon]="'add'"
+            [title]="'Add Code'"
+          />
+        </div>
+        <div class="space-y-2">
+          @for (code of getExitStatusCodes(); track $index) {
+            <fieldset class="fieldset">
+              <div class="flex items-center gap-2">
+                <input
+                  type="number"
+                  class="input outline-none!"
+                  [formField]="form().exitStatusCodes[$index]"
+                  placeholder="HTTP status code"
+                />
+                <app-button
+                  (click)="removeExitStatusCode.emit($index)"
+                  [color]="'error'"
+                  [icon]="'delete'"
+                  [title]="'Remove Code'"
+                />
+              </div>
+              @if (
+                form().exitStatusCodes[$index]().touched() &&
+                form().exitStatusCodes[$index]().invalid()
+              ) {
+                <p class="label text-error ml-2">
+                  @for (
+                    error of form().exitStatusCodes[$index]().errors();
+                    track error
+                  ) {
+                    {{ error.message }}
+                  }
+                </p>
+              }
+            </fieldset>
+          }
+        </div>
+      </div>
+    </div>
+  }
+</div>

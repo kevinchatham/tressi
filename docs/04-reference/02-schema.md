@@ -1,12 +1,28 @@
-# Configuration Schema
+# Configuration Schema Reference
 
-Tressi uses a JSON schema to validate configuration files and provide IntelliSense in supported editors.
+The Tressi JSON schema defines the structure for test configurations, ensuring valid execution parameters and providing realtime feedback in supported editors. Using the schema prevents runtime errors by validating types, ranges, and required fields before a test begins.
 
-### Locate the Schema
+This document covers:
 
-The schema is located at [`projects/tressi-cli/tressi.schema.json`](projects/tressi-cli/tressi.schema.json).
+- **Schema Location**: Accessing the schema file for local reference or IDE integration.
+- **Global Configuration**: Root properties and execution engine options.
+- **Request Parameters**: Endpoint targeting, load profiles, and automated termination logic.
 
-### Configure Root Properties
+### Schema Location
+
+The schema is located within the project at `projects/cli/tressi.schema.json`. Version-specific schemas are also available on [GitHub](https://github.com/kevinchatham/tressi/tree/main/schemas).
+
+To enable validation and IntelliSense in VS Code or other supported editors, ensure the `$schema` property is at the root of your configuration file:
+
+```json
+{
+  "$schema": "https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json",
+  "requests": [],
+  "options": {}
+}
+```
+
+### Root Properties
 
 | Property   | Type   | Description                                  |
 | ---------- | ------ | -------------------------------------------- |
@@ -14,36 +30,36 @@ The schema is located at [`projects/tressi-cli/tressi.schema.json`](projects/tre
 | `requests` | array  | List of endpoint configurations to test.     |
 | `options`  | object | Global configuration for the test execution. |
 
-### Set Global Runner Options
+### Global Runner Options
 
 Configure overall test runner behavior using the `options` object.
 
-| Property            | Type    | Description                                                                         |
-| ------------------- | ------- | ----------------------------------------------------------------------------------- |
-| `durationSec`       | integer | Total duration of the test in seconds.                                              |
-| `rampUpDurationSec` | integer | Global ramp-up time in seconds for all endpoints.                                   |
-| `headers`           | object  | Global headers sent with every request.                                             |
-| `threads`           | integer | Number of worker threads to spawn. Min: `1`, Max: `os.cpus().length`, Default: `4`. |
-| `workerMemoryLimit` | integer | Maximum memory allocation per worker in MB. Min: `16`, Max: `512`, Default: `128`.  |
-| `workerEarlyExit`   | object  | Default [Early Exit Configuration](#automate-test-termination) for workers.         |
+| Property            | Type    | Description                                                                  |
+| ------------------- | ------- | ---------------------------------------------------------------------------- |
+| `durationSec`       | integer | Total test duration in seconds. Min: `10`. Default: `10`.                    |
+| `rampUpDurationSec` | integer | Global ramp up time in seconds for all endpoints. Default: `0`.              |
+| `headers`           | object  | Global headers sent with every request.                                      |
+| `threads`           | integer | Number of worker threads. Default: CPU count.                                |
+| `workerMemoryLimit` | integer | Memory allocation per worker in MB. Min: `16`, Max: `512`. Default: `128`.   |
+| `workerEarlyExit`   | object  | Default [Early Exit Configuration](#automated-test-termination) for workers. |
 
-### Define Request Endpoints
+### Request Endpoints
 
 Define specific endpoints to target within the `requests` array.
 
-| Property            | Type    | Description                                                               |
-| ------------------- | ------- | ------------------------------------------------------------------------- |
-| `url`               | string  | Target URI for the request.                                               |
-| `method`            | string  | HTTP method (GET, POST, PUT, PATCH, DELETE). Defaults to GET.             |
-| `payload`           | object  | Request body for POST/PUT/PATCH methods.                                  |
-| `headers`           | object  | Endpoint-specific headers. Merged with global headers.                    |
-| `rps`               | integer | Target requests per second for this endpoint.                             |
-| `rampUpDurationSec` | integer | Seconds to reach target RPS. Overrides global ramp up if non zero.        |
-| `earlyExit`         | object  | [Early Exit Configuration](#automate-test-termination) for this endpoint. |
+| Property            | Type    | Description                                                                |
+| ------------------- | ------- | -------------------------------------------------------------------------- |
+| `url`               | string  | Target URI for the request.                                                |
+| `method`            | string  | HTTP method (GET, POST, PUT, PATCH, DELETE). Default: `GET`.               |
+| `payload`           | object  | Request body for POST/PUT/PATCH methods.                                   |
+| `headers`           | object  | Endpoint specific headers. Merged with global headers.                     |
+| `rps`               | integer | Target requests per second for this endpoint. Default: `1`.                |
+| `rampUpDurationSec` | integer | Seconds to reach target RPS. Overrides global ramp up if non-zero.         |
+| `earlyExit`         | object  | [Early Exit Configuration](#automated-test-termination) for this endpoint. |
 
-### Automate Test Termination
+### Automated Test Termination
 
-Set thresholds to stop tests automatically when performance or stability degrades. Review [Automated Test Termination](../03-advanced/02-early-exit.md) for implementation details and best practices.
+Set thresholds to stop tests automatically when performance or stability degrades. Review [Automated Test Termination](../03-advanced/01-early-exit.md) for implementation details and best practices.
 
 | Property             | Type    | Description                                                         |
 | -------------------- | ------- | ------------------------------------------------------------------- |
@@ -54,4 +70,4 @@ Set thresholds to stop tests automatically when performance or stability degrade
 
 ### Next Steps
 
-Explore [Tressi Architecture](../05-internals/01-architecture.md) to understand the high-performance execution engine and shared memory synchronization.
+Explore [Tressi Architecture](../05-internals/01-architecture.md) to understand the high performance execution engine and shared memory synchronization.
