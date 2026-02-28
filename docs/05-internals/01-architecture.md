@@ -1,71 +1,60 @@
 # Architecture Overview
 
-Tressi utilizes a multithreaded architecture optimized for high concurrency load generation and realtime metrics aggregation. It leverages Node.js `worker_threads` for parallel execution and `SharedArrayBuffer` for zero copy metrics synchronization.
+Tressi utilizes a multithreaded architecture optimized for high concurrency load generation and realtime metrics aggregation. The platform leverages Node.js `worker_threads` for parallel execution and `SharedArrayBuffer` for zero copy metrics synchronization.
 
-### Orchestrating the CLI
+This document covers the relationship between system components, the execution pipeline, and the implementation of low overhead data collection.
 
-The primary entry point responsible for lifecycle management and coordination.
+### Application Architecture
 
-- **Configuration Validation**: Uses the `TressiConfig` schema to validate user provided test parameters before execution.
-- **Database Management**: Manages the SQLite lifecycle via `tressi-cli/src/database/db.ts`, ensuring persistence of test configurations and historical metrics.
-- **Process Coordination**: Orchestrates the transition between test execution and the API server, managing the initialization of shared memory structures.
+Tressi is packaged as a unified CLI that encapsulates both the execution engine and the management interface.
 
-### Serving the UI
+```mermaid
+flowchart TB
 
-Provides a type safe RPC interface for test management and serves the Angular UI.
+    User((User))
+    Browser((Browser))
 
-- **Type Safe Communication**: Leverages Hono RPC to provide end to end type safety between the CLI server and the Angular UI.
-- **Event Driven Updates**: Listens to the global event emitter to bridge internal execution events to the UI via Server Sent Events (SSE).
-- **Realtime Streaming**: Utilizes `SSEManager` to broadcast `ServerEvents.METRICS` to connected clients.
+    CLI[Tressi CLI]
 
-### Managing Worker Threads
+    Server[Management Server]
+    Engine[Execution Engine]
 
-The execution engine responsible for generating load.
+    DB[(SQLite)]
 
-- **Parallel Execution**: Spawns independent `worker_threads` to maximize CPU utilization.
-- **Endpoint Distribution**: Implements round robin distribution of endpoints in `SharedMemoryFactory` to ensure balance across workers.
+    User --> CLI
+    User --> Browser
+    Browser --> Server
 
-### Synchronizing Shared Memory
+    CLI --> Server
+    Server --> Engine
+    Engine --> DB
+    Engine --> Server
+```
 
-Tressi uses a zero copy communication layer built on `SharedArrayBuffer` for low overhead metrics collection.
+### System Components
 
-- **State Management**: Tracks lifecycle states for workers and per endpoint execution status to enable coordinated early exit logic.
-- **Atomic Counters**: Provides high performance counters for success counts, status codes, and network throughput.
-- **Latency Tracking**: Records high resolution latency data using HDR histograms with configurable precision.
-- **Learn More**: See the [Shared Memory Architecture](./02-shared-memory.md) for implementation details.
+- **Orchestrating the CLI**: The primary entry point responsible for lifecycle management. The CLI validates user provided test parameters using the `TressiConfig` schema and coordinates the transition between test execution and the API server.
+- **Serving the UI**: Provides a type safe RPC interface via Hono and manages realtime streaming of metrics to the Angular UI. The server utilizes `SSEManager` to broadcast internal execution events via Server Sent Events (SSE).
+- **Data Persistence**: Manages the SQLite lifecycle via Kysely, ensuring persistence of test configurations and historical timeseries metrics for trend visualization in the dashboard.
 
-### Executing Asynchronous Pipelines
+### Execution Engine
 
-Tressi implements an asynchronous pipeline designed for high throughput request generation.
+- **Parallel Execution**: Spawns independent `worker_threads` to maximize CPU utilization. The `SharedMemoryFactory` implements round robin distribution of endpoints to ensure balance across workers.
+- **Asynchronous Pipelines**: Each worker maintains an asynchronous pipeline with a depth of 15 concurrent requests to maximize throughput while keeping the event loop responsive.
+- **Traffic Smoothing & Rate Limiting**: Utilizes a token bucket algorithm with linear ramp up logic and staggered execution to prevent thundering herd effects and ensure smooth traffic patterns.
 
-- **Pipeline Architecture**: Each worker maintains an asynchronous pipeline with a depth of 15 concurrent requests to maximize throughput while keeping the event loop responsive.
-- **Traffic Smoothing**: Implements staggered execution to prevent thundering herd effects and ensure smooth traffic patterns.
-- **Rate Limiting**: Utilizes a token bucket algorithm with linear ramp up logic to enforce target limits.
-- **Learn More**: See the [Execution Engine](./03-execution-engine.md) for pipeline and rate limiting details.
+### Metrics & Observability
 
-### Aggregating Metrics
+- **Shared Memory Layer**: A zero copy communication layer built on `SharedArrayBuffer` and `Atomics`. This layer tracks lifecycle states for workers and provides high performance atomic counters for success counts, status codes, and network throughput.
+- **Latency Tracking**: Records high resolution latency data using HDR histograms with configurable precision, enabling microsecond level analysis.
+- **Realtime Aggregation**: The `MetricsAggregator` polls shared memory every 1000ms. The aggregator approximates global latency percentiles using weighted averages of per worker histograms and calculates peak RPS using a sliding window.
 
-The aggregation layer consolidates data from shared memory for realtime monitoring and reporting.
-
-- **Polling Strategy**: The `MetricsAggregator` polls shared memory managers every 1000ms to collect the latest counters and histograms.
-- **Weighted Aggregation**: Approximates global latency percentiles using weighted averages of per worker HDR histograms.
-- **Sliding Window RPS**: Calculates peak RPS using a 5 second sliding window to provide an accurate representation of sustained throughput.
-- **Learn More**: See [Metrics and Calculations](./04-metrics-and-calculations.md) for statistical analysis details.
-
-### Persistence Layer
-
-Tressi uses SQLite for persistent storage of test data and metrics.
-
-- **Schema Management**: The database schema is managed by Kysely.
-- **Timeseries Data**: Stores timeseries metrics for both global and per-endpoint data, enabling historical analysis and trend visualization in the dashboard.
-
-### Execution Lifecycle
+### Lifecycle Management
 
 ```mermaid
 sequenceDiagram
-    participant M as Main Thread
+    participant M as Main Thread (WorkerPoolManager)
     participant SMF as SharedMemoryFactory
-    participant WPM as WorkerPoolManager
     participant WT as WorkerThreads
     participant SM as SharedArrayBuffer
     participant SSE as SSEManager
@@ -73,19 +62,17 @@ sequenceDiagram
 
     M->>SMF: Create Managers
     SMF->>SM: Allocate Buffers
-    M->>WPM: Start Test
-    WPM->>WT: Spawn Workers (Round robin)
+    M->>WT: Spawn Workers (Distribute endpoints)
     loop Execution
         WT->>WT: Rate Limit (Token bucket)
         WT->>WT: Execute Pipeline (Depth 15)
         WT->>SM: Atomic Metrics Update
-        WPM->>SM: Poll Metrics (1000ms)
-        WPM->>M: Emit ServerEvents.METRICS
+        M->>SM: Poll Metrics (1000ms)
         M->>SSE: Broadcast Metrics
         SSE->>UI: Stream to Frontend
     end
-    WT->>WPM: Signal Completion/Error
-    WPM->>M: Consolidate & Export
+    WT->>M: Signal Completion (Shared state/Exit)
+    M->>M: Consolidate & Export to SQLite
 ```
 
 ### Next Steps

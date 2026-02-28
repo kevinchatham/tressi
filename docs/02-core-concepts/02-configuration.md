@@ -1,66 +1,133 @@
-# Configuration Guide
+# Configure Load Tests
 
-Tressi configurations define the parameters and targets for a load test. While these are typically managed through the web interface, they can be loaded from local JSON files or remote URLs and executed via the CLI.
+Tressi configurations define execution parameters and targets. While the web interface provides a visual configuration builder to generate schema compliant JSON, configurations can also be managed via local files or remote URLs for CLI execution. Using the visual builder ensures all required properties are defined, preventing validation errors during execution.
 
-## Configuration Structure
+This document covers:
 
-A Tressi configuration is divided into global options and specific request targets.
+- **Schema & Targets**: Using JSON schemas for type safety and defining independent control over endpoint behavior.
+- **Global & Advanced Options**: Establishing environment constraints and implementing linear load progression.
+- **Settings Hierarchy**: Understanding how endpoint specific configurations override global options.
 
-### Global Options
+### Schema Validation
 
-Global settings define the environment and execution constraints for the entire test.
+The `$schema` property enables type safety for IDE edits and UI exports. This provides validation and IntelliSense for all properties, ensuring configuration accuracy outside of the web interface. Review the [Configuration Schema](../04-reference/02-schema.md) for property definitions.
 
-- **Duration**: The total time the test will run (minimum 10 seconds).
-- **Global Headers**: Standard headers applied to all requests. Tressi includes `User-Agent: Tressi` by default.
-- **Worker Threads**: The number of parallel cores utilized to generate load. Increasing threads allows work to be distributed evenly across CPU cores, ensuring high RPS targets are met without saturating the generator.
-- **Worker Memory Limit**: The maximum memory (MB) allocated per worker thread (16MB - 512MB).
-- **Worker Early Exit**: A safety mechanism that provides default thresholds for all endpoints. It stops individual endpoints if their error rate thresholds are exceeded or specific HTTP status codes are encountered.
+```json
+{
+  "$schema": "https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json"
+}
+```
 
-### Request Configuration
+> **Note**: The Tressi schema requires explicit definition of all properties. Using the web interface is recommended to generate valid configurations.
 
-Each target endpoint can be configured with its own performance profile.
+### Configure Request Targets
 
-- **Target RPS**: The desired requests per second for the specific endpoint.
-- **Payloads & Methods**: Support for standard HTTP verbs and JSON payloads (objects or arrays).
-- **Early Exit**: Safety thresholds that stop the individual endpoint if error rates exceed acceptable limits or specific status codes are returned.
+Define specific target behavior within the `requests` array. This provides independent control over the HTTP method, payload, and target throughput (RPS) for every endpoint in the test.
 
-## Configuration Hierarchy
+```json
+{
+  "requests": [
+    {
+      "url": "http://api.example.com/v1",
+      "method": "POST",
+      "payload": {
+        "hello": true
+      },
+      "headers": {
+        "User-Agent": "Tressi"
+      },
+      "rps": 100,
+      "rampUpDurationSec": 0,
+      "earlyExit": {
+        "enabled": false,
+        "errorRateThreshold": 0,
+        "exitStatusCodes": [],
+        "monitoringWindowMs": 1000
+      }
+    }
+  ]
+}
+```
 
-Tressi uses a hierarchical model for settings. This allows for broad defaults with specific overrides.
+### Define Global Options
 
-- **Headers**: Endpoint-specific headers are merged with global headers. If a key exists in both, the endpoint-specific header takes precedence.
-- **Early Exit**: Worker early exit settings act as the default for all endpoints. If an endpoint defines its own `earlyExit` configuration, it overrides the global settings for that specific target. The entire test only terminates early if all endpoints have been stopped.
+Global settings establish environment constraints for the entire test suite. Use these to set total test duration, global HTTP headers, and resource allocation for worker threads.
 
-## ramp up Dynamics
+```json
+{
+  "options": {
+    "durationSec": 300,
+    "threads": 8,
+    "workerMemoryLimit": 128,
+    "headers": {
+      "Authorization": "Bearer <token>"
+    }
+  }
+}
+```
 
-To ensure system stability and accurate telemetry, Tressi supports a linear ramp up period.
+### Control Load Progression
 
-- **Linear Progression**: Load increases steadily from zero to the target RPS over the specified ramp up duration.
-- **Metric Accuracy**: For the most reliable performance analysis, the ramp up period should not exceed **25% (one quarter)** of the total test duration. This ensures a sufficient window of "Constant Load" to validate sustained performance.
-- **RPS Constraints**: When a global ramp up is active, all endpoints must have a target of at least **5 RPS** to ensure smooth linear progression.
+Implement linear load progression to stabilize target systems before reaching peak intensity. See [Control Load Progression](../03-advanced/01-ramp-up-dynamics.md) for methodology and constraints.
 
-## Type Safety & Validation
+```json
+{
+  "requests": [
+    {
+      "url": "http://api.example.com/v1",
+      "rps": 1000,
+      "rampUpDurationSec": 30
+    }
+  ],
+  "options": {
+    "durationSec": 300,
+    "rampUpDurationSec": 60
+  }
+}
+```
 
-For users managing configurations as code, Tressi provides a versioned JSON Schema hosted on GitHub. This ensures that your configuration remains compatible with the specific version of the Tressi CLI you have installed.
+### Manage Settings Hierarchy
 
-- **Validation**: Ensures all required fields are present and types are correct before execution.
-- **IDE Integration**: Provides autocompletion and documentation tooltips in editors like VS Code when the `$schema` property is defined.
-- **Versioning**: Always use the schema version that matches your Tressi installation to ensure access to the correct features and constraints.
+Endpoint specific configurations take precedence over global `options` for granular control. This hierarchy applies to:
 
-## Example Configuration
+- **Headers** (`headers`)
+- **Load Progression** (`rampUpDurationSec`)
+- **Early Exit** (`earlyExit` overrides `workerEarlyExit`)
+
+```json
+{
+  "requests": [
+    {
+      "url": "http://api.example.com/v1",
+      "rampUpDurationSec": 30,
+      "headers": {
+        "X-Target-ID": "endpoint-01"
+      }
+    }
+  ],
+  "options": {
+    "rampUpDurationSec": 60,
+    "headers": {
+      "User-Agent": "Tressi-Global-Runner"
+    }
+  }
+}
+```
+
+### Full Example
 
 ```json
 {
   "$schema": "https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json",
   "requests": [
     {
-      "url": "https://api.example.com/v1/users",
-      "method": "GET",
-      "rps": 100,
+      "url": "http://localhost:5000/health",
       "payload": {},
+      "method": "GET",
       "headers": {
-        "X-Endpoint-Specific": "true"
+        "User-Agent": "Tressi"
       },
+      "rps": 100,
       "rampUpDurationSec": 0,
       "earlyExit": {
         "enabled": false,
@@ -70,13 +137,15 @@ For users managing configurations as code, Tressi provides a versioned JSON Sche
       }
     },
     {
-      "url": "https://api.example.com/v1/auth",
-      "method": "POST",
-      "rps": 10,
+      "url": "http://localhost:5000/echo",
       "payload": {
-        "username": "test"
+        "hello": true
       },
-      "headers": {},
+      "method": "POST",
+      "headers": {
+        "User-Agent": "Tressi"
+      },
+      "rps": 10,
       "rampUpDurationSec": 0,
       "earlyExit": {
         "enabled": false,
@@ -87,18 +156,18 @@ For users managing configurations as code, Tressi provides a versioned JSON Sche
     }
   ],
   "options": {
-    "durationSec": 300,
-    "rampUpDurationSec": 30,
-    "threads": 8,
-    "workerMemoryLimit": 128,
+    "durationSec": 10,
+    "rampUpDurationSec": 0,
     "headers": {
-      "Authorization": "Bearer <token>"
+      "User-Agent": "Tressi"
     },
+    "threads": 4,
+    "workerMemoryLimit": 128,
     "workerEarlyExit": {
-      "enabled": true,
-      "errorRateThreshold": 0.1,
-      "exitStatusCodes": [500, 503],
-      "monitoringWindowMs": 5000
+      "enabled": false,
+      "errorRateThreshold": 0,
+      "exitStatusCodes": [],
+      "monitoringWindowMs": 1000
     }
   }
 }
@@ -106,4 +175,4 @@ For users managing configurations as code, Tressi provides a versioned JSON Sche
 
 ### Next Steps
 
-Review the [Execution Lifecycle](./03-execution-lifecycle.md) to understand how Tressi runs your tests.
+Review the [Execution Lifecycle](./03-execution-lifecycle.md) to understand how Tressi processes these configurations.

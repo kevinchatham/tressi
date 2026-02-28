@@ -1,49 +1,38 @@
-# Remote Configurations & Security
+# Centralizing Remote Configurations
 
-Centralize and share test definitions across teams using remote URLs and secure access methods.
-
-### Capabilities
+Managing test definitions across distributed teams and automated environments often leads to configuration drift and security challenges. Remote configurations allow you to centralize test logic, ensuring that all execution environments pull from a single source of truth while maintaining secure access to sensitive definitions.
 
 This document covers:
 
-- **Load Remote Configurations**: Executing tests directly from remote URLs.
-- **Secure Remote Access**: Using Signed URLs or SAS tokens to protect sensitive configurations.
-- **Validate Remote Schemas**: Ensuring remote configurations remain compatible with the installed CLI version.
+- **Remote Configuration**: Executing tests directly from HTTPS endpoints.
+- **Secure Access**: Using presigned URLs and SAS tokens to protect private configurations.
+- **Schema Validation**: Ensuring remote definitions remain compatible with the CLI runtime.
 
-### Load Remote Configurations
+### Remote Configuration
 
-The CLI loads configuration files from HTTP/HTTPS endpoints. This enables teams to maintain a single source of truth for performance tests without manual file distribution.
+The CLI loads configuration files from HTTPS endpoints. This enables teams to maintain a single source of truth for performance tests without manual file distribution.
 
 To execute a test using a remote configuration, provide the URL as the primary argument to the `run` command:
 
 ```bash
-tressi run https://config.internal.company.com/performance/api-v1.json
+tressi run "https://config.internal.company.com/performance/api.json"
 ```
 
 The CLI performs an HTTP GET request to retrieve the JSON payload. The response must be a valid JSON object conforming to the Tressi configuration schema.
 
-### Secure Remote Access
+### Secure Access
 
-For configurations stored in private cloud storage (e.g., AWS S3, Google Cloud Storage, or Azure Blob Storage), use pre-signed URLs or Shared Access Signature (SAS) tokens to grant temporary, secure access.
+For configurations stored in private cloud storage (e.g., AWS S3, Google Cloud Storage, or Azure Blob Storage), use presigned URLs or Shared Access Signature (SAS) tokens to grant temporary, secure access.
 
-**Example using a pre-signed URL:**
+**Example using a presigned URL:**
 
 ```bash
 tressi run "https://s3.amazonaws.com/my-bucket/test.json?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=..."
 ```
 
-### Validate Remote Schemas
+### Schema Validation
 
 The CLI validates remote configurations against the internal Zod schema before execution. This ensures the runtime environment is compatible with the provided configuration.
-
-Configurations should include the `$schema` field for IDE autocompletion and version tracking:
-
-```json
-{
-  "$schema": "https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json",
-  ...
-}
-```
 
 If validation fails, the CLI terminates with a report identifying the incompatible fields.
 
@@ -51,10 +40,10 @@ If validation fails, the CLI terminates with a report identifying the incompatib
 
 Remote configurations enable several operational workflows:
 
-- **CI/CD Integration**: Pipelines pull validated test definitions from a central repository.
+- **Automated Pipelines**: Pipelines pull validated test definitions from a central repository.
 - **Environment Management**: Maintain distinct configuration URLs for staging, canary, and production environments.
 - **Team Collaboration**: Share test scenarios via URL instead of local files.
 
-### Next Section
+### Next Steps
 
 Review the [Reference](../04-reference/index.md) section for detailed CLI and Schema documentation.

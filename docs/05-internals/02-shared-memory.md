@@ -1,6 +1,8 @@
 # Shared Memory Architecture
 
-Tressi utilizes `SharedArrayBuffer` and `Atomics` to implement a zero copy metrics collection system. This architecture eliminates the performance overhead associated with standard Node.js interprocess communication by allowing worker threads and the main thread to operate on the same memory space.
+Tressi utilizes `SharedArrayBuffer` and `Atomics` to implement a zero copy metrics collection system. By operating on a single block of shared memory, Tressi eliminates the serialization and copying overhead associated with Node.js interprocess communication, enabling high frequency updates without impacting the event loop.
+
+This document covers the memory segmentation strategy, the use of atomic operations for thread safe synchronization, and the layout of counters and histograms within the shared buffer.
 
 ```mermaid
 graph TD
@@ -17,31 +19,18 @@ graph TD
     WT2[Worker Thread 2] <-->|Atomics| SharedArrayBuffer
 ```
 
-### Zero Copy Communication
-
-Standard message passing in Node.js requires serializing data to JSON and copying it between threads. Tressi avoids this by partitioning a single block of shared memory into specialized segments managed by the `SharedMemoryFactory`.
-
-### Segmenting Memory
+### Partitioning Shared Buffers
 
 - **Worker State**: Tracks thread lifecycle (Initializing, Ready, Running, Finished, Error) using 4 byte `Int32` slots per worker.
 - **Endpoint State**: Provides a control plane for the main thread to signal early exits to specific workers via per endpoint state flags.
 - **Stats Counters**: Stores frequency request metrics including success/failure counts, network throughput, and status code distributions.
 - **HDR Histograms**: Maintains latency distribution data with microsecond precision using a canonical HDR histogram implementation.
 
-### Using Atomic Operations
-
-To ensure data integrity without the use of standard mutexes or locks, Tressi employs the `Atomics` API for thread safe memory access:
-
-- **`Atomics.add()`**: Increments request counters and latency buckets from worker threads without blocking.
-- **`Atomics.load()`**: Retrieves realtime metrics for UI updates and reporting.
-- **`Atomics.store()`**: Updates worker and endpoint states.
-- **`Atomics.wait()` / `Atomics.notify()`**: Synchronizes worker thread startup and shutdown sequences, allowing the main thread to wait for all workers to reach a `READY` state before beginning execution.
-
-### Memory Layout & Partitioning
+### Defining Memory Layout
 
 The `SharedMemoryFactory` manages the allocation and partitioning of `SharedArrayBuffer` instances. It ensures that each worker has dedicated memory regions for its assigned endpoints to minimize cache contention.
 
-#### Mapping Stats Counters
+#### Allocating Counter Blocks
 
 Each endpoint is allocated a fixed size counter block:
 
@@ -55,7 +44,7 @@ Each endpoint is allocated a fixed size counter block:
 | 608    | Status Counters      | Int32[600] | Frequency of status codes (100-699)    |
 | 1208   | Body Sample Indices  | Int32[N]   | Ring buffer for response body sampling |
 
-#### Mapping Latency Histograms
+#### Implementing HDR Histograms
 
 Tressi implements a canonical HDR histogram mapping to provide microsecond precision latency tracking with constant memory overhead:
 
@@ -63,7 +52,16 @@ Tressi implements a canonical HDR histogram mapping to provide microsecond preci
 - **Dynamic Range**: Supports values from 1μs up to 120s while maintaining configurable significant figures (default: 3).
 - **Bucket Mapping**: Uses a logarithmic bucket and sub bucket indexing scheme to provide consistent relative accuracy across the entire range.
 
-### Ensuring Memory Safety
+### Synchronizing Thread Access
+
+To ensure data integrity without the use of mutexes or locks, Tressi employs the `Atomics` API for thread safe memory access:
+
+- **`Atomics.add()`**: Increments request counters and latency buckets from worker threads without blocking.
+- **`Atomics.load()`**: Retrieves realtime metrics for UI updates and reporting.
+- **`Atomics.store()`**: Updates worker and endpoint states.
+- **`Atomics.wait()` / `Atomics.notify()`**: Synchronizes worker thread startup and shutdown sequences, allowing the main thread to wait for all workers to reach a `READY` state before beginning execution.
+
+### Validating Memory Allocation
 
 The `SharedMemoryFactory` precalculates exact byte requirements before test execution based on the number of workers, endpoints, and configured buffer sizes.
 

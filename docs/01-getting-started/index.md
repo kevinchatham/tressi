@@ -4,8 +4,8 @@ This section will help you understand the tool and get your first load test runn
 
 In this section, you will find:
 
-- [Intro](./01-intro.md): Overview capabilities and core workflow.
-- [Quickstart](./02-quickstart.md): A step-by-step guide to running your first test.
+- [Intro](./01-intro.md): Workflow overview and core capabilities.
+- [Quickstart](./02-quickstart.md): A step by step guide to running your first test.
 
 ## Next Section
 

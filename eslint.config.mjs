@@ -4,9 +4,6 @@ import tsLint from 'typescript-eslint';
 
 export default [
   {
-    // https://eslint.org/docs/latest/use/configure/ignore
-    // only ignore node_modules in the same directory as the configuration file
-    // so you have toS add `**/` pattern to include nested directories (for example if you use pnpm workspace)
     ignores: [
       'temp/',
       'node_modules/',
@@ -20,7 +17,6 @@ export default [
       globals: { ...globals.node },
     },
   },
-  // rules
   ...tsLint.configs.recommended,
   {
     files: ['**/*.ts'],
@@ -32,7 +28,6 @@ export default [
       '@typescript-eslint/explicit-function-return-type': 'error',
       eqeqeq: ['error', 'smart'],
       'simple-import-sort/imports': ['warn'],
-      // Add the naming convention rule here
       '@typescript-eslint/naming-convention': [
         'error',
         {

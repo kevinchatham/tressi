@@ -1,74 +1,93 @@
-# CLI Reference
+# Command Line Reference
+
+The Tressi CLI provides a set of commands to execute load tests, manage the local database, and start the web interface. It is designed for both interactive use and integration into automated pipelines.
+
+This document covers:
+
+- **Global Options**: Accessing system information and command assistance.
+- **Run Load Tests**: Executing tests using local or remote configuration files.
+- **Start Server**: Launching the web based dashboard for realtime monitoring.
+- **Reset Database**: Managing local data persistence.
+
+### Global Options
+
+Access system information and command assistance.
+
+**Options:**
+
+- `--version`: Display the current version of the Tressi CLI.
+- `--help`: Display help information for the CLI or a specific command.
 
 ### Run Load Tests
 
 Execute a load test based on a JSON configuration schema.
 
-`tressi run <config>`
+- `tressi run <config>`
 
 **Arguments:**
 
-- `<config>`: Path to a local JSON file or a valid URL pointing to a remote configuration.
+- `<config>`: Path to a local JSON file or a valid HTTPS URL pointing to a remote configuration.
 
 **Options:**
 
-- `-e --export <path>`: Generate shareable reports to a specified directory.
-- `-s --silent`: Suppress TUI and progress output. Optimized for CI/CD pipelines and automated environments.
+- `--export <path>`: Generate reports to a specified directory.
+- `--silent`: Suppress TUI and progress output. Optimized for automated pipelines and environments.
+
+**Remote Configurations:**
+
+- The CLI performs an HTTP GET request to retrieve the JSON payload.
+- The response must be a valid JSON object conforming to the Tressi configuration schema.
+- For private configurations, use presigned URLs or SAS tokens to grant access.
+
+**Examples:**
+
+- **Execute Local Test**:
+  ```bash
+  tressi run ./load-test.config.json
+  ```
+- **Execute Remote Test with Export**:
+  ```bash
+  tressi run "https://api.example.com/conf.json" --export ./reports/results
+  ```
+- **Headless Execution**:
+  ```bash
+  tressi run ./config.json --silent --export ./reports/results
+  ```
 
 ### Start Server
 
-Start the Tressi Server to provide access to the Web UI.
+Start the Tressi Server to provide access to the web interface.
 
-`tressi serve`
+- `tressi serve`
 
 **Options:**
 
-- `-p, --port <port>`: Specify the network port for the server. Defaults to `3108`
+- `--port <port>`: Specify the network port for the server. Defaults to `3108`.
 
-> `3108 `represents the speed of light, 3x10^8 m/s.
+**Example:**
+
+- **Custom Server Port**:
+  ```bash
+  tressi serve --port 8080
+  ```
 
 ### Reset Database
 
 Purge all stored data from the local database.
 
-`tressi reset`
+- `tressi reset`
 
 **Details:**
 
 - This command deletes all local data.
 - Requires manual confirmation before execution.
 
-### Examples
+**Example:**
 
-#### Execute Local Test
-
-```bash
-tressi run ./load-test.config.json
-```
-
-#### Execute Remote Test with Export
-
-```bash
-tressi run https://api.example.com/configs/perf.json --export ./reports/results
-```
-
-#### Headless Execution for CI/CD
-
-```bash
-tressi run ./config.json --silent --export ./reports/results
-```
-
-#### Custom Server Port
-
-```bash
-tressi serve --port 8080
-```
-
-#### Database Purge
-
-```bash
-tressi reset
-```
+- **Database Purge**:
+  ```bash
+  tressi reset
+  ```
 
 ### Next Steps
 

@@ -1,8 +1,8 @@
 {
   "name": "tressi",
   "version": "0.0.13",
-  "description": "A lightweight, declarative stress testing CLI for modern developers.",
-  "license": "SEE LICENSE IN docs/01-home/03-license.md",
+  "description": "A modern load testing tool that brings professional API analysis to your workspace.",
+  "license": "SEE LICENSE IN docs/06-community/02-license.md",
   "author": "kevinchatham",
   "repository": {
     "type": "git",
@@ -10,12 +10,21 @@
     "directory": ""
   },
   "keywords": [
+    "load testing",
+    "stress testing",
     "performance",
-    "load",
-    "stress",
-    "testing",
+    "benchmark",
+    "api testing",
+    "http",
+    "dashboard",
+    "gui",
     "cli",
-    "automation"
+    "multithreaded",
+    "realtime",
+    "automation",
+    "autocannon",
+    "artillery",
+    "wrk"
   ],
   "type": "commonjs",
   "main": "dist/index.js",
@@ -26,23 +35,24 @@
     "node": ">=20.0.0"
   },
   "workspaces": [
-    "projects/tressi-cli",
-    "projects/tressi-ui"
+    "projects/cli",
+    "projects/ui",
+    "projects/shared"
   ],
   "scripts": {
-    "build": "npx rimraf dist && npx rimraf server/dist && npm run cli:build && npm run ui:build && cp -r projects/tressi-cli/dist dist",
+    "build": "npx rimraf dist && npx rimraf server/dist && npm run cli:build && npm run ui:build && cp -r projects/cli/dist dist",
     "clean": "npx rimraf --glob \"**/package-lock.json\" \"**/dist\" \"**/node_modules\" \"**/.angular\"",
-    "cli:build": "npm run build -w projects/tressi-cli",
-    "cli:run": "npm run run -w projects/tressi-cli",
-    "cli:serve": "nodemon --watch projects/tressi-cli/src --watch docs --ext ts,md --exec \"npm run build && cd dist && node cli.js serve\"",
+    "cli:build": "npm run build -w projects/cli",
+    "cli:run": "npm run run -w projects/cli",
+    "cli:serve": "nodemon --watch projects/cli/src --watch docs --ext ts,md --exec \"npm run build && cd dist && node cli.js serve\"",
     "format:watch": "chokidar \"**/*.{ts,json,md,html,yml,css}\" -c \"npm run format\" --ignore \"**/node_modules/**\" --ignore \"**/dist/**\"",
     "format": "prettier --write . --config .prettierrc --ignore-path .prettierignore",
     "lint:inspect": "eslint --inspect-config",
     "lint:watch": "chokidar \"**/*.ts\" -c \"npm run lint\" --ignore \"**/node_modules/**\" --ignore \"**/dist/**\"",
     "lint": "eslint --fix --format unix --config ./eslint.config.mjs .",
-    "ui:build": "npm run build -w projects/tressi-ui",
-    "ui:serve": "npm run serve -w projects/tressi-ui",
-    "test:server": "npx tsx projects/tressi-cli/tests/setup/server.ts",
+    "ui:build": "npm run build -w projects/ui",
+    "ui:serve": "npm run serve -w projects/ui",
+    "test:server": "npx tsx projects/cli/tests/setup/server.ts",
     "kill": "sudo lsof -i :4200 -i :3108 | awk '$2 ~ /^[0-9]+$/ {print $2}' | xargs sudo kill -9"
   },
   "dependencies": {

@@ -1,44 +1,89 @@
-# Execution Lifecycle
+# Lifecycle Management
 
-This section covers the internal mechanics of the Tressi execution engine lifecycle.
+Tressi executes tests through a structured lifecycle designed to ensure stable load generation and accurate performance data. This process manages the transition from initial resource allocation to final data persistence, providing a consistent environment for both short bursts and long duration soak tests.
 
-## 1. Initialization
+This document covers:
 
-When a test starts, the **Worker Pool Manager** orchestrates the following:
+- **Initialization & Load Progression**: Resource allocation and managing the transition from ramp up to steady state.
+- **Early Exit Monitoring**: Selective termination of endpoints based on error thresholds.
+- **Finalization & Export**: Graceful shutdown and data consolidation for final reporting.
 
-- **Resource Allocation**: Spawns the configured number of worker cores.
-- **Endpoint Distribution**: Assigns targets to workers using a round robin algorithm to ensure balanced load generation.
-- **Shared Memory Setup**: Initializes `SharedArrayBuffer` instances for zero copy atomic communication between cores, allowing for high frequency metrics updates without the overhead of message passing.
+### Tressi Lifecycle
 
-## 2. Ramp Up Phase
+The following diagram illustrates the interaction between the runner, worker threads, and the target system during a standard execution run:
 
-If ramp up duration is not zero, Tressi enters a linear progression phase:
+```mermaid
+sequenceDiagram
+    participant U as User (CLI/UI)
+    participant R as Runner
+    participant W as Worker Threads
+    participant T as Target System
+    participant D as Local Database (UI Only)
+    participant F as Filesystem (CLI Export)
 
-- **Token Replenishment**: The rate limiter starts at zero and steadily increases the token replenishment rate until it reaches the target.
-- **Staggered Execution**: Requests within a pipeline batch are staggered to prevent "thundering herd" effects on the target infrastructure.
+    Note over U, F: 1. Initialize Test
+    U->>R: Start Test
+    R->>W: Spawn Workers & Distribute Endpoints
+    W->>R: Ready Signal
+    R->>U: Test Initialized
 
-## 3. Constant Load (Steady State)
+    Note over U, F: 2. Ramp Up / 3. Steady State
+    W->>T: Generate Load
+    T-->>W: Responses
+    W->>R: Aggregate Metrics
+    R->>U: Stream Live Metrics
+    opt UI Only
+        R->>D: Persist Interval Metrics (for Charts)
+    end
 
-Once the ramp up is complete, the engine maintains the target:
+    Note over U, F: 4. Monitor Early Exit
+    alt Threshold Exceeded
+        R->>W: Stop Specific Endpoint
+    else All Endpoints Stopped
+        R->>W: Terminate All Workers
+    end
 
-- **Pipeline Architecture**: Each worker maintains a pipeline depth of 15 concurrent requests. This ensures that network latency on one request does not block the generation of the next.
-- **Burst Handling**: The token bucket algorithm allows for bursts up to twice the target. This accommodates minor system stutters while maintaining the requested average rate over time.
-- **Telemetry Aggregation**: A dedicated metrics aggregator polls the shared memory every 1000ms to update the UI or TUI with live metrics.
+    Note over U, F: 5. Finalize & Export
+    W->>W: Finish Active Requests
+    W->>R: Final Metrics & Samples
+    alt UI Only
+        R->>D: Persist Final Summary
+    else CLI Only
+        R->>F: Export Results (JSON/XLSX)
+    end
+    R->>U: Test Complete
+```
 
-## 4. Early Exit Monitoring
+### 1. Initialize Test
 
-Throughout the execution, the **Early Exit Coordinator** monitors error rates and status codes:
+Tressi prepares the execution environment to ensure predictable load generation:
 
-- **Threshold Evaluation**: If an endpoint exceeds its Error Rate Threshold. or returns a blacklisted status code, it is stopped individually while other endpoints continue.
-- **Test Termination**: The entire test run terminates early only if all endpoints have been stopped or all worker threads have reached a terminal state.
+- **Resource Allocation**: Spawns worker threads based on configuration.
+- **Endpoint Distribution**: Maps target URLs to specific workers for balanced load.
+- **Communication Layer**: Establishes the internal bus for metrics aggregation.
 
-## 5. Finalization & Export
+### 2. Ramp Up
 
-Upon reaching the duration:
+- **Load Progression**: Increases request rate linearly from zero to the target RPS.
+- **Traffic Stabilization**: Prevents system shock and allows target environments to scale, ensuring metrics reflect sustained performance rather than cold start spikes.
 
-- **Graceful Shutdown**: Workers finish in flight requests before terminating.
-- **Data Consolidation**: Final metrics, including HDR histograms and response samples, are consolidated into the final test summary.
-- **Persistence**: Results are saved to the local database (Web UI) or exported to the filesystem (CLI).
+### 3. Steady State
+
+- **Constant Load**: Maintains the target request rate for the test duration.
+- **Asynchronous Execution**: Workers generate parallel requests to maximize throughput.
+- **Live Monitoring**: Aggregates performance data for immediate visibility into system behavior.
+
+### 4. Monitor Early Exit
+
+- **Threshold Evaluation**: Stops individual endpoints if they exceed Error Rate Thresholds or return blacklisted status codes.
+- **Selective Termination**: Allows healthy endpoints to continue testing while protecting failing systems from further load.
+- **Test Termination**: The entire test run terminates if all endpoints have been stopped or all worker threads reach a terminal state.
+
+### 5. Finalize & Export
+
+- **Graceful Shutdown**: Workers complete active requests before terminating.
+- **Data Consolidation**: Merges latency distribution data and response samples into a final summary.
+- **Persistence**: Saves results to the local database or exports to the filesystem.
 
 ### Next Steps
 

@@ -1,0 +1,16 @@
+@if (isTestRunning()) {
+  <app-button
+    (click)="stop()"
+    [title]="'Stop Test'"
+    [color]="'error'"
+    [icon]="'close'"
+  />
+} @else {
+  <app-button
+    (click)="start()"
+    [title]="'Start Test'"
+    [color]="'primary'"
+    [icon]="'dynamic_form'"
+    [disabled]="isDisabled()"
+  />
+}
