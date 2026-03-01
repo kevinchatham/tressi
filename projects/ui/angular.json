@@ -75,22 +75,12 @@
           "builder": "@angular/build:extract-i18n"
         },
         "test": {
-          "builder": "@angular/build:karma",
+          "builder": "@angular/build:unit-test",
           "options": {
-            "polyfills": [],
             "tsConfig": "tsconfig.spec.json",
-            "assets": [
-              {
-                "glob": "**/*",
-                "input": "public"
-              },
-              {
-                "glob": "**/*.md",
-                "input": "../../docs",
-                "output": "public/docs"
-              }
-            ],
-            "styles": ["src/styles.css"]
+            "buildTarget": "::local",
+            "browsers": ["chromium"],
+            "headless": true
           }
         }
       }

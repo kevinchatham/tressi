@@ -30,11 +30,21 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
       - run: npm ci
-      - run: npm run test:unit -w projects/cli
+      - name: Run CLI Tests
+        run: npm run test -w projects/cli
+      - name: Run UI Tests
+        run: npm run test -w projects/ui
 
   docker-build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
       - name: Build Docker image
-        run: docker build .
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

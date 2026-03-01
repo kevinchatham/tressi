@@ -155,7 +155,7 @@ describe('config', () => {
           headers: {
             Authorization: 'Bearer global-token',
           },
-          durationSec: 1,
+          durationSec: 10,
           rampUpDurationSec: 0,
           workerMemoryLimit: 128,
           threads: 4,
