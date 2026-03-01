@@ -4,7 +4,7 @@
   "scripts": {
     "clean": "npx rimraf --glob \"**/.angular\"",
     "serve": "ng serve",
-    "build": "ng build",
+    "build": "cp ../../LICENSE ../../docs/06-community/02-license.md && ng build",
     "test": "ng test"
   },
   "dependencies": {

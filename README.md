@@ -3,7 +3,7 @@
   <br/>
   <em>Stress less, test more.</em>
   <br/><br/>
-  <a href="./docs/06-community/02-license.md">
+  <a href="./LICENSE">
     <img src="https://img.shields.io/badge/license-MIT%20%2B%20Commons%20Clause-orange" alt="Source Available"/>
   </a>
 </p>
@@ -41,6 +41,40 @@ Or install it globally to use the `tressi` command anywhere:
 ```bash
 npm install -g tressi
 tressi serve
+```
+
+### Docker
+
+You can also run `tressi` using Docker. This is the recommended way for CI/CD environments or if you don't want to install Node.js locally.
+
+#### Using Docker Run
+
+To persist your data, mount a volume to `/home/node/.tressi`:
+
+```bash
+docker run -p 3108:3108 -v tressi-data:/home/node/.tressi ghcr.io/kevinchatham/tressi serve
+```
+
+#### Using Docker Compose
+
+Create a `docker-compose.yml` file:
+
+```yaml
+services:
+  tressi:
+    image: ghcr.io/kevinchatham/tressi:latest
+    ports:
+      - '3108:3108'
+    volumes:
+      - tressi-data:/home/node/.tressi
+volumes:
+  tressi-data:
+```
+
+Then run:
+
+```bash
+docker compose up -d
 ```
 
 ## 📖 Documentation

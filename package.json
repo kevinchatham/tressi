@@ -2,7 +2,7 @@
   "name": "tressi",
   "version": "0.0.13",
   "description": "A modern load testing tool that brings professional API analysis to your workspace.",
-  "license": "SEE LICENSE IN docs/06-community/02-license.md",
+  "license": "SEE LICENSE IN LICENSE",
   "author": "kevinchatham",
   "repository": {
     "type": "git",
@@ -39,6 +39,12 @@
     "projects/ui",
     "projects/shared"
   ],
+  "files": [
+    "dist",
+    "LICENSE",
+    "package.json",
+    "README.md"
+  ],
   "scripts": {
     "build": "npx rimraf dist && npx rimraf server/dist && npm run cli:build && npm run ui:build && cp -r projects/cli/dist dist",
     "clean": "npx rimraf --glob \"**/package-lock.json\" \"**/dist\" \"**/node_modules\" \"**/.angular\"",
@@ -53,7 +59,8 @@
     "ui:build": "npm run build -w projects/ui",
     "ui:serve": "npm run serve -w projects/ui",
     "test:server": "npx tsx projects/cli/tests/setup/server.ts",
-    "kill": "sudo lsof -i :4200 -i :3108 | awk '$2 ~ /^[0-9]+$/ {print $2}' | xargs sudo kill -9"
+    "kill": "sudo lsof -i :4200 -i :3108 | awk '$2 ~ /^[0-9]+$/ {print $2}' | xargs sudo kill -9",
+    "docker": "tsx scripts/docker.ts"
   },
   "dependencies": {
     "@acrodata/code-editor": "^0.6.0",

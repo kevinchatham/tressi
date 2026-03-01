@@ -49,15 +49,15 @@ tressi run ./load-test.config.json --silent --export ./artifacts/perf-results
 
 ```yaml
 steps:
-  - uses: actions/checkout@v4
-  - uses: actions/setup-node@v4
+  - uses: actions/checkout@v6
+  - uses: actions/setup-node@v6
     with:
-      node-version: '20'
+      node-version: '24'
   - run: npm install -g tressi
   - name: Run Load Test
     run: tressi run ./perf/config.json --silent --export ./reports
   - name: Upload Results
-    uses: actions/upload-artifact@v4
+    uses: actions/upload-artifact@v7
     with:
       name: performance-reports
       path: ./reports/*/
