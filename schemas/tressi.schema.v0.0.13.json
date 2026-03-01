@@ -72,13 +72,7 @@
           "method": {
             "description": "The HTTP method to use for the request. Defaults to GET.",
             "type": "string",
-            "enum": [
-              "GET",
-              "POST",
-              "PUT",
-              "PATCH",
-              "DELETE"
-            ]
+            "enum": ["GET", "POST", "PUT", "PATCH", "DELETE"]
           },
           "headers": {
             "description": "Headers to be sent with this specific request. Merged with global headers.",
@@ -269,10 +263,6 @@
       "additionalProperties": false
     }
   },
-  "required": [
-    "$schema",
-    "requests",
-    "options"
-  ],
+  "required": ["$schema", "requests", "options"],
   "additionalProperties": false
 }

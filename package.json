@@ -50,7 +50,7 @@
     "clean": "npx rimraf --glob \"**/package-lock.json\" \"**/dist\" \"**/node_modules\" \"**/.angular\"",
     "cli:build": "npm run build -w projects/cli",
     "cli:run": "npm run run -w projects/cli",
-    "cli:serve": "nodemon --watch projects/cli/src --watch docs --ext ts,md --exec \"npm run build && cd dist && node cli.js serve\"",
+    "cli:serve": "nodemon",
     "format:watch": "chokidar \"**/*.{ts,json,md,html,yml,css}\" -c \"npm run format\" --ignore \"**/node_modules/**\" --ignore \"**/dist/**\"",
     "format": "prettier --write . --config .prettierrc --ignore-path .prettierignore",
     "lint:inspect": "eslint --inspect-config",

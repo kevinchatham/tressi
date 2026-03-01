@@ -1,4 +1,5 @@
 import { TressiConfig } from './config.types';
+import { AggregatedMetrics } from './metrics.types';
 import { TestSummary } from './reporting.types';
 import { TestStatus } from './test.types';
 
@@ -53,7 +54,7 @@ export interface IGlobalServerEvents {
 
 export interface IRunnerEvents {
   start: (data: { config: TressiConfig; startTime: number }) => void;
-  complete: (results: any) => void;
+  complete: (results: AggregatedMetrics) => void;
   error: (err: unknown) => void;
 }
 
