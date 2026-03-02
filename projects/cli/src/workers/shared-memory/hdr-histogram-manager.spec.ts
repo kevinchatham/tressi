@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { HdrHistogramManager } from '../../../../src/workers/shared-memory/hdr-histogram-manager';
+import { HdrHistogramManager } from './hdr-histogram-manager';
 
 describe('HdrHistogramManager', () => {
   describe('constructor', () => {

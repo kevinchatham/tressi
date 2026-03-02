@@ -17,7 +17,7 @@ export class ServerManager {
             'npx',
             [
               'tsx',
-              path.join(__dirname, './server.ts'),
+              path.join(__dirname, './test-server.ts'),
               `--port=${this._port}`,
             ],
             {

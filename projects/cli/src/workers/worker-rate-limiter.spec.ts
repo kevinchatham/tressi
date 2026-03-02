@@ -1,7 +1,7 @@
 import type { TressiRequestConfig } from '@tressi/shared/common';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { WorkerRateLimiter } from '../../../src/workers/worker-rate-limiter';
+import { WorkerRateLimiter } from './worker-rate-limiter';
 
 describe('WorkerRateLimiter', () => {
   let mockEndpoints: TressiRequestConfig[];

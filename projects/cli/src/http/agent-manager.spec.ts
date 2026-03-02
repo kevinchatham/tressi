@@ -2,10 +2,7 @@ import { AgentConfig } from '@tressi/shared/common';
 import { Agent } from 'undici';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import {
-  AgentManager,
-  globalAgentManager,
-} from '../../../src/http/agent-manager';
+import { AgentManager, globalAgentManager } from './agent-manager';
 
 describe('AgentManager', () => {
   let manager: AgentManager;

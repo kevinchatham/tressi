@@ -5,7 +5,7 @@ import {
 import { TressiConfig } from '@tressi/shared/common';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { EarlyExitCoordinator } from '../../../src/workers/early-exit-coordinator';
+import { EarlyExitCoordinator } from './early-exit-coordinator';
 
 describe('EarlyExitCoordinator', () => {
   let mockConfig: TressiConfig;

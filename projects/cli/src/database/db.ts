@@ -8,7 +8,7 @@ import { join } from 'path';
 const rootDir = join(homedir(), '.tressi');
 if (!existsSync(rootDir)) mkdirSync(rootDir, { recursive: true });
 
-const dbPath = join(rootDir, 'tressi.db');
+const dbPath = process.env['TRESSI_DB_PATH'] || join(rootDir, 'tressi.db');
 
 const dialect = new SqliteDialect({
   database: new Database(dbPath),

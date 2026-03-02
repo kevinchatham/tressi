@@ -1,23 +1,23 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { expect, test } from '@playwright/test';
+import { runLoadTest, TressiConfig } from '@tressi/cli';
 
-import { runLoadTest, TressiConfig } from '../../src/index';
 import { ServerManager } from '../setup/server-manager';
 
-describe('Per-endpoint RPS Configuration Tests', () => {
+test.describe('Per-endpoint RPS Configuration Tests', () => {
   let serverManager: ServerManager;
   let baseUrl: string;
 
-  beforeAll(async () => {
+  test.beforeAll(async () => {
     serverManager = new ServerManager();
     baseUrl = await serverManager.start();
   });
 
-  afterAll(async () => {
+  test.afterAll(async () => {
     await serverManager.stop();
   });
 
-  describe('Endpoint specific rate limiting', () => {
-    it('should apply different RPS limits to different endpoints', async () => {
+  test.describe('Endpoint specific rate limiting', () => {
+    test('should apply different RPS limits to different endpoints', async () => {
       const config: TressiConfig = {
         $schema:
           'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json',
@@ -66,7 +66,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
           },
         ],
         options: {
-          durationSec: 5, // Reduced duration for faster tests
+          durationSec: 5,
           rampUpDurationSec: 0,
           headers: {},
           threads: 4,
@@ -82,21 +82,19 @@ describe('Per-endpoint RPS Configuration Tests', () => {
 
       const results = await runLoadTest(config);
 
-      // Total should be close to 50 + 25 + 10 = 85 RPS
       const actualRps =
         results.summary.global.totalRequests /
         results.summary.global.finalDurationSec;
       expect(actualRps).toBeGreaterThanOrEqual(75);
       expect(actualRps).toBeLessThanOrEqual(95);
 
-      // Each endpoint should have appropriate request counts
-      const successEndpoint = results.summary.endpoints.find((e) =>
+      const successEndpoint = results.summary.endpoints.find((e: any) =>
         e.url.endsWith('/success'),
       );
-      const delayEndpoint = results.summary.endpoints.find((e) =>
+      const delayEndpoint = results.summary.endpoints.find((e: any) =>
         e.url.endsWith('/delay/100'),
       );
-      const payloadEndpoint = results.summary.endpoints.find((e) =>
+      const payloadEndpoint = results.summary.endpoints.find((e: any) =>
         e.url.endsWith('/payload/1'),
       );
 
@@ -105,7 +103,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
       expect(payloadEndpoint?.successfulRequests).toBeGreaterThan(40);
     });
 
-    it('should handle minimum RPS for specific endpoints', async () => {
+    test('should handle minimum RPS for specific endpoints', async () => {
       const config: TressiConfig = {
         $schema:
           'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json',
@@ -170,14 +168,13 @@ describe('Per-endpoint RPS Configuration Tests', () => {
 
       const results = await runLoadTest(config);
 
-      // Should hit all endpoints with their specified RPS
-      const successEndpoint = results.summary.endpoints.find((e) =>
+      const successEndpoint = results.summary.endpoints.find((e: any) =>
         e.url.endsWith('/success'),
       );
-      const delayEndpoint = results.summary.endpoints.find((e) =>
+      const delayEndpoint = results.summary.endpoints.find((e: any) =>
         e.url.endsWith('/delay/50'),
       );
-      const payloadEndpoint = results.summary.endpoints.find((e) =>
+      const payloadEndpoint = results.summary.endpoints.find((e: any) =>
         e.url.endsWith('/payload/1'),
       );
 
@@ -186,7 +183,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
       expect(payloadEndpoint?.successfulRequests).toBeGreaterThan(90);
     });
 
-    it('should support very high per-endpoint RPS', async () => {
+    test('should support very high per-endpoint RPS', async () => {
       const config: TressiConfig = {
         $schema:
           'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json',
@@ -237,7 +234,6 @@ describe('Per-endpoint RPS Configuration Tests', () => {
 
       const results = await runLoadTest(config);
 
-      // Should achieve close to 300 RPS total
       const actualRps =
         results.summary.global.totalRequests /
         results.summary.global.finalDurationSec;
@@ -245,7 +241,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
       expect(actualRps).toBeLessThanOrEqual(320);
     });
 
-    it('should support very low per-endpoint RPS', async () => {
+    test('should support very low per-endpoint RPS', async () => {
       const config: TressiConfig = {
         $schema:
           'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json',
@@ -296,7 +292,6 @@ describe('Per-endpoint RPS Configuration Tests', () => {
 
       const results = await runLoadTest(config);
 
-      // Should achieve close to 4 RPS total
       const actualRps =
         results.summary.global.totalRequests /
         results.summary.global.finalDurationSec;
@@ -305,8 +300,8 @@ describe('Per-endpoint RPS Configuration Tests', () => {
     });
   });
 
-  describe('Mixed configuration scenarios', () => {
-    it('should combine per-endpoint and global RPS correctly', async () => {
+  test.describe('Mixed configuration scenarios', () => {
+    test('should combine per-endpoint and global RPS correctly', async () => {
       const config: TressiConfig = {
         $schema:
           'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json',
@@ -371,7 +366,6 @@ describe('Per-endpoint RPS Configuration Tests', () => {
 
       const results = await runLoadTest(config);
 
-      // Expected: 40 + 15 + 20 = 75 RPS
       const actualRps =
         results.summary.global.totalRequests /
         results.summary.global.finalDurationSec;
@@ -379,7 +373,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
       expect(actualRps).toBeLessThanOrEqual(85);
     });
 
-    it('should handle all endpoints using global RPS', async () => {
+    test('should handle all endpoints using global RPS', async () => {
       const config: TressiConfig = {
         $schema:
           'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json',
@@ -444,7 +438,6 @@ describe('Per-endpoint RPS Configuration Tests', () => {
 
       const results = await runLoadTest(config);
 
-      // Should distribute 60 RPS across all endpoints
       const actualRps =
         results.summary.global.totalRequests /
         results.summary.global.finalDurationSec;
@@ -453,8 +446,8 @@ describe('Per-endpoint RPS Configuration Tests', () => {
     });
   });
 
-  describe('Edge cases', () => {
-    it('should handle single endpoint with per-endpoint RPS', async () => {
+  test.describe('Edge cases', () => {
+    test('should handle single endpoint with per-endpoint RPS', async () => {
       const config: TressiConfig = {
         $schema:
           'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json',
@@ -498,7 +491,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
       expect(actualRps).toBeLessThanOrEqual(110);
     });
 
-    it('should handle low RPS values', async () => {
+    test('should handle low RPS values', async () => {
       const config: TressiConfig = {
         $schema:
           'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json',
@@ -535,7 +528,6 @@ describe('Per-endpoint RPS Configuration Tests', () => {
 
       const results = await runLoadTest(config);
 
-      // Should achieve close to 5 RPS total
       const actualRps =
         results.summary.global.totalRequests /
         results.summary.global.finalDurationSec;
@@ -544,8 +536,8 @@ describe('Per-endpoint RPS Configuration Tests', () => {
     });
   });
 
-  describe('Accuracy validation', () => {
-    it('should maintain reasonable accuracy for single endpoint', async () => {
+  test.describe('Accuracy validation', () => {
+    test('should maintain reasonable accuracy for single endpoint', async () => {
       const targetRps = 75;
 
       const config: TressiConfig = {
@@ -587,13 +579,13 @@ describe('Per-endpoint RPS Configuration Tests', () => {
       const actualRps =
         results.summary.global.totalRequests /
         results.summary.global.finalDurationSec;
-      const tolerance = targetRps * 0.1; // 10% tolerance for real-world conditions
+      const tolerance = targetRps * 0.1;
       expect(actualRps).toBeGreaterThanOrEqual(targetRps - tolerance);
       expect(actualRps).toBeLessThanOrEqual(targetRps + tolerance);
     });
 
-    it('should maintain reasonable accuracy for multiple endpoints', async () => {
-      const expectedTotal = 30 + 20 + 10; // 60 RPS
+    test('should maintain reasonable accuracy for multiple endpoints', async () => {
+      const expectedTotal = 30 + 20 + 10;
 
       const config: TressiConfig = {
         $schema:
@@ -662,7 +654,7 @@ describe('Per-endpoint RPS Configuration Tests', () => {
       const actualRps =
         results.summary.global.totalRequests /
         results.summary.global.finalDurationSec;
-      const tolerance = expectedTotal * 0.15; // 15% tolerance for real-world conditions
+      const tolerance = expectedTotal * 0.15;
       expect(actualRps).toBeGreaterThanOrEqual(expectedTotal - tolerance);
       expect(actualRps).toBeLessThanOrEqual(expectedTotal + tolerance);
     });

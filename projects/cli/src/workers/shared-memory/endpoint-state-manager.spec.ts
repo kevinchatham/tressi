@@ -1,7 +1,7 @@
 import { EndpointState } from '@tressi/shared/common';
 import { describe, expect, it } from 'vitest';
 
-import { EndpointStateManager } from '../../../../src/workers/shared-memory/endpoint-state-manager';
+import { EndpointStateManager } from './endpoint-state-manager';
 
 describe('EndpointStateManager', () => {
   describe('constructor', () => {

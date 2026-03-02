@@ -3,8 +3,7 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   test: {
     globals: true,
-    setupFiles: ['tests/setup/test-setup.ts'],
-    include: ['tests/**/*.ts'],
+    include: ['src/**/*.spec.ts'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
@@ -26,8 +25,8 @@ export default defineConfig({
         },
       },
     },
-    testTimeout: 10000, // Increased for worker tests
-    hookTimeout: 10000,
-    teardownTimeout: 10000,
+    testTimeout: 5000,
+    hookTimeout: 5000,
+    teardownTimeout: 5000,
   },
 });

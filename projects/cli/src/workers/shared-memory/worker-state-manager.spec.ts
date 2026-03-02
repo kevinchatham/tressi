@@ -1,7 +1,7 @@
 import { WorkerState } from '@tressi/shared/common';
 import { describe, expect, it } from 'vitest';
 
-import { WorkerStateManager } from '../../../../src/workers/shared-memory/worker-state-manager';
+import { WorkerStateManager } from './worker-state-manager';
 
 describe('WorkerStateManager', () => {
   describe('constructor', () => {

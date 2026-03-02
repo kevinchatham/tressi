@@ -1,7 +1,7 @@
 import type { TressiRequestConfig } from '@tressi/shared/common';
 import { describe, expect, it } from 'vitest';
 
-import { SharedMemoryFactory } from '../../../../src/workers/shared-memory/shared-memory-factory';
+import { SharedMemoryFactory } from './shared-memory-factory';
 
 describe('SharedMemoryFactory', () => {
   const mockEndpoints: TressiRequestConfig[] = [

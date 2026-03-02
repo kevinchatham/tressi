@@ -1,4 +1,4 @@
-import { TressiConfig } from '../../src/index';
+import { TressiConfig } from '../../cli/src/index';
 
 /**
  * Creates a properly typed test configuration with all required fields

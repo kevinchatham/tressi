@@ -1,7 +1,7 @@
 import { IHdrHistogramManager, IStatsCounterManager } from '@tressi/shared/cli';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { MetricsAggregator } from '../../../src/workers/metrics-aggregator';
+import { MetricsAggregator } from './metrics-aggregator';
 
 describe('MetricsAggregator', () => {
   let mockHdrHistogramManagers: IHdrHistogramManager[];

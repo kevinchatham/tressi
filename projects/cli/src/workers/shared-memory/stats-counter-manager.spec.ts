@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { StatsCounterManager } from '../../../../src/workers/shared-memory/stats-counter-manager';
+import { StatsCounterManager } from './stats-counter-manager';
 
 describe('StatsCounterManager', () => {
   describe('constructor', () => {

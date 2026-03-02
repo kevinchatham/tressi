@@ -1,0 +1,28 @@
+import { expect, test } from '@playwright/test';
+
+test.describe('API Integration', () => {
+  test('GET /api/health should return 200 OK', async ({ request }) => {
+    const response = await request.get('/api/health');
+    expect(response.ok()).toBeTruthy();
+    const body = await response.json();
+    expect(body).toHaveProperty('status', 'ok');
+  });
+
+  test('GET /api/tests should return an array of results', async ({
+    request,
+  }) => {
+    const response = await request.get('/api/tests');
+    expect(response.ok()).toBeTruthy();
+    const body = await response.json();
+    expect(Array.isArray(body)).toBeTruthy();
+  });
+
+  test('GET /api/configs should return an array of configs', async ({
+    request,
+  }) => {
+    const response = await request.get('/api/configs');
+    expect(response.ok()).toBeTruthy();
+    const body = await response.json();
+    expect(Array.isArray(body)).toBeTruthy();
+  });
+});
