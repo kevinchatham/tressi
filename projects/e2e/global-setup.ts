@@ -1,23 +1,19 @@
-import { FullConfig } from '@playwright/test';
-import { execSync } from 'child_process';
+import { test as setup } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-async function globalSetup(config: FullConfig): Promise<void> {
+import { run } from './utils';
+
+setup('global setup', async () => {
   // eslint-disable-next-line no-console
   console.log('Building projects...');
 
-  const rootDir = path.resolve(__dirname, '../../');
-
-  // Build all projects from the root
-  execSync('npm run build', { cwd: rootDir, stdio: 'inherit' });
+  // Build all projects from the root using the sanitized utility
+  run('npm run build');
 
   // Ensure the test database is clean
   const dbPath = path.resolve(__dirname, 'tressi.test.db');
   if (fs.existsSync(dbPath)) {
     fs.unlinkSync(dbPath);
   }
-}
-
-export default globalSetup;
+});

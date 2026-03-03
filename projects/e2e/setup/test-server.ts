@@ -68,7 +68,7 @@ let requestCount = 0;
 const startTime = Date.now();
 
 // Middleware to track requests
-app.use('*', async (c, next) => {
+app.use('*', async (_c, next) => {
   requestCount++;
   await next();
 });

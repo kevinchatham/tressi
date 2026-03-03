@@ -30,7 +30,7 @@ Execute a load test based on a JSON configuration schema.
 
 **Options:**
 
-- `--export <path>`: Generate reports to a specified directory.
+- `--export <path>`: Export test results in all formats (JSON, XLSX, MD) to the specified directory.
 - `--silent`: Suppress TUI and progress output. Optimized for automated pipelines and environments.
 
 **Remote Configurations:**

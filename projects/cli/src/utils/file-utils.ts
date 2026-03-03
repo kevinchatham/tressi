@@ -145,42 +145,41 @@ export class FileUtils {
     // Get the current directory of this file
     const currentDir = __dirname;
 
-    // Check if we're running from the src directory (development mode)
-    const isInSrc = currentDir.endsWith('src') || currentDir.endsWith('src/');
-
-    if (isInSrc) {
-      // When running with tsx from src directory
-      const tsPath = path.resolve(currentDir, 'workers/worker-thread.ts');
-      if (existsSync(tsPath)) {
-        return tsPath;
-      }
+    // Find the project root (projects/cli) by looking for src or dist in the path
+    // This handles cases where this file is in a subdirectory like src/utils
+    let projectRoot = currentDir;
+    if (currentDir.includes('/src')) {
+      projectRoot = currentDir.split('/src')[0];
+    } else if (currentDir.includes('/dist')) {
+      projectRoot = currentDir.split('/dist')[0];
+    } else {
+      // Fallback to one level up if we can't find src or dist
+      projectRoot = path.resolve(currentDir, '..');
     }
 
-    // Check if we're running from dist directory
-    const isInDist =
-      currentDir.endsWith('dist') || currentDir.endsWith('dist/');
-    if (isInDist) {
-      // When running from dist directory
-      const jsPath = path.resolve(currentDir, 'workers/worker-thread.js');
-      if (existsSync(jsPath)) {
-        return jsPath;
-      }
-    }
-
-    // Fallback to absolute paths
-    const projectRoot = path.resolve(__dirname, '..');
+    // Try absolute paths first to avoid CWD dependency
     const srcPath = path.resolve(projectRoot, 'src/workers/worker-thread.ts');
     const distPath = path.resolve(projectRoot, 'dist/workers/worker-thread.js');
 
-    if (existsSync(srcPath)) {
-      return srcPath;
-    }
-
+    // 1. Check for dist version (production)
+    // We prefer the compiled version if it exists, as it's more reliable across different environments
+    // (especially in worker threads where TS loaders might not be present)
     if (existsSync(distPath)) {
       return distPath;
     }
 
-    // Final fallback
-    return './dist/workers/worker-thread.js';
+    // 2. Check for source version (development)
+    if (existsSync(srcPath)) {
+      return srcPath;
+    }
+
+    // 3. Fallback for bundled environments where __dirname might be the dist root
+    const bundledPath = path.resolve(currentDir, 'workers/worker-thread.js');
+    if (existsSync(bundledPath)) {
+      return bundledPath;
+    }
+
+    // Final fallback - still use absolute path if possible
+    return distPath;
   }
 }

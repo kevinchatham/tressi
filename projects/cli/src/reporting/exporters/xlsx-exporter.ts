@@ -3,9 +3,10 @@ import {
   StatusCodeMap,
   TestSummary,
 } from '@tressi/shared/common';
+import { writeFile } from 'fs/promises';
 import * as xlsx from 'xlsx';
 
-import { validatePath } from '../utils/validation';
+import { validateXlsxPath } from '../utils/validation';
 
 /**
  * Exports test results to Excel format with unified interface
@@ -45,8 +46,9 @@ export class XlsxExporter {
       this._addSampledResponsesSheet(wb, processedSummary.endpoints);
 
       if (path) {
-        validatePath(path);
-        xlsx.writeFile(wb, path);
+        validateXlsxPath(path);
+        const buffer = xlsx.write(wb, { type: 'buffer' });
+        await writeFile(path, buffer);
         return;
       } else {
         // Return buffer for in-memory use

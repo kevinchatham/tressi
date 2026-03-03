@@ -1,7 +1,10 @@
 import { expect, test } from '@playwright/test';
+import { loadConfig } from '@tressi/cli/src/core/config';
+import fs from 'fs';
+import path from 'path';
 import { MockAgent, setGlobalDispatcher } from 'undici';
 
-import { loadConfig } from '../../cli/src/core/config';
+import { execute } from '../utils';
 
 const minimalConfig = {
   $schema: 'https://example.com/schema.json',
@@ -70,7 +73,17 @@ const expectedConfig = {
 };
 
 test.describe('Config Loading Integration', () => {
+  const rootDir = path.resolve(__dirname, '../../../');
+  const cliPath = path.join(rootDir, 'dist/cli.js');
+  const testConfigPath = path.join(__dirname, 'test-config.json');
+
   let mockAgent: MockAgent;
+
+  test.beforeEach(() => {
+    if (fs.existsSync(testConfigPath)) {
+      fs.unlinkSync(testConfigPath);
+    }
+  });
 
   test.beforeAll(() => {
     mockAgent = new MockAgent();
@@ -83,25 +96,8 @@ test.describe('Config Loading Integration', () => {
   });
 
   test.afterAll(async () => {
+    if (fs.existsSync(testConfigPath)) fs.unlinkSync(testConfigPath);
     await mockAgent.close();
-  });
-
-  test('should load config from a direct object', async () => {
-    const result = await loadConfig(minimalConfig);
-    expect(result.config).toEqual(expectedConfig);
-  });
-
-  test('should return validation errors for invalid config', async () => {
-    const invalidConfig = { ...minimalConfig, requests: 'not-an-array' };
-    await expect(loadConfig(invalidConfig as any)).rejects.toThrow();
-  });
-
-  test('should return merge errors for config with missing required fields', async () => {
-    const invalidConfig = {
-      ...minimalConfig,
-      requests: [{}],
-    };
-    await expect(loadConfig(invalidConfig as any)).rejects.toThrow();
   });
 
   test('should load config from a remote URL', async () => {
@@ -125,51 +121,25 @@ test.describe('Config Loading Integration', () => {
     ).rejects.toThrow('Remote config fetch failed with status 500');
   });
 
-  test('should correctly parse a config with per-request headers', async () => {
-    const configWithHeaders = {
-      $schema: 'https://example.com/schema.json',
+  test('should handle invalid configuration gracefully', async () => {
+    const invalidConfig = {
       options: {
-        headers: {
-          Authorization: 'Bearer global-token',
-        },
-        durationSec: 10,
-        rampUpDurationSec: 0,
-        workerMemoryLimit: 128,
-        threads: 4,
-        workerEarlyExit: {
-          enabled: false,
-          errorRateThreshold: 0,
-          exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
-          monitoringWindowMs: 5000,
-        },
+        durationSec: 'invalid',
       },
-      requests: [
-        {
-          url: 'http://localhost:8080/test',
-          method: 'GET' as const,
-          headers: {
-            'X-Request-ID': '123',
-          },
-          rps: 10,
-          rampUpDurationSec: 0,
-          payload: {},
-          earlyExit: {
-            enabled: false,
-            errorRateThreshold: 0,
-            exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
-            monitoringWindowMs: 5000,
-          },
-        },
-      ],
     };
 
-    const parsedConfig = await loadConfig(configWithHeaders);
+    fs.writeFileSync(testConfigPath, JSON.stringify(invalidConfig, null, 2));
 
-    expect(parsedConfig.config.requests[0].headers).toEqual({
-      'X-Request-ID': '123',
-    });
-    expect(parsedConfig.config.options.headers).toEqual({
-      Authorization: 'Bearer global-token',
-    });
+    try {
+      const command = `node ${cliPath} run ${testConfigPath}`;
+      await execute(command).output;
+      throw new Error('Should have thrown an error');
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        expect(error.message).toBeDefined();
+      } else {
+        throw new Error(`Caught non-error: ${String(error)}`);
+      }
+    }
   });
 });

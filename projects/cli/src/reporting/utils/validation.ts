@@ -21,6 +21,22 @@ function validateExportPath(path: string, expectedExtension: string): void {
  * Validates JSON export path
  * @param path - The file path to validate
  */
-export function validatePath(path: string): void {
+export function validateJsonPath(path: string): void {
   validateExportPath(path, '.json');
+}
+
+/**
+ * Validates XLSX export path
+ * @param path - The file path to validate
+ */
+export function validateXlsxPath(path: string): void {
+  validateExportPath(path, '.xlsx');
+}
+
+/**
+ * Validates Markdown export path
+ * @param path - The file path to validate
+ */
+export function validateMarkdownPath(path: string): void {
+  validateExportPath(path, '.md');
 }

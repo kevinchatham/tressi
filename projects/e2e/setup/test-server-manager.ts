@@ -1,9 +1,10 @@
 import type { ChildProcess } from 'child_process';
-import { spawn } from 'child_process';
 import * as net from 'net';
 import * as path from 'path';
 
-export class ServerManager {
+import { execute } from '../utils';
+
+export class TestServerManager {
   private _process: ChildProcess | null = null;
   private _port = 0;
 
@@ -13,18 +14,15 @@ export class ServerManager {
       server.listen(0, () => {
         this._port = (server.address() as { port: number }).port;
         server.close(() => {
-          this._process = spawn(
-            'npx',
-            [
+          this._process = execute('npx', {
+            args: [
               'tsx',
               path.join(__dirname, './test-server.ts'),
               `--port=${this._port}`,
             ],
-            {
-              stdio: 'pipe',
-              cwd: process.cwd(),
-            },
-          );
+            stdio: 'pipe',
+            cwd: process.cwd(),
+          });
 
           this._waitForReady()
             .then(() => resolve(`http://localhost:${this._port}`))

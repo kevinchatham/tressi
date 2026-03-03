@@ -34,7 +34,7 @@ export function createApp(sseManager: ISSEClientManager, port: number) {
     })
     .get('/api/health', (c) => {
       return c.json({
-        status: 'healthy',
+        status: 'ok',
         timestamp: Date.now(),
       });
     })

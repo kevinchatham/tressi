@@ -271,6 +271,8 @@ export class MetricsAggregator implements IMetricsAggregator {
       this._pollingInterval = null;
     }
     this._endTime = Date.now();
+    // Prevents cli from hanging open
+    this._stopMetricsSampling();
   }
 
   /**

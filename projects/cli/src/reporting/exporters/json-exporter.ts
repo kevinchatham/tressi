@@ -1,7 +1,7 @@
 import { TestSummary } from '@tressi/shared/common';
 import { writeFile } from 'fs/promises';
 
-import { validatePath } from '../utils/validation';
+import { validateJsonPath } from '../utils/validation';
 
 /**
  * Exports test results and summary data to JSON format
@@ -17,7 +17,7 @@ export class JsonExporter {
       const jsonContent = JSON.stringify(summary, null, 2);
 
       if (path) {
-        validatePath(path);
+        validateJsonPath(path);
         await writeFile(path, jsonContent, 'utf-8');
         return; // Returns void when path is provided
       } else {

@@ -31,8 +31,8 @@ class TressiCLI {
       .version(pkg.version);
 
     this._program.option(
-      '-e, --export [path]',
-      'Export test results to specified path (supports .json, .xlsx, .md formats)',
+      '-e, --export <path>',
+      'Export test results in all formats (JSON, XLSX, MD) to the specified directory',
     );
     this._program.option(
       '-s, --silent',
@@ -51,9 +51,14 @@ class TressiCLI {
       .argument('<config>', 'Path or URL to JSON configuration file')
       .summary('Run a load test')
       .description(RunCommand.getDescription())
-      .action(async (config, options) => {
+      .action(async (config, _options, commandInstance) => {
         const command = new RunCommand();
-        await command.execute(config, options.export, options.silent);
+        const globalOptions = commandInstance.optsWithGlobals();
+        await command.execute(
+          config,
+          globalOptions.export,
+          globalOptions.silent,
+        );
       });
 
     // Serve command
@@ -92,7 +97,7 @@ Commands:
   reset         Completely reset Tressi database
 
 Options:
-  -e, --export <path>  Export test results to specified path (supports .json, .xlsx, .md formats)
+  -e, --export <path>  Export test results in all formats (JSON, XLSX, MD) to the specified directory
   -s, --silent         Run in silent mode without TUI or progress output
 
 Examples:

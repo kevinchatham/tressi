@@ -5,7 +5,6 @@ import {
 } from '@tressi/shared/common';
 import { TressiConfig } from '@tressi/shared/common';
 import chalk from 'chalk';
-import { promises as fs } from 'fs';
 import ora from 'ora';
 import path from 'path';
 
@@ -73,18 +72,18 @@ async function executeLoadTest(
   const isCanceled = runner.isCanceled();
 
   // Handle export and printing only for CLI
-  if (options.enableTUI) {
-    // await handleCLIExport(summary, samples, options.exportPath, options.silent);
+  if (options.exportPath) {
     await handleCLIExport(summary, options.exportPath, options.silent);
-    if (!options.silent) {
-      printSummary(summary, config.options, config, options.silent);
-    }
+  }
+
+  if (options.enableTUI && !options.silent) {
+    printSummary(summary, config.options, config, options.silent);
   }
 
   runner.cleanupResponseSamples();
 
   // Check for threshold violations in CLI mode
-  if (options.enableTUI && checkThresholds(summary)) {
+  if (options.setupSignalHandlers && checkThresholds(summary)) {
     throw new Error('Test failed: One or more error thresholds were exceeded.');
   }
 
@@ -152,14 +151,10 @@ async function handleCLIExport(
   try {
     const baseExportName =
       typeof exportPath === 'string' ? exportPath : 'tressi-report';
-    const runDate = new Date();
 
-    const reportDir = path.join(
-      process.cwd(),
-      FileUtils.getSafeDirectoryName(
-        `${baseExportName}-${runDate.toISOString()}`,
-      ),
-    );
+    const reportDir = path.isAbsolute(baseExportName)
+      ? baseExportName
+      : path.join(process.cwd(), baseExportName);
     await FileUtils.ensureDirectoryExists(reportDir);
 
     const jsonExporter = new JsonExporter();
@@ -173,13 +168,7 @@ async function handleCLIExport(
     await xlsxExporter.export(summary, path.join(reportDir, 'results.xlsx'));
 
     // Export Markdown report
-    const markdownReport = markdownExporter.export(
-      summary,
-      path.join(reportDir, 'report.md'),
-    );
-    if (typeof markdownReport === 'string') {
-      await fs.writeFile(path.join(reportDir, 'report.md'), markdownReport);
-    }
+    await markdownExporter.export(summary, path.join(reportDir, 'report.md'));
 
     exportSpinner?.succeed(`Successfully exported results to ${reportDir}`);
   } catch (err) {
@@ -198,7 +187,7 @@ export async function runLoadTest(
   silent?: boolean,
 ): Promise<LoadTestResult> {
   return executeLoadTest(config, {
-    enableTUI: true,
+    enableTUI: !silent,
     setupSignalHandlers: true,
     exportPath,
     silent,
