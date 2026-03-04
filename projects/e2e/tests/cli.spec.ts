@@ -1,4 +1,3 @@
-import { expect, test } from '@playwright/test';
 import {
   defaultTressiConfig,
   defaultTressiRequestConfig,
@@ -6,7 +5,7 @@ import {
 import fs from 'fs';
 import path from 'path';
 
-import { baseURL } from '../playwright.config';
+import { expect, test } from '../setup/fixtures';
 import { execute } from '../utils';
 
 test.describe('CLI Integration', () => {
@@ -32,12 +31,12 @@ test.describe('CLI Integration', () => {
     }
   });
 
-  test('should execute a basic load test', async () => {
+  test('should execute a basic load test', async ({ testServer }) => {
     const config = defaultTressiConfig;
 
     const req = defaultTressiRequestConfig;
     req.method = 'GET';
-    req.url = `${baseURL}/api/health`;
+    req.url = `${testServer}/health`;
     req.rps = 10;
 
     config.requests.push(req);
@@ -52,11 +51,11 @@ test.describe('CLI Integration', () => {
     expect(stdout.includes('Report Information'));
   });
 
-  test('should run tressi run and export reports', async () => {
+  test('should run tressi run and export reports', async ({ testServer }) => {
     const config = defaultTressiConfig;
 
     const req = defaultTressiRequestConfig;
-    req.url = `${baseURL}/api/health`;
+    req.url = `${testServer}/health`;
     req.rps = 10;
 
     config.requests.push(req);

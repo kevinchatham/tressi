@@ -1,64 +1,61 @@
 import type { ChildProcess } from 'child_process';
-import * as net from 'net';
 import * as path from 'path';
+import kill from 'tree-kill';
 
-import { execute } from '../utils';
+import { execute, killPort } from '../utils';
 
 export class TestServerManager {
   private _process: ChildProcess | null = null;
-  private _port = 0;
+
+  constructor(private readonly _port: number = 8001) {}
 
   async start(): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const server = net.createServer();
-      server.listen(0, () => {
-        this._port = (server.address() as { port: number }).port;
-        server.close(() => {
-          this._process = execute('npx', {
-            args: [
-              'tsx',
-              path.join(__dirname, './test-server.ts'),
-              `--port=${this._port}`,
-            ],
-            stdio: 'pipe',
-            cwd: process.cwd(),
-          });
+    const baseURL = `http://localhost:${this._port}`;
 
-          this._waitForReady()
-            .then(() => resolve(`http://localhost:${this._port}`))
-            .catch(reject);
-        });
-      });
+    // Ensure the port is clean before starting
+    killPort(this._port);
+
+    this._process = execute('npx', {
+      args: [
+        'tsx',
+        path.join(__dirname, './test-server.ts'),
+        `--port=${this._port}`,
+        '--silent',
+      ],
+      stdio: 'pipe',
+      cwd: process.cwd(),
     });
+
+    await this._waitForReady();
+    return baseURL;
   }
 
   async stop(): Promise<void> {
-    if (this._process) {
-      this._process.kill();
-      this._process = null;
+    if (this._process && this._process.pid) {
+      const pid = this._process.pid;
+      await new Promise<void>((resolve) => {
+        kill(pid, 'SIGTERM', () => {
+          this._process = null;
+          resolve();
+        });
+      });
     }
   }
 
   private async _waitForReady(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const timeout = setTimeout(
-        () => reject(new Error('Server startup timeout')),
-        10000,
-      );
+    const maxAttempts = 30;
+    const interval = 500;
+    const healthUrl = `http://localhost:${this._port}/health`;
 
-      this._process?.stdout?.on('data', (data: Buffer) => {
-        const output = data.toString();
-        if (output.includes('starting at')) {
-          clearTimeout(timeout);
-          resolve();
-        }
-      });
-
-      // Also listen for stderr in case there are startup issues
-      this._process?.stderr?.on('data', (data: Buffer) => {
-        // eslint-disable-next-line no-console
-        console.error('Server stderr:', data.toString());
-      });
-    });
+    for (let i = 0; i < maxAttempts; i++) {
+      try {
+        const response = await fetch(healthUrl);
+        if (response.ok) return;
+      } catch {
+        // Server not ready yet
+      }
+      await new Promise((resolve) => setTimeout(resolve, interval));
+    }
+    throw new Error('Server startup timeout');
   }
 }

@@ -1,6 +1,7 @@
 @if (shouldRender()) {
   <div
     class="loading-overlay"
+    data-e2e="loading-overlay"
     [class.opacity-0]="isFadingOut() || !navigating()"
     [class.opacity-100]="!isFadingOut() && navigating()"
     role="status"

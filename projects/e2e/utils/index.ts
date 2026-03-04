@@ -96,3 +96,13 @@ export function execute(
 
   return child;
 }
+
+/**
+ * Kills any process listening on the specified port.
+ * Useful for cleaning up orphaned test servers.
+ */
+export function killPort(port: number): void {
+  try {
+    execSync(`fuser -k ${port}/tcp`, { stdio: 'ignore' });
+  } catch {}
+}

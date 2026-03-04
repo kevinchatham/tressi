@@ -16,10 +16,12 @@ export const BUTTON_COLORS = SHARED_BUTTON_COLORS;
   styleUrl: './button.component.css',
   host: {
     '[style.pointer-events]': 'disabled() ? "none" : "auto"',
+    '[attr.data-e2e]': 'dataE2e()',
     class: 'contents',
   },
 })
 export class ButtonComponent {
+  dataE2e = input<string | undefined>(undefined, { alias: 'data-e2e' });
   color = input<ButtonColor>('default');
   disabled = input<boolean>(false);
   ghost = input<boolean>(false);

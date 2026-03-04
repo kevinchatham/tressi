@@ -1,4 +1,6 @@
-import { expect, test } from '@playwright/test';
+import { expect } from '@playwright/test';
+
+import { test } from '../setup/fixtures';
 
 test.describe('API Integration', () => {
   test('GET /api/health should return 200 OK', async ({ request }) => {

@@ -1,4 +1,5 @@
 <app-collapsible-card
+  data-e2e="config-card"
   [title]="input().name"
   [subtitle]="
     'Updated: ' + timeService.getRelativeTimeString(input().epochUpdatedAt ?? 0)
@@ -132,6 +133,7 @@
       [ghost]="true"
       [title]="'Use'"
       [icon]="'dynamic_form'"
+      data-e2e="use-config-btn"
     />
   </div>
 </app-collapsible-card>

@@ -55,7 +55,7 @@
     "docker": "tsx scripts/docker.ts",
     "format:watch": "chokidar \"**/*.{ts,json,md,html,yml,css}\" -c \"npm run format\" --ignore \"**/node_modules/**\" --ignore \"**/dist/**\"",
     "format": "prettier --write . --config .prettierrc --ignore-path .prettierignore",
-    "kill": "sudo lsof -i :4200 -i :3108 | awk '$2 ~ /^[0-9]+$/ {print $2}' | xargs sudo kill -9",
+    "kill": "fuser -k 3108/tcp && fuser -k 4200/tcp && fuser -k 5000/tcp && fuser -k 8000/tcp && fuser -k 8001/tcp",
     "lint:inspect": "eslint --inspect-config",
     "lint:watch": "chokidar \"**/*.ts\" -c \"npm run lint\" --ignore \"**/node_modules/**\" --ignore \"**/dist/**\"",
     "lint": "eslint --fix --format unix --config ./eslint.config.mjs .",

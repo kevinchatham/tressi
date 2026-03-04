@@ -10,7 +10,9 @@
         <app-icon [name]="icon()!" />
       }
       <div>
-        <h2 class="text-xl font-semibold">{{ title() }}</h2>
+        <h2 data-e2e="collapsible-card-title" class="text-xl font-semibold">
+          {{ title() }}
+        </h2>
         @if (subtitle()) {
           <p class="text-base-content/70 text-sm">{{ subtitle() }}</p>
         }

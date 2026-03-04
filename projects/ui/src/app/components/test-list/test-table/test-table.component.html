@@ -72,6 +72,7 @@
     <tbody>
       @for (test of tests(); track test.id) {
         <tr
+          data-e2e="test-row"
           class="hover:bg-base-300 bg-base-200 cursor-pointer"
           (click)="onViewTest(test.id)"
           [class.bg-base-300]="selectedTests().has(test.id)"

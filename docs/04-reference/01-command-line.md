@@ -4,10 +4,9 @@ The Tressi CLI provides a set of commands to execute load tests, manage the loca
 
 This document covers:
 
+- **CLI Commands**: Executing tests, starting the server, and managing data.
 - **Global Options**: Accessing system information and command assistance.
-- **Run Load Tests**: Executing tests using local or remote configuration files.
-- **Start Server**: Launching the web based dashboard for realtime monitoring.
-- **Reset Database**: Managing local data persistence.
+- **Environment Variables**: Configuring runtime behavior via the shell.
 
 ### Global Options
 
@@ -88,6 +87,12 @@ Purge all stored data from the local database.
   ```bash
   tressi reset
   ```
+
+### Environment Variables
+
+Configure CLI and server behavior using environment variables.
+
+- `TRESSI_DB_PATH`: Specify a custom path for the SQLite database. Defaults to `~/.tressi/tressi.db`.
 
 ### Next Steps
 

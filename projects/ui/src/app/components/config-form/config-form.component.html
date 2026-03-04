@@ -16,6 +16,7 @@
         [type]="'submit'"
         (click)="onSubmit($event)"
         [disabled]="!isFormValid()"
+        data-e2e="save-config-btn"
       />
     </div>
   </div>
@@ -27,6 +28,7 @@
     <nav class="-mt-4 flex items-center justify-around">
       <button
         type="button"
+        data-e2e="general-tab"
         class="flex w-full cursor-pointer items-center justify-center gap-2 border-b-2 px-2 py-4 text-sm font-medium transition-colors"
         [class.border-primary]="activeTab() === 'general'"
         [class.text-primary]="activeTab() === 'general'"
@@ -40,6 +42,7 @@
       </button>
       <button
         type="button"
+        data-e2e="requests-tab"
         class="flex w-full cursor-pointer items-center justify-center gap-2 border-b-2 px-1 py-4 text-sm font-medium transition-colors"
         [class.border-primary]="activeTab() === 'requests'"
         [class.text-primary]="activeTab() === 'requests'"

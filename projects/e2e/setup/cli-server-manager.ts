@@ -1,51 +1,57 @@
 import type { ChildProcess } from 'child_process';
+import fs from 'fs';
 import * as http from 'http';
 import * as path from 'path';
+import kill from 'tree-kill';
 
-import { execute } from '../utils';
+import { execute, killPort } from '../utils';
 
 export class CliServerManager {
   private _process: ChildProcess | null = null;
-  private _port: number;
-
-  constructor(port = 8888) {
-    this._port = port;
-  }
+  constructor(private readonly _port: number = 8000) {}
 
   async start(): Promise<string> {
-    const cliDir = path.resolve(__dirname, '../../cli');
+    const cliDir = path.resolve(__dirname, '../../../dist');
     const baseURL = `http://localhost:${this._port}`;
+    const dbPath = path.resolve(__dirname, '../tressi.test.db');
 
-    // Check if server is already running
-    const isRunning = await this._checkHealth(baseURL);
-    if (isRunning) {
+    if (fs.existsSync(dbPath)) {
       // eslint-disable-next-line no-console
-      console.log('Tressi CLI server already running, reusing...');
-      return baseURL;
+      console.log(`Resetting ${dbPath}`);
+      fs.rmSync(dbPath);
     }
 
-    return new Promise((resolve, reject) => {
-      // eslint-disable-next-line no-console
-      console.log(`Starting Tressi CLI server on port ${this._port}...`);
+    // eslint-disable-next-line no-console
+    console.log(`Starting Tressi CLI server on port ${this._port}...`);
 
-      this._process = execute('npm', {
-        args: ['run', 'serve', '--', '--port', this._port.toString()],
-        stdio: 'pipe',
-        cwd: cliDir,
-      });
+    // Ensure the port is clean before starting
+    killPort(this._port);
 
-      this._waitForReady(baseURL)
-        .then(() => resolve(baseURL))
-        .catch(reject);
+    this._process = execute('node', {
+      args: ['cli.js', 'serve', '--port', this._port.toString()],
+      env: {
+        ...process.env,
+        TRESSI_DB_PATH: dbPath,
+      },
+      stdio: 'pipe',
+      cwd: cliDir,
     });
+
+    await this._waitForReady(baseURL);
+    return baseURL;
   }
 
   async stop(): Promise<void> {
-    if (this._process) {
+    if (this._process && this._process.pid) {
       // eslint-disable-next-line no-console
       console.log('Stopping Tressi CLI server...');
-      this._process.kill();
-      this._process = null;
+      const pid = this._process.pid;
+      await new Promise<void>((resolve) => {
+        kill(pid, 'SIGTERM', () => {
+          this._process = null;
+          resolve();
+        });
+      });
     }
   }
 

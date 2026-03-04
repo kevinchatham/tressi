@@ -48,19 +48,28 @@
  */
 /* eslint-disable no-console */
 import { serve } from '@hono/node-server';
+import { program } from 'commander';
 import { Hono } from 'hono';
 import { compress } from 'hono/compress';
 import { logger } from 'hono/logger';
 
 const app = new Hono();
-const args = process.argv.slice(2);
-const portArg = args.find((arg) => arg.startsWith('--port='));
-const PORT = portArg
-  ? parseInt(portArg.split('=')[1], 10)
-  : parseInt(process.env.PORT || '5000', 10);
+
+program
+  .option('-p, --port <number>', 'Port to run the server on', (val) =>
+    parseInt(val, 10),
+  )
+  .option('-s, --silent', 'Disable logging', false)
+  .parse(process.argv);
+
+const options = program.opts();
+const PORT = parseInt(options.port || 5000);
+const SILENT = options.silent;
 
 // Middleware
-app.use('*', logger());
+if (!SILENT) {
+  app.use('*', logger());
+}
 app.use('*', compress());
 
 // Request tracking for metrics
@@ -187,9 +196,11 @@ app.get('/delay/:ms', async (c) => {
 // Timeout endpoint (never responds)
 app.get('/timeout', (c) => {
   // Intentionally do not respond
-  console.log(
-    `Timeout request received from ${c.req.header('x-forwarded-for') || 'unknown'} - will not respond`,
-  );
+  if (!SILENT) {
+    console.log(
+      `Timeout request received from ${c.req.header('x-forwarded-for') || 'unknown'} - will not respond`,
+    );
+  }
   // Return a promise that never resolves
   return new Promise(() => {});
 });
@@ -538,63 +549,69 @@ app.onError((err, c) => {
   );
 });
 
-// Start server
-console.log(`🚀 Tressi Test Server starting at http://localhost:${PORT}`);
-console.log('Available endpoints:');
-console.log('\n📊 Health & Metrics:');
-console.log('  GET  /health - Health check with uptime and request count');
-console.log(
-  '  GET  /metrics - Server metrics (uptime, requests, memory usage)',
-);
-console.log('  GET  /config - Server configuration details');
-console.log('\n🔢 Status Code Testing:');
-console.log(
-  '  GET  /status/:code - Returns specified HTTP status code (100-599)',
-);
-console.log('  GET  /success - 200 OK');
-console.log('  GET  /created - 201 Created');
-console.log('  GET  /accepted - 202 Accepted');
-console.log('  GET  /bad-request - 400 Bad Request');
-console.log('  GET  /unauthorized - 401 Unauthorized');
-console.log('  GET  /forbidden - 403 Forbidden');
-console.log('  GET  /not-found - 404 Not Found');
-console.log('  GET  /server-error - 500 Internal Server Error');
-console.log('  GET  /service-unavailable - 503 Service Unavailable');
-console.log('\n⏱️  Timing & Performance:');
-console.log(
-  '  GET  /delay/:ms - Delays response by specified milliseconds (max 30s)',
-);
-console.log('  GET  /timeout - Never responds (for timeout testing)');
-console.log(
-  '  GET  /slow-response - Slow incremental JSON response over 5 seconds',
-);
-console.log(
-  '  GET  /chunked - Chunked transfer encoding with 5 chunks over 5 seconds',
-);
-console.log('\n📦 Response Size Testing:');
-console.log(
-  '  GET  /random-size - Returns random response size (100-10100 bytes)',
-);
-console.log(
-  '  GET  /payload/:size - Returns response of specified size in KB (1-100 KB)',
-);
-console.log('\n🔍 Request Inspection:');
-console.log('  GET  /echo - Echoes request data (method, URL, headers, query)');
-console.log('  POST /echo - Echoes request data including body');
-console.log('  GET  /headers - Returns request headers and client info');
-console.log('  GET  /ip - Returns client IP address');
-console.log('\n🔄 Redirect Testing:');
-console.log(
-  '  GET  /redirect/:code?url= - Redirects to specified URL with given status code',
-);
-console.log('       Valid codes: 301, 302, 303, 307, 308');
-console.log('\n🚦 Miscellaneous:');
-console.log(
-  '  GET  /rate-limit - 30% chance of returning 429 rate limit error',
-);
-console.log('  GET  /error-50-percent - 50% chance of returning 500 error');
-console.log('  GET  / - Root endpoint with available endpoints documentation');
-console.log('\nPress Ctrl+C to stop the server');
+console.log(`Tressi Test Server starting at http://localhost:${PORT}`);
+
+if (!SILENT) {
+  console.log('Available endpoints:');
+  console.log('\n📊 Health & Metrics:');
+  console.log('  GET  /health - Health check with uptime and request count');
+  console.log(
+    '  GET  /metrics - Server metrics (uptime, requests, memory usage)',
+  );
+  console.log('  GET  /config - Server configuration details');
+  console.log('\n🔢 Status Code Testing:');
+  console.log(
+    '  GET  /status/:code - Returns specified HTTP status code (100-599)',
+  );
+  console.log('  GET  /success - 200 OK');
+  console.log('  GET  /created - 201 Created');
+  console.log('  GET  /accepted - 202 Accepted');
+  console.log('  GET  /bad-request - 400 Bad Request');
+  console.log('  GET  /unauthorized - 401 Unauthorized');
+  console.log('  GET  /forbidden - 403 Forbidden');
+  console.log('  GET  /not-found - 404 Not Found');
+  console.log('  GET  /server-error - 500 Internal Server Error');
+  console.log('  GET  /service-unavailable - 503 Service Unavailable');
+  console.log('\n⏱️  Timing & Performance:');
+  console.log(
+    '  GET  /delay/:ms - Delays response by specified milliseconds (max 30s)',
+  );
+  console.log('  GET  /timeout - Never responds (for timeout testing)');
+  console.log(
+    '  GET  /slow-response - Slow incremental JSON response over 5 seconds',
+  );
+  console.log(
+    '  GET  /chunked - Chunked transfer encoding with 5 chunks over 5 seconds',
+  );
+  console.log('\n📦 Response Size Testing:');
+  console.log(
+    '  GET  /random-size - Returns random response size (100-10100 bytes)',
+  );
+  console.log(
+    '  GET  /payload/:size - Returns response of specified size in KB (1-100 KB)',
+  );
+  console.log('\n🔍 Request Inspection:');
+  console.log(
+    '  GET  /echo - Echoes request data (method, URL, headers, query)',
+  );
+  console.log('  POST /echo - Echoes request data including body');
+  console.log('  GET  /headers - Returns request headers and client info');
+  console.log('  GET  /ip - Returns client IP address');
+  console.log('\n🔄 Redirect Testing:');
+  console.log(
+    '  GET  /redirect/:code?url= - Redirects to specified URL with given status code',
+  );
+  console.log('       Valid codes: 301, 302, 303, 307, 308');
+  console.log('\n🚦 Miscellaneous:');
+  console.log(
+    '  GET  /rate-limit - 30% chance of returning 429 rate limit error',
+  );
+  console.log('  GET  /error-50-percent - 50% chance of returning 500 error');
+  console.log(
+    '  GET  / - Root endpoint with available endpoints documentation',
+  );
+  console.log('\nPress Ctrl+C to stop the server');
+}
 
 const server = serve({
   fetch: app.fetch,
@@ -602,10 +619,13 @@ const server = serve({
 });
 
 // Graceful shutdown
-process.on('SIGINT', () => {
+const shutdown = (): void => {
   console.log('\n🛑 Shutting down server...');
   server.close(() => {
     console.log('Server closed');
     process.exit(0);
   });
-});
+};
+
+process.on('SIGINT', shutdown);
+process.on('SIGTERM', shutdown);

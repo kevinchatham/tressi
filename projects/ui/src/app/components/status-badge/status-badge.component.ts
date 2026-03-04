@@ -11,6 +11,7 @@ import { IconComponent } from '../icon/icon.component';
   templateUrl: './status-badge.component.html',
 })
 export class StatusBadgeComponent {
+  dataE2e = input<string | undefined>(undefined, { alias: 'data-e2e' });
   status = input.required<TestStatus>();
   showIcon = input<boolean>(true);
   showPulse = input<boolean>(false);
