@@ -1,0 +1,9 @@
+{
+  "browser": {
+    "browserName": "chromium",
+    "launchOptions": {
+      "executablePath": "/home/kevin/.cache/ms-playwright/chromium-1208/chrome-linux/chrome",
+      "headless": true
+    }
+  }
+}
