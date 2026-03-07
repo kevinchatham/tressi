@@ -1,6 +1,29 @@
-import { db } from './db';
+import type { Database as DatabaseSchema } from '@tressi/shared/cli';
+import Database from 'better-sqlite3';
+import { existsSync, mkdirSync } from 'fs';
+import { Kysely, sql, SqliteDialect } from 'kysely';
+import { homedir } from 'os';
+import { join } from 'path';
+
+import { DatabaseMigrationManager } from './database-migration-manager';
+
+const rootDir = join(homedir(), '.tressi');
+if (!existsSync(rootDir)) mkdirSync(rootDir, { recursive: true });
+
+const dbPath = process.env['TRESSI_DB_PATH'] || join(rootDir, 'tressi.db');
+
+const dialect = new SqliteDialect({
+  database: new Database(dbPath),
+});
+
+export const db = new Kysely<DatabaseSchema>({
+  dialect,
+});
 
 export async function initializeDatabase(): Promise<void> {
+  // Enable foreign keys after connection
+  db.executeQuery(sql`PRAGMA foreign_keys = ON`.compile(db));
+
   // Create configs table
   await db.schema
     .createTable('configs')
@@ -66,6 +89,14 @@ export async function initializeDatabase(): Promise<void> {
     )
     .execute();
 
+  // create migrations table
+  await db.schema
+    .createTable('database_migrations')
+    .ifNotExists()
+    .addColumn('version', 'text', (col) => col.primaryKey())
+    .addColumn('applied_at', 'integer', (col) => col.notNull())
+    .execute();
+
   // Create performance indexes
   await db.schema
     .createIndex('idx_tests_config_id')
@@ -103,4 +134,8 @@ export async function initializeDatabase(): Promise<void> {
     .on('endpoint_metrics')
     .column('epoch')
     .execute();
+
+  // Run database migrations
+  const migrationManager = new DatabaseMigrationManager(db);
+  await migrationManager.run();
 }

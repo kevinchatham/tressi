@@ -90,4 +90,4 @@ System level metrics provide context for performance results and identify local 
 
 ### Next Steps
 
-Learn how to contribute to the project or explore the licensing details in the [Community Section](../06-community/index.md).
+Explore the [Schema Migration Architecture](./05-schema-migrations.md) to learn how Tressi handles JSON configuration versioning.

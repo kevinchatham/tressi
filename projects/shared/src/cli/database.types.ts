@@ -7,6 +7,12 @@ export type Database = {
   tests: TestsTable;
   global_metrics: GlobalMetricsTable;
   endpoint_metrics: EndpointMetricsTable;
+  database_migrations: DatabaseMigrationsTable;
+};
+
+export type DatabaseMigrationsTable = {
+  version: string;
+  applied_at: number;
 };
 
 export type ConfigsTable = {
@@ -41,6 +47,7 @@ export type EndpointMetricsTable = {
   metric: string; // JSON string of Metric
 };
 
+export type MigrationRow = Selectable<DatabaseMigrationsTable>;
 export type ConfigRow = Selectable<ConfigsTable>;
 export type TestRow = Selectable<TestsTable>;
 export type GlobalMetricRow = Selectable<GlobalMetricsTable>;

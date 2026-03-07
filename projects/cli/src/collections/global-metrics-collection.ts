@@ -4,7 +4,7 @@ import {
   GlobalMetricDocument,
 } from '@tressi/shared/common';
 
-import { db } from '../database/db';
+import { db } from '../data/database';
 
 function mapGlobalMetricFromDb(row: GlobalMetricRow): GlobalMetricDocument {
   return {

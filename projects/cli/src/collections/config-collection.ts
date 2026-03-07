@@ -5,7 +5,7 @@ import {
   ConfigEdit,
 } from '@tressi/shared/common';
 
-import { db } from '../database/db';
+import { db } from '../data/database';
 
 function mapConfigFromDb(row: ConfigRow): ConfigDocument {
   return {

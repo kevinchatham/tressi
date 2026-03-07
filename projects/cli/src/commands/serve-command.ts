@@ -1,4 +1,4 @@
-import { MigrationManager } from '../migrations/manager';
+import { JsonMigrationManager } from '../data/json-migration-manager';
 import { TressiServer } from '../server';
 
 /**
@@ -16,7 +16,7 @@ export class ServeCommand {
   async execute(options: { port?: number; migrate?: boolean }): Promise<void> {
     try {
       // Run migrations before server starts
-      const migrationManager = new MigrationManager();
+      const migrationManager = new JsonMigrationManager();
       await migrationManager.run(options.migrate);
 
       this._server = new TressiServer(options.port);

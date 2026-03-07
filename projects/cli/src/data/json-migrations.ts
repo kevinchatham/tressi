@@ -1,39 +1,13 @@
-/**
- * Base interface for versioned configurations.
- * Every configuration must have a $schema property.
- */
-export interface VersionedConfig {
-  $schema: string;
-  [key: string]: unknown;
-}
+import { JsonMigrations } from '@tressi/shared/cli';
 
-/**
- * Represents a single schema migration step.
- */
-export interface Migration {
-  /**
-   * A human-readable summary of the changes in this migration.
-   */
-  summary: string;
-  /**
-   * The transformation function to apply to the configuration.
-   */
-  transform: (config: VersionedConfig) => VersionedConfig;
-}
+export { VersionedTressiConfig, IJsonMigration } from '@tressi/shared/cli';
 
-/**
- * Registry of manual schema migrations.
- * Key is the 'source' version.
- * Value is the Migration object containing the summary and transform function.
- */
-export type MigrationRegistry = Record<string, Migration>;
-
-export const MIGRATIONS: MigrationRegistry = {
+export const JSON_MIGRATIONS: JsonMigrations = {
   /**
    * Example: Renaming a field
    * '0.0.13': {
    *   summary: "Rename 'oldField' to 'newField' for better clarity.",
-   *   transform: (config) => {
+   *   up: (config) => {
    *     if (!('oldField' in config) || typeof config.oldField !== 'string') {
    *       throw new Error('Migration 0.0.13 failed: "oldField" is missing or not a string');
    *     }
@@ -50,7 +24,7 @@ export const MIGRATIONS: MigrationRegistry = {
    * Example: Moving a field into a nested object
    * '0.0.14': {
    *   summary: "Move 'timeout' into a nested 'settings' object.",
-   *   transform: (config) => {
+   *   up: (config) => {
    *     if (!('timeout' in config) || typeof config.timeout !== 'number') {
    *       throw new Error('Migration 0.0.14 failed: "timeout" is missing or not a number');
    *     }

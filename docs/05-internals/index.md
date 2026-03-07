@@ -7,6 +7,7 @@ Explore the engineering principles and technical implementation details that pow
 - [Execution Engine](./03-execution-engine.md): Asynchronous pipelining and rate limiting algorithms.
 - [Metrics & Calculations](./04-metrics-and-calculations.md): HDR Histograms and high precision statistical analysis.
 - [Schema Migrations](./05-schema-migrations.md): Sequential versioning and configuration transformation.
+- [Database Migrations](./06-database-migrations.md): SQLite schema evolution and version tracking.
 
 ## Next Section
 

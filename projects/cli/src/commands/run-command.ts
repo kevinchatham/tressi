@@ -1,6 +1,6 @@
 import { runLoadTest } from '..';
 import { loadConfig } from '../core/config';
-import { MigrationManager } from '../migrations/manager';
+import { JsonMigrationManager } from '../data/json-migration-manager';
 
 /**
  * Handles the main 'run' command for executing load tests.
@@ -22,7 +22,7 @@ export class RunCommand {
     migrate?: boolean,
   ): Promise<void> {
     // Run migrations before loading config
-    const migrationManager = new MigrationManager();
+    const migrationManager = new JsonMigrationManager();
     await migrationManager.migrateFile(
       configPath || 'tressi.config.json',
       migrate,

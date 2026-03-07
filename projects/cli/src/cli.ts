@@ -5,7 +5,7 @@ import pkg from '../../../package.json';
 import { ResetCommand } from './commands/reset-command';
 import { RunCommand } from './commands/run-command';
 import { ServeCommand } from './commands/serve-command';
-import { initializeDatabase } from './database/init';
+import { initializeDatabase } from './data/database';
 import { terminal } from './tui/terminal';
 
 /**
@@ -59,14 +59,14 @@ class TressiCLI {
       .argument('<config>', 'Path or URL to JSON configuration file')
       .summary('Execute a load test')
       .description(RunCommand.getDescription())
-      .action(async (config, _options, commandInstance) => {
+      .action(async (config, options, commandInstance) => {
         const command = new RunCommand();
         const globalOptions = commandInstance.optsWithGlobals();
         await command.execute(
           config,
-          globalOptions.export,
-          globalOptions.silent,
-          globalOptions.migrate,
+          options.export || globalOptions.export,
+          options.silent || globalOptions.silent,
+          options.migrate || globalOptions.migrate,
         );
       });
 
@@ -80,7 +80,10 @@ class TressiCLI {
         const command = new ServeCommand();
         const globalOptions = commandInstance.optsWithGlobals();
         const port = parseInt(options.port, 10);
-        await command.execute({ port, migrate: globalOptions.migrate });
+        await command.execute({
+          port,
+          migrate: options.migrate || globalOptions.migrate,
+        });
       });
 
     // Reset command
@@ -89,9 +92,10 @@ class TressiCLI {
       .summary('Reset the database')
       .description(ResetCommand.getDescription())
       .option('-f, --force', 'Bypass confirmation prompts.', false)
-      .action(async (options) => {
+      .action(async (options, commandInstance) => {
         const command = new ResetCommand();
-        await command.execute(options.force);
+        const globalOptions = commandInstance.optsWithGlobals();
+        await command.execute(options.force || globalOptions.force);
       });
   }
 

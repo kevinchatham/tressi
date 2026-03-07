@@ -2,6 +2,7 @@ import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import * as readline from 'node:readline/promises';
 
+import { VersionedTressiConfig } from '@tressi/shared/cli';
 import {
   ConfigDocument,
   TressiConfig,
@@ -13,12 +14,12 @@ import semver from 'semver';
 import pkg from '../../../../package.json';
 import { configStorage } from '../collections/config-collection';
 import { terminal } from '../tui/terminal';
-import { MIGRATIONS, VersionedConfig } from './registry';
+import { JSON_MIGRATIONS } from './json-migrations';
 
 /**
  * Manages the detection and execution of schema migrations for stored configurations and files.
  */
-export class MigrationManager {
+export class JsonMigrationManager {
   /**
    * Extracts the version string from a schema URL.
    * @param schemaUrl The URL to extract the version from.
@@ -50,7 +51,9 @@ export class MigrationManager {
 
     for (const doc of configs) {
       try {
-        const configVersion = MigrationManager.getVersion(doc.config.$schema);
+        const configVersion = JsonMigrationManager.getVersion(
+          doc.config.$schema,
+        );
         if (semver.lt(configVersion, currentVersion)) {
           outdated.push(doc);
         }
@@ -156,7 +159,7 @@ export class MigrationManager {
     }
 
     let fileContent: string;
-    let config: VersionedConfig;
+    let config: VersionedTressiConfig;
     try {
       fileContent = await fs.readFile(absolutePath, 'utf-8');
       config = JSON.parse(fileContent);
@@ -167,7 +170,7 @@ export class MigrationManager {
 
     let configVersion: string;
     try {
-      configVersion = MigrationManager.getVersion(config.$schema);
+      configVersion = JsonMigrationManager.getVersion(config.$schema);
     } catch (error) {
       terminal.error(
         `Configuration file "${filePath}" is invalid: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -228,20 +231,20 @@ export class MigrationManager {
    * @returns The migrated configuration object and a list of summaries.
    */
   private async _migrateConfig(
-    config: VersionedConfig,
+    config: VersionedTressiConfig,
   ): Promise<{ migratedData: TressiConfig; summaries: string[] }> {
     const currentVersion = pkg.version;
-    let data: VersionedConfig = { ...config };
-    let v = MigrationManager.getVersion(data.$schema);
+    let data: VersionedTressiConfig = { ...config };
+    let v = JsonMigrationManager.getVersion(data.$schema);
     const summaries: string[] = [];
 
     // 1. Sequential Manual Migrations
-    while (semver.lt(v, currentVersion) && MIGRATIONS[v]) {
-      const migration = MIGRATIONS[v];
+    while (semver.lt(v, currentVersion) && JSON_MIGRATIONS[v]) {
+      const migration = JSON_MIGRATIONS[v];
       summaries.push(migration.summary);
 
-      const nextData = migration.transform(data);
-      const nextV = MigrationManager.getVersion(nextData.$schema);
+      const nextData = migration.up(data);
+      const nextV = JsonMigrationManager.getVersion(nextData.$schema);
 
       if (nextV === v) {
         throw new Error(

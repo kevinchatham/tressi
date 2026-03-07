@@ -4,7 +4,7 @@ import {
   EndpointMetricDocument,
 } from '@tressi/shared/common';
 
-import { db } from '../database/db';
+import { db } from '../data/database';
 
 function mapEndpointMetricFromDb(
   row: EndpointMetricRow,

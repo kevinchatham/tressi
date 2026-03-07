@@ -4,8 +4,8 @@ import { ConfigDocument, TressiConfigSchema } from '@tressi/shared/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { configStorage } from '../collections/config-collection';
-import { MigrationManager } from './manager';
-import { MIGRATIONS } from './registry';
+import { JsonMigrationManager } from './json-migration-manager';
+import { JSON_MIGRATIONS } from './json-migrations';
 
 vi.mock('../collections/config-collection', () => ({
   configStorage: {
@@ -31,8 +31,8 @@ vi.mock('@tressi/shared/common', async () => {
   };
 });
 
-vi.mock('./registry', () => ({
-  MIGRATIONS: {},
+vi.mock('./json-migrations', () => ({
+  JSON_MIGRATIONS: {},
 }));
 
 vi.mock('../../../../package.json', () => ({
@@ -57,17 +57,17 @@ vi.mock('node:fs/promises', () => ({
   },
 }));
 
-describe('MigrationManager', () => {
-  let manager: MigrationManager;
+describe('JsonMigrationManager', () => {
+  let manager: JsonMigrationManager;
 
   beforeEach(() => {
     vi.clearAllMocks();
     // Reset MIGRATIONS object since it's shared across tests
-    for (const key in MIGRATIONS) {
-      delete MIGRATIONS[key];
+    for (const key in JSON_MIGRATIONS) {
+      delete JSON_MIGRATIONS[key];
     }
 
-    manager = new MigrationManager();
+    manager = new JsonMigrationManager();
     // Default to TTY for tests
     vi.stubGlobal('process', {
       ...process,
@@ -79,20 +79,20 @@ describe('MigrationManager', () => {
     it('should extract version from schema URL', () => {
       const url =
         'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json';
-      expect(MigrationManager.getVersion(url)).toBe('0.0.13');
+      expect(JsonMigrationManager.getVersion(url)).toBe('0.0.13');
     });
 
     it('should throw for invalid URL format', () => {
-      expect(() => MigrationManager.getVersion('invalid')).toThrow(
+      expect(() => JsonMigrationManager.getVersion('invalid')).toThrow(
         'Invalid "$schema" format',
       );
     });
 
     it('should throw for null or undefined', () => {
-      expect(() => MigrationManager.getVersion(null)).toThrow(
+      expect(() => JsonMigrationManager.getVersion(null)).toThrow(
         'Missing required property: "$schema"',
       );
-      expect(() => MigrationManager.getVersion(undefined)).toThrow(
+      expect(() => JsonMigrationManager.getVersion(undefined)).toThrow(
         'Missing required property: "$schema"',
       );
     });
@@ -134,9 +134,9 @@ describe('MigrationManager', () => {
       vi.mocked(configStorage.getAll).mockResolvedValue([outdatedConfig]);
 
       // Mock a migration object
-      MIGRATIONS['0.0.13'] = {
+      JSON_MIGRATIONS['0.0.13'] = {
         summary: 'Test migration',
-        transform: vi.fn((config) => ({
+        up: vi.fn((config) => ({
           ...config,
           $schema: config.$schema.replace('0.0.13', '0.0.14'),
           newField: config.oldField,
@@ -145,7 +145,7 @@ describe('MigrationManager', () => {
 
       await manager.run();
 
-      expect(MIGRATIONS['0.0.13'].transform).toHaveBeenCalled();
+      expect(JSON_MIGRATIONS['0.0.13'].up).toHaveBeenCalled();
       expect(TressiConfigSchema.parse).toHaveBeenCalled();
       expect(configStorage.edit).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -171,9 +171,9 @@ describe('MigrationManager', () => {
       vi.mocked(configStorage.getAll).mockResolvedValue([outdatedConfig]);
 
       // Force a migration failure
-      MIGRATIONS['0.0.13'] = {
+      JSON_MIGRATIONS['0.0.13'] = {
         summary: 'Failing migration',
-        transform: vi.fn(() => {
+        up: vi.fn(() => {
           throw new Error('Migration failed');
         }),
       };
@@ -254,9 +254,9 @@ describe('MigrationManager', () => {
 
       vi.mocked(configStorage.getAll).mockResolvedValue([outdatedConfig]);
 
-      MIGRATIONS['0.0.13'] = {
+      JSON_MIGRATIONS['0.0.13'] = {
         summary: 'Test migration',
-        transform: vi.fn((config) => ({
+        up: vi.fn((config) => ({
           ...config,
           $schema: config.$schema.replace('0.0.13', '0.0.14'),
         })),
@@ -332,9 +332,9 @@ describe('MigrationManager', () => {
         }),
       );
 
-      MIGRATIONS['0.0.13'] = {
+      JSON_MIGRATIONS['0.0.13'] = {
         summary: 'Test migration',
-        transform: vi.fn((config) => ({
+        up: vi.fn((config) => ({
           ...config,
           $schema: config.$schema.replace('0.0.13', '0.0.14'),
           newField: config.oldField,
@@ -433,9 +433,9 @@ describe('MigrationManager', () => {
         }),
       );
 
-      MIGRATIONS['0.0.13'] = {
+      JSON_MIGRATIONS['0.0.13'] = {
         summary: 'Test migration',
-        transform: vi.fn((config) => ({
+        up: vi.fn((config) => ({
           ...config,
           $schema: config.$schema.replace('0.0.13', '0.0.14'),
         })),

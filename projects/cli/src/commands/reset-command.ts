@@ -2,7 +2,7 @@ import * as readline from 'node:readline/promises';
 
 import chalk from 'chalk';
 
-import { db } from '../database/db';
+import { db } from '../data/database';
 import { terminal } from '../tui/terminal';
 
 /**
@@ -15,25 +15,31 @@ export class ResetCommand {
    * Verifies that all tables are cleared after the operation.
    */
   async execute(force?: boolean): Promise<void> {
-    const rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout,
-    });
-
     try {
       if (!force) {
-        terminal.print(
-          chalk.yellow(
-            '\n⚠️  WARNING: This will permanently delete all configurations, tests, and metrics.',
-          ),
-        );
-        const answer = await rl.question(
-          chalk.white('Are you sure you want to reset Tressi? (y/N): '),
-        );
+        const rl = readline.createInterface({
+          input: process.stdin,
+          output: process.stdout,
+        });
 
-        if (answer.toLowerCase() !== 'y') {
-          terminal.print(chalk.blue('\nReset cancelled. No data was deleted.'));
-          return;
+        try {
+          terminal.print(
+            chalk.yellow(
+              '\n⚠️  WARNING: This will permanently delete all configurations, tests, and metrics.',
+            ),
+          );
+          const answer = await rl.question(
+            chalk.white('Are you sure you want to reset Tressi? (y/N): '),
+          );
+
+          if (answer.toLowerCase() !== 'y') {
+            terminal.print(
+              chalk.blue('\nReset cancelled. No data was deleted.'),
+            );
+            return;
+          }
+        } finally {
+          rl.close();
         }
       }
 
@@ -82,8 +88,6 @@ export class ResetCommand {
         chalk.red(`\n❌ Error during reset: ${(error as Error).message}`),
       );
       throw error;
-    } finally {
-      rl.close();
     }
   }
 
