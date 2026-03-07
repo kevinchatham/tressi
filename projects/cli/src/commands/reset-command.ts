@@ -2,11 +2,11 @@ import * as readline from 'node:readline/promises';
 
 import chalk from 'chalk';
 
-import { db } from '../database/db';
+import { db } from '../data/database';
 import { terminal } from '../tui/terminal';
 
 /**
- * Handles the 'reset' command for completely clearing the Tressi database.
+ * Handles the 'reset' command for clearing the Tressi database.
  */
 export class ResetCommand {
   /**
@@ -14,25 +14,33 @@ export class ResetCommand {
    * Asks for user confirmation before deleting all data from the database.
    * Verifies that all tables are cleared after the operation.
    */
-  async execute(): Promise<void> {
-    const rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout,
-    });
-
+  async execute(force?: boolean): Promise<void> {
     try {
-      terminal.print(
-        chalk.yellow(
-          '\n⚠️  WARNING: This will permanently delete all configurations, tests, and metrics.',
-        ),
-      );
-      const answer = await rl.question(
-        chalk.white('Are you sure you want to reset Tressi? (y/N): '),
-      );
+      if (!force) {
+        const rl = readline.createInterface({
+          input: process.stdin,
+          output: process.stdout,
+        });
 
-      if (answer.toLowerCase() !== 'y') {
-        terminal.print(chalk.blue('\nReset cancelled. No data was deleted.'));
-        return;
+        try {
+          terminal.print(
+            chalk.yellow(
+              '\n⚠️  WARNING: This will permanently delete all configurations, tests, and metrics.',
+            ),
+          );
+          const answer = await rl.question(
+            chalk.white('Are you sure you want to reset Tressi? (y/N): '),
+          );
+
+          if (answer.toLowerCase() !== 'y') {
+            terminal.print(
+              chalk.blue('\nReset cancelled. No data was deleted.'),
+            );
+            return;
+          }
+        } finally {
+          rl.close();
+        }
       }
 
       terminal.print(chalk.cyan('\nResetting Tressi database...'));
@@ -41,12 +49,7 @@ export class ResetCommand {
       await db.deleteFrom('configs').execute();
 
       // 2. Verification Step
-      const tables = [
-        'configs',
-        'tests',
-        'global_metrics',
-        'endpoint_metrics',
-      ] as const;
+      const tables = ['configs', 'tests', 'metrics'] as const;
       const verificationResults = await Promise.all(
         tables.map(async (table) => {
           const result = await db
@@ -80,8 +83,6 @@ export class ResetCommand {
         chalk.red(`\n❌ Error during reset: ${(error as Error).message}`),
       );
       throw error;
-    } finally {
-      rl.close();
     }
   }
 
@@ -90,6 +91,6 @@ export class ResetCommand {
    * @returns Command description
    */
   static getDescription(): string {
-    return 'Completely reset Tressi by deleting all configurations, test history, and metrics from the database.';
+    return 'Reset the database, removing all configurations and test data.';
   }
 }

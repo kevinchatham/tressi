@@ -39,7 +39,7 @@ tressi run ./load-test.config.json --silent --export ./artifacts/perf-results
 ```
 
 - **Flag**: `-e <path>` or `--export <path>`
-- **Behavior**: Creates a timestamped directory containing multiple report formats.
+- **Behavior**: Exports test results in all supported formats (JSON, XLSX, MD) to the specified directory.
 - **Generated Files**:
   - `summary.json`: Machine readable metrics for automated parsing or custom dashboards.
   - `results.xlsx`: Tabular data for manual review and spreadsheet based analysis.
@@ -49,15 +49,15 @@ tressi run ./load-test.config.json --silent --export ./artifacts/perf-results
 
 ```yaml
 steps:
-  - uses: actions/checkout@v4
-  - uses: actions/setup-node@v4
+  - uses: actions/checkout@v6
+  - uses: actions/setup-node@v6
     with:
-      node-version: '20'
+      node-version: '24'
   - run: npm install -g tressi
   - name: Run Load Test
     run: tressi run ./perf/config.json --silent --export ./reports
   - name: Upload Results
-    uses: actions/upload-artifact@v4
+    uses: actions/upload-artifact@v7
     with:
       name: performance-reports
       path: ./reports/*/

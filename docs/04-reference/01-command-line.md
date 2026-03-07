@@ -4,10 +4,9 @@ The Tressi CLI provides a set of commands to execute load tests, manage the loca
 
 This document covers:
 
+- **CLI Commands**: Executing tests, starting the server, and managing data.
 - **Global Options**: Accessing system information and command assistance.
-- **Run Load Tests**: Executing tests using local or remote configuration files.
-- **Start Server**: Launching the web based dashboard for realtime monitoring.
-- **Reset Database**: Managing local data persistence.
+- **Environment Variables**: Configuring runtime behavior via the shell.
 
 ### Global Options
 
@@ -17,6 +16,7 @@ Access system information and command assistance.
 
 - `--version`: Display the current version of the Tressi CLI.
 - `--help`: Display help information for the CLI or a specific command.
+- `--migrate`: Migrate configurations without prompting. Ideal for automated pipelines and headless environments.
 
 ### Run Load Tests
 
@@ -30,8 +30,9 @@ Execute a load test based on a JSON configuration schema.
 
 **Options:**
 
-- `--export <path>`: Generate reports to a specified directory.
-- `--silent`: Suppress TUI and progress output. Optimized for automated pipelines and environments.
+- `--export <path>`: Export test results to the specified directory.
+- `--silent`: Disable TUI and progress output. Optimized for automated pipelines and environments.
+- `--migrate`: Migrate the configuration file before running a test.
 
 **Remote Configurations:**
 
@@ -56,13 +57,14 @@ Execute a load test based on a JSON configuration schema.
 
 ### Start Server
 
-Start the Tressi Server to provide access to the web interface.
+Start the management server and interactive dashboard.
 
 - `tressi serve`
 
 **Options:**
 
 - `--port <port>`: Specify the network port for the server. Defaults to `3108`.
+- `--migrate`: Migrate all configurations in the database.
 
 **Example:**
 
@@ -73,21 +75,35 @@ Start the Tressi Server to provide access to the web interface.
 
 ### Reset Database
 
-Purge all stored data from the local database.
+Reset the database, removing all configurations and test data.
 
 - `tressi reset`
+
+**Options:**
+
+- `--force`: Bypass confirmation prompts.
 
 **Details:**
 
 - This command deletes all local data.
-- Requires manual confirmation before execution.
+- Requires manual confirmation unless the `--force` flag is used.
 
-**Example:**
+**Examples:**
 
-- **Database Purge**:
+- **Database Reset**:
   ```bash
   tressi reset
   ```
+- **Bypass Confirmation**:
+  ```bash
+  tressi reset --force
+  ```
+
+### Environment Variables
+
+Configure CLI and server behavior using environment variables.
+
+- `TRESSI_DB_PATH`: Specify a custom path for the SQLite database. Defaults to `~/.tressi/tressi.db`.
 
 ### Next Steps
 

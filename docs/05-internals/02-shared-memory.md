@@ -1,6 +1,6 @@
 # Shared Memory Architecture
 
-Tressi utilizes `SharedArrayBuffer` and `Atomics` to implement a zero copy metrics collection system. By operating on a single block of shared memory, Tressi eliminates the serialization and copying overhead associated with Node.js interprocess communication, enabling high frequency updates without impacting the event loop.
+Tressi utilizes `SharedArrayBuffer` and `Atomics` to implement a zero copy metrics collection system. By operating on a single block of shared memory, Tressi eliminates the serialization and copying overhead associated with Node.js inter-process communication, enabling high frequency updates without impacting the event loop.
 
 This document covers the memory segmentation strategy, the use of atomic operations for thread safe synchronization, and the layout of counters and histograms within the shared buffer.
 

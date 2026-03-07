@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "skipLibCheck": true,
+    "declaration": true,
+    "declarationMap": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "baseUrl": ".",
+    "paths": {
+      "@tressi/shared/common": ["../shared/src/common/index.ts"],
+      "@tressi/shared/cli": ["../shared/src/cli/index.ts"],
+      "@tressi/shared/ui": ["../shared/src/ui/index.ts"],
+      "@tressi/cli": ["../cli/src/index.ts"]
+    },
+    "types": ["node"]
+  },
+  "include": ["**/*.ts"]
+}

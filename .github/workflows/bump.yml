@@ -42,15 +42,15 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           # A Personal Access Token is used to ensure subsequent workflows are triggered.
           token: ${{ secrets.GH_TOKEN }}
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: '22'
+          node-version: 24
 
       - name: Set up Git identity
         run: |

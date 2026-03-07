@@ -47,7 +47,9 @@ export class TressiServer {
         });
         this._server.on('listening', () => {
           const url = `http://localhost:${this._port}`;
-          const dbPath = join(homedir(), '.tressi', 'tressi.db');
+          const dbPath =
+            process.env['TRESSI_DB_PATH'] ||
+            join(homedir(), '.tressi', 'tressi.db');
 
           terminal.print('');
           terminal.print(

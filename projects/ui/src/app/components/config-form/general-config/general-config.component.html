@@ -13,6 +13,7 @@
           class="input outline-none!"
           placeholder="Enter configuration name"
           [formField]="form().name"
+          data-e2e="config-name-input"
         />
         <p class="label ml-2 py-0 text-xs opacity-60">
           Display name for this test
@@ -36,6 +37,7 @@
           class="input outline-none!"
           [formField]="form().config.options.durationSec"
           placeholder="Total test duration"
+          data-e2e="config-duration-input"
         />
         <p class="label ml-2 py-0 text-xs opacity-60">In seconds</p>
         @if (

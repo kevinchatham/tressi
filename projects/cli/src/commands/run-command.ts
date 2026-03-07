@@ -1,5 +1,6 @@
 import { runLoadTest } from '..';
 import { loadConfig } from '../core/config';
+import { JsonMigrationManager } from '../data/json-migration-manager';
 
 /**
  * Handles the main 'run' command for executing load tests.
@@ -10,6 +11,7 @@ export class RunCommand {
    * @param configPath Optional path to configuration file
    * @param exportPath Optional path to export test results
    * @param silent Optional flag to run in silent mode
+   * @param migrate Optional flag to automatically migrate outdated configurations
    * @returns Promise that resolves when the command completes
    * @throws Error when config loading or test execution fails
    */
@@ -17,7 +19,15 @@ export class RunCommand {
     configPath?: string,
     exportPath?: string,
     silent?: boolean,
+    migrate?: boolean,
   ): Promise<void> {
+    // Run migrations before loading config
+    const migrationManager = new JsonMigrationManager();
+    await migrationManager.migrateFile(
+      configPath || 'tressi.config.json',
+      migrate,
+    );
+
     const { config } = await loadConfig(configPath);
     await runLoadTest(config, exportPath, silent);
   }
@@ -27,6 +37,6 @@ export class RunCommand {
    * @returns Command description
    */
   static getDescription(): string {
-    return 'Run a load test using the specified configuration file.';
+    return 'Execute a load test using a local or remote configuration file.';
   }
 }

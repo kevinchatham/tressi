@@ -1,5 +1,7 @@
+coverage/
 dist/
 node_modules/
+test-results/
 temp/
 tressi-report-*/
-*.aider*
+tressi.test.db

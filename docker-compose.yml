@@ -1,0 +1,11 @@
+services:
+  tressi:
+    build: .
+    image: tressi:local
+    ports:
+      - '3108:3108'
+    volumes:
+      - data:/home/node/.tressi
+
+volumes:
+  data:

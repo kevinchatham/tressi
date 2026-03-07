@@ -1,5 +1,5 @@
 <div class="p-12">
-  <app-header>
+  <app-header data-e2e="configs-header">
     @if (!showForm()) {
       <app-theme-switcher />
       <app-import-config-button
@@ -13,6 +13,7 @@
         [color]="'primary'"
         [title]="'Create'"
         [icon]="'post_add'"
+        data-e2e="create-config-btn"
       />
       <app-button
         (click)="appRouter.toHome()"
@@ -62,6 +63,7 @@
               [color]="'primary'"
               [icon]="'add'"
               [title]="'Create'"
+              data-e2e="create-config-btn"
             />
           </div>
         </div>

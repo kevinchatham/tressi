@@ -25,7 +25,7 @@
         "autoExecuteCommands": true,
         "icon": "beaker",
         "color": "terminal.ansiGreen",
-        "commands": ["npm run test:server"]
+        "commands": ["npm run start:test:server"]
       },
       {
         "name": "format-watch",

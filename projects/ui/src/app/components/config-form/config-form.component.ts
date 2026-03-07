@@ -336,7 +336,7 @@ export class ConfigFormComponent {
 
   /** Create an empty configuration structure */
   private _createEmptyConfig(): SaveConfigRequest {
-    const config = JSON.parse(JSON.stringify(defaultTressiConfig));
+    const config = defaultTressiConfig;
     config.requests = [{ ...requestDefaults }];
 
     const defaultConfig: SaveConfigRequest = {

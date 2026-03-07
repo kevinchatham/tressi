@@ -74,6 +74,7 @@
           <app-status-badge
             [status]="service.test()?.status ?? null"
             [showPulse]="service.isRealTime()"
+            data-e2e="status-badge"
           />
           <div class="flex items-center gap-4">
             <div class="dropdown dropdown-bottom dropdown-end">

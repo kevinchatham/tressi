@@ -41,7 +41,7 @@ import { ToastService } from '../../services/toast.service';
   templateUrl: './configs.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ConfigurationsComponent implements OnInit {
+export class ConfigsComponent implements OnInit {
   /** Service injection */
   private readonly _configService = inject(ConfigService);
   private readonly _router = inject(Router);

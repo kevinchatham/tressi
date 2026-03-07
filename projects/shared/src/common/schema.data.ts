@@ -1,7 +1,7 @@
 import z from 'zod';
 
 import pkg from '../../../../package.json';
-import { TressiConfig } from './config.types';
+import { TressiConfig, TressiRequestConfig } from './config.types';
 
 export const schemaDefault = `https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v${pkg.version}.json`;
 
@@ -213,9 +213,17 @@ export const TressiConfigSchema = z
     options: optionsDefaults,
   });
 
+function deepCopy<T>(input: T): T {
+  return JSON.parse(JSON.stringify(input));
+}
+
 /**
  * Default Tressi configuration with sample requests.
  * This configuration provides a starting point for new users.
  */
 export const defaultTressiConfig: TressiConfig = ((): TressiConfig =>
-  TressiConfigSchema.parse(undefined))();
+  deepCopy(TressiConfigSchema.parse(undefined)))();
+
+export const defaultTressiRequestConfig: TressiRequestConfig =
+  ((): TressiRequestConfig =>
+    deepCopy(TressiRequestConfigSchema.parse(undefined)))();

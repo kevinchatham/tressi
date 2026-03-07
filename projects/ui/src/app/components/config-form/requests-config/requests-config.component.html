@@ -12,6 +12,7 @@
           [color]="'primary'"
           [icon]="'add'"
           [title]="'Add Request'"
+          data-e2e="add-endpoint-btn"
         />
       </div>
 
@@ -51,6 +52,7 @@
                   class="input flex-1 outline-none!"
                   [formField]="form().config.requests[$index].url"
                   placeholder="https://api.example.com/endpoint"
+                  data-e2e="endpoint-url-input"
                 />
                 <select
                   class="select select-bordered w-24"

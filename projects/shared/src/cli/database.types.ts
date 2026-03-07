@@ -5,8 +5,13 @@ import { TestStatus } from '../common/test.types';
 export type Database = {
   configs: ConfigsTable;
   tests: TestsTable;
-  global_metrics: GlobalMetricsTable;
-  endpoint_metrics: EndpointMetricsTable;
+  metrics: MetricsTable;
+  migrations: MigrationsTable;
+};
+
+export type MigrationsTable = {
+  version: string;
+  applied_at: number;
 };
 
 export type ConfigsTable = {
@@ -26,22 +31,15 @@ export type TestsTable = {
   summary: string | null; // JSON string of TestSummary
 };
 
-export type GlobalMetricsTable = {
+export type MetricsTable = {
   id: Generated<string>;
   test_id: string;
+  url: string; // 'global' for global metrics, or the endpoint URL
   epoch: number;
   metric: string; // JSON string of Metric
 };
 
-export type EndpointMetricsTable = {
-  id: Generated<string>;
-  test_id: string;
-  url: string;
-  epoch: number;
-  metric: string; // JSON string of Metric
-};
-
+export type MigrationRow = Selectable<MigrationsTable>;
 export type ConfigRow = Selectable<ConfigsTable>;
 export type TestRow = Selectable<TestsTable>;
-export type GlobalMetricRow = Selectable<GlobalMetricsTable>;
-export type EndpointMetricRow = Selectable<EndpointMetricsTable>;
+export type MetricRow = Selectable<MetricsTable>;

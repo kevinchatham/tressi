@@ -47,16 +47,18 @@ export type TestEdit = Pick<TestDocument, 'id' | 'configId'> &
   Partial<Pick<TestDocument, 'status' | 'error' | 'summary'>>;
 
 /**
- * Global metric document stored in the database.
- * Represents aggregated metrics across all endpoints for a test.
+ * Metric document stored in the database.
+ * Represents metrics for a specific endpoint or global metrics during a test.
  */
-export type GlobalMetricDocument = {
+export type MetricDocument = {
   /** Unique identifier for the document */
   id: string;
   /** Reference to the test run this metric belongs to */
   testId: string;
   /** Timestamp when the document was created (milliseconds since epoch) */
   epoch: number;
+  /** The specific endpoint URL this metric represents, or 'global' for aggregated metrics */
+  url: string;
   /** The actual metric data from the load test */
   metric: Metric;
 };
@@ -65,33 +67,11 @@ export type GlobalMetricDocument = {
  * Combined metrics for a test run, including global and per-endpoint data.
  */
 export type TestMetrics = {
-  global: GlobalMetricDocument[];
-  endpoints: EndpointMetricDocument[];
+  global: MetricDocument[];
+  endpoints: MetricDocument[];
 };
 
-export type EndpointMetricCreate = Pick<
-  EndpointMetricDocument,
+export type MetricCreate = Pick<
+  MetricDocument,
   'testId' | 'url' | 'epoch' | 'metric'
 >;
-
-export type GlobalMetricCreate = Pick<
-  GlobalMetricDocument,
-  'testId' | 'epoch' | 'metric'
->;
-
-/**
- * Endpoint specific metric document stored in the database.
- * Represents metrics for a specific endpoint during a test.
- */
-export type EndpointMetricDocument = {
-  /** Unique identifier for the document */
-  id: string;
-  /** Reference to the test run this metric belongs to */
-  testId: string;
-  /** Timestamp when the document was created (milliseconds since epoch) */
-  epoch: number;
-  /** The specific endpoint URL this metric represents */
-  url: string;
-  /** The actual metric data from the load test */
-  metric: Metric;
-};

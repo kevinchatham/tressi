@@ -8,6 +8,7 @@ import { writeFile } from 'fs/promises';
 
 import { ReportingUtils } from '../../utils/reporting-utils';
 import { aggregateStatusCodesFromEndpoints } from '../utils/status-code-aggregator';
+import { validateMarkdownPath } from '../utils/validation';
 
 /**
  * Exports test results as a comprehensive Markdown report.
@@ -71,6 +72,7 @@ export class MarkdownExporter {
       }
 
       if (path) {
+        validateMarkdownPath(path);
         await writeFile(path, md, 'utf-8');
         return;
       } else {

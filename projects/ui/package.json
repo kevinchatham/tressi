@@ -4,8 +4,8 @@
   "scripts": {
     "clean": "npx rimraf --glob \"**/.angular\"",
     "serve": "ng serve",
-    "build": "ng build",
-    "test": "ng test"
+    "build": "cp ../../LICENSE ../../docs/06-community/02-license.md && ng build",
+    "test": "ng test --watch false"
   },
   "dependencies": {
     "@angular/cdk": "^21.0.5",

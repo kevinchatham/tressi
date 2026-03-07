@@ -1,7 +1,7 @@
 import { TestRow } from '@tressi/shared/cli';
 import { TestCreate, TestDocument, TestEdit } from '@tressi/shared/common';
 
-import { db } from '../database/db';
+import { db } from '../data/database';
 
 function mapTestFromDb(row: TestRow): TestDocument {
   return {

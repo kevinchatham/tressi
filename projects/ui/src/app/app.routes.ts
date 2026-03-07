@@ -105,7 +105,7 @@ export const routes: Routes = [
     path: AppRoutes.CONFIGS,
     loadComponent: () =>
       import('./pages/configs/configs.component').then(
-        (m) => m.ConfigurationsComponent,
+        (m) => m.ConfigsComponent,
       ),
     canActivate: [healthCheckGuard],
     resolve: { configs: configsResolver },
@@ -115,7 +115,7 @@ export const routes: Routes = [
     path: AppRoutes.CONFIGS_CREATE,
     loadComponent: () =>
       import('./pages/configs/configs.component').then(
-        (m) => m.ConfigurationsComponent,
+        (m) => m.ConfigsComponent,
       ),
     canActivate: [healthCheckGuard],
     resolve: { configs: configsResolver },

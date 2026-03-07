@@ -16,7 +16,7 @@ export class MinimalTUI {
   constructor(config: TressiConfig, silent?: boolean) {
     this._config = config;
     this._silent = silent ?? false;
-    this._spinner = ora({ text: 'Test starting...' });
+    this._spinner = ora({ text: 'Test starting...', isSilent: silent });
   }
 
   /**

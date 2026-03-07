@@ -1,3 +1,4 @@
+import { JsonMigrationManager } from '../data/json-migration-manager';
 import { TressiServer } from '../server';
 
 /**
@@ -12,11 +13,14 @@ export class ServeCommand {
    * @returns Promise that resolves when the server starts
    * @throws Error when server fails to start
    */
-  async execute(options: { port?: number }): Promise<void> {
+  async execute(options: { port?: number; migrate?: boolean }): Promise<void> {
     try {
+      // Run migrations before server starts
+      const migrationManager = new JsonMigrationManager();
+      await migrationManager.run(options.migrate);
+
       this._server = new TressiServer(options.port);
 
-      // Handle graceful shutdown
       const handleShutdown = async (): Promise<void> => {
         if (this._server) {
           await this._server.stop();
@@ -27,7 +31,6 @@ export class ServeCommand {
       process.on('SIGINT', handleShutdown);
       process.on('SIGTERM', handleShutdown);
 
-      // Start the server
       await this._server.start();
     } catch (error) {
       throw new Error(`Failed to start server: ${(error as Error).message}`);
@@ -39,6 +42,6 @@ export class ServeCommand {
    * @returns Command description
    */
   static getDescription(): string {
-    return 'Start a Hono server with a healthcheck endpoint for monitoring and testing purposes.';
+    return 'Start the management server and interactive dashboard.';
   }
 }

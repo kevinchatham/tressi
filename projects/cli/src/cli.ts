@@ -5,7 +5,7 @@ import pkg from '../../../package.json';
 import { ResetCommand } from './commands/reset-command';
 import { RunCommand } from './commands/run-command';
 import { ServeCommand } from './commands/serve-command';
-import { initializeDatabase } from './database/init';
+import { initializeDatabase } from './data/database';
 import { terminal } from './tui/terminal';
 
 /**
@@ -27,18 +27,26 @@ class TressiCLI {
   private _setupProgram(): void {
     this._program
       .name('tressi')
-      .description('A modern, simple load testing tool for APIs.')
+      .description('A modern load testing tool for APIs.')
       .version(pkg.version);
 
     this._program.option(
-      '-e, --export [path]',
-      'Export test results to specified path (supports .json, .xlsx, .md formats)',
+      '-e, --export <path>',
+      'Export test results to the specified directory',
     );
     this._program.option(
       '-s, --silent',
-      'Run in silent mode without TUI or progress output',
+      'Disable TUI and progress output',
       false,
     );
+
+    this._program.option(
+      '-m, --migrate',
+      'Migrate configurations without prompting',
+      false,
+    );
+
+    this._program.option('-f, --force', 'Force the database reset', false);
   }
 
   /**
@@ -49,33 +57,45 @@ class TressiCLI {
     this._program
       .command('run')
       .argument('<config>', 'Path or URL to JSON configuration file')
-      .summary('Run a load test')
+      .summary('Execute a load test')
       .description(RunCommand.getDescription())
-      .action(async (config, options) => {
+      .action(async (config, options, commandInstance) => {
         const command = new RunCommand();
-        await command.execute(config, options.export, options.silent);
+        const globalOptions = commandInstance.optsWithGlobals();
+        await command.execute(
+          config,
+          options.export || globalOptions.export,
+          options.silent || globalOptions.silent,
+          options.migrate || globalOptions.migrate,
+        );
       });
 
     // Serve command
     this._program
       .command('serve')
-      .summary('Start a Hono server with healthcheck endpoint')
+      .summary('Start the management server')
       .description(ServeCommand.getDescription())
       .option('-p, --port <port>', 'Server port (default: 3108)', '3108')
-      .action(async (options) => {
+      .action(async (options, commandInstance) => {
         const command = new ServeCommand();
+        const globalOptions = commandInstance.optsWithGlobals();
         const port = parseInt(options.port, 10);
-        await command.execute({ port });
+        await command.execute({
+          port,
+          migrate: options.migrate || globalOptions.migrate,
+        });
       });
 
     // Reset command
     this._program
       .command('reset')
-      .summary('Completely reset Tressi database')
+      .summary('Reset the database')
       .description(ResetCommand.getDescription())
-      .action(async () => {
+      .option('-f, --force', 'Bypass confirmation prompts.', false)
+      .action(async (options, commandInstance) => {
         const command = new ResetCommand();
-        await command.execute();
+        const globalOptions = commandInstance.optsWithGlobals();
+        await command.execute(options.force || globalOptions.force);
       });
   }
 
@@ -87,13 +107,13 @@ class TressiCLI {
       'after',
       `
 Commands:
-  run <config>  Run a load test using the specified configuration file
-  serve         Start a Hono server with healthcheck endpoint
-  reset         Completely reset Tressi database
+  run <config>  Execute a load test using the specified configuration file
+  serve         Start the management server
+  reset         Reset the database
 
 Options:
-  -e, --export <path>  Export test results to specified path (supports .json, .xlsx, .md formats)
-  -s, --silent         Run in silent mode without TUI or progress output
+  -e, --export <path>  Export test results to the specified directory
+  -s, --silent         Disable TUI and progress output
 
 Examples:
   # Run a load test with a specific local configuration file
@@ -116,6 +136,9 @@ Examples:
 
   # Reset the Tressi database
   $ tressi reset
+
+  # Reset the Tressi database without confirmation
+  $ tressi reset --force
 `,
     );
   }
