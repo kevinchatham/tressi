@@ -8,8 +8,7 @@ import { Hono } from 'hono';
 import z from 'zod';
 
 import { configStorage } from '../../collections/config-collection';
-import { endpointMetricStorage } from '../../collections/endpoint-metrics-collection';
-import { globalMetricStorage } from '../../collections/global-metrics-collection';
+import { metricStorage } from '../../collections/metrics-collection';
 import { testStorage } from '../../collections/test-collection';
 import { runLoadTestForServer, stopLoadTest } from '../../core/test-executor';
 import { globalEventEmitter } from '../../events/global-event-emitter';
@@ -293,10 +292,7 @@ const app = new Hono()
         }
 
         // Delete all associated metrics first (cascade deletion)
-        const globalMetricsDeleted =
-          await globalMetricStorage.deleteByTestId(id);
-        const endpointMetricsDeleted =
-          await endpointMetricStorage.deleteByTestId(id);
+        const metricsDeleted = await metricStorage.deleteByTestId(id);
 
         // Then delete the test itself
         const success = await testStorage.delete(id);
@@ -309,10 +305,7 @@ const app = new Hono()
 
         const response: DeleteTestResponse = {
           success: true,
-          metricsDeleted: {
-            global: globalMetricsDeleted,
-            endpoints: endpointMetricsDeleted,
-          },
+          metricsDeleted,
         };
         return c.json(response);
       } catch (error) {
@@ -358,10 +351,6 @@ const app = new Hono()
           400,
         );
       }
-
-      // Fetch timeseries metrics
-      // const globalMetrics = await globalMetricStorage.getByTestId(id);
-      // const endpointMetrics = await endpointMetricStorage.getByTestId(id);
 
       // Handle JSON format
 

@@ -37,28 +37,42 @@ describe('DatabaseMigrationManager', () => {
     manager = new DatabaseMigrationManager(db);
   });
 
-  it('should create database_migrations table if it does not exist', async () => {
+  it('should create migrations table if it does not exist', async () => {
     await manager.run();
 
     const tableExists = await db.introspection
       .getTables()
-      .then((tables) => tables.some((t) => t.name === 'database_migrations'));
+      .then((tables) => tables.some((t) => t.name === 'migrations'));
 
     expect(tableExists).toBe(true);
   });
 
-  it('should do nothing if no migrations are pending', async () => {
+  it('should stamp current version on fresh install', async () => {
     await manager.run();
 
     const result = await db
-      .selectFrom('database_migrations')
+      .selectFrom('migrations')
       .select('version')
       .execute();
 
-    expect(result).toHaveLength(0);
+    expect(result).toHaveLength(1);
+    expect(result[0].version).toBe('0.0.15');
   });
 
   it('should apply pending migrations in order', async () => {
+    // Pre-set version to simulate an existing install
+    await db.schema
+      .createTable('migrations')
+      .ifNotExists()
+      .addColumn('version', 'text', (col) => col.primaryKey())
+      .addColumn('applied_at', 'integer', (col) => col.notNull())
+      .execute();
+
+    await db
+      .insertInto('migrations')
+      .values({ version: '0.0.13', applied_at: Date.now() })
+      .execute();
+
     // Mock migrations
     DATABASE_MIGRATIONS['0.0.14'] = {
       summary: 'Create test_table',
@@ -92,17 +106,31 @@ describe('DatabaseMigrationManager', () => {
 
     // Verify versions recorded
     const versions = await db
-      .selectFrom('database_migrations')
+      .selectFrom('migrations')
       .select('version')
       .orderBy('version', 'asc')
       .execute();
 
-    expect(versions).toHaveLength(2);
-    expect(versions[0].version).toBe('0.0.14');
-    expect(versions[1].version).toBe('0.0.15');
+    expect(versions).toHaveLength(3);
+    expect(versions[0].version).toBe('0.0.13');
+    expect(versions[1].version).toBe('0.0.14');
+    expect(versions[2].version).toBe('0.0.15');
   });
 
   it('should only apply migrations up to target version', async () => {
+    // Pre-set version to simulate an existing install
+    await db.schema
+      .createTable('migrations')
+      .ifNotExists()
+      .addColumn('version', 'text', (col) => col.primaryKey())
+      .addColumn('applied_at', 'integer', (col) => col.notNull())
+      .execute();
+
+    await db
+      .insertInto('migrations')
+      .values({ version: '0.0.13', applied_at: Date.now() })
+      .execute();
+
     DATABASE_MIGRATIONS['0.0.14'] = {
       summary: 'Migration 1',
       up: async (): Promise<void> => {},
@@ -116,15 +144,29 @@ describe('DatabaseMigrationManager', () => {
     await manager.run();
 
     const versions = await db
-      .selectFrom('database_migrations')
+      .selectFrom('migrations')
       .select('version')
       .execute();
 
-    expect(versions).toHaveLength(1);
-    expect(versions[0].version).toBe('0.0.14');
+    expect(versions).toHaveLength(2);
+    expect(versions[0].version).toBe('0.0.13');
+    expect(versions[1].version).toBe('0.0.14');
   });
 
   it('should roll back and halt if a migration fails', async () => {
+    // Pre-set version to simulate an existing install
+    await db.schema
+      .createTable('migrations')
+      .ifNotExists()
+      .addColumn('version', 'text', (col) => col.primaryKey())
+      .addColumn('applied_at', 'integer', (col) => col.notNull())
+      .execute();
+
+    await db
+      .insertInto('migrations')
+      .values({ version: '0.0.13', applied_at: Date.now() })
+      .execute();
+
     DATABASE_MIGRATIONS['0.0.14'] = {
       summary: 'Successful migration',
       up: async (db): Promise<void> => {
@@ -154,10 +196,11 @@ describe('DatabaseMigrationManager', () => {
     expect(successTableExists).toBe(true);
 
     const versions = await db
-      .selectFrom('database_migrations')
+      .selectFrom('migrations')
       .select('version')
       .execute();
-    expect(versions).toHaveLength(1);
-    expect(versions[0].version).toBe('0.0.14');
+    expect(versions).toHaveLength(2);
+    expect(versions[0].version).toBe('0.0.13');
+    expect(versions[1].version).toBe('0.0.14');
   });
 });

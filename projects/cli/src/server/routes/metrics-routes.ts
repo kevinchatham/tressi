@@ -4,8 +4,7 @@ import { Hono } from 'hono';
 import os from 'os';
 import z from 'zod';
 
-import { endpointMetricStorage } from '../../collections/endpoint-metrics-collection';
-import { globalMetricStorage } from '../../collections/global-metrics-collection';
+import { metricStorage } from '../../collections/metrics-collection';
 import { createApiErrorResponse } from '../utils/error-response-generator';
 
 /**
@@ -61,12 +60,12 @@ function createMetricsApp(sseManager: ISSEClientManager) {
         });
       })
       /**
-       * GET /global/:testId - Retrieves global metrics for a specific test
+       * GET /:testId - Retrieves all metrics for a specific test
        * @param {string} testId - The test ID from URL parameter
-       * @returns {Promise<Response>} JSON array of global metrics for the test
+       * @returns {Promise<Response>} JSON array of metrics for the test
        */
       .get(
-        '/global/:testId',
+        '/:testId',
         sValidator(
           'param',
           z.object({
@@ -76,38 +75,12 @@ function createMetricsApp(sseManager: ISSEClientManager) {
         async (c) => {
           try {
             const { testId } = c.req.valid('param');
-            const globalMetrics = await globalMetricStorage.getByTestId(testId);
-            return c.json(globalMetrics);
+            const metrics = await metricStorage.getByTestId(testId);
+            return c.json(metrics);
           } catch (error) {
             return c.json(
               createApiErrorResponse(
-                'Failed to load global metrics',
-                'INTERNAL_ERROR',
-                error instanceof Error ? [error.message] : undefined,
-              ),
-              500,
-            );
-          }
-        },
-      )
-      /**
-       * GET /endpoints/:testId - Retrieves endpoint specific metrics for a test
-       * @param {string} testId - The test ID from URL parameter
-       * @returns {Promise<Response>} JSON array of endpoint metrics for the test
-       */
-      .get(
-        '/endpoints/:testId',
-        sValidator('param', z.object({ testId: z.string() })),
-        async (c) => {
-          try {
-            const { testId } = c.req.valid('param');
-            const endpointMetrics =
-              await endpointMetricStorage.getByTestId(testId);
-            return c.json(endpointMetrics);
-          } catch (error) {
-            return c.json(
-              createApiErrorResponse(
-                'Failed to load endpoint metrics',
+                'Failed to load metrics',
                 'INTERNAL_ERROR',
                 error instanceof Error ? [error.message] : undefined,
               ),

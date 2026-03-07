@@ -1,6 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import {
   DeleteTestResponse,
+  MetricDocument,
   TestDocument,
   TestMetrics,
 } from '@tressi/shared/common';
@@ -94,43 +95,34 @@ export class TestService {
    */
   async getTestMetrics(id: string): Promise<TestMetrics> {
     try {
-      const globalMetricsPromise = this._metricsClient.global[':testId'].$get({
+      const response = await this._metricsClient[':testId'].$get({
         param: { testId: id },
       });
 
-      const endpointMetricsPromise = this._metricsClient.endpoints[
-        ':testId'
-      ].$get({
-        param: { testId: id },
+      if (!response.ok) {
+        throw new Error(`Failed to load metrics: ${response.statusText}`);
+      }
+
+      const allMetrics: MetricDocument[] = await response.json();
+
+      const global: MetricDocument[] = [];
+      const endpoints: MetricDocument[] = [];
+
+      allMetrics.forEach((m) => {
+        if (m.url === 'global') {
+          global.push(m);
+        } else {
+          endpoints.push(m);
+        }
       });
-
-      const [globalResponse, endpointsResponse] = await Promise.all([
-        globalMetricsPromise,
-        endpointMetricsPromise,
-      ]);
-
-      if (!globalResponse.ok) {
-        throw new Error(
-          `Failed to load global metrics: ${globalResponse.statusText}`,
-        );
-      }
-
-      if (!endpointsResponse.ok) {
-        throw new Error(
-          `Failed to load endpoint metrics: ${endpointsResponse.statusText}`,
-        );
-      }
-
-      const globalMetrics = await globalResponse.json();
-      const endpointMetrics = await endpointsResponse.json();
 
       // Sort metrics by timestamp (epoch)
-      globalMetrics.sort((a, b) => a.epoch - b.epoch);
-      endpointMetrics.sort((a, b) => a.epoch - b.epoch);
+      global.sort((a, b) => a.epoch - b.epoch);
+      endpoints.sort((a, b) => a.epoch - b.epoch);
 
       return {
-        global: globalMetrics,
-        endpoints: endpointMetrics,
+        global,
+        endpoints,
       };
     } catch (error) {
       this._logService.error('Failed to load test metrics:', error);

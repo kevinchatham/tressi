@@ -54,26 +54,9 @@ export async function initializeDatabase(): Promise<void> {
     )
     .execute();
 
-  // Create global_metrics table
+  // Create metrics table
   await db.schema
-    .createTable('global_metrics')
-    .ifNotExists()
-    .addColumn('id', 'text', (col) => col.primaryKey())
-    .addColumn('test_id', 'text', (col) => col.notNull())
-    .addColumn('epoch', 'integer', (col) => col.notNull())
-    .addColumn('metric', 'text', (col) => col.notNull())
-    .addForeignKeyConstraint(
-      'fk_global_metrics_test',
-      ['test_id'],
-      'tests',
-      ['id'],
-      (cb) => cb.onDelete('cascade'),
-    )
-    .execute();
-
-  // Create endpoint_metrics table
-  await db.schema
-    .createTable('endpoint_metrics')
+    .createTable('metrics')
     .ifNotExists()
     .addColumn('id', 'text', (col) => col.primaryKey())
     .addColumn('test_id', 'text', (col) => col.notNull())
@@ -81,7 +64,7 @@ export async function initializeDatabase(): Promise<void> {
     .addColumn('epoch', 'integer', (col) => col.notNull())
     .addColumn('metric', 'text', (col) => col.notNull())
     .addForeignKeyConstraint(
-      'fk_endpoint_metrics_test',
+      'fk_metrics_test',
       ['test_id'],
       'tests',
       ['id'],
@@ -91,7 +74,7 @@ export async function initializeDatabase(): Promise<void> {
 
   // create migrations table
   await db.schema
-    .createTable('database_migrations')
+    .createTable('migrations')
     .ifNotExists()
     .addColumn('version', 'text', (col) => col.primaryKey())
     .addColumn('applied_at', 'integer', (col) => col.notNull())
@@ -104,34 +87,25 @@ export async function initializeDatabase(): Promise<void> {
     .on('tests')
     .column('config_id')
     .execute();
+
   await db.schema
-    .createIndex('idx_global_metrics_test_id')
+    .createIndex('idx_metrics_test_id')
     .ifNotExists()
-    .on('global_metrics')
+    .on('metrics')
     .column('test_id')
     .execute();
+
   await db.schema
-    .createIndex('idx_global_metrics_epoch')
+    .createIndex('idx_metrics_url')
     .ifNotExists()
-    .on('global_metrics')
-    .column('epoch')
-    .execute();
-  await db.schema
-    .createIndex('idx_endpoint_metrics_test_id')
-    .ifNotExists()
-    .on('endpoint_metrics')
-    .column('test_id')
-    .execute();
-  await db.schema
-    .createIndex('idx_endpoint_metrics_url')
-    .ifNotExists()
-    .on('endpoint_metrics')
+    .on('metrics')
     .column('url')
     .execute();
+
   await db.schema
-    .createIndex('idx_endpoint_metrics_epoch')
+    .createIndex('idx_metrics_epoch')
     .ifNotExists()
-    .on('endpoint_metrics')
+    .on('metrics')
     .column('epoch')
     .execute();
 

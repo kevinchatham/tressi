@@ -13,8 +13,7 @@ import {
 } from '@tressi/shared/common';
 import { cpus, loadavg } from 'os';
 
-import { endpointMetricStorage } from '../collections/endpoint-metrics-collection';
-import { globalMetricStorage } from '../collections/global-metrics-collection';
+import { metricStorage } from '../collections/metrics-collection';
 import { globalEventEmitter } from '../events/global-event-emitter';
 import { transformAggregatedMetricToTestSummary } from '../reporting/utils/transformations';
 
@@ -308,15 +307,16 @@ export class MetricsAggregator implements IMetricsAggregator {
       // Store metrics if testId is provided (server mode)
       if (this._testId) {
         // Store global metrics
-        await globalMetricStorage.create({
+        await metricStorage.create({
           testId: this._testId,
+          url: 'global',
           metric: metrics.global,
           epoch: metrics.epoch,
         });
 
         // Store per-endpoint metrics
         for (const [url, endpointMetric] of Object.entries(metrics.endpoints)) {
-          await endpointMetricStorage.create({
+          await metricStorage.create({
             testId: this._testId,
             url,
             metric: endpointMetric,

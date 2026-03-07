@@ -49,12 +49,7 @@ export class ResetCommand {
       await db.deleteFrom('configs').execute();
 
       // 2. Verification Step
-      const tables = [
-        'configs',
-        'tests',
-        'global_metrics',
-        'endpoint_metrics',
-      ] as const;
+      const tables = ['configs', 'tests', 'metrics'] as const;
       const verificationResults = await Promise.all(
         tables.map(async (table) => {
           const result = await db

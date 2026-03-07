@@ -1,10 +1,9 @@
 import { computed, inject, Injectable, OnDestroy, signal } from '@angular/core';
 import {
   ConfigDocument,
-  EndpointMetricDocument,
   EndpointSummary,
-  GlobalMetricDocument,
   GlobalSummary,
+  MetricDocument,
   TestDocument,
   TestEventData,
   TestMetrics,
@@ -266,7 +265,7 @@ export class TestDetailService implements OnDestroy {
   }
 
   private _mapMetricsToData(
-    metrics: (GlobalMetricDocument | EndpointMetricDocument)[],
+    metrics: MetricDocument[],
     metricType: ChartType,
   ): number[] {
     switch (metricType) {

@@ -56,8 +56,5 @@ export type LoadTestResult = {
  */
 export type DeleteTestResponse = {
   success: boolean;
-  metricsDeleted: {
-    global: number;
-    endpoints: number;
-  };
+  metricsDeleted: number;
 };

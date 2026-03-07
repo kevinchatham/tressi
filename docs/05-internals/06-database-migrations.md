@@ -16,11 +16,14 @@ graph TD
 
     subgraph DatabaseMigrationManager
         B --> C[getCurrentVersion]
-        C --> D{Any version < pkg.version?}
-        D -- No --> E[Proceed with Command]
-        D -- Yes --> F[Sequential Database Migrations]
-        F --> G[Update database_migrations]
-        G --> E
+        C --> D{Version == '0.0.0'?}
+        D -- Yes --> E[Stamp Current Version]
+        D -- No --> F{Any version < pkg.version?}
+        F -- No --> G[Proceed with Command]
+        F -- Yes --> H[Sequential Database Migrations]
+        H --> I[Update migrations]
+        I --> G
+        E --> G
     end
 ```
 
@@ -36,11 +39,12 @@ Database migrations are triggered automatically during the CLI initialization pr
 
 #### Workflow Steps:
 
-1.  **Version Tracking**: The system maintains a `database_migrations` table to record the highest version successfully applied to the database.
-2.  **Version Detection**: Compares the current database version against the application version defined in `package.json`.
-3.  **Sequential Execution**: Identifies all pending migrations in the registry and applies them in order using semver comparison.
-4.  **Transactional Safety**: Each migration is executed within a database transaction. If a migration fails, the transaction is rolled back, and the application halts to prevent data corruption.
-5.  **Version Persistence**: Upon successful completion of a migration, the new version is recorded in the `database_migrations` table.
+1.  **Version Tracking**: The system maintains a `migrations` table to record the highest version successfully applied to the database.
+2.  **Fresh Install Detection**: If the `migrations` table is empty (version `0.0.0`), the system assumes a fresh install. It stamps the database with the current application version and skips all intermediate migrations.
+3.  **Version Detection**: For existing installations, it compares the current database version against the application version defined in `package.json`.
+4.  **Sequential Execution**: Identifies all pending migrations in the registry and applies them in order using semver comparison.
+5.  **Transactional Safety**: Each migration is executed within a database transaction. If a migration fails, the transaction is rolled back, and the application halts to prevent data corruption.
+6.  **Version Persistence**: Upon successful completion of a migration, the new version is recorded in the `migrations` table.
 
 ### Integrity & Safety
 
@@ -66,9 +70,10 @@ export interface IDatabaseMigration {
 When releasing a new version of Tressi with database schema changes:
 
 1.  Identify the required DDL changes (e.g., adding a column, creating an index).
-2.  Add a new entry to the `DATABASE_MIGRATIONS` registry in `projects/cli/src/data/database-migrations.ts`.
-3.  Provide a clear `summary` of the changes.
-4.  Implement the `up` function using the Kysely `db.schema` builder.
+2.  Update the base schema in `projects/cli/src/data/database.ts` to include the new changes. This ensures fresh installs receive the correct schema immediately.
+3.  Add a new entry to the `DATABASE_MIGRATIONS` registry in `projects/cli/src/data/database-migrations.ts`.
+4.  Provide a clear `summary` of the changes.
+5.  Implement the `up` function using the Kysely `db.schema` builder.
 
 ```typescript
 // Example: Adding a column
@@ -87,10 +92,10 @@ When releasing a new version of Tressi with database schema changes:
 
 By default, Tressi stores its internal state in a SQLite database located at `~/.tressi/tressi.db`. This path can be overridden using the `TRESSI_DB_PATH` environment variable.
 
-To manually inspect the migration status, you can query the `database_migrations` table:
+To manually inspect the migration status, you can query the `migrations` table:
 
 ```sql
-SELECT * FROM database_migrations ORDER BY applied_at DESC;
+SELECT * FROM migrations ORDER BY applied_at DESC;
 ```
 
 ### Next Steps

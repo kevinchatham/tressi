@@ -18,7 +18,7 @@ export class DatabaseMigrationManager {
   async run(): Promise<void> {
     // Ensure the migrations table exists before checking version
     await this._db.schema
-      .createTable('database_migrations')
+      .createTable('migrations')
       .ifNotExists()
       .addColumn('version', 'text', (col) => col.primaryKey())
       .addColumn('applied_at', 'integer', (col) => col.notNull())
@@ -26,6 +26,12 @@ export class DatabaseMigrationManager {
 
     const currentVersion = await this._getCurrentVersion();
     const targetVersion = pkg.version;
+
+    // If this is a fresh install, stamp the current version and exit
+    if (currentVersion === '0.0.0') {
+      await this._updateVersion(targetVersion, this._db);
+      return;
+    }
 
     // Find all migrations between current and target version
     const pendingVersions = Object.keys(DATABASE_MIGRATIONS)
@@ -64,28 +70,28 @@ export class DatabaseMigrationManager {
   }
 
   /**
-   * Gets the current database version from the database_migrations table.
+   * Gets the current database version from the migrations table.
    */
   private async _getCurrentVersion(): Promise<string> {
     const result = await this._db
-      .selectFrom('database_migrations')
+      .selectFrom('migrations')
       .select('version')
       .orderBy('version', 'desc')
       .limit(1)
       .executeTakeFirst();
 
-    return (result as { version: string } | undefined)?.version || '0.0.0';
+    return result?.version || '0.0.0';
   }
 
   /**
-   * Updates the database version in the database_migrations table.
+   * Updates the database version in the migrations table.
    */
   private async _updateVersion(
     version: string,
     trx: Kysely<Database>,
   ): Promise<void> {
     await trx
-      .insertInto('database_migrations')
+      .insertInto('migrations')
       .values({
         version,
         applied_at: Date.now(),
