@@ -50,6 +50,7 @@ export const UserPreferencesSchema = z.object({
   lastSelectedConfig: z.custom<ConfigDocument | null>(),
   columnPreferences: z.array(ColumnConfigSchema).nullable(),
   lastRoute: z.string().nullable(),
+  pwaPromptDismissed: z.boolean().optional(),
 });
 
 /**

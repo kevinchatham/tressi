@@ -26,6 +26,7 @@ export class LocalStorageService {
       lastSelectedConfig: null,
       columnPreferences: DEFAULT_COLUMN_CONFIGS,
       lastRoute: null,
+      pwaPromptDismissed: false,
     };
   });
 
@@ -52,6 +53,14 @@ export class LocalStorageService {
   saveLastRoute(route: string): void {
     const current = this._preferences();
     this.savePreferences({ ...current, lastRoute: route });
+  }
+
+  /**
+   * Dismisses the PWA install prompt
+   */
+  dismissPwaPrompt(): void {
+    const current = this._preferences();
+    this.savePreferences({ ...current, pwaPromptDismissed: true });
   }
 
   /**

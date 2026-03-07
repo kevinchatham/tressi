@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "tressi-ui": {
+    "ui": {
       "projectType": "application",
       "schematics": {},
       "root": "",
@@ -48,7 +48,8 @@
               "../../node_modules/emoji-toolkit/lib/js/joypixels.min.js",
               "../../node_modules/mermaid/dist/mermaid.min.js",
               "../../node_modules/clipboard/dist/clipboard.min.js"
-            ]
+            ],
+            "serviceWorker": "ngsw-config.json"
           },
           "configurations": {
             "local": {
@@ -66,7 +67,7 @@
           },
           "configurations": {
             "local": {
-              "buildTarget": "tressi-ui:build:local"
+              "buildTarget": "ui:build:local"
             }
           },
           "defaultConfiguration": "local"
