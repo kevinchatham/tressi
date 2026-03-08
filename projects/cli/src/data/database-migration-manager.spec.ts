@@ -4,7 +4,7 @@ import { Kysely, SqliteDialect } from 'kysely';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DatabaseMigrationManager } from './database-migration-manager';
-import { DATABASE_MIGRATIONS } from './database-migrations';
+import { DATABASE_MIGRATIONS } from './migrations';
 
 vi.mock('../../../../package.json', () => ({
   default: { version: '0.0.15' },

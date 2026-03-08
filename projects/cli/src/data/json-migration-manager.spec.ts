@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { configStorage } from '../collections/config-collection';
 import { JsonMigrationManager } from './json-migration-manager';
-import { JSON_MIGRATIONS } from './json-migrations';
+import { JSON_MIGRATIONS } from './migrations';
 
 vi.mock('../collections/config-collection', () => ({
   configStorage: {
