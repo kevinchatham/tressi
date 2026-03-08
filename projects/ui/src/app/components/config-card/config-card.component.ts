@@ -17,7 +17,7 @@ import { CollapsibleCardComponent } from '../collapsible-card/collapsible-card.c
 import { ExportConfigButtonComponent } from '../export-config-button/export-config-button.component';
 
 @Component({
-  selector: 'app-configuration-card',
+  selector: 'app-config-card',
   imports: [
     ExportConfigButtonComponent,
     ButtonComponent,
@@ -26,10 +26,10 @@ import { ExportConfigButtonComponent } from '../export-config-button/export-conf
     FormatDurationDirective,
     CollapsibleCardComponent,
   ],
-  templateUrl: './configuration-card.component.html',
+  templateUrl: './config-card.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ConfigurationCardComponent {
+export class ConfigCardComponent {
   readonly input = input.required<ConfigDocument>();
 
   /** Output events */
@@ -61,7 +61,7 @@ export class ConfigurationCardComponent {
 
   /** Check if request has payload */
   hasPayload(request: TressiRequestConfig): boolean {
-    return (
+    return !!(
       request.payload &&
       (Array.isArray(request.payload)
         ? request.payload.length > 0

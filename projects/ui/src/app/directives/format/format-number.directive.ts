@@ -17,9 +17,15 @@ export class FormatNumberDirective {
         this._el.nativeElement.textContent = '0';
         return;
       }
-      this._el.nativeElement.textContent = humanNumber(value, (n) =>
-        n.toFixed(0),
-      );
+      const numValue = Number(value);
+      if (numValue === 0) {
+        this._el.nativeElement.textContent = '0';
+        return;
+      }
+      const sign = numValue < 0 ? '-' : '';
+      const absValue = Math.abs(numValue);
+      this._el.nativeElement.textContent =
+        sign + humanNumber(absValue).toLowerCase();
     });
   }
 }

@@ -17,11 +17,13 @@ export class FormatPercentageDirective {
         return;
       }
       const v = value * 100;
-      if (v < 1) {
-        this._el.nativeElement.textContent = `${value.toFixed(1)}%`;
-      } else {
-        this._el.nativeElement.textContent = `${v.toFixed(0)}%`;
+      const absV = Math.abs(v);
+      const decimals = absV < 100 ? 1 : 0;
+      let formatted = v.toFixed(decimals);
+      if (absV >= 10 && formatted.endsWith('.0')) {
+        formatted = formatted.slice(0, -2);
       }
+      this._el.nativeElement.textContent = formatted + '%';
     });
   }
 }

@@ -17,7 +17,8 @@ export class FormatMemoryDirective {
         return;
       }
 
-      if (mb < 1024) {
+      const absMb = Math.abs(mb);
+      if (absMb < 1024) {
         this._el.nativeElement.textContent = `${Math.round(mb)} MB`;
       } else {
         this._el.nativeElement.textContent = `${(mb / 1024).toFixed(2)} GB`;

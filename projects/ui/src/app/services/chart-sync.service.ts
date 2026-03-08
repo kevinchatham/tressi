@@ -41,14 +41,14 @@ export class ChartSyncService {
   broadcastState(
     updates: Partial<Omit<ChartSyncState, 'lastInteractedChartId'>>,
   ): void {
-    const now = performance.now();
+    const now = Date.now();
     const span = now - this._lastUpdate;
     if (span > this._batchMs) {
       this._state.update((current) => ({
         ...current,
         ...updates,
       }));
-      this._lastUpdate = performance.now();
+      this._lastUpdate = Date.now();
     }
   }
 
