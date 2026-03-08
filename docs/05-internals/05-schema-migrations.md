@@ -77,7 +77,7 @@ A valid Tressi configuration **must** include the `$schema` property. If the pro
 
 While structural changes such as adding new fields with defaults are handled by Zod validation, semantic changes like renaming a field or changing logic require transformation functions.
 
-These functions are defined in `projects/cli/src/data/json-migrations.ts` and utilize the `IJsonMigration` interface (defined in `projects/shared/src/cli/migration.types.ts`). Each migration includes a `summary` and an `up` function.
+These functions are defined in `projects/cli/src/data/migrations.ts` and utilize the `IJsonMigration` interface (defined in `projects/shared/src/cli/migration.types.ts`). Each migration includes a `summary` and an `up` function.
 
 ### Maintaining Type Safety
 
@@ -145,7 +145,7 @@ Tressi implements a fault tolerant migration strategy to ensure that individual 
 When releasing a new version of Tressi with breaking schema changes:
 
 1.  Identify the required semantic changes.
-2.  Add a new entry to the `JSON_MIGRATIONS` registry in `projects/cli/src/data/json-migrations.ts`.
+2.  Add a new entry to the `JSON_MIGRATIONS` registry in `projects/cli/src/data/migrations.ts`.
 3.  Provide a clear `summary` of the changes.
 4.  Return the transformed configuration object from the `up` function.
 

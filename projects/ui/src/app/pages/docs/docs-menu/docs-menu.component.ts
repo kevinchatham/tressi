@@ -100,6 +100,8 @@ export class DocsMenuComponent {
       } catch (error) {
         // eslint-disable-next-line no-console
         console.error('Search failed', error);
+      } finally {
+        this.isSearching.set(false);
       }
     });
   }

@@ -133,11 +133,26 @@ export class TestDetailComponent {
   // New helper methods for enhanced UI
   getYAxisLabel(): string {
     const selected = this.service.selectedChartType();
-    if (selected.includes('throughput')) return 'Req/sec';
-    if (selected.includes('latency')) return 'ms';
-    if (selected.includes('rate') || selected === 'target_achieved') return '%';
-    if (selected.includes('network_throughput')) return 'Bytes/sec';
-    if (selected.includes('network_bytes')) return 'Bytes';
+    if (selected === 'network_throughput') return 'Bytes/sec';
+    if (selected === 'peak_throughput' || selected === 'average_throughput')
+      return 'Req/sec';
+    if (
+      selected === 'latency' ||
+      selected === 'latency_p95' ||
+      selected === 'latency_p99'
+    )
+      return 'ms';
+    if (
+      selected === 'error_rate' ||
+      selected === 'success_rate' ||
+      selected === 'target_achieved'
+    )
+      return '%';
+    if (
+      selected === 'network_bytes_sent' ||
+      selected === 'network_bytes_received'
+    )
+      return 'Bytes';
     if (selected === 'failed_requests') return 'requests';
     return 'Value';
   }

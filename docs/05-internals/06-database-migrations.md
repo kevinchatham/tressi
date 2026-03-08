@@ -56,7 +56,7 @@ Tressi prioritizes database integrity through several safety mechanisms:
 
 ### Defining Migrations
 
-Database migrations are defined in `projects/cli/src/data/database-migrations.ts` and utilize the `IDatabaseMigration` interface (defined in `projects/shared/src/cli/migration.types.ts`). Each migration includes a `summary` and an `up` function.
+Database migrations are defined in `projects/cli/src/data/migrations.ts` and utilize the `IDatabaseMigration` interface (defined in `projects/shared/src/cli/migration.types.ts`). Each migration includes a `summary` and an `up` function.
 
 ```typescript
 export interface IDatabaseMigration {
@@ -71,7 +71,7 @@ When releasing a new version of Tressi with database schema changes:
 
 1.  Identify the required DDL changes (e.g., adding a column, creating an index).
 2.  Update the base schema in `projects/cli/src/data/database.ts` to include the new changes. This ensures fresh installs receive the correct schema immediately.
-3.  Add a new entry to the `DATABASE_MIGRATIONS` registry in `projects/cli/src/data/database-migrations.ts`.
+3.  Add a new entry to the `DATABASE_MIGRATIONS` registry in `projects/cli/src/data/migrations.ts`.
 4.  Provide a clear `summary` of the changes.
 5.  Implement the `up` function using the Kysely `db.schema` builder.
 

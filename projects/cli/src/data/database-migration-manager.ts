@@ -4,7 +4,7 @@ import semver from 'semver';
 
 import pkg from '../../../../package.json';
 import { terminal } from '../tui/terminal';
-import { DATABASE_MIGRATIONS } from './database-migrations';
+import { DATABASE_MIGRATIONS } from './migrations';
 
 /**
  * Manages the detection and execution of database schema migrations.

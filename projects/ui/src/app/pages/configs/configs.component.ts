@@ -15,8 +15,8 @@ import { AppRoutes } from '@tressi/shared/ui';
 import { ButtonComponent } from 'src/app/components/button/button.component';
 import { ThemeSwitcherComponent } from 'src/app/components/theme-switcher/theme-switcher.component';
 
+import { ConfigCardComponent } from '../../components/config-card/config-card.component';
 import { ConfigFormComponent } from '../../components/config-form/config-form.component';
-import { ConfigurationCardComponent } from '../../components/configuration-card/configuration-card.component';
 import { DeleteConfirmationModalComponent } from '../../components/delete-confirmation-modal/delete-confirmation-modal.component';
 import { HeaderComponent } from '../../components/header/header.component';
 import { ImportConfigButtonComponent } from '../../components/import-config-button/import-config-button.component';
@@ -32,7 +32,7 @@ import { ToastService } from '../../services/toast.service';
     ThemeSwitcherComponent,
     ConfigFormComponent,
     HeaderComponent,
-    ConfigurationCardComponent,
+    ConfigCardComponent,
     SearchBarComponent,
     DeleteConfirmationModalComponent,
     ImportConfigButtonComponent,

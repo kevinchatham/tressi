@@ -14,7 +14,7 @@ import semver from 'semver';
 import pkg from '../../../../package.json';
 import { configStorage } from '../collections/config-collection';
 import { terminal } from '../tui/terminal';
-import { JSON_MIGRATIONS } from './json-migrations';
+import { JSON_MIGRATIONS } from './migrations';
 
 /**
  * Manages the detection and execution of schema migrations for stored configurations and files.
