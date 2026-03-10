@@ -1,3 +1,18 @@
+# ============================================
+# 🚀 Continuous Integration
+# --------------------------------------------
+# This workflow runs on every push to main and
+# every pull request targeting main.
+#
+# 🛠 Jobs:
+# - lint: Runs linting checks
+# - test: Runs CLI, UI, and E2E tests across
+#         multiple Node.js versions (20, 22, 24)
+# - docker-build: Verifies Docker image build
+#
+# 🔁 Manual trigger available via workflow_dispatch
+# ============================================
+
 name: CI
 
 on:

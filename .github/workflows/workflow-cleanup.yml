@@ -13,7 +13,6 @@
 # - If `older_than_days` is NOT provided:
 #     → Deletes *only failed* runs regardless of age
 #
-# Uses GH CLI with token-based auth (stored as `GH_TOKEN`)
 # Only affects runs with `status=completed` (not in-progress)
 # ============================================
 
@@ -37,7 +36,7 @@ jobs:
     steps:
       - name: Delete matching runs
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          TRESSI_GITHUB_TOKEN: ${{ secrets.TRESSI_GITHUB_TOKEN }}
         run: |
           REPO="${{ github.repository }}"
           INPUT_DAYS="${{ github.event.inputs.older_than_days }}"

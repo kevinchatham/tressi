@@ -1,9 +1,25 @@
+# ============================================
+# 📦 Release Workflow
+# --------------------------------------------
+# This workflow handles the release process:
+# 1. Pre-flight: Checks if version is already published
+# 2. Publish NPM: Publishes to NPM if needed
+# 3. Publish Docker: Publishes to GHCR if needed
+# 4. Create Release: Creates a GitHub release
+#
+# 🔁 Triggered on push to main
+# ============================================
+
 name: Release
 
 on:
   workflow_dispatch:
   push:
     branches: [main]
+
+permissions:
+  id-token: write
+  contents: read
 
 env:
   REGISTRY: ghcr.io
@@ -37,7 +53,7 @@ jobs:
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.TRESSI_GITHUB_TOKEN }}
 
       - name: Check NPM version status
         id: check-npm
@@ -95,12 +111,10 @@ jobs:
 
       - name: Publish to NPM
         run: npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   publish-docker:
     name: Publish Docker Image
-    needs: pre-flight
+    needs: [pre-flight, publish-npm]
     if: needs.pre-flight.outputs.docker_publish == 'true'
     runs-on: ubuntu-latest
     permissions:
@@ -119,7 +133,7 @@ jobs:
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.TRESSI_GITHUB_TOKEN }}
 
       - name: Extract Docker metadata
         id: meta
@@ -147,7 +161,7 @@ jobs:
     needs: [pre-flight, publish-npm, publish-docker]
     if: |
       always() &&
-      (needs.publish-npm.result == 'success' || needs.publish-docker.result == 'success')
+      (needs.publish-npm.result == 'success' && needs.publish-docker.result == 'success')
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -161,4 +175,4 @@ jobs:
             --title "Release v${{ needs.pre-flight.outputs.version }}" \
             --generate-notes
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.TRESSI_GITHUB_TOKEN }}
