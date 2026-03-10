@@ -43,6 +43,11 @@ jobs:
           node-version: 24
           registry-url: 'https://registry.npmjs.org/'
 
+      - name: Validate NPM Token
+        run: npm whoami
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.TRESSI_NPM_TOKEN }}
+
       - name: Log into registry ${{ env.REGISTRY }}
         uses: docker/login-action@v3
         with:
@@ -106,6 +111,8 @@ jobs:
 
       - name: Publish to NPM
         run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.TRESSI_NPM_TOKEN }}
 
   publish-docker:
     name: Publish Docker Image
