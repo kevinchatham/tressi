@@ -13,8 +13,6 @@
 > ```bash
 > npx tressi serve
 > ```
->
-> Then open `http://localhost:3108` in your browser.
 
 ![./images/0.0.13-test-details.png](https://github.com/kevinchatham/tressi/blob/main/images/0.0.13-test-details.png?raw=true)
 
