@@ -75,6 +75,7 @@
     "@hono/node-server": "^1.19.6",
     "@hono/standard-validator": "^0.2.0",
     "@tailwindcss/postcss": "^4.1.17",
+    "better-sqlite3": "^12.6.0",
     "chalk": "^5.4.1",
     "cli-table3": "^0.6.5",
     "clipboard": "^2.0.11",
