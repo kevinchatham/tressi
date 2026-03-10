@@ -1,0 +1,208 @@
+<div class="space-y-6">
+  <div>
+    <!-- Requests Configuration -->
+    <div>
+      <div class="mb-4 flex items-center justify-between">
+        <h3 class="flex items-center gap-2 text-lg font-semibold">
+          <app-icon name="send" class="h-5 w-5" />
+          All Requests
+        </h3>
+        <app-button
+          (click)="addRequest.emit()"
+          [color]="'primary'"
+          [icon]="'add'"
+          [title]="'Add Request'"
+          data-e2e="add-endpoint-btn"
+        />
+      </div>
+
+      @for (request of model().config.requests; track $index) {
+        <app-collapsible-card
+          class="mb-4 block"
+          [title]="
+            request.url !== ''
+              ? `${request.method} ${request.url}`
+              : 'Empty Request'
+          "
+          [collapsed]="!isRequestExpanded($index)"
+          (collapsedChange)="toggleRequest($index)"
+        >
+          <ng-template>
+            <app-button
+              (click)="removeRequest.emit($index)"
+              [color]="'error'"
+              [disabled]="model().config.requests.length === 1"
+              [icon]="'delete'"
+              [title]="'Remove Request'"
+            />
+          </ng-template>
+
+          <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <!-- URL and Method -->
+            <fieldset class="fieldset md:col-span-2">
+              <legend
+                class="fieldset-legend text-xs font-bold uppercase opacity-70"
+              >
+                URL
+              </legend>
+              <div class="flex gap-2">
+                <input
+                  #urlInput
+                  type="url"
+                  class="input flex-1 outline-none!"
+                  [formField]="form().config.requests[$index].url"
+                  placeholder="https://api.example.com/endpoint"
+                  data-e2e="endpoint-url-input"
+                />
+                <select
+                  class="select select-bordered w-24"
+                  [formField]="form().config.requests[$index].method"
+                >
+                  @for (method of httpMethods; track method) {
+                    <option [value]="method">{{ method }}</option>
+                  }
+                </select>
+              </div>
+              @if (
+                form().config.requests[$index].url().touched() &&
+                form().config.requests[$index].url().invalid()
+              ) {
+                <p class="label text-error ml-2">
+                  @for (
+                    error of form().config.requests[$index].url().errors();
+                    track error
+                  ) {
+                    {{ error.message }}
+                  }
+                </p>
+              }
+            </fieldset>
+
+            <!-- RPS -->
+            <fieldset class="fieldset">
+              <legend
+                class="fieldset-legend text-xs font-bold uppercase opacity-70"
+              >
+                Target
+              </legend>
+              <input
+                type="number"
+                class="input outline-none!"
+                [formField]="form().config.requests[$index].rps"
+                placeholder="Requests per second"
+              />
+              <p class="label ml-2 py-0 text-xs opacity-60">
+                Requests per second
+              </p>
+              @if (
+                form().config.requests[$index].rps().touched() &&
+                form().config.requests[$index].rps().invalid()
+              ) {
+                <p class="label text-error ml-2">
+                  @for (
+                    error of form().config.requests[$index].rps().errors();
+                    track error
+                  ) {
+                    {{ error.message }}
+                  }
+                </p>
+              }
+            </fieldset>
+
+            <!-- Ramp Up Duration -->
+            <fieldset class="fieldset">
+              <legend
+                class="fieldset-legend text-xs font-bold uppercase opacity-70"
+              >
+                Ramp Up Time
+              </legend>
+              <input
+                type="number"
+                class="input outline-none!"
+                [formField]="form().config.requests[$index].rampUpDurationSec"
+                placeholder="Time to reach target RPS"
+              />
+              <p class="label ml-2 py-0 text-xs opacity-60">In seconds</p>
+              @if (
+                form().config.requests[$index].rampUpDurationSec().touched() &&
+                form().config.requests[$index].rampUpDurationSec().invalid()
+              ) {
+                <p class="label text-error ml-2">
+                  @for (
+                    error of form()
+                      .config.requests[$index].rampUpDurationSec()
+                      .errors();
+                    track error
+                  ) {
+                    {{ error.message }}
+                  }
+                </p>
+              }
+            </fieldset>
+
+            <!-- Headers -->
+            <fieldset class="fieldset md:col-span-2">
+              <legend
+                class="fieldset-legend text-xs font-bold uppercase opacity-70"
+              >
+                Headers
+              </legend>
+              <app-json-textarea
+                [(value)]="model().config.requests[$index].headers"
+                [rows]="3"
+                (valueChange)="onJsonTextareaValueChange()"
+                placeholder='{"Content-Type": "application/json", "Authorization": "Bearer token"}'
+              />
+              <p class="label ml-2 py-0 text-xs text-wrap opacity-60">
+                Merged with global headers; request headers take precedence
+              </p>
+            </fieldset>
+
+            <!-- Payload -->
+            @if (
+              supportsRequestBody(
+                model().config.requests[$index].method || 'GET'
+              )
+            ) {
+              <fieldset class="fieldset md:col-span-2">
+                <legend
+                  class="fieldset-legend text-xs font-bold uppercase opacity-70"
+                >
+                  Payload (JSON)
+                </legend>
+                <app-json-textarea
+                  [(value)]="model().config.requests[$index].payload"
+                  [rows]="4"
+                  (valueChange)="onJsonTextareaValueChange()"
+                  placeholder='{"key": "value", "array": [1, 2, 3]}'
+                />
+              </fieldset>
+            }
+
+            <!-- Early Exit Configuration -->
+            <div class="md:col-span-2">
+              <h4 class="text-md mb-3 flex items-center gap-2 font-semibold">
+                <app-icon name="warning" />
+                Early Exit Configuration
+              </h4>
+              <app-early-exit-config
+                [form]="form().config.requests[$index].earlyExit"
+                [model]="model().config.requests[$index].earlyExit"
+                (addExitStatusCode)="addRequestExitStatusCode.emit($index)"
+                (removeExitStatusCode)="
+                  removeRequestExitStatusCode.emit({
+                    requestIndex: $index,
+                    codeIndex: $event,
+                  })
+                "
+              />
+              <p class="label ml-2 py-0 text-xs text-wrap opacity-60">
+                Overrides global configuration
+              </p>
+            </div>
+          </div>
+        </app-collapsible-card>
+      }
+    </div>
+  </div>
+</div>

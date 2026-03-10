@@ -1,0 +1,108 @@
+<div
+  class="shrink-0 transition-all duration-300 ease-in-out"
+  [class.w-full]="!isCollapsed()"
+  [class.md:w-64]="!isCollapsed()"
+  [class.w-8]="isCollapsed()"
+>
+  <div [ngClass]="getWrapperClass()">
+    <!-- Header with Search and Collapse -->
+    <div class="flex items-center gap-4">
+      @if (!isCollapsed()) {
+        <div class="flex-1">
+          <app-search-bar
+            [query]="searchQuery()"
+            (queryChange)="onSearch($event)"
+          />
+        </div>
+      }
+      <button
+        (click)="toggleCollapse()"
+        class="btn btn-ghost btn-primary btn-square btn-sm"
+        [title]="isCollapsed() ? 'Expand Menu' : 'Collapse Menu'"
+      >
+        <app-icon [name]="isCollapsed() ? 'chevron_right' : 'chevron_left'" />
+      </button>
+    </div>
+
+    @if (!isCollapsed()) {
+      <div class="flex flex-col gap-2">
+        @if (searchQuery().length >= 2) {
+          <!-- Search Results -->
+          <div class="flex flex-col gap-2">
+            <div class="text-xs font-bold uppercase opacity-50">
+              Search Results
+            </div>
+            @if (searchResults().length === 0) {
+              <div class="p-2 text-sm opacity-50">No results found</div>
+            } @else {
+              <ul class="menu p-0">
+                @for (result of searchResults(); track result.path) {
+                  <li>
+                    <a
+                      (click)="this.searchQuery.set('')"
+                      [routerLink]="['/docs'].concat(result.path.split('/'))"
+                      routerLinkActive="text-primary active"
+                      class="flex flex-col items-start gap-0"
+                    >
+                      <span class="font-bold">{{
+                        formatTitle(result.title)
+                      }}</span>
+                      @if (result.section) {
+                        <span class="text-[10px] opacity-50">{{
+                          result.section
+                        }}</span>
+                      }
+                    </a>
+                  </li>
+                }
+              </ul>
+            }
+          </div>
+        } @else {
+          <!-- Default Menu -->
+          @for (
+            section of availableDocs() | keyvalue: preserveOrder;
+            track section.key
+          ) {
+            <div>
+              <div
+                (click)="toggleSection(section.key)"
+                class="mb-2 flex cursor-pointer items-center justify-between font-bold tracking-wider transition-opacity hover:opacity-100"
+                [class.opacity-50]="expandedSection() !== section.key"
+                [class.opacity-100]="expandedSection() === section.key"
+                [class.text-primary]="expandedSection() === section.key"
+              >
+                <span>{{ section.key }}</span>
+              </div>
+              <div
+                class="collapse-transition"
+                [class.collapse-expanded]="expandedSection() === section.key"
+                [class.collapse-collapsed]="expandedSection() !== section.key"
+              >
+                <ul class="menu p-0">
+                  @for (doc of section.value.docs; track doc.slug) {
+                    @if (doc.slug !== 'index') {
+                      <li>
+                        <a
+                          [routerLink]="
+                            section.value.path
+                              ? ['/docs', section.value.path, doc.slug]
+                              : ['/docs', doc.slug]
+                          "
+                          routerLinkActive="text-secondary active"
+                          class="text-base-content/70"
+                        >
+                          {{ formatTitle(doc.slug) }}
+                        </a>
+                      </li>
+                    }
+                  }
+                </ul>
+              </div>
+            </div>
+          }
+        }
+      </div>
+    }
+  </div>
+</div>

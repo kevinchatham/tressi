@@ -1,0 +1,55 @@
+<div class="p-12">
+  <app-header>
+    @if (hasTestHistory() || !selectedConfigId()) {
+      <app-start-button
+        [config]="selectedConfig()"
+        (testStarted)="onTestStarted()"
+        (testStartFailed)="onTestStartFailed($event)"
+      />
+    }
+
+    <!-- Configuration Selector -->
+    <div class="dropdown dropdown-center">
+      <app-button
+        [title]="'Select Config'"
+        [tabindex]="0"
+        [color]="'secondary'"
+        [icon]="'text_snippet'"
+      />
+      <ul
+        tabindex="0"
+        class="dropdown-content bg-base-200 rounded-box z-9999 mt-2 max-h-96 w-52 overflow-y-auto p-2 shadow-2xl"
+      >
+        @for (config of configs(); track config.id) {
+          <li>
+            <input
+              type="radio"
+              name="config-dropdown"
+              class="theme-controller btn btn-sm btn-block btn-ghost w-full justify-start"
+              [attr.aria-label]="config.name"
+              [value]="config.id"
+              [checked]="selectedConfigId() === config.id"
+              (change)="onConfigSelect(config.id)"
+            />
+          </li>
+        }
+      </ul>
+    </div>
+
+    <app-button
+      (click)="appRouter.toConfigs()"
+      [title]="'View Configs'"
+      [color]="'info'"
+      [icon]="'sdk'"
+    />
+  </app-header>
+
+  @if (selectedConfig()) {
+    <div class="mt-8 px-8">
+      <app-test-list
+        [config]="selectedConfig()!"
+        (testHistoryUpdate)="onTestHistoryUpdate($event)"
+      />
+    </div>
+  }
+</div>

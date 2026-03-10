@@ -1,0 +1,8 @@
+<app-button
+  (click)="themeService.toggleTheme()"
+  [color]="'rainbow'"
+  [title]="'Toggle Theme'"
+  [icon]="'light_mode'"
+  [secondaryIcon]="'thunderstorm'"
+  [toggled]="themeService.isDark()"
+/>

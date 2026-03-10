@@ -1,0 +1,98 @@
+<div class="p-12">
+  <app-header data-e2e="configs-header">
+    @if (!showForm()) {
+      <app-theme-switcher />
+      <app-import-config-button
+        (configImported)="onConfigImported($event)"
+        (importError)="onImportError($event)"
+      />
+    }
+    @if (!hasNoConfigs() && !showForm()) {
+      <app-button
+        (click)="startCreate()"
+        [color]="'primary'"
+        [title]="'Create'"
+        [icon]="'post_add'"
+        data-e2e="create-config-btn"
+      />
+      <app-button
+        (click)="appRouter.toHome()"
+        [color]="'info'"
+        [title]="'Dashboard'"
+        [icon]="'browse_activity'"
+      />
+    }
+  </app-header>
+
+  <div class="px-8">
+    <!-- Configuration List -->
+    @if (!showForm()) {
+      <!-- Search Bar -->
+      <div class="mb-6 flex justify-start">
+        <app-search-bar
+          [query]="searchQuery()"
+          (queryChange)="onSearchQueryChange($event)"
+        />
+      </div>
+
+      <div class="columns-1 gap-4 space-y-4 md:columns-2">
+        @for (config of filteredConfigs(); track config.id) {
+          <div class="break-inside-avoid">
+            <app-config-card
+              [style.view-transition-name]="'card-' + config.id"
+              [input]="config"
+              (edit)="startEdit($event)"
+              (duplicate)="startDuplicate($event)"
+              (delete)="showDeleteConfirm($event)"
+              (navigate)="appRouter.toDashboard($event.id)"
+            />
+          </div>
+        }
+      </div>
+
+      @if (hasNoConfigs()) {
+        <div
+          class="border-base-content/10 bg-base-300 mx-auto rounded-xl border-2 p-8"
+        >
+          <div class="text-center">
+            <p class="text-base-content/70 mb-4 text-lg">
+              No configurations found
+            </p>
+            <app-button
+              (click)="startCreate()"
+              [color]="'primary'"
+              [icon]="'add'"
+              [title]="'Create'"
+              data-e2e="create-config-btn"
+            />
+          </div>
+        </div>
+      }
+    }
+
+    <!-- Edit/Create Form -->
+    @if (showForm()) {
+      <div class="mx-auto max-w-5xl">
+        <div class="border-base-content/10 bg-base-300 rounded-xl border-2 p-6">
+          <h2 class="mb-4 text-xl font-semibold">
+            {{ currentConfig()?.id ? 'Edit Existing' : 'Create New' }}
+          </h2>
+          <app-config-form
+            [input]="currentConfig()"
+            (output)="onConfigSaved($event)"
+            (closed)="cancelEdit()"
+          />
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <app-delete-confirmation-modal
+    [isOpen]="showDeleteModal()"
+    [id]="configToDelete()?.id || ''"
+    [itemLabel]="'Configuration'"
+    (confirmed)="deleteConfig()"
+    (closed)="cancelDelete()"
+  />
+</div>

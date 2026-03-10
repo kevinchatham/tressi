@@ -1,0 +1,215 @@
+<div class="p-12">
+  <app-header>
+    <app-button
+      (click)="deleteTest()"
+      [color]="'error'"
+      [icon]="'delete'"
+      [disabled]="service.test()?.status === 'running'"
+      [title]="'Delete'"
+    />
+    <div class="dropdown dropdown-center">
+      <app-button
+        [title]="'Export'"
+        [color]="'primary'"
+        [tabindex]="0"
+        [icon]="'save_as'"
+      />
+      <ul
+        tabindex="0"
+        class="dropdown-content bg-base-100 rounded-box ring-base-content/10 z-50 mt-4 w-34 p-2 shadow-lg ring-1"
+      >
+        <li>
+          <button
+            class="btn btn-ghost w-full justify-center"
+            (click)="service.exportResults('json')"
+          >
+            JSON
+          </button>
+        </li>
+        <li>
+          <button
+            class="btn btn-ghost w-full justify-center"
+            (click)="service.exportResults('xlsx')"
+          >
+            XLSX
+          </button>
+        </li>
+        <li>
+          <button
+            class="btn btn-ghost w-full justify-center"
+            (click)="service.exportResults('md')"
+          >
+            Markdown
+          </button>
+        </li>
+      </ul>
+    </div>
+    <app-button
+      (click)="appRouter.toHome()"
+      [color]="'info'"
+      [title]="'Dashboard'"
+      [icon]="'browse_activity'"
+    />
+  </app-header>
+
+  <div class="px-8">
+    <!-- Error State -->
+    @if (service.hasError()) {
+      <div class="flex min-h-100 items-center justify-center p-8">
+        <div class="max-w-md text-center">
+          <app-icon name="warning" class="text-warning mb-4" />
+          <h2 class="text-base-content mb-2 text-xl font-semibold">
+            Failed to Load Test Details
+          </h2>
+          <p class="text-base-content/70 mb-4">{{ service.errorMessage() }}</p>
+        </div>
+      </div>
+    }
+
+    <!-- Test Details -->
+    @if (!service.hasError() && service.test()) {
+      <div class="flex flex-col gap-4">
+        <!-- Toolbar Row -->
+        <div class="flex items-center justify-between px-8">
+          <app-status-badge
+            [status]="service.test()?.status ?? null"
+            [showPulse]="service.isRealTime()"
+            data-e2e="status-badge"
+          />
+          <div class="flex items-center gap-4">
+            <div class="dropdown dropdown-bottom dropdown-end">
+              <div
+                tabindex="0"
+                role="button"
+                class="btn btn-ghost btn-sm flex items-center gap-2 py-4 pr-0 pl-2 text-lg font-bold normal-case"
+              >
+                <span>
+                  {{
+                    service.selectedEndpoint() === 'global'
+                      ? 'Global Metrics'
+                      : service.selectedEndpoint()
+                  }}
+                </span>
+                <app-icon
+                  name="keyboard_arrow_down"
+                  class="text-base-content/30"
+                />
+              </div>
+              <ul
+                tabindex="0"
+                class="dropdown-content menu bg-base-100 rounded-box ring-base-content/10 z-50 mt-2 w-80 p-2 shadow-xl ring-1"
+              >
+                <li>
+                  <a
+                    (click)="onEndpointChangeValue('global')"
+                    [class.active]="service.selectedEndpoint() === 'global'"
+                    class="flex items-center gap-2"
+                  >
+                    <app-icon name="analytics" />
+                    <span>Global Metrics</span>
+                  </a>
+                </li>
+                <div class="divider my-1"></div>
+                @for (
+                  endpoint of service.test()?.summary?.endpoints || [];
+                  track endpoint.url
+                ) {
+                  <li>
+                    <a
+                      (click)="onEndpointChangeValue(endpoint.url)"
+                      [class.active]="
+                        service.selectedEndpoint() === endpoint.url
+                      "
+                      class="flex items-center gap-2"
+                    >
+                      <app-icon name="lan" />
+                      <span class="truncate">{{ endpoint.url }}</span>
+                    </a>
+                  </li>
+                }
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hero Stats Row -->
+        <div class="px-6">
+          <app-hero-stats
+            [testData]="service.test()"
+            [selectedSummary]="service.selectedSummary()"
+            [isRealTime]="service.isRealTime()"
+            [selectedEndpoint]="service.selectedEndpoint()"
+          />
+        </div>
+
+        <!-- Performance Over Time -->
+        <app-performance-over-time
+          [selectedChartType]="service.selectedChartType()"
+          [selectedEndpoint]="service.selectedEndpoint()"
+          [chartOptions]="chartOptions"
+          [testTimeRange]="service.testTimeRange()"
+          [hasChartData]="service.hasChartData()"
+          [yAxisLabel]="getYAxisLabel()"
+          [chartId]="getChartId()"
+          [chartData]="service.currentChartData()"
+          [isRunning]="service.isRealTime()"
+          [collapsed]="performanceOverTimeCollapsed()"
+          [pollingInterval]="service.selectedPollingInterval()"
+          [pollingOptions]="pollingOptions"
+          (chartTypeChange)="service.selectedChartType.set($event)"
+          (collapsedChange)="performanceOverTimeCollapsed.set($event)"
+          (pollingIntervalChange)="service.selectedPollingInterval.set($event)"
+          (refresh)="service.refreshMetrics()"
+        />
+
+        <!-- Performance Summary (Metrics Grid) -->
+        <app-performance-summary
+          [selectedSummary]="service.selectedSummary()"
+          [testData]="service.test()"
+          [collapsed]="performanceSummaryCollapsed()"
+          (collapsedChange)="performanceSummaryCollapsed.set($event)"
+        />
+
+        <!-- Latency Distribution -->
+        @if (service.histogram()) {
+          <app-latency-distribution
+            [histogram]="service.histogram()"
+            [collapsed]="latencyDistributionCollapsed()"
+            (collapsedChange)="latencyDistributionCollapsed.set($event)"
+          />
+        }
+
+        <!-- Response Samples -->
+        @if (service.endpointSummary()?.responseSamples) {
+          <app-response-samples
+            [responseSamples]="service.endpointSummary()?.responseSamples"
+            [statusCodeDistribution]="
+              service.endpointSummary()?.statusCodeDistribution
+            "
+            [totalRequests]="service.endpointSummary()?.totalRequests"
+            [collapsed]="responseSamplesCollapsed()"
+            (collapsedChange)="responseSamplesCollapsed.set($event)"
+          />
+        }
+
+        <!-- Test Metadata & Configuration -->
+        <app-metadata
+          [testData]="service.test()"
+          [configName]="service.displayConfigName()"
+          [configSnapshot]="service.test()?.summary?.configSnapshot"
+          [collapsed]="configCollapsed()"
+          (collapsedChange)="configCollapsed.set($event)"
+        />
+      </div>
+    }
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <app-delete-confirmation-modal
+    [isOpen]="showDeleteModal()"
+    [id]="service.test()?.id || ''"
+    [itemLabel]="'Test'"
+    (confirmed)="handleDeleteConfirm()"
+    (closed)="handleDeleteCancel()"
+  />
+</div>

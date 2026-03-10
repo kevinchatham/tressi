@@ -1,0 +1,14 @@
+<span
+  class="badge border-base-content/10 mx-auto gap-1 py-4 pr-4 pl-2"
+  [ngClass]="getStatusColor()"
+>
+  @if (showIcon()) {
+    <app-icon [name]="getStatusIcon()" />
+  }
+  {{ getDisplayText() }}
+  @if (showPulse()) {
+    <span
+      class="ml-1 inline-block h-2 w-2 animate-pulse rounded-full bg-current"
+    ></span>
+  }
+</span>

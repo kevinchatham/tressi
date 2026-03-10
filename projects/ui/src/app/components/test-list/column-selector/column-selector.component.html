@@ -1,0 +1,135 @@
+<div
+  class="dropdown dropdown-end"
+  [class.dropdown-open]="showColumnSelector()"
+  (outsideClick)="onCloseSelector()"
+  appOutsideClick
+>
+  <app-button
+    (click)="onToggleSelector()"
+    [ghost]="true"
+    [title]="'Customize Columns'"
+    [tabindex]="0"
+    [icon]="'view_column'"
+    [secondaryIcon]="'close'"
+    [toggled]="showColumnSelector()"
+  />
+  <div
+    class="dropdown-content bg-base-100 rounded-box ring-base-content/10 z-50 mt-2 w-lg p-6 shadow-lg ring-1"
+  >
+    <div class="mb-4 flex items-center justify-between">
+      <h3 class="text-base-content font-semibold">Customize Columns</h3>
+      <app-button
+        (click)="onResetColumns()"
+        [title]="'Reset'"
+        [icon]="'reset_focus'"
+        [ghost]="true"
+      />
+    </div>
+
+    <!-- All Column Groups -->
+    <div class="grid grid-cols-3 gap-6">
+      <!-- Basic Columns -->
+      <div>
+        <h4 class="text-base-content/70 text-sm font-medium">Basic</h4>
+        @for (col of columnGroups()['basic']; track col.key) {
+          <label
+            class="hover:bg-base-300/50 my-2 flex cursor-pointer items-center rounded transition-colors duration-150"
+          >
+            <input
+              type="checkbox"
+              class="checkbox checkbox-sm mr-2"
+              [checked]="col.visible"
+              [disabled]="
+                col.key === 'select' ||
+                col.key === 'status' ||
+                col.key === 'actions'
+              "
+              (change)="onToggleColumn(col.key)"
+            />
+            <span class="text-xs select-none">{{ col.label }}</span>
+          </label>
+        }
+      </div>
+      <div>
+        <h4 class="text-base-content/70 text-sm font-medium">Request</h4>
+        @for (col of columnGroups()['request']; track col.key) {
+          <label
+            class="hover:bg-base-300/50 my-2 flex cursor-pointer items-center rounded transition-colors duration-150"
+          >
+            <input
+              type="checkbox"
+              class="checkbox checkbox-sm mr-2"
+              [checked]="col.visible"
+              (change)="onToggleColumn(col.key)"
+            />
+            <span class="text-xs select-none">{{ col.label }}</span>
+          </label>
+        }
+      </div>
+      <div>
+        <h4 class="text-base-content/70 text-sm font-medium">Latency</h4>
+        @for (col of columnGroups()['latency']; track col.key) {
+          <label
+            class="hover:bg-base-300/50 my-2 flex cursor-pointer items-center rounded transition-colors duration-150"
+          >
+            <input
+              type="checkbox"
+              class="checkbox checkbox-sm mr-2"
+              [checked]="col.visible"
+              (change)="onToggleColumn(col.key)"
+            />
+            <span class="text-xs select-none">{{ col.label }}</span>
+          </label>
+        }
+      </div>
+      <div>
+        <h4 class="text-base-content/70 text-sm font-medium">Network</h4>
+        @for (col of columnGroups()['network']; track col.key) {
+          <label
+            class="hover:bg-base-300/50 my-2 flex cursor-pointer items-center rounded transition-colors duration-150"
+          >
+            <input
+              type="checkbox"
+              class="checkbox checkbox-sm mr-2"
+              [checked]="col.visible"
+              (change)="onToggleColumn(col.key)"
+            />
+            <span class="text-xs select-none">{{ col.label }}</span>
+          </label>
+        }
+      </div>
+      <div>
+        <h4 class="text-base-content/70 text-sm font-medium">Performance</h4>
+        @for (col of columnGroups()['performance']; track col.key) {
+          <label
+            class="hover:bg-base-300/50 my-2 flex cursor-pointer items-center rounded transition-colors duration-150"
+          >
+            <input
+              type="checkbox"
+              class="checkbox checkbox-sm mr-2"
+              [checked]="col.visible"
+              (change)="onToggleColumn(col.key)"
+            />
+            <span class="text-xs select-none">{{ col.label }}</span>
+          </label>
+        }
+      </div>
+      <div>
+        <h4 class="text-base-content/70 text-sm font-medium">Configuration</h4>
+        @for (col of columnGroups()['configuration']; track col.key) {
+          <label
+            class="hover:bg-base-300/50 my-2 flex cursor-pointer items-center rounded transition-colors duration-150"
+          >
+            <input
+              type="checkbox"
+              class="checkbox checkbox-sm mr-2"
+              [checked]="col.visible"
+              (change)="onToggleColumn(col.key)"
+            />
+            <span class="text-xs select-none">{{ col.label }}</span>
+          </label>
+        }
+      </div>
+    </div>
+  </div>
+</div>

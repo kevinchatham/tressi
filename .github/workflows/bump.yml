@@ -8,9 +8,6 @@
 # - Bumps the version in package.json based on input (major, minor, patch).
 # - Automatically creates a new branch and a pull request with the changes.
 #
-# 📌 Requirements:
-# - Secrets: GH_TOKEN (a PAT with pull request write permissions).
-#
 # ✅ Creates a pull request for review, so no direct commits to the base branch.
 # ============================================
 
@@ -42,15 +39,15 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           # A Personal Access Token is used to ensure subsequent workflows are triggered.
-          token: ${{ secrets.GH_TOKEN }}
+          token: ${{ secrets.TRESSI_GITHUB_TOKEN }}
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: '22'
+          node-version: 24
 
       - name: Set up Git identity
         run: |
@@ -91,4 +88,4 @@ jobs:
             --base "${{ github.ref_name }}" \
             --head "$BRANCH_NAME"
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.TRESSI_GITHUB_TOKEN }}

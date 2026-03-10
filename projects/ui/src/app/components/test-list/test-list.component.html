@@ -1,0 +1,99 @@
+<!-- Test List -->
+@if (!hasError() && hasTests()) {
+  <div class="mb-4 flex items-center justify-between">
+    <div class="flex items-center gap-4">
+      <h2 class="text-base-content text-xl font-semibold">
+        {{ pageTitle() }}
+      </h2>
+    </div>
+
+    <!-- Bulk Actions -->
+    @if (selectedTestsCount() > 0) {
+      <div class="mr-2 ml-auto flex items-center">
+        <app-button
+          (click)="deleteTest(null, $event)"
+          [disabled]="hasRunningTestsSelected()"
+          [color]="'error'"
+          [title]="`Delete ${selectedTestsCount()}`"
+          [icon]="'delete'"
+        />
+      </div>
+    }
+
+    <!-- Column Selector -->
+    <app-column-selector
+      [columnGroups]="columnGroups()"
+      [showColumnSelector]="showColumnSelector()"
+      (toggleColumn)="toggleColumn($event)"
+      (resetColumns)="resetColumns()"
+      (toggleSelector)="toggleColumnSelector()"
+      (closeSelector)="closeColumnSelector()"
+    />
+  </div>
+
+  <app-test-table
+    [tests]="displayedTests()"
+    [columns]="visibleColumns()"
+    [selectedTests]="selectedTests()"
+    [isAllSelected]="isAllSelected()"
+    [isSomeSelected]="isSomeSelected()"
+    [currentSort]="currentSort()"
+    (viewTest)="appRouter.toTestDetails($event)"
+    (toggleSelection)="toggleTestSelection($event.testId, $event.event)"
+    (toggleAllSelection)="toggleAllTests($event)"
+    (columnReorder)="onColumnReorder($event)"
+    (columnSort)="onColumnSort($event)"
+  />
+}
+
+<!-- Error State -->
+@if (hasError()) {
+  <div class="flex min-h-100 items-center justify-center p-8">
+    <div class="max-w-md text-center">
+      <app-icon name="warning" class="text-warning mb-4" />
+      <h2 class="text-base-content mb-2 text-xl font-semibold">
+        Failed to Load Tests
+      </h2>
+      <p class="text-base-content/70 mb-4">{{ errorMessage() }}</p>
+      <app-button
+        (click)="refreshTests()"
+        [title]="'Try Again'"
+        [icon]="'search'"
+      />
+    </div>
+  </div>
+}
+
+<!-- Empty State -->
+@if (!hasError() && !hasTests()) {
+  <div class="border-base-content/10 mx-auto rounded-xl border-2 p-8">
+    <div class="text-center">
+      <h2 class="text-base-content mb-2 text-xl font-semibold">
+        No Test History
+      </h2>
+      <p class="text-base-content/70 mb-2">
+        There are no tests recorded for {{ configName() }} yet.
+      </p>
+      <p class="text-base-content/70 mb-4">
+        Run a new test to see it appear here.
+      </p>
+
+      <!-- Add Start Button Here -->
+      <app-start-button
+        [config]="config()"
+        (testStarted)="onTestStarted()"
+        (testStartFailed)="onTestStartFailed($event)"
+      />
+    </div>
+  </div>
+}
+
+<!-- Delete Confirmation Modal -->
+<app-delete-confirmation-modal
+  [isOpen]="showDeleteModal()"
+  [bulkCount]="isBulkDelete() ? selectedTestsCount() : null"
+  [id]="testToDelete()?.id || ''"
+  [itemLabel]="isBulkDelete() ? 'Tests' : 'Test'"
+  (confirmed)="deleteTestConfirmed()"
+  (closed)="cancelDelete()"
+/>

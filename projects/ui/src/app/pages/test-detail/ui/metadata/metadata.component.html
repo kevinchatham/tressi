@@ -1,0 +1,66 @@
+<section class="bg-base-100 rounded-xl px-6">
+  <app-collapsible-card
+    [title]="'Test Information & Configuration'"
+    [collapsed]="collapsed()"
+    (collapsedChange)="onCollapsedChange($event)"
+  >
+    <!-- Header controls projection -->
+    <ng-template>
+      <app-button
+        (click)="copyConfig()"
+        [title]="'Copy Config'"
+        [icon]="'copy_all'"
+        [secondaryIcon]="'check'"
+        [toggled]="copied()"
+        [ghost]="true"
+      />
+    </ng-template>
+
+    <!-- Main content projection -->
+    <div class="mt-4 flex flex-col gap-8">
+      <!-- Timing Section -->
+      <div class="space-y-4">
+        <h4
+          class="text-base-content/80 flex items-center gap-2 text-sm font-semibold tracking-wide uppercase"
+        >
+          <app-icon name="schedule" class="text-base" />
+          Timing
+        </h4>
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div class="bg-base-100 rounded-xl p-4">
+            <div class="text-base-content/70 mb-1 text-xs uppercase">
+              Started
+            </div>
+            <div
+              class="text-sm font-medium"
+              [appFormatDate]="testData()?.summary?.global?.epochStartedAt"
+            ></div>
+          </div>
+          <div class="bg-base-100 rounded-xl p-4">
+            <div class="text-base-content/70 mb-1 text-xs uppercase">Ended</div>
+            <div
+              class="text-sm font-medium"
+              [appFormatDate]="testData()?.summary?.global?.epochEndedAt"
+            ></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Configuration Section -->
+      <div class="space-y-4">
+        <h4
+          class="text-base-content/80 flex items-center gap-2 text-sm font-semibold tracking-wide uppercase"
+        >
+          <app-icon name="tune" class="text-base" />
+          Configuration Snapshot
+        </h4>
+        <app-json-textarea
+          [value]="configSnapshot()"
+          [rows]="10"
+          [disabled]="true"
+          class="mt-2"
+        />
+      </div>
+    </div>
+  </app-collapsible-card>
+</section>

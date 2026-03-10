@@ -1,3 +1,32 @@
 {
-  "cSpell.words": ["Tressi"]
+  "cSpell.words": [
+    "Apexcharts",
+    "appinstalled",
+    "beforeinstallprompt",
+    "caramellatte",
+    "Docable",
+    "ISSE",
+    "kysely",
+    "lezer",
+    "linestep",
+    "lofi",
+    "ngsw",
+    "nord",
+    "oklch",
+    "signaldb",
+    "synthwave",
+    "titlecase",
+    "Tressi",
+    "xaxis",
+    "xcrosshairs",
+    "yaxis",
+    "ycrosshairs",
+    "zoomin",
+    "zoomout"
+  ],
+  "typescript.tsserver.experimental.enableProjectDiagnostics": true,
+  "typescript.validate.enable": true,
+  "typescript.preferences.includePackageJsonAutoImports": "on",
+  "typescript.suggest.autoImports": true,
+  "typescript.updateImportsOnFileMove.enabled": "always"
 }

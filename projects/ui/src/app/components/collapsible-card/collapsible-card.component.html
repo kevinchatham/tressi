@@ -1,0 +1,44 @@
+<div
+  class="bg-base-200 border-base-300 hover:border-base-content/10 rounded-xl border p-4"
+>
+  <div
+    class="flex cursor-pointer items-center justify-between transition-all"
+    (click)="toggleCollapsed()"
+  >
+    <div class="flex items-center gap-2">
+      @if (icon()) {
+        <app-icon [name]="icon()!" />
+      }
+      <div>
+        <h2 data-e2e="collapsible-card-title" class="text-xl font-semibold">
+          {{ title() }}
+        </h2>
+        @if (subtitle()) {
+          <p class="text-base-content/70 text-sm">{{ subtitle() }}</p>
+        }
+      </div>
+    </div>
+    <div class="flex items-center justify-end gap-4">
+      <!-- Header content projection -->
+      @for (content of headerContent(); track content) {
+        <ng-container [ngTemplateOutlet]="content" />
+      }
+      <app-button
+        (click)="toggleCollapsed()"
+        [title]="collapsed() ? 'Expand' : 'Collapse'"
+        [icon]="'keyboard_arrow_up'"
+        [secondaryIcon]="'keyboard_arrow_down'"
+        [toggled]="collapsed()"
+        [ghost]="true"
+      />
+    </div>
+  </div>
+
+  <div
+    class="collapse-transition"
+    [class.collapse-collapsed]="collapsed()"
+    [class.collapse-expanded]="!collapsed()"
+  >
+    <ng-content />
+  </div>
+</div>

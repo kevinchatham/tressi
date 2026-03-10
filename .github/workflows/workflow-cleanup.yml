@@ -13,7 +13,6 @@
 # - If `older_than_days` is NOT provided:
 #     → Deletes *only failed* runs regardless of age
 #
-# Uses GH CLI with token-based auth (stored as `GH_TOKEN`)
 # Only affects runs with `status=completed` (not in-progress)
 # ============================================
 
@@ -37,7 +36,7 @@ jobs:
     steps:
       - name: Delete matching runs
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          TRESSI_GITHUB_TOKEN: ${{ secrets.TRESSI_GITHUB_TOKEN }}
         run: |
           REPO="${{ github.repository }}"
           INPUT_DAYS="${{ github.event.inputs.older_than_days }}"
@@ -54,34 +53,23 @@ jobs:
             RUN_FILTER='select(.conclusion == "failure")'
           fi
 
-          # Fetch and parse runs (ID + created_at)
-          RUNS=$(gh api -H "Authorization: token $GH_TOKEN" \
-            -H "Accept: application/vnd.github+json" \
-            "/repos/$REPO/actions/runs?per_page=100&status=completed" \
-            --jq ".workflow_runs[] | $RUN_FILTER | [.id, .created_at] | @tsv")
+          # Fetch runs using gh run list for better pagination and filtering
+          if [[ "$FILTER_BY_DATE" == true ]]; then
+            # Convert cutoff date to ISO format for gh CLI
+            CUTOFF_ISO=$(date -u -d "$INPUT_DAYS days ago" +%Y-%m-%dT%H:%M:%SZ)
+            RUNS=$(gh run list --status completed --limit 1000 --json id,createdAt --jq ".[] | select(.createdAt < \"$CUTOFF_ISO\") | .id")
+          else
+            RUNS=$(gh run list --status completed --conclusion failure --limit 1000 --json id --jq '.[].id')
+          fi
 
           if [[ -z "$RUNS" ]]; then
             echo "✅ No matching runs found."
             exit 0
           fi
 
-          echo "$RUNS" | while IFS=$'\t' read -r RUN_ID CREATED_AT; do
-            CREATED_EPOCH=$(date -d "$CREATED_AT" +%s)
-
-            if [[ "$FILTER_BY_DATE" == true && "$CREATED_EPOCH" -gt "$CUTOFF_DATE" ]]; then
-              echo "⏩ Skipping run $RUN_ID (too recent)"
-            else
-              echo "🧹 Deleting run $RUN_ID (created $CREATED_AT)..."
-              RESPONSE=$(gh api -X DELETE \
-                -H "Authorization: token $GH_TOKEN" \
-                "/repos/$REPO/actions/runs/$RUN_ID" 2>&1)
-
-              if [[ $? -ne 0 ]]; then
-                echo "⚠️ Failed to delete run $RUN_ID — $RESPONSE"
-              else
-                echo "✅ Deleted run $RUN_ID"
-              fi
-            fi
+          for RUN_ID in $RUNS; do
+            echo "🧹 Deleting run $RUN_ID..."
+            gh run delete "$RUN_ID"
           done
 
           echo "🏁 Cleanup complete."

@@ -1,0 +1,139 @@
+<app-collapsible-card
+  data-e2e="config-card"
+  [title]="input().name"
+  [subtitle]="
+    'Updated: ' + timeService.getRelativeTimeString(input().epochUpdatedAt ?? 0)
+  "
+  [collapsed]="collapsed()"
+  (collapsedChange)="toggleCollapsed($event)"
+>
+  <!-- Expanded Configuration Details -->
+  <div class="border-neutral mt-4 space-y-3 border-t pt-4">
+    <!-- Requests Section -->
+    <div>
+      <h4 class="text-base-content/70 mb-2 text-sm font-semibold">Requests</h4>
+      <div class="space-y-2">
+        @for (
+          request of input().config.requests.slice(0, 3);
+          track request.url
+        ) {
+          <div
+            class="bg-base-300/50 flex items-center justify-between rounded-xl p-2"
+          >
+            <div class="flex items-center gap-2">
+              <span
+                class="font-mono text-xs font-semibold uppercase"
+                [class]="{
+                  'text-success': request.method === 'GET',
+                  'text-warning': request.method === 'POST',
+                  'text-info': request.method === 'PUT',
+                  'text-accent': request.method === 'PATCH',
+                  'text-error': request.method === 'DELETE',
+                }"
+              >
+                {{ request.method }}
+              </span>
+              <span class="truncate text-sm" [title]="request.url">
+                {{ request.url }}
+              </span>
+            </div>
+            <div class="flex items-center gap-1">
+              <span
+                class="text-base-content/60 text-xs"
+                [appFormatRps]="request.rps"
+              ></span>
+            </div>
+          </div>
+        }
+        @if (input().config.requests.length > 3) {
+          <div class="text-base-content/60 text-center text-sm">
+            +<span
+              [appFormatNumber]="input().config.requests.length - 3"
+            ></span>
+            more
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Configuration Options -->
+    <div class="grid grid-cols-3 place-items-center gap-4">
+      <div>
+        <h4 class="text-base-content/70 mb-1 text-sm font-semibold">
+          Duration
+        </h4>
+        <p
+          class="text-sm"
+          [appFormatDuration]="input().config.options.durationSec"
+        ></p>
+      </div>
+      <div>
+        <h4 class="text-base-content/70 mb-1 text-sm font-semibold">Threads</h4>
+        <p class="text-sm">
+          <span [appFormatNumber]="input().config.options.threads"></span>
+          thread{{ input().config.options.threads !== 1 ? 's' : '' }}
+        </p>
+      </div>
+      <div>
+        <h4 class="text-base-content/70 mb-1 text-sm font-semibold">Ramp Up</h4>
+        <p
+          class="text-sm"
+          [appFormatDuration]="getEffectiveRampUpDuration()"
+        ></p>
+      </div>
+      <div>
+        <h4 class="text-base-content/70 mb-1 text-sm font-semibold">
+          Early Exit
+        </h4>
+        <p class="text-sm">
+          {{ getEffectiveEarlyExitStatus() ? 'Enabled' : 'Disabled' }}
+        </p>
+      </div>
+      <div>
+        <h4 class="text-base-content/70 mb-1 text-sm font-semibold">
+          Endpoints
+        </h4>
+        <p class="text-sm" [appFormatNumber]="getTotalEndpoints()"></p>
+      </div>
+      <div>
+        <h4 class="text-base-content/70 mb-1 text-sm font-semibold">
+          Total RPS
+        </h4>
+        <p class="text-sm" [appFormatRps]="getTotalRPS()"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Action Buttons -->
+  <div class="border-neutral mt-4 flex justify-end gap-2 border-t pt-4">
+    <app-button
+      (click)="duplicate.emit(input())"
+      [ghost]="true"
+      [icon]="'copy_all'"
+      [title]="'Copy'"
+    />
+    <app-export-config-button [config]="input()" />
+    <app-button
+      (click)="delete.emit(input())"
+      [color]="'error'"
+      [ghost]="true"
+      [title]="'Delete'"
+      [icon]="'delete'"
+    />
+    <app-button
+      (click)="edit.emit(input())"
+      [color]="'success'"
+      [ghost]="true"
+      [icon]="'edit_square'"
+      [title]="'Edit'"
+    />
+    <app-button
+      (click)="navigate.emit(input())"
+      [color]="'primary'"
+      [ghost]="true"
+      [title]="'Use'"
+      [icon]="'dynamic_form'"
+      data-e2e="use-config-btn"
+    />
+  </div>
+</app-collapsible-card>

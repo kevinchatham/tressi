@@ -1,0 +1,99 @@
+<!-- Form Actions -->
+<div class="-mt-12 mb-4">
+  <div class="flex justify-end gap-3">
+    <app-button
+      (click)="onCancel($event)"
+      [color]="'error'"
+      [ghost]="true"
+      [title]="'Cancel'"
+      [icon]="'close'"
+    />
+    <div class="flex items-center gap-2">
+      <app-button
+        [color]="'success'"
+        [title]="'Save'"
+        [icon]="'check'"
+        [type]="'submit'"
+        (click)="onSubmit($event)"
+        [disabled]="!isFormValid()"
+        data-e2e="save-config-btn"
+      />
+    </div>
+  </div>
+</div>
+<form (submit)="onSubmit($event)" class="space-y-4">
+  <!-- Tabs Navigation -->
+  <div class="border-neutral border-b">
+    <!-- Sub Component Navigation -->
+    <nav class="-mt-4 flex items-center justify-around">
+      <button
+        type="button"
+        data-e2e="general-tab"
+        class="flex w-full cursor-pointer items-center justify-center gap-2 border-b-2 px-2 py-4 text-sm font-medium transition-colors"
+        [class.border-primary]="activeTab() === 'general'"
+        [class.text-primary]="activeTab() === 'general'"
+        [class.border-transparent]="activeTab() !== 'general'"
+        [class.text-base-content/60]="activeTab() !== 'general'"
+        [class.hover:text-base-content]="activeTab() !== 'general'"
+        (click)="setActiveTab('general')"
+      >
+        <app-icon name="tune" />
+        General
+      </button>
+      <button
+        type="button"
+        data-e2e="requests-tab"
+        class="flex w-full cursor-pointer items-center justify-center gap-2 border-b-2 px-1 py-4 text-sm font-medium transition-colors"
+        [class.border-primary]="activeTab() === 'requests'"
+        [class.text-primary]="activeTab() === 'requests'"
+        [class.border-transparent]="activeTab() !== 'requests'"
+        [class.text-base-content/60]="activeTab() !== 'requests'"
+        [class.hover:text-base-content]="activeTab() !== 'requests'"
+        (click)="setActiveTab('requests')"
+      >
+        <app-icon name="send" />
+        Requests
+      </button>
+    </nav>
+  </div>
+
+  <!-- Tab Content -->
+  <div class="space-y-6">
+    <!-- General Configuration Tab -->
+    @if (activeTab() === 'general') {
+      <app-general-config
+        [form]="form"
+        [model]="model()"
+        (addExitStatusCode)="addGlobalExitStatusCode()"
+        (removeExitStatusCode)="removeGlobalExitStatusCode($event)"
+        (jsonTextareaChange)="onJsonTextAreaChange()"
+      />
+    }
+
+    <!-- Requests Configuration Tab -->
+    @if (activeTab() === 'requests') {
+      <app-requests-config
+        [form]="form"
+        [model]="model()"
+        (addRequest)="addRequest()"
+        (removeRequest)="removeRequest($event)"
+        (jsonTextareaChange)="onJsonTextAreaChange()"
+        (addRequestExitStatusCode)="addRequestExitStatusCode($event)"
+        (removeRequestExitStatusCode)="
+          removeRequestExitStatusCode($event.requestIndex, $event.codeIndex)
+        "
+      />
+    }
+  </div>
+
+  @if (form().touched() && form().invalid() && formErrors().length > 0) {
+    <div class="-pt-2">
+      <span class="text-error text-sm">Validation Errors</span>
+      <ul>
+        @for (error of formErrors(); track error) {
+          <li class="text-error ml-4 text-sm">- {{ error }}.</li>
+        }
+      </ul>
+    </div>
+  }
+</form>

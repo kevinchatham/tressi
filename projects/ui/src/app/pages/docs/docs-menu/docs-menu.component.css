@@ -1,0 +1,19 @@
+@reference "tailwindcss";
+@plugin 'daisyui';
+
+:host {
+  font-family: 'Roboto Mono', monospace;
+}
+
+.collapse-transition {
+  @apply overflow-hidden transition-[max-height,opacity] duration-300 ease-in-out;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.collapse-collapsed {
+  @apply max-h-0 opacity-0;
+}
+
+.collapse-expanded {
+  @apply max-h-125 opacity-100;
+}
