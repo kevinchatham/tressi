@@ -4,6 +4,7 @@ import {
   VersionedTressiConfig,
 } from '@tressi/shared/cli';
 import { IDatabaseMigration } from '@tressi/shared/cli';
+import { TressiConfig, TressiRequestConfig } from '@tressi/shared/common';
 
 export const noopDatabaseMigration: IDatabaseMigration = {
   summary: 'version bump',
@@ -27,7 +28,55 @@ export const JSON_MIGRATIONS: JsonMigrations = {
   '0.0.14': noopJsonMigration('0.0.14'),
   '0.0.15': noopJsonMigration('0.0.15'),
   '0.0.16': noopJsonMigration('0.0.16'),
-  '0.0.17': noopJsonMigration('0.0.17'),
+  '0.0.17': {
+    summary:
+      'Bump early exit monitoring window configurations > 0 and < 1000 to 1000.',
+    up: (config: VersionedTressiConfig): VersionedTressiConfig => {
+      const data = config as TressiConfig;
+
+      const { $schema } = noopJsonMigration('0.0.17').up(config);
+
+      const bumpWindow = (window: number | undefined): number | undefined => {
+        if (window && window > 0 && window < 1000) {
+          return 1000;
+        }
+        return window;
+      };
+
+      const options = data.options
+        ? {
+            ...data.options,
+            workerEarlyExit: data.options.workerEarlyExit
+              ? {
+                  ...data.options.workerEarlyExit,
+                  monitoringWindowMs: bumpWindow(
+                    data.options.workerEarlyExit.monitoringWindowMs,
+                  ),
+                }
+              : data.options.workerEarlyExit,
+          }
+        : data.options;
+
+      const requests = data.requests?.map((request: TressiRequestConfig) => ({
+        ...request,
+        earlyExit: request.earlyExit
+          ? {
+              ...request.earlyExit,
+              monitoringWindowMs: bumpWindow(
+                request.earlyExit.monitoringWindowMs,
+              ),
+            }
+          : request.earlyExit,
+      }));
+
+      return {
+        ...data,
+        $schema,
+        options,
+        requests,
+      } as VersionedTressiConfig;
+    },
+  },
   /**
    * Example: Renaming a field
    * '0.0.13': {

@@ -52,13 +52,18 @@
             "serviceWorker": "ngsw-config.json"
           },
           "configurations": {
-            "local": {
+            "production": {
               "optimization": true,
               "extractLicenses": true,
+              "sourceMap": false
+            },
+            "development": {
+              "optimization": false,
+              "extractLicenses": false,
               "sourceMap": true
             }
           },
-          "defaultConfiguration": "local"
+          "defaultConfiguration": "production"
         },
         "serve": {
           "builder": "@angular/build:dev-server",
@@ -66,11 +71,14 @@
             "proxyConfig": "proxy.conf.json"
           },
           "configurations": {
-            "local": {
-              "buildTarget": "ui:build:local"
+            "production": {
+              "buildTarget": "ui:build:production"
+            },
+            "development": {
+              "buildTarget": "ui:build:development"
             }
           },
-          "defaultConfiguration": "local"
+          "defaultConfiguration": "development"
         },
         "extract-i18n": {
           "builder": "@angular/build:extract-i18n"
@@ -79,7 +87,7 @@
           "builder": "@angular/build:unit-test",
           "options": {
             "tsConfig": "tsconfig.spec.json",
-            "buildTarget": "::local",
+            "buildTarget": "ui:build:development",
             "browsers": ["chromium"],
             "headless": true
           }
