@@ -97,7 +97,7 @@
               </div>
               <ul
                 tabindex="0"
-                class="dropdown-content menu bg-base-100 rounded-box ring-base-content/10 z-50 mt-2 w-80 p-2 shadow-xl ring-1"
+                class="dropdown-content menu bg-base-100 rounded-box ring-base-content/10 z-50 mt-2 max-w-2xl p-2 shadow-xl ring-1"
               >
                 <li>
                   <a
@@ -120,10 +120,10 @@
                       [class.active]="
                         service.selectedEndpoint() === endpoint.url
                       "
-                      class="flex items-center gap-2"
+                      class="flex max-w-2xl items-center gap-2"
                     >
                       <app-icon name="lan" />
-                      <span class="truncate">{{ endpoint.url }}</span>
+                      <span class="min-w-0 truncate">{{ endpoint.url }}</span>
                     </a>
                   </li>
                 }

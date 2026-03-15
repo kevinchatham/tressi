@@ -71,9 +71,9 @@ When releasing a new version of Tressi with database schema changes:
 
 1.  Identify the required DDL changes (e.g., adding a column, creating an index).
 2.  Update the base schema in `projects/cli/src/data/database.ts` to include the new changes. This ensures fresh installs receive the correct schema immediately.
-3.  Add a new entry to the `DATABASE_MIGRATIONS` registry in `projects/cli/src/data/migrations.ts`.
+3.  Add a new entry to the `DATABASE_MIGRATIONS` registry in `projects/cli/src/data/migrations.ts`. The key must be the **target version** (e.g., `'0.0.18'`).
 4.  Provide a clear `summary` of the changes.
-5.  Implement the `up` function using the Kysely `db.schema` builder.
+5.  Implement the `up` function using the Kysely `db.schema` builder. This function receives a transaction object and should perform the necessary schema modifications.
 
 ```typescript
 // Example: Adding a column

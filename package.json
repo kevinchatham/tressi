@@ -1,7 +1,7 @@
 {
   "name": "tressi",
   "version": "0.0.17",
-  "description": "A modern load testing tool that brings professional API analysis to your workspace.",
+  "description": "Deterministic load testing for API performance validation.",
   "license": "SEE LICENSE IN LICENSE",
   "author": "kevinchatham",
   "repository": {

@@ -62,6 +62,7 @@ export const EarlyExitConfigSchema = z
       .number()
       .int()
       .positive()
+      .min(1000)
       .describe('Time window in milliseconds for threshold calculation'),
   })
   .default(earlyExitDefaults);

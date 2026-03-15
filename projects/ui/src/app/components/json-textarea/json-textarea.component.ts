@@ -3,6 +3,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  effect,
   inject,
   model,
   output,
@@ -23,15 +24,27 @@ import { ThemeService } from '../../services/theme.service';
   imports: [CodeEditor],
 })
 export class JsonTextareaComponent<T> implements FormValueControl<T> {
-  value = model<T>(null as T);
+  value = model<T>({} as T);
   rows = model<number>(3);
   placeholder = model<string>('');
   disabled = model<boolean>(false);
   valueChange = output<T>();
 
   error = signal<string | null>(null);
+  private _lastValue = '';
 
   private readonly _themeService = inject(ThemeService);
+
+  constructor() {
+    effect(() => {
+      const val = this.value();
+      if (val !== null && val !== undefined) {
+        this._lastValue = JSON.stringify(val, null, 2);
+      } else {
+        this._lastValue = '';
+      }
+    });
+  }
 
   displayValue = computed(() => {
     const val = this.value();
@@ -67,6 +80,14 @@ export class JsonTextareaComponent<T> implements FormValueControl<T> {
           color: this._themeService.neutralContent(),
           border: 'none',
         },
+        '&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground':
+          {
+            backgroundColor: this._themeService.primary(),
+            opacity: 0.1,
+          },
+        '.cm-selectionBackground': {
+          backgroundColor: 'transparent',
+        },
       },
       { dark: this._themeService.isDark() },
     ),
@@ -101,27 +122,51 @@ export class JsonTextareaComponent<T> implements FormValueControl<T> {
   ]);
 
   handleValueChange(newValue: string): void {
-    // Don't process changes when disabled
     if (this.disabled()) {
       return;
     }
 
+    this._lastValue = newValue;
+
+    // We only validate the JSON here, but we don't update the `value` signal
+    // until the editor loses focus. This prevents the cursor from jumping.
     if (!newValue.trim()) {
-      this.value.set(null as T);
       this.error.set(null);
-      this.valueChange.emit(null as T);
+      this.value.set({} as T);
+      this.valueChange.emit({} as T);
+      return;
+    }
+
+    try {
+      JSON.parse(newValue);
+      this.error.set(null);
+    } catch (e) {
+      this.error.set(
+        `Invalid JSON: ${e instanceof Error ? e.message : 'Unknown error'}`,
+      );
+    }
+  }
+
+  handleBlur(): void {
+    if (this.disabled() || this.error()) {
+      return;
+    }
+
+    const newValue = this._lastValue;
+
+    if (!newValue.trim()) {
+      const emptyObj = {} as T;
+      this.value.set(emptyObj);
+      this.valueChange.emit(emptyObj);
       return;
     }
 
     try {
       const parsed = JSON.parse(newValue);
       this.value.set(parsed as T);
-      this.error.set(null);
       this.valueChange.emit(parsed as T);
-    } catch (e) {
-      this.error.set(
-        `Invalid JSON: ${e instanceof Error ? e.message : 'Unknown error'}`,
-      );
+    } catch {
+      // Should not happen if we validated in handleValueChange
     }
   }
 }

@@ -1,6 +1,7 @@
 import {
   defaultTressiConfig,
   defaultTressiRequestConfig,
+  EndpointSummary,
 } from '@tressi/shared/common';
 import fs from 'fs';
 import path from 'path';
@@ -81,5 +82,48 @@ test.describe('CLI Integration', () => {
     expect(report).toHaveProperty('configSnapshot');
     expect(report).toHaveProperty('global');
     expect(report).toHaveProperty('endpoints');
+  });
+
+  test('should exit early when error rate threshold is exceeded', async ({
+    testServer,
+  }) => {
+    const config = { ...defaultTressiConfig };
+
+    const healthReq = { ...defaultTressiRequestConfig };
+    healthReq.url = `${testServer}/health`;
+    healthReq.rps = 10;
+
+    const errorReq = { ...defaultTressiRequestConfig };
+    errorReq.url = `${testServer}/error-50-percent`;
+    errorReq.rps = 10;
+    errorReq.earlyExit = {
+      enabled: true,
+      errorRateThreshold: 0.1,
+      exitStatusCodes: [500],
+      monitoringWindowMs: 1000,
+    };
+
+    config.requests = [healthReq, errorReq];
+
+    fs.writeFileSync(testConfigPath, JSON.stringify(config, null, 2));
+    const command = `node ${cliPath} run ${testConfigPath} --export ${reportPath}`;
+    try {
+      await execute(command).output;
+    } catch {
+      // Expected to fail due to early exit
+    }
+
+    const summaryPath = path.join(reportPath, 'summary.json');
+    const report = JSON.parse(fs.readFileSync(summaryPath, 'utf-8'));
+
+    const healthEndpoint = report.endpoints.find((e: EndpointSummary) =>
+      e.url.includes('/health'),
+    );
+    const errorEndpoint = report.endpoints.find((e: EndpointSummary) =>
+      e.url.includes('/error-50-percent'),
+    );
+
+    expect(healthEndpoint.totalRequests).toBeGreaterThan(90);
+    expect(errorEndpoint.totalRequests).toBeLessThan(50);
   });
 });

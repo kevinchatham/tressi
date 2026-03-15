@@ -1,3 +1,10 @@
+# License and Usage Rights
+
+Tressi is **source available** under the MIT License with the Commons Clause condition.
+
+- ✅ **Permissions**: You are free to use, copy, modify, and run the software, including internal commercial use.
+- ❌ **Restrictions**: You may not sell the software or offer a paid product or service whose value derives substantially from Tressi.
+
 ### MIT License + Commons Clause 1.0
 
 Copyright (c) 2026 Kevin Chatham

@@ -29,7 +29,8 @@ export class JsonMigrationManager {
     if (!schemaUrl) {
       throw new Error('Missing required property: "$schema"');
     }
-    const match = schemaUrl.match(/v(\d+\.\d+\.\d+)\.json$/);
+    // https://raw.githubusercontent.com/kevinchatham/tressi/refs/heads/main/schemas/tressi.schema.v0.0.10.json
+    const match = schemaUrl.match(/v?(\d+\.\d+\.\d+)(?:\.json)?$/);
     if (!match) {
       throw new Error(
         'Invalid "$schema" format. Expected a Tressi schema URL containing a version (e.g., "...v0.0.13.json")',
@@ -239,21 +240,28 @@ export class JsonMigrationManager {
     const summaries: string[] = [];
 
     // 1. Sequential Manual Migrations
-    while (semver.lt(v, currentVersion) && JSON_MIGRATIONS[v]) {
-      const migration = JSON_MIGRATIONS[v];
-      summaries.push(migration.summary);
+    // The key in JSON_MIGRATIONS is the TARGET version.
+    // We sort all available migration versions and apply those that are greater than the current config version.
+    const availableVersions = Object.keys(JSON_MIGRATIONS).sort(semver.compare);
 
-      const nextData = migration.up(data);
-      const nextV = JsonMigrationManager.getVersion(nextData.$schema);
+    for (const targetV of availableVersions) {
+      if (semver.gt(targetV, v) && semver.lte(targetV, currentVersion)) {
+        const migration = JSON_MIGRATIONS[targetV];
 
-      if (nextV === v) {
-        throw new Error(
-          `Migration for version ${v} did not update the schema version.`,
-        );
+        summaries.push(migration.summary);
+
+        const nextData = migration.up(data);
+        const migratedV = JsonMigrationManager.getVersion(nextData.$schema);
+
+        if (migratedV !== targetV) {
+          throw new Error(
+            `Migration for version ${targetV} did not update the schema version correctly. Expected ${targetV}, got ${migratedV}`,
+          );
+        }
+
+        data = nextData;
+        v = migratedV;
       }
-
-      data = nextData;
-      v = nextV;
     }
 
     // 2. Final Zod "Default Strategy"

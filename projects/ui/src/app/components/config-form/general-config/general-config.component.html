@@ -79,7 +79,7 @@
             placeholder="Time to reach target RPS"
           />
           <p class="label ml-2 py-0 text-xs opacity-60">
-            In seconds; overrides request level ramp up
+            In seconds; used if request level ramp up is not set
           </p>
           @if (
             form().config.options.rampUpDurationSec().touched() &&
@@ -109,7 +109,7 @@
             placeholder='{"User-Agent": "Tressi", "Accept": "application/json"}'
           />
           <p class="label ml-2 py-0 text-xs text-wrap opacity-60">
-            Overrides request level headers
+            Merged with request level headers (request headers take precedence)
           </p>
           @if (
             form().config.options.headers().touched() &&

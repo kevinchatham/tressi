@@ -1,7 +1,33 @@
-import { JsonMigrations } from '@tressi/shared/cli';
+import {
+  IJsonMigration,
+  JsonMigrations,
+  VersionedTressiConfig,
+} from '@tressi/shared/cli';
 import { IDatabaseMigration } from '@tressi/shared/cli';
 
+export const noopDatabaseMigration: IDatabaseMigration = {
+  summary: 'version bump',
+  up: async () => {},
+} as const;
+
+export const noopJsonMigration = (targetVersion: string): IJsonMigration => ({
+  summary: 'version bump',
+  up: (config: VersionedTressiConfig): VersionedTressiConfig => {
+    const $schema = config.$schema.replace(/\d+\.\d+\.\d+/, targetVersion);
+    return {
+      ...config,
+      $schema,
+    };
+  },
+});
+
 export const JSON_MIGRATIONS: JsonMigrations = {
+  // Key is the TARGET version. The up function transforms from (target - 1) to target.
+  '0.0.13': noopJsonMigration('0.0.13'),
+  '0.0.14': noopJsonMigration('0.0.14'),
+  '0.0.15': noopJsonMigration('0.0.15'),
+  '0.0.16': noopJsonMigration('0.0.16'),
+  '0.0.17': noopJsonMigration('0.0.17'),
   /**
    * Example: Renaming a field
    * '0.0.13': {
@@ -65,6 +91,10 @@ export const JSON_MIGRATIONS: JsonMigrations = {
  * Key is the 'target' version.
  */
 export const DATABASE_MIGRATIONS: Record<string, IDatabaseMigration> = {
+  '0.0.14': noopDatabaseMigration,
+  '0.0.15': noopDatabaseMigration,
+  '0.0.16': noopDatabaseMigration,
+  '0.0.17': noopDatabaseMigration,
   /**
    * Example:
    * '0.0.14': {

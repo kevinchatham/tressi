@@ -5,16 +5,20 @@
     class="flex cursor-pointer items-center justify-between transition-all"
     (click)="toggleCollapsed()"
   >
-    <div class="flex items-center gap-2">
+    <div class="flex min-w-0 items-center gap-2">
       @if (icon()) {
         <app-icon [name]="icon()!" />
       }
-      <div>
-        <h2 data-e2e="collapsible-card-title" class="text-xl font-semibold">
+      <div class="min-w-0 flex-1">
+        <h2
+          data-e2e="collapsible-card-title"
+          class="truncate text-xl font-semibold"
+          [attr.tooltip]="title()"
+        >
           {{ title() }}
         </h2>
         @if (subtitle()) {
-          <p class="text-base-content/70 text-sm">{{ subtitle() }}</p>
+          <p class="text-base-content/70 truncate text-sm">{{ subtitle() }}</p>
         }
       </div>
     </div>

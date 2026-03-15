@@ -51,50 +51,47 @@ export class EarlyExitCoordinator implements IEarlyExitCoordinator {
    */
   private _parseThresholds(): EarlyExitThresholds {
     const globalExitConfig = this._config.options.workerEarlyExit;
-
-    if (!globalExitConfig?.enabled) {
-      return {
-        perEndpoint: new Map(),
-        monitoringWindowMs: 5000,
-      };
-    }
+    const globalMonitoringWindow = globalExitConfig?.monitoringWindowMs || 1000;
 
     const perEndpointMap = new Map();
-    const globalMonitoringWindow = globalExitConfig.monitoringWindowMs || 5000;
+    let minMonitoringWindow = globalMonitoringWindow;
 
-    // Process each endpoint to determine its effective early exit config
+    // Process each endpoint to determine its effective early exit config.
+    // Per-request earlyExit configs are evaluated independently of the global flag,
+    // so individual endpoints can opt-in even when workerEarlyExit.enabled is false.
     this._config.requests.forEach((request) => {
       // Precedence: request-level > global defaults
       const requestConfig = request.earlyExit;
 
       if (requestConfig?.enabled) {
-        // Use request-level configuration
+        // Use request-level configuration (takes precedence regardless of global flag)
+        const window = Math.max(
+          1000,
+          requestConfig.monitoringWindowMs || globalMonitoringWindow,
+        );
+        minMonitoringWindow = Math.min(minMonitoringWindow, window);
+
         perEndpointMap.set(request.url, {
           errorRate: requestConfig.errorRateThreshold,
           exitStatusCodes: new Set(requestConfig.exitStatusCodes),
-          monitoringWindowMs:
-            requestConfig.monitoringWindowMs || globalMonitoringWindow,
+          monitoringWindowMs: window,
         });
-      } else if (globalExitConfig.enabled) {
-        // Use global configuration as fallback
-        // Only apply if endpoint has no request-level config or it's disabled
-        const hasRequestConfig = requestConfig !== undefined;
-
-        if (!hasRequestConfig) {
-          // Endpoint has no early exit config, use global defaults
-          perEndpointMap.set(request.url, {
-            errorRate: globalExitConfig.errorRateThreshold,
-            exitStatusCodes: new Set(globalExitConfig.exitStatusCodes),
-            monitoringWindowMs: globalMonitoringWindow,
-          });
-        }
+      } else if (globalExitConfig?.enabled && requestConfig === undefined) {
+        // Use global configuration as fallback only when:
+        // - the global flag is enabled, AND
+        // - the endpoint has no per-request earlyExit config at all
+        perEndpointMap.set(request.url, {
+          errorRate: globalExitConfig.errorRateThreshold,
+          exitStatusCodes: new Set(globalExitConfig.exitStatusCodes),
+          monitoringWindowMs: globalMonitoringWindow,
+        });
         // If requestConfig.enabled is false, don't add to map (endpoint won't have early exit)
       }
     });
 
     return {
       perEndpoint: perEndpointMap,
-      monitoringWindowMs: globalMonitoringWindow,
+      monitoringWindowMs: minMonitoringWindow,
     };
   }
 
@@ -107,7 +104,9 @@ export class EarlyExitCoordinator implements IEarlyExitCoordinator {
    * The monitoring interval is determined by the monitoringWindowMs configuration parameter.
    */
   startMonitoring(): void {
-    if (!this._config.options.workerEarlyExit?.enabled) return;
+    // Start monitoring whenever there is at least one endpoint configured for early exit,
+    // regardless of whether the global workerEarlyExit flag is enabled.
+    if (this._thresholds.perEndpoint.size === 0) return;
 
     this._monitoringInterval = setInterval(() => {
       this._checkEarlyExitConditions();

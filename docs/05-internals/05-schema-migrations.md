@@ -116,13 +116,14 @@ Migrations are applied sequentially to bridge the gap between the stored configu
 
 ```mermaid
 flowchart LR
-    V1[v0.0.13] -->|Fn 0.0.13| V2[v0.0.14]
-    V2 -->|Fn 0.0.14| V3[v0.0.15]
-    V3 -->|Fn 0.0.15| V4[v0.0.16]
-    V4 -->|Zod Parse| Final[Current Version]
+    V1[v0.0.13] -->|Fn 0.0.14| V2[v0.0.14]
+    V2 -->|Fn 0.0.15| V3[v0.0.15]
+    V3 -->|Fn 0.0.16| V4[v0.0.16]
+    V4 -->|Fn 0.0.17| V5[v0.0.17]
+    V5 -->|Zod Parse| Final[Current Version]
 ```
 
-If a configuration is at version `0.0.13` and the current version is `0.0.16`, the system applies the `0.0.13 -> 0.0.14`, `0.0.14 -> 0.0.15`, and `0.0.15 -> 0.0.16` transformations in order.
+If a configuration is at version `0.0.13` and the current version is `0.0.17`, the system applies the `0.0.14`, `0.0.15`, `0.0.16`, and `0.0.17` transformations in order. Each migration key represents the **target version** of that step.
 
 ### Injecting Configuration Defaults
 
@@ -145,9 +146,10 @@ Tressi implements a fault tolerant migration strategy to ensure that individual 
 When releasing a new version of Tressi with breaking schema changes:
 
 1.  Identify the required semantic changes.
-2.  Add a new entry to the `JSON_MIGRATIONS` registry in `projects/cli/src/data/migrations.ts`.
+2.  Add a new entry to the `JSON_MIGRATIONS` registry in `projects/cli/src/data/migrations.ts`. The key must be the **target version** (e.g., `'0.0.18'`).
 3.  Provide a clear `summary` of the changes.
-4.  Return the transformed configuration object from the `up` function.
+4.  Implement the `up` function. This function receives the configuration at `target - 1` and must return the configuration at `target`.
+5.  **Crucial**: The `up` function **must** update the `$schema` URL to match the target version. The `JsonMigrationManager` validates this after each step.
 
 ### Next Steps
 

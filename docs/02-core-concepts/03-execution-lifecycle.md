@@ -70,7 +70,7 @@ Tressi prepares the execution environment to ensure predictable load generation:
 ### 3. Steady State
 
 - **Constant Load**: Maintains the target request rate for the test duration.
-- **Asynchronous Execution**: Workers generate parallel requests to maximize throughput.
+- **Asynchronous Execution**: Workers generate concurrent requests to sustain the configured arrival rate.
 - **Live Monitoring**: Aggregates performance data for immediate visibility into system behavior.
 
 ### 4. Monitor Early Exit
