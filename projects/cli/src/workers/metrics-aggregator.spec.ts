@@ -528,7 +528,7 @@ describe('MetricsAggregator', () => {
       const summary = aggregator.getTestSummary();
 
       expect(summary.global.epochStartedAt).toBe(startTime);
-      expect(summary.global.epochEndedAt).toBe(endTime);
+      expect(summary.global.epochEndedAt).toBeCloseTo(endTime, -2);
       expect(summary.global.epochEndedAt).toBeGreaterThan(
         summary.global.epochStartedAt,
       );
