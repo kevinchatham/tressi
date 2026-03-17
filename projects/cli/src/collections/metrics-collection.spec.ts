@@ -1,4 +1,4 @@
-import { Metric } from '@tressi/shared/common';
+import { TestSummary } from '@tressi/shared/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { db } from '../data/database';
@@ -43,25 +43,26 @@ describe('MetricCollection', () => {
 
     const metric = await metricStorage.create({
       testId: '1',
-      url: 'test',
       metric: {
-        failedRequests: 0,
-        maxLatencyMs: 100,
-        minLatencyMs: 10,
-        networkBytesReceived: 0,
-        networkBytesSent: 0,
-        networkBytesPerSec: 0,
-        p50LatencyMs: 50,
-        p95LatencyMs: 95,
-        p99LatencyMs: 99,
-        averageRequestsPerSecond: 1,
-        peakRequestsPerSecond: 1,
-        errorRate: 0,
-        statusCodeDistribution: {},
-        successfulRequests: 1,
-        totalRequests: 1,
-        targetAchieved: 1,
-      } as unknown as Metric,
+        global: {
+          failedRequests: 0,
+          maxLatencyMs: 100,
+          minLatencyMs: 10,
+          networkBytesReceived: 0,
+          networkBytesSent: 0,
+          networkBytesPerSec: 0,
+          p50LatencyMs: 50,
+          p95LatencyMs: 95,
+          p99LatencyMs: 99,
+          averageRequestsPerSecond: 1,
+          peakRequestsPerSecond: 1,
+          errorRate: 0,
+          statusCodeDistribution: {},
+          successfulRequests: 1,
+          totalRequests: 1,
+          targetAchieved: 1,
+        },
+      } as unknown as TestSummary,
       epoch: 123,
     });
     expect(metric.testId).toBe('1');

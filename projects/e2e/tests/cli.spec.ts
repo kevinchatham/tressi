@@ -40,7 +40,7 @@ test.describe('CLI Integration', () => {
     req.url = `${testServer}/health`;
     req.rps = 10;
 
-    config.requests.push(req);
+    config.requests = [req];
 
     fs.writeFileSync(testConfigPath, JSON.stringify(config, null, 2));
 
@@ -59,7 +59,7 @@ test.describe('CLI Integration', () => {
     req.url = `${testServer}/health`;
     req.rps = 10;
 
-    config.requests.push(req);
+    config.requests = [req];
 
     fs.writeFileSync(testConfigPath, JSON.stringify(config, null, 2));
     const command = `node ${cliPath} run ${testConfigPath} --export ${reportPath}`;

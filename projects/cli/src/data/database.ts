@@ -60,7 +60,6 @@ export async function initializeDatabase(): Promise<void> {
     .ifNotExists()
     .addColumn('id', 'text', (col) => col.primaryKey())
     .addColumn('test_id', 'text', (col) => col.notNull())
-    .addColumn('url', 'text', (col) => col.notNull())
     .addColumn('epoch', 'integer', (col) => col.notNull())
     .addColumn('metric', 'text', (col) => col.notNull())
     .addForeignKeyConstraint(
@@ -70,14 +69,6 @@ export async function initializeDatabase(): Promise<void> {
       ['id'],
       (cb) => cb.onDelete('cascade'),
     )
-    .execute();
-
-  // create migrations table
-  await db.schema
-    .createTable('migrations')
-    .ifNotExists()
-    .addColumn('version', 'text', (col) => col.primaryKey())
-    .addColumn('applied_at', 'integer', (col) => col.notNull())
     .execute();
 
   // Create performance indexes
@@ -93,13 +84,6 @@ export async function initializeDatabase(): Promise<void> {
     .ifNotExists()
     .on('metrics')
     .column('test_id')
-    .execute();
-
-  await db.schema
-    .createIndex('idx_metrics_url')
-    .ifNotExists()
-    .on('metrics')
-    .column('url')
     .execute();
 
   await db.schema

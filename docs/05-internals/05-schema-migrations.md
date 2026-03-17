@@ -9,29 +9,25 @@ This document covers the migration pipeline, version detection mechanisms, and t
 The migration system ensures that configurations remain valid as the platform evolves, preventing runtime errors caused by deprecated or renamed fields.
 
 ```mermaid
-flowchart TD
-    subgraph Commands
-        A1[ServeCommand.execute] --> B
-        A2[RunCommand.execute] --> C
-    end
+sequenceDiagram
+    participant CLI as CLI Entry
+    participant DB as Database Migration
+    participant CFG as Config Migration
+    participant APP as Application Logic
 
-    subgraph JsonMigrationManager
-        B[run - DB Migration] --> D[Fetch all configs from DB]
-        C[migrateFile - File Migration] --> E[Read config file]
-        D --> F{Any version < pkg.version?}
-        E --> F
-        F -- No --> G[Proceed with Command]
-        F -- Yes --> H{Interactive Terminal?}
-        H -- No --> I[Log Warning & Proceed]
-        H -- Yes --> J[Prompt User for Migration]
-        J -- Yes --> K[_migrateConfig - Core Logic]
-        K --> L[Sequential Manual Migrations]
-        L --> M[Final Zod Validation & Default Injection]
-        M --> N[Update DB or File]
-        N --> O[Summarize Failures]
-        O --> G
-        J -- No --> I
-    end
+    CLI->>DB: initializeDatabase()
+    Note over DB: 1. Check for pending migrations
+    Note over DB: 2. Create backup (tressi-vX.X.X-timestamp.db.bak)
+    Note over DB: 3. Apply SQL migrations in transaction
+    DB-->>CLI: Database Ready
+
+    CLI->>CFG: JsonMigrationManager.run() / migrateFile()
+    Note over CFG: 1. Check for outdated JSON schemas
+    Note over CFG: 2. Create backup (config.json.bak)
+    Note over CFG: 3. Apply transformations & Zod validation
+    CFG-->>CLI: Configs Ready
+
+    CLI->>APP: Execute Command (run/serve)
 ```
 
 ### System Components
@@ -45,7 +41,9 @@ flowchart TD
 The `JsonMigrationManager` handles two distinct migration workflows:
 
 1.  **Database Migrations**: Triggered by the `serve` command. It scans the internal SQLite database for all stored configurations.
-2.  **File Migrations**: Triggered by the `run` or `serve` command. It validates the specific configuration file provided for the test execution (e.g., `tressi.config.json`).
+2.  **File Migrations**: Triggered by the `migrate` command. It validates and updates the specific configuration file provided.
+
+Database migrations always run before configuration migrations when serving the UI. This ensures the underlying storage is ready.
 
 #### Workflow Steps:
 
@@ -65,11 +63,10 @@ Tressi maintains data integrity and provides visibility during the migration pro
 - **Automatic Backups**: Revert changes or compare versions using automatic backups (e.g., `tressi.config.json.bak`) created before migrating local files.
 - **Change Summaries**: Review planned changes through human readable transformation summaries displayed during the interactive prompt.
 - **Visual Diff**: Inspect exact field modifications with terminal based line by line JSON diffs highlighting added, removed, or modified fields.
-- **Automated Migrations**: Automate updates in CI/CD pipelines using the `--migrate` (or `-m`) flag to automatically accept and apply migrations.
 
 ### Detecting Configuration Versions
 
-Version detection relies on the `$schema` URL in the configuration JSON. The `JsonMigrationManager` utilizes a regular expression to extract the version string (e.g., `0.0.13`) from the URL.
+Version detection relies on the `$schema` URL in the configuration JSON. The `JsonMigrationManager` utilizes a regular expression to extract the version string (e.g., `0.0.17`) from the URL.
 
 A valid Tressi configuration **must** include the `$schema` property. If the property is missing or does not contain a valid Tressi schema URL, the system will report a validation error and halt the migration process for that configuration.
 
@@ -94,16 +91,16 @@ When implementing a migration, use a type guard to narrow the `unknown` fields t
 
 ```typescript
 // Example: Renaming a field
-'0.0.13': {
+'0.0.17': {
   summary: "Rename 'oldField' to 'newField' for better clarity.",
   up: (config) => {
     if (!('oldField' in config) || typeof config.oldField !== 'string') {
-      throw new Error('Migration 0.0.13 failed: "oldField" is missing or not a string');
+      throw new Error('Migration 0.0.17 failed: "oldField" is missing or not a string');
     }
     const { oldField, ...rest } = config;
     return {
       ...rest,
-      $schema: config.$schema.replace('0.0.13', '0.0.14'),
+      $schema: config.$schema.replace('0.0.17', '0.0.18'),
       newField: oldField,
     };
   }
@@ -139,17 +136,6 @@ Tressi implements a fault tolerant migration strategy to ensure that individual 
 - **Error Isolation**: If a specific configuration fails during transformation or validation, the system catches the error and logs it to the terminal.
 - **Continuous Processing**: The `JsonMigrationManager` continues to process any remaining outdated configurations even if previous attempts encountered errors.
 - **Failure Summarization**: After processing all configurations, the system provides a consolidated summary of all failed migrations, including the configuration name and the specific error message.
-- **Execution Continuity**: The application proceeds with the original command (e.g., `serve` or `run`). Configurations that failed to migrate remain in their original state and may require manual intervention if they are incompatible with the current runtime.
-
-### Implementing Custom Migrations
-
-When releasing a new version of Tressi with breaking schema changes:
-
-1.  Identify the required semantic changes.
-2.  Add a new entry to the `JSON_MIGRATIONS` registry in `projects/cli/src/data/migrations.ts`. The key must be the **target version** (e.g., `'0.0.18'`).
-3.  Provide a clear `summary` of the changes.
-4.  Implement the `up` function. This function receives the configuration at `target - 1` and must return the configuration at `target`.
-5.  **Crucial**: The `up` function **must** update the `$schema` URL to match the target version. The `JsonMigrationManager` validates this after each step.
 
 ### Next Steps
 

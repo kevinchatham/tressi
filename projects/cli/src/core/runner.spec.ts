@@ -29,8 +29,8 @@ describe('Runner', () => {
 
   it('should get aggregated metrics', () => {
     const mockMetrics = {
-      totalRequests: 100,
-    } as unknown as import('@tressi/shared/common').AggregatedMetrics;
+      global: { totalRequests: 100 },
+    } as unknown as import('@tressi/shared/common').TestSummary;
     const workerPoolMock = vi.mocked(WorkerPoolManager.prototype);
     workerPoolMock.getAggregatedResults.mockReturnValue(mockMetrics);
 

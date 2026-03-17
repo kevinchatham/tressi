@@ -3,8 +3,9 @@ import {
   defaultTressiConfig,
   GlobalSummary,
   LatencyHistogram,
+  MetricDocument,
   TestDocument,
-  TestMetrics,
+  TestSummary,
 } from '@tressi/shared/common';
 import { ChartType } from '@tressi/shared/ui';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -83,14 +84,13 @@ describe('TestDetailService', () => {
     },
   };
 
-  const mockMetrics: TestMetrics = {
-    global: [
-      {
-        id: 'metric-1',
-        testId: 'test-123',
-        epoch: 1000,
-        url: 'global',
-        metric: {
+  const mockMetrics: MetricDocument[] = [
+    {
+      id: 'metric-1',
+      testId: 'test-123',
+      epoch: 1000,
+      metric: {
+        global: {
           totalRequests: 100,
           successfulRequests: 95,
           failedRequests: 5,
@@ -108,10 +108,9 @@ describe('TestDetailService', () => {
           networkBytesReceived: 2500,
           statusCodeDistribution: { '200': 95 },
         },
-      },
-    ],
-    endpoints: [],
-  };
+      } as unknown as TestSummary,
+    },
+  ];
 
   beforeEach(() => {
     configServiceSpy = vi.fn(() =>
@@ -355,10 +354,44 @@ describe('TestDetailService', () => {
       expect(chartData.data).toEqual([45]);
     });
 
+    it('should return endpoint chart data when endpoint is selected', () => {
+      const endpointUrl = 'https://api.example.com/users';
+      const mockMetricsWithEndpoint: MetricDocument[] = [
+        {
+          id: 'metric-1',
+          testId: 'test-123',
+          epoch: 1000,
+          metric: {
+            global: mockGlobalSummary,
+            endpoints: [
+              {
+                url: endpointUrl,
+                p50LatencyMs: 40,
+                totalRequests: 100,
+                successfulRequests: 100,
+                failedRequests: 0,
+              },
+            ],
+          } as unknown as TestSummary,
+        },
+      ];
+
+      service.initialize({
+        test: mockTest,
+        metrics: mockMetricsWithEndpoint,
+      });
+      service.selectedEndpoint.set(endpointUrl);
+      service.selectedChartType.set('latency' as ChartType);
+
+      const chartData = service.currentChartData();
+      expect(chartData.labels).toEqual([1000]);
+      expect(chartData.data).toEqual([40]);
+    });
+
     it('should return empty data when no metrics exist', () => {
       service.initialize({
         test: mockTest,
-        metrics: { global: [], endpoints: [] },
+        metrics: [],
       });
       service.selectedEndpoint.set('global');
 
@@ -379,7 +412,7 @@ describe('TestDetailService', () => {
     it('should return false when chart data is empty', () => {
       service.initialize({
         test: mockTest,
-        metrics: { global: [], endpoints: [] },
+        metrics: [],
       });
 
       expect(service.hasChartData()).toBe(false);
@@ -473,41 +506,6 @@ describe('TestDetailService', () => {
       await service.exportResults('json');
 
       expect(testExportServiceSpy).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('getCachedEndpointChartData', () => {
-    it('should return cached data if available', () => {
-      service.initialize({ test: mockTest, metrics: mockMetrics });
-      service.selectedEndpoint.set('https://api.example.com');
-      service.selectedChartType.set('latency' as ChartType);
-
-      // First call to populate cache
-      service.getCachedEndpointChartData(
-        'https://api.example.com',
-        'latency' as ChartType,
-      );
-
-      // Second call should return cached data
-      const result = service.getCachedEndpointChartData(
-        'https://api.example.com',
-        'latency' as ChartType,
-      );
-      expect(result).toBeDefined();
-    });
-
-    it('should return empty data when no metrics exist', () => {
-      service.initialize({
-        test: mockTest,
-        metrics: { global: [], endpoints: [] },
-      });
-
-      const result = service.getCachedEndpointChartData(
-        'https://api.example.com',
-        'latency' as ChartType,
-      );
-      expect(result.data).toEqual([]);
-      expect(result.labels).toEqual([]);
     });
   });
 

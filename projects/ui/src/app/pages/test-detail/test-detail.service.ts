@@ -6,13 +6,11 @@ import {
   MetricDocument,
   TestDocument,
   TestEventData,
-  TestMetrics,
 } from '@tressi/shared/common';
 import {
-  ChartData,
   ChartType,
+  DEFAULT_CHART_POLLING_INTERVAL,
   DEFAULT_CHART_TYPE,
-  EndpointChartDataCache,
   PollingInterval,
 } from '@tressi/shared/ui';
 import { TestSummaryData } from '@tressi/shared/ui';
@@ -35,7 +33,7 @@ export class TestDetailService implements OnDestroy {
 
   // Data Signals
   readonly test = signal<TestDocument | null>(null);
-  readonly metrics = signal<TestMetrics | null>(null);
+  readonly metrics = signal<MetricDocument[] | null>(null);
   readonly config = signal<ConfigDocument | null>(null);
   readonly testId = signal<string | null>(null);
   readonly testTimeRange = signal<{ min: number; max: number } | null>(null);
@@ -43,7 +41,9 @@ export class TestDetailService implements OnDestroy {
   // UI State Signals (shared)
   readonly selectedEndpoint = signal<string>('global');
   readonly selectedChartType = signal<ChartType>(DEFAULT_CHART_TYPE);
-  readonly selectedPollingInterval = signal<PollingInterval>(5000);
+  readonly selectedPollingInterval = signal<PollingInterval>(
+    DEFAULT_CHART_POLLING_INTERVAL,
+  );
   readonly hasError = signal(false);
   readonly errorMessage = signal('');
   readonly configError = signal<string>('');
@@ -90,13 +90,15 @@ export class TestDetailService implements OnDestroy {
     const chartType = this.selectedChartType();
     const metrics = this.metrics();
 
-    if (!metrics) return { data: [], labels: [] };
+    if (!metrics || metrics.length === 0) return { data: [], labels: [] };
 
-    if (endpoint === 'global') {
-      return this._getGlobalChartData(chartType);
-    } else {
-      return this.getCachedEndpointChartData(endpoint, chartType);
-    }
+    const labels = metrics.map((m) => m.epoch);
+    const data =
+      endpoint === 'global'
+        ? this._mapMetricsToData(metrics, chartType)
+        : this._mapEndpointMetricsToData(metrics, endpoint, chartType);
+
+    return { data, labels };
   });
 
   readonly hasChartData = computed(() => {
@@ -111,15 +113,15 @@ export class TestDetailService implements OnDestroy {
     return false;
   });
 
-  // Cache for endpoint chart data
-  private readonly _cachedEndpointChartData: EndpointChartDataCache = new Map();
-
   // Subscriptions
   private _metricsStreamSubscription: Subscription | null = null;
   private _testEventsSubscription: Subscription | null = null;
   private _pollingTimerId: ReturnType<typeof setInterval> | null = null;
 
-  initialize(data: { test: TestDocument; metrics: TestMetrics | null }): void {
+  initialize(data: {
+    test: TestDocument;
+    metrics: MetricDocument[] | null;
+  }): void {
     this.testId.set(data.test.id);
     this.test.set(data.test);
     this.metrics.set(data.metrics);
@@ -228,76 +230,83 @@ export class TestDetailService implements OnDestroy {
     }
   }
 
-  getCachedEndpointChartData(url: string, metricType: ChartType): ChartData {
-    const cacheKey = `${url}-${metricType}`;
-    if (!this._cachedEndpointChartData.has(url)) {
-      this._cachedEndpointChartData.set(url, new Map());
-    }
-    const urlCache = this._cachedEndpointChartData.get(url)!;
-    if (urlCache.has(cacheKey)) {
-      return urlCache.get(cacheKey)!;
-    }
-
-    const metrics = this.metrics();
-    if (!metrics?.endpoints?.length) {
-      const emptyData = { data: [], labels: [] };
-      urlCache.set(cacheKey, emptyData);
-      return emptyData;
-    }
-
-    const endpointMetrics = metrics.endpoints.filter((m) => m.url === url);
-    const labels = endpointMetrics.map((m) => m.epoch);
-    const data = this._mapMetricsToData(endpointMetrics, metricType);
-
-    const chartData = { data, labels };
-    urlCache.set(cacheKey, chartData);
-    return chartData;
-  }
-
-  private _getGlobalChartData(metricType: ChartType): ChartData {
-    const metrics = this.metrics();
-    if (!metrics?.global?.length) return { data: [], labels: [] };
-
-    return {
-      data: this._mapMetricsToData(metrics.global, metricType),
-      labels: metrics.global.map((m) => m.epoch),
-    };
-  }
-
   private _mapMetricsToData(
     metrics: MetricDocument[],
     metricType: ChartType,
   ): number[] {
     switch (metricType) {
       case 'peak_throughput':
-        return metrics.map((m) => m.metric?.peakRequestsPerSecond || 0);
+        return metrics.map((m) => m.metric?.global?.peakRequestsPerSecond || 0);
       case 'average_throughput':
-        return metrics.map((m) => m.metric?.averageRequestsPerSecond || 0);
+        return metrics.map(
+          (m) => m.metric?.global?.averageRequestsPerSecond || 0,
+        );
       case 'latency':
-        return metrics.map((m) => m.metric?.p50LatencyMs || 0);
+        return metrics.map((m) => m.metric?.global?.p50LatencyMs || 0);
       case 'latency_p95':
-        return metrics.map((m) => m.metric?.p95LatencyMs || 0);
+        return metrics.map((m) => m.metric?.global?.p95LatencyMs || 0);
       case 'latency_p99':
-        return metrics.map((m) => m.metric?.p99LatencyMs || 0);
+        return metrics.map((m) => m.metric?.global?.p99LatencyMs || 0);
       case 'error_rate':
-        return metrics.map((m) => (m.metric?.errorRate || 0) * 100);
+        return metrics.map((m) => (m.metric?.global?.errorRate || 0) * 100);
       case 'success_rate':
         return metrics.map(
           (m) =>
-            ((m.metric?.successfulRequests || 0) /
-              (m.metric?.totalRequests || 1)) *
+            ((m.metric?.global?.successfulRequests || 0) /
+              (m.metric?.global?.totalRequests || 1)) *
             100,
         );
       case 'failed_requests':
-        return metrics.map((m) => m.metric?.failedRequests || 0);
+        return metrics.map((m) => m.metric?.global?.failedRequests || 0);
       case 'network_throughput':
-        return metrics.map((m) => m.metric?.networkBytesPerSec || 0);
+        return metrics.map((m) => m.metric?.global?.networkBytesPerSec || 0);
       case 'network_bytes_sent':
-        return metrics.map((m) => m.metric?.networkBytesSent || 0);
+        return metrics.map((m) => m.metric?.global?.networkBytesSent || 0);
       case 'network_bytes_received':
-        return metrics.map((m) => m.metric?.networkBytesReceived || 0);
+        return metrics.map((m) => m.metric?.global?.networkBytesReceived || 0);
       case 'target_achieved':
-        return metrics.map((m) => (m.metric?.targetAchieved || 0) * 100);
+        return metrics.map(
+          (m) => (m.metric?.global?.targetAchieved || 0) * 100,
+        );
+      default:
+        return [];
+    }
+  }
+
+  private _mapEndpointMetricsToData(
+    metrics: MetricDocument[],
+    url: string,
+    metricType: ChartType,
+  ): number[] {
+    const getEndpoint = (
+      m: MetricDocument,
+    ): import('@tressi/shared/common').EndpointSummary | undefined =>
+      m.metric?.endpoints?.find((e) => e.url === url);
+
+    switch (metricType) {
+      case 'peak_throughput':
+        return metrics.map((m) => getEndpoint(m)?.peakRequestsPerSecond || 0);
+      case 'average_throughput':
+        return metrics.map(
+          (m) => getEndpoint(m)?.averageRequestsPerSecond || 0,
+        );
+      case 'latency':
+        return metrics.map((m) => getEndpoint(m)?.p50LatencyMs || 0);
+      case 'latency_p95':
+        return metrics.map((m) => getEndpoint(m)?.p95LatencyMs || 0);
+      case 'latency_p99':
+        return metrics.map((m) => getEndpoint(m)?.p99LatencyMs || 0);
+      case 'error_rate':
+        return metrics.map((m) => (getEndpoint(m)?.errorRate || 0) * 100);
+      case 'success_rate':
+        return metrics.map((m) => {
+          const e = getEndpoint(m);
+          return ((e?.successfulRequests || 0) / (e?.totalRequests || 1)) * 100;
+        });
+      case 'failed_requests':
+        return metrics.map((m) => getEndpoint(m)?.failedRequests || 0);
+      case 'target_achieved':
+        return metrics.map((m) => (getEndpoint(m)?.targetAchieved || 0) * 100);
       default:
         return [];
     }

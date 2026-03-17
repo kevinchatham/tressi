@@ -3,7 +3,6 @@ export * from './collection.types';
 export * from './config.types';
 export * from './docs.types';
 export * from './event.types';
-export * from './metrics.types';
 export * from './reporting.types';
 export * from './test.types';
 export * from './validation.utils';

@@ -208,23 +208,33 @@ export const TressiConfigSchema = z
       path: ['options', 'rampUpDurationSec'],
     },
   )
+  .refine(
+    (data) => {
+      if (data.requests.length > 1) {
+        const urls = data.requests.map((req) => req.url);
+        const uniqueUrls = new Set(urls);
+        return uniqueUrls.size === urls.length;
+      }
+      return true;
+    },
+    {
+      message: 'Duplicate endpoint URLs are not allowed',
+      path: ['requests'],
+    },
+  )
   .default({
     $schema: schemaDefault,
     requests: [],
     options: optionsDefaults,
   });
 
-function deepCopy<T>(input: T): T {
-  return JSON.parse(JSON.stringify(input));
-}
-
 /**
  * Default Tressi configuration with sample requests.
  * This configuration provides a starting point for new users.
  */
 export const defaultTressiConfig: TressiConfig = ((): TressiConfig =>
-  deepCopy(TressiConfigSchema.parse(undefined)))();
+  structuredClone(TressiConfigSchema.parse(undefined)))();
 
 export const defaultTressiRequestConfig: TressiRequestConfig =
   ((): TressiRequestConfig =>
-    deepCopy(TressiRequestConfigSchema.parse(undefined)))();
+    structuredClone(TressiRequestConfigSchema.parse(undefined)))();

@@ -20,10 +20,15 @@ graph TD
         D -- Yes --> E[Stamp Current Version]
         D -- No --> F{Any version < pkg.version?}
         F -- No --> G[Proceed with Command]
-        F -- Yes --> H[Sequential Database Migrations]
-        H --> I[Update migrations]
-        I --> G
+        F -- Yes --> H[Display Migration Summary]
+        H --> I{User Confirms?}
+        I -- No --> J[Skip & Warn]
+        I -- Yes --> K[Create Backup]
+        K --> L[Sequential Database Migrations]
+        L --> M[Update migrations]
+        M --> G
         E --> G
+        J --> G
     end
 ```
 
@@ -42,15 +47,18 @@ Database migrations are triggered automatically during the CLI initialization pr
 1.  **Version Tracking**: The system maintains a `migrations` table to record the highest version successfully applied to the database.
 2.  **Fresh Install Detection**: If the `migrations` table is empty (version `0.0.0`), the system assumes a fresh install. It stamps the database with the current application version and skips all intermediate migrations.
 3.  **Version Detection**: For existing installations, it compares the current database version against the application version defined in `package.json`.
-4.  **Sequential Execution**: Identifies all pending migrations in the registry and applies them in order using semver comparison.
-5.  **Transactional Safety**: Each migration is executed within a database transaction. If a migration fails, the transaction is rolled back, and the application halts to prevent data corruption.
-6.  **Version Persistence**: Upon successful completion of a migration, the new version is recorded in the `migrations` table.
+4.  **User Confirmation**: If pending migrations are found, the system displays a summary of the changes and prompts the user for confirmation.
+5.  **Sequential Execution**: Identifies all pending migrations in the registry and applies them in order using semver comparison.
+6.  **Transactional Safety**: Each migration is executed within a database transaction. If a migration fails, the transaction is rolled back, and the application halts to prevent data corruption.
+7.  **Version Persistence**: Upon successful completion of a migration, the new version is recorded in the `migrations` table.
 
 ### Integrity & Safety
 
 Tressi prioritizes database integrity through several safety mechanisms:
 
-- **Automatic Execution**: Migrations run automatically during startup, ensuring the environment is always ready for execution without manual intervention.
+- **Automatic Detection**: Migrations are detected automatically during startup, ensuring the environment is always ready for execution.
+- **Automatic Backups**: Before applying any schema changes, Tressi creates a backup of the database file (e.g., `tressi-v0.0.17-1710636892.db.bak`) in the same directory.
+- **User Control**: Users are prompted before schema changes are applied, allowing for manual backups or inspection if desired.
 - **Atomic Updates**: The use of transactions ensures that the database never remains in a partially migrated state.
 - **Detailed Logging**: The system logs the summary of each migration as it is applied, providing visibility into schema changes.
 
@@ -62,29 +70,6 @@ Database migrations are defined in `projects/cli/src/data/migrations.ts` and uti
 export interface IDatabaseMigration {
   summary: string;
   up: (db: Kysely<Database>) => Promise<void>;
-}
-```
-
-### Adding New Migrations
-
-When releasing a new version of Tressi with database schema changes:
-
-1.  Identify the required DDL changes (e.g., adding a column, creating an index).
-2.  Update the base schema in `projects/cli/src/data/database.ts` to include the new changes. This ensures fresh installs receive the correct schema immediately.
-3.  Add a new entry to the `DATABASE_MIGRATIONS` registry in `projects/cli/src/data/migrations.ts`. The key must be the **target version** (e.g., `'0.0.18'`).
-4.  Provide a clear `summary` of the changes.
-5.  Implement the `up` function using the Kysely `db.schema` builder. This function receives a transaction object and should perform the necessary schema modifications.
-
-```typescript
-// Example: Adding a column
-'0.0.14': {
-  summary: "Add 'description' column to 'configs' table.",
-  up: async (db) => {
-    await db.schema
-      .alterTable('configs')
-      .addColumn('description', 'text')
-      .execute();
-  }
 }
 ```
 

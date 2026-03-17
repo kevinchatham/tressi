@@ -1,3 +1,5 @@
+import * as fs from 'node:fs/promises';
+
 import type { Database as DatabaseSchema } from '@tressi/shared/cli';
 import Database from 'better-sqlite3';
 import { Kysely, SqliteDialect } from 'kysely';
@@ -14,6 +16,17 @@ vi.mock('./database-migrations', () => ({
   DATABASE_MIGRATIONS: {},
 }));
 
+vi.mock('node:fs/promises', async () => {
+  const actual =
+    await vi.importActual<typeof import('node:fs/promises')>(
+      'node:fs/promises',
+    );
+  return {
+    ...actual,
+    copyFile: vi.fn(),
+  };
+});
+
 describe('DatabaseMigrationManager', () => {
   let db: Kysely<DatabaseSchema>;
   let manager: DatabaseMigrationManager;
@@ -21,10 +34,21 @@ describe('DatabaseMigrationManager', () => {
   beforeEach(async () => {
     vi.clearAllMocks();
 
+    // Mock TTY to avoid prompt issues in tests
+    process.stdin.isTTY = true;
+
     // Reset DATABASE_MIGRATIONS object since it's shared across tests
     for (const key in DATABASE_MIGRATIONS) {
       delete DATABASE_MIGRATIONS[key];
     }
+
+    // Mock readline to automatically confirm
+    vi.mock('node:readline/promises', () => ({
+      createInterface: vi.fn().mockReturnValue({
+        question: vi.fn().mockResolvedValue('y'),
+        close: vi.fn(),
+      }),
+    }));
 
     const dialect = new SqliteDialect({
       database: new Database(':memory:'),
@@ -57,6 +81,33 @@ describe('DatabaseMigrationManager', () => {
 
     expect(result).toHaveLength(1);
     expect(result[0].version).toBe('0.0.15');
+  });
+
+  it('should create a backup before applying migrations', async () => {
+    // Pre-set version to simulate an existing install
+    await db.schema
+      .createTable('migrations')
+      .ifNotExists()
+      .addColumn('version', 'text', (col) => col.primaryKey())
+      .addColumn('applied_at', 'integer', (col) => col.notNull())
+      .execute();
+
+    await db
+      .insertInto('migrations')
+      .values({ version: '0.0.13', applied_at: Date.now() })
+      .execute();
+
+    DATABASE_MIGRATIONS['0.0.14'] = {
+      summary: 'Test migration',
+      up: async (): Promise<void> => {},
+    };
+
+    await manager.run();
+
+    expect(fs.copyFile).toHaveBeenCalled();
+    const [src, dest] = vi.mocked(fs.copyFile).mock.calls[0] as string[];
+    expect(src).toContain('tressi.db');
+    expect(dest).toMatch(/tressi-0\.0\.13-\d+\.db\.bak/);
   });
 
   it('should apply pending migrations in order', async () => {

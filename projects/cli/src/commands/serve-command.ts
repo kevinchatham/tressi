@@ -1,3 +1,4 @@
+import { initializeDatabase } from '../data/database';
 import { JsonMigrationManager } from '../data/json-migration-manager';
 import { TressiServer } from '../server';
 
@@ -15,6 +16,9 @@ export class ServeCommand {
    */
   async execute(options: { port?: number; migrate?: boolean }): Promise<void> {
     try {
+      // Initialize and migrate database before server starts.
+      await initializeDatabase();
+
       // Run migrations before server starts
       const migrationManager = new JsonMigrationManager();
       await migrationManager.run(options.migrate);

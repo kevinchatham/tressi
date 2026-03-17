@@ -62,6 +62,9 @@ describe('JsonMigrationManager', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.spyOn(process, 'exit').mockImplementation(() => {
+      throw new Error('process.exit called');
+    });
     // Reset MIGRATIONS object since it's shared across tests
     for (const key in JSON_MIGRATIONS) {
       delete JSON_MIGRATIONS[key];
@@ -185,7 +188,7 @@ describe('JsonMigrationManager', () => {
 
       expect(errorSpy).toHaveBeenCalledWith(
         expect.stringContaining(
-          'Database migration complete with 1 failure(s)',
+          'Configuration migration complete with 1 failure(s)',
         ),
       );
       expect(errorSpy).toHaveBeenCalledWith(
@@ -237,7 +240,7 @@ describe('JsonMigrationManager', () => {
         } as ConfigDocument,
       ]);
 
-      await manager.run();
+      await expect(manager.run()).rejects.toThrow('process.exit called');
 
       expect(configStorage.edit).not.toHaveBeenCalled();
     });
@@ -400,7 +403,9 @@ describe('JsonMigrationManager', () => {
         }),
       );
 
-      await manager.migrateFile(filePath);
+      await expect(manager.migrateFile(filePath)).rejects.toThrow(
+        'process.exit called',
+      );
 
       expect(fs.writeFile).not.toHaveBeenCalled();
     });
@@ -419,7 +424,9 @@ describe('JsonMigrationManager', () => {
         }),
       );
 
-      await manager.migrateFile(filePath);
+      await expect(manager.migrateFile(filePath)).rejects.toThrow(
+        'process.exit called',
+      );
 
       expect(fs.writeFile).not.toHaveBeenCalled();
     });

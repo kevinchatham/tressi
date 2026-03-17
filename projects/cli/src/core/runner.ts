@@ -1,6 +1,5 @@
 import { IRunnerEvents } from '@tressi/shared/cli';
 import {
-  AggregatedMetrics,
   ResponseSamples,
   TestSummary,
   TressiConfig,
@@ -28,7 +27,7 @@ export class Runner extends EventEmitter<IRunnerEvents> {
     this._workerPool = new WorkerPoolManager(_config);
   }
 
-  getAggregatedMetrics(): AggregatedMetrics {
+  getAggregatedMetrics(): TestSummary {
     return this._workerPool.getAggregatedResults();
   }
 

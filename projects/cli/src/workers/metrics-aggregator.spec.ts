@@ -309,9 +309,15 @@ describe('MetricsAggregator', () => {
       expect(results.global.successfulRequests).toBe(30);
       expect(results.global.failedRequests).toBe(6);
       // errorPercentage is not part of Metric type
-      expect(results.endpoints).toHaveProperty('http://example.com/api/1');
-      expect(results.endpoints).toHaveProperty('http://example.com/api/2');
-      expect(results.endpoints).toHaveProperty('http://example.com/api/3');
+      expect(
+        results.endpoints.find((e) => e.url === 'http://example.com/api/1'),
+      ).toBeDefined();
+      expect(
+        results.endpoints.find((e) => e.url === 'http://example.com/api/2'),
+      ).toBeDefined();
+      expect(
+        results.endpoints.find((e) => e.url === 'http://example.com/api/3'),
+      ).toBeDefined();
     });
 
     it('should calculate endpoint specific metrics', () => {
@@ -355,7 +361,9 @@ describe('MetricsAggregator', () => {
 
       const results = aggregator.getResults(2, ['http://example.com/api/1']);
 
-      const endpointMetrics = results.endpoints['http://example.com/api/1'];
+      const endpointMetrics = results.endpoints.find(
+        (e) => e.url === 'http://example.com/api/1',
+      )!;
       expect(endpointMetrics.totalRequests).toBe(12);
       expect(endpointMetrics.successfulRequests).toBe(10);
       expect(endpointMetrics.failedRequests).toBe(2);
@@ -517,7 +525,7 @@ describe('MetricsAggregator', () => {
       const endTime = Date.now();
       aggregator.setEndTime(endTime);
 
-      const summary = aggregator.getTestSummary(1, ['http://example.com']);
+      const summary = aggregator.getTestSummary();
 
       expect(summary.global.epochStartedAt).toBe(startTime);
       expect(summary.global.epochEndedAt).toBe(endTime);
@@ -541,7 +549,7 @@ describe('MetricsAggregator', () => {
 
       // Don't call stopPolling() or setEndTime()
       const beforeSummary = Date.now();
-      const summary = aggregator.getTestSummary(1, ['http://example.com']);
+      const summary = aggregator.getTestSummary();
       const afterSummary = Date.now();
 
       expect(summary.global.epochStartedAt).toBe(startTime);
@@ -562,7 +570,7 @@ describe('MetricsAggregator', () => {
       aggregator.setEndpoints(['http://example.com']);
       aggregator.setEndTime(Date.now());
 
-      const summary = aggregator.getTestSummary(1, ['http://example.com']);
+      const summary = aggregator.getTestSummary();
 
       expect(summary.global.epochStartedAt).toBe(0);
       expect(summary.global.epochEndedAt).toBeGreaterThan(0);
@@ -583,8 +591,8 @@ describe('MetricsAggregator', () => {
 
       aggregator.stopPolling(); // Sets endTime
 
-      const summary1 = aggregator.getTestSummary(1, ['http://example.com']);
-      const summary2 = aggregator.getTestSummary(1, ['http://example.com']);
+      const summary1 = aggregator.getTestSummary();
+      const summary2 = aggregator.getTestSummary();
 
       expect(summary1.global.epochStartedAt).toBe(
         summary2.global.epochStartedAt,
@@ -707,8 +715,9 @@ describe('MetricsAggregator', () => {
 
       // Second call to getResults (during active test) - should calculate current instant RPS
       const results1 = aggregator.getResults(1, ['http://example.com/api']);
-      const firstInstantRps =
-        results1.endpoints['http://example.com/api'].peakRequestsPerSecond;
+      const firstInstantRps = results1.endpoints.find(
+        (e) => e.url === 'http://example.com/api',
+      )!.peakRequestsPerSecond;
 
       // Verify that we got a positive instant RPS during active test
       expect(firstInstantRps).toBeGreaterThan(0);
@@ -760,7 +769,8 @@ describe('MetricsAggregator', () => {
 
       // Should be 0 when no requests were made
       expect(
-        results.endpoints['http://example.com/api'].peakRequestsPerSecond,
+        results.endpoints.find((e) => e.url === 'http://example.com/api')!
+          .peakRequestsPerSecond,
       ).toBe(0);
       expect(results.global.peakRequestsPerSecond).toBe(0);
     });

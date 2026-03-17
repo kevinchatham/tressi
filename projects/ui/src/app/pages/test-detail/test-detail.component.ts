@@ -1,6 +1,7 @@
 import { Component, effect, inject, input, signal } from '@angular/core';
 import {
   CHART_OPTIONS,
+  DEFAULT_CHART_POLLING_INTERVAL,
   POLLING_OPTIONS,
   TestDetailResolvedData,
 } from '@tressi/shared/ui';
@@ -81,7 +82,9 @@ export class TestDetailComponent {
       }
 
       if (isRunning && interval === 0) {
-        this.service.selectedPollingInterval.set(5000);
+        this.service.selectedPollingInterval.set(
+          DEFAULT_CHART_POLLING_INTERVAL,
+        );
         return;
       }
 

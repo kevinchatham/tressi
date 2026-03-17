@@ -1,5 +1,4 @@
 import { TressiConfig } from './config.types';
-import { Metric } from './metrics.types';
 import { TestSummary } from './reporting.types';
 import { TestStatus } from './test.types';
 
@@ -57,21 +56,8 @@ export type MetricDocument = {
   testId: string;
   /** Timestamp when the document was created (milliseconds since epoch) */
   epoch: number;
-  /** The specific endpoint URL this metric represents, or 'global' for aggregated metrics */
-  url: string;
   /** The actual metric data from the load test */
-  metric: Metric;
+  metric: TestSummary;
 };
 
-/**
- * Combined metrics for a test run, including global and per-endpoint data.
- */
-export type TestMetrics = {
-  global: MetricDocument[];
-  endpoints: MetricDocument[];
-};
-
-export type MetricCreate = Pick<
-  MetricDocument,
-  'testId' | 'url' | 'epoch' | 'metric'
->;
+export type MetricCreate = Pick<MetricDocument, 'testId' | 'epoch' | 'metric'>;
