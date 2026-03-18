@@ -129,13 +129,46 @@ export interface IMetricsAggregator {
     headers: Record<string, string>,
     body: string,
   ): void;
-  getCollectedResponseSamples(runId: string): Map<
-    string,
-    Array<{
-      statusCode: number;
-      headers: Record<string, string>;
-      body: string;
-    }>
-  >;
+  getCollectedResponseSamples(runId: string): Map<string, ResponseSample[]>;
   cleanupResponseSamples(runId: string): void;
 }
+
+export type AggregatedWorkerData = {
+  totalSuccess: number;
+  totalFailure: number;
+  totalRequests: number;
+  totalBytesSent: number;
+  totalBytesReceived: number;
+  endpointHistograms: Record<string, LatencyHistogram[]>;
+  endpointStatusCounts: Record<string, Record<number, number>>;
+  currentEndpointCounts: Record<string, { success: number; failure: number }>;
+};
+
+export const EMPTY_HISTOGRAM: LatencyHistogram = {
+  totalCount: 0,
+  min: 0,
+  max: 0,
+  mean: 0,
+  stdDev: 0,
+  percentiles: {},
+  buckets: [],
+};
+
+export type GlobalLatencyStats = {
+  averageLatency: number;
+  minLatency: number;
+  maxLatency: number;
+  p50Latency: number;
+  p95Latency: number;
+  p99Latency: number;
+};
+
+export type EndpointLatencyStats = GlobalLatencyStats & {
+  totalCount: number;
+};
+
+export type ResponseSample = {
+  statusCode: number;
+  headers: Record<string, string>;
+  body: string;
+};

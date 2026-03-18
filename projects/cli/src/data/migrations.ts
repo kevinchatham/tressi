@@ -79,6 +79,7 @@ export const JSON_MIGRATIONS: JsonMigrations = {
       } as VersionedTressiConfig;
     },
   },
+  '0.0.18': noopJsonMigration('0.0.18'),
 };
 
 /**
@@ -97,6 +98,7 @@ export const DATABASE_MIGRATIONS: Record<string, IDatabaseMigration> = {
       await db.deleteFrom('metrics').execute();
     },
   },
+  '0.0.18': noopDatabaseMigration,
 };
 
 async function dropColumnIfExists(

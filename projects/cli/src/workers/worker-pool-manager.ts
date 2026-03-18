@@ -11,7 +11,7 @@ import { Worker } from 'worker_threads';
 
 import { FileUtils } from '../utils/file-utils';
 import { EarlyExitCoordinator } from './early-exit-coordinator';
-import { MetricsAggregator } from './metrics-aggregator';
+import { MetricsAggregator } from './metrics-aggregation/metrics-aggregator';
 import { EndpointStateManager } from './shared-memory/endpoint-state-manager';
 import { HdrHistogramManager } from './shared-memory/hdr-histogram-manager';
 import { SharedMemoryFactory } from './shared-memory/shared-memory-factory';
