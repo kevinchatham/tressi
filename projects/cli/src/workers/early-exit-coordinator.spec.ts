@@ -29,7 +29,7 @@ describe('EarlyExitCoordinator', () => {
             enabled: false,
             errorRateThreshold: 0,
             exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
-            monitoringWindowMs: 5000,
+            monitoringWindowMs: 1000,
           },
         },
         {
@@ -43,7 +43,7 @@ describe('EarlyExitCoordinator', () => {
             enabled: false,
             errorRateThreshold: 0,
             exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
-            monitoringWindowMs: 5000,
+            monitoringWindowMs: 1000,
           },
         },
         {
@@ -57,7 +57,7 @@ describe('EarlyExitCoordinator', () => {
             enabled: false,
             errorRateThreshold: 0,
             exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
-            monitoringWindowMs: 5000,
+            monitoringWindowMs: 1000,
           },
         },
       ],
@@ -71,7 +71,7 @@ describe('EarlyExitCoordinator', () => {
           enabled: true,
           errorRateThreshold: 0.1,
           exitStatusCodes: [500, 502, 503],
-          monitoringWindowMs: 100,
+          monitoringWindowMs: 1000,
         },
       },
     } as TressiConfig;
@@ -151,7 +151,7 @@ describe('EarlyExitCoordinator', () => {
             enabled: false,
             errorRateThreshold: 0.5,
             exitStatusCodes: [],
-            monitoringWindowMs: 100,
+            monitoringWindowMs: 1000,
           },
         },
       };
@@ -191,7 +191,7 @@ describe('EarlyExitCoordinator', () => {
             enabled: false,
             errorRateThreshold: 0.5,
             exitStatusCodes: [],
-            monitoringWindowMs: 100,
+            monitoringWindowMs: 1000,
           },
         },
       };
@@ -220,6 +220,69 @@ describe('EarlyExitCoordinator', () => {
       // Clean up
       coordinator.stopMonitoring();
     });
+
+    it('should start monitoring based on per-request earlyExit even when global workerEarlyExit is disabled', async () => {
+      const configPerRequestOnly: TressiConfig = {
+        $schema: 'http://example.com/schema.json',
+        requests: [
+          {
+            url: 'http://example.com/api/error-prone',
+            method: 'GET',
+            payload: {},
+            headers: {},
+            rps: 10,
+            rampUpDurationSec: 0,
+            earlyExit: {
+              enabled: true,
+              errorRateThreshold: 0.1,
+              exitStatusCodes: [500],
+              monitoringWindowMs: 50,
+            },
+          },
+        ],
+        options: {
+          durationSec: 60,
+          rampUpDurationSec: 0,
+          headers: {},
+          threads: 1,
+          workerMemoryLimit: 512,
+          workerEarlyExit: {
+            enabled: false,
+            errorRateThreshold: 0,
+            exitStatusCodes: [],
+            monitoringWindowMs: 50,
+          },
+        },
+      } as TressiConfig;
+
+      vi.mocked(
+        mockStatsCounterManagers[0].getEndpointCounters,
+      ).mockReturnValue({
+        successCount: 1,
+        failureCount: 10,
+        bytesSent: 500,
+        bytesReceived: 1000,
+        statusCodeCounts: { 500: 10 },
+        sampledStatusCodes: [],
+        bodySampleIndices: [],
+      });
+
+      const perRequestCoordinator = new EarlyExitCoordinator(
+        configPerRequestOnly,
+        mockStatsCounterManagers,
+        mockEndpointStateManager,
+      );
+
+      perRequestCoordinator.startMonitoring();
+
+      // Wait for at least one monitoring cycle
+      await new Promise((resolve) => setTimeout(resolve, 150));
+
+      perRequestCoordinator.stopMonitoring();
+
+      // Endpoint should have been stopped despite global flag being false
+      expect(mockEndpointStateManager.stopEndpoint).toHaveBeenCalled();
+    });
   });
 
   describe('monitoring behavior', () => {
@@ -239,7 +302,7 @@ describe('EarlyExitCoordinator', () => {
               enabled: true,
               errorRateThreshold: 0.5,
               exitStatusCodes: [500, 502, 503],
-              monitoringWindowMs: 100,
+              monitoringWindowMs: 50,
             },
           },
           {
@@ -253,7 +316,7 @@ describe('EarlyExitCoordinator', () => {
               enabled: true,
               errorRateThreshold: 0.1,
               exitStatusCodes: [500, 502, 503],
-              monitoringWindowMs: 100,
+              monitoringWindowMs: 50,
             },
           },
         ],
@@ -267,7 +330,7 @@ describe('EarlyExitCoordinator', () => {
             enabled: true,
             errorRateThreshold: 0.1,
             exitStatusCodes: [500, 502, 503],
-            monitoringWindowMs: 100,
+            monitoringWindowMs: 50,
           },
         },
       } as TressiConfig;
@@ -353,7 +416,7 @@ describe('EarlyExitCoordinator', () => {
               enabled: true,
               errorRateThreshold: 0.1,
               exitStatusCodes: [500, 502, 503],
-              monitoringWindowMs: 100,
+              monitoringWindowMs: 1000,
             },
           },
         ],
@@ -367,7 +430,7 @@ describe('EarlyExitCoordinator', () => {
             enabled: true,
             errorRateThreshold: 0.1,
             exitStatusCodes: [500, 502, 503],
-            monitoringWindowMs: 100,
+            monitoringWindowMs: 1000,
           },
         },
       } as TressiConfig;
@@ -414,7 +477,7 @@ describe('EarlyExitCoordinator', () => {
               enabled: true,
               errorRateThreshold: 0.2,
               exitStatusCodes: [500],
-              monitoringWindowMs: 2000,
+              monitoringWindowMs: 1000,
             },
           },
           {
@@ -428,7 +491,7 @@ describe('EarlyExitCoordinator', () => {
               enabled: false,
               errorRateThreshold: 0,
               exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
-              monitoringWindowMs: 5000,
+              monitoringWindowMs: 1000,
             },
           },
         ],
@@ -472,7 +535,7 @@ describe('EarlyExitCoordinator', () => {
               enabled: false,
               errorRateThreshold: 0,
               exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
-              monitoringWindowMs: 5000,
+              monitoringWindowMs: 1000,
             },
           },
           {
@@ -486,7 +549,7 @@ describe('EarlyExitCoordinator', () => {
               enabled: false,
               errorRateThreshold: 0,
               exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
-              monitoringWindowMs: 5000,
+              monitoringWindowMs: 1000,
             },
           },
         ],
@@ -529,7 +592,7 @@ describe('EarlyExitCoordinator', () => {
               enabled: false,
               errorRateThreshold: 0.1,
               exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
-              monitoringWindowMs: 5000,
+              monitoringWindowMs: 1000,
             },
           },
         ],
@@ -556,6 +619,114 @@ describe('EarlyExitCoordinator', () => {
 
       expect(testCoordinator).toBeInstanceOf(EarlyExitCoordinator);
     });
+
+    it('should stop the error-prone endpoint and not the healthy endpoint when only per-request earlyExit is configured', async () => {
+      // Mirrors the e2e scenario: global workerEarlyExit is disabled, one endpoint has
+      // per-request earlyExit enabled with a 10% error Rate threshold.
+      const configGlobalDisabled: TressiConfig = {
+        $schema: 'http://example.com/schema.json',
+        requests: [
+          {
+            url: 'http://example.com/api/healthy',
+            method: 'GET',
+            payload: {},
+            headers: {},
+            rps: 10,
+            rampUpDurationSec: 0,
+            earlyExit: {
+              enabled: false,
+              errorRateThreshold: 0,
+              exitStatusCodes: [],
+              monitoringWindowMs: 1000,
+            },
+          },
+          {
+            url: 'http://example.com/api/error-prone',
+            method: 'GET',
+            payload: {},
+            headers: {},
+            rps: 10,
+            rampUpDurationSec: 0,
+            earlyExit: {
+              enabled: true,
+              errorRateThreshold: 0.1,
+              exitStatusCodes: [500],
+              monitoringWindowMs: 1000,
+            },
+          },
+        ],
+        options: {
+          durationSec: 60,
+          rampUpDurationSec: 0,
+          headers: {},
+          threads: 1,
+          workerMemoryLimit: 512,
+          workerEarlyExit: {
+            enabled: false,
+            errorRateThreshold: 0,
+            exitStatusCodes: [],
+            // monitoringWindowMs here drives the setInterval period even when global is
+            // disabled, so it must be low enough that the interval fires within the test wait.
+            monitoringWindowMs: 50,
+          },
+        },
+      } as TressiConfig;
+
+      // Single worker owns both endpoints:
+      //   globalEndpointIndex 0 → workerId 0, localEndpointIndex 0 (healthy)
+      //   globalEndpointIndex 1 → workerId 0, localEndpointIndex 1 (error-prone)
+      const singleWorkerManager: IStatsCounterManager = {
+        getEndpointsCount: vi.fn().mockReturnValue(2),
+        getEndpointCounters: vi
+          .fn()
+          .mockImplementation((localIndex: number) => {
+            if (localIndex === 0) {
+              // healthy endpoint – no errors
+              return {
+                successCount: 100,
+                failureCount: 0,
+                bytesSent: 1000,
+                bytesReceived: 2000,
+                statusCodeCounts: {},
+                sampledStatusCodes: [],
+                bodySampleIndices: [],
+              };
+            }
+            // error-prone endpoint – ~95% error rate
+            return {
+              successCount: 1,
+              failureCount: 20,
+              bytesSent: 500,
+              bytesReceived: 1000,
+              statusCodeCounts: { 500: 20 },
+              sampledStatusCodes: [],
+              bodySampleIndices: [],
+            };
+          }),
+        getAllEndpointCounters: vi.fn(),
+        recordRequest: vi.fn(),
+        recordStatusCode: vi.fn(),
+        recordBytesSent: vi.fn(),
+        recordBytesReceived: vi.fn(),
+      };
+
+      const testCoordinator = new EarlyExitCoordinator(
+        configGlobalDisabled,
+        [singleWorkerManager],
+        mockEndpointStateManager,
+      );
+
+      testCoordinator.startMonitoring();
+
+      await new Promise((resolve) => setTimeout(resolve, 150));
+
+      testCoordinator.stopMonitoring();
+
+      // Only the error-prone endpoint (global index 1) should be stopped
+      expect(mockEndpointStateManager.stopEndpoint).toHaveBeenCalledWith(1);
+      // The healthy endpoint (global index 0, earlyExit.enabled: false) must not be stopped
+      expect(mockEndpointStateManager.stopEndpoint).not.toHaveBeenCalledWith(0);
+    });
   });
 
   describe('status code checking', () => {
@@ -574,7 +745,7 @@ describe('EarlyExitCoordinator', () => {
               enabled: true,
               exitStatusCodes: [500, 502],
               errorRateThreshold: 0,
-              monitoringWindowMs: 5000,
+              monitoringWindowMs: 1000,
             },
           },
         ],
@@ -588,7 +759,7 @@ describe('EarlyExitCoordinator', () => {
             enabled: true,
             exitStatusCodes: [503],
             errorRateThreshold: 0,
-            monitoringWindowMs: 5000,
+            monitoringWindowMs: 1000,
           },
         },
       };

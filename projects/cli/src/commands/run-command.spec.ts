@@ -14,6 +14,7 @@ vi.mock('../core/config', () => ({
 
 vi.mock('../data/json-migration-manager', () => ({
   JsonMigrationManager: class {
+    validateVersion = vi.fn();
     migrateFile = vi.fn();
     run = vi.fn();
   },
@@ -30,25 +31,6 @@ describe('RunCommand', () => {
     );
   });
 
-  it('should execute run command with default config path', async () => {
-    const command = new RunCommand();
-    const runLoadTestMock = vi.mocked(runLoadTest);
-    const loadConfigMock = vi.mocked(loadConfig);
-
-    loadConfigMock.mockResolvedValue({
-      config: { name: 'test' },
-    } as unknown as Awaited<ReturnType<typeof loadConfig>>);
-
-    await command.execute();
-
-    expect(loadConfigMock).toHaveBeenCalledWith(undefined);
-    expect(runLoadTestMock).toHaveBeenCalledWith(
-      { name: 'test' },
-      undefined,
-      undefined,
-    );
-  });
-
   it('should execute run command with custom options', async () => {
     const command = new RunCommand();
     const runLoadTestMock = vi.mocked(runLoadTest);
@@ -58,7 +40,7 @@ describe('RunCommand', () => {
       config: { name: 'test' },
     } as unknown as Awaited<ReturnType<typeof loadConfig>>);
 
-    await command.execute('custom.json', 'results.json', true, true);
+    await command.execute('custom.json', 'results.json', true);
 
     expect(loadConfigMock).toHaveBeenCalledWith('custom.json');
     expect(runLoadTestMock).toHaveBeenCalledWith(
@@ -73,6 +55,8 @@ describe('RunCommand', () => {
     const loadConfigMock = vi.mocked(loadConfig);
     loadConfigMock.mockRejectedValue(new Error('Config Error'));
 
-    await expect(command.execute()).rejects.toThrow('Config Error');
+    await expect(command.execute('tressi.config.json')).rejects.toThrow(
+      'Config Error',
+    );
   });
 });

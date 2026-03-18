@@ -213,7 +213,7 @@ export class ConfigFormComponent {
             ...updatedRequests[index].earlyExit,
             enabled: true,
             exitStatusCodes: [500, 502, 503, 504],
-            monitoringWindowMs: 5000,
+            monitoringWindowMs: 1000,
           },
         };
       }
@@ -263,7 +263,7 @@ export class ConfigFormComponent {
         const currentEarlyExit = updatedRequests[index].earlyExit ?? {
           enabled: false,
           exitStatusCodes: [500, 502, 503, 504],
-          monitoringWindowMs: 5000,
+          monitoringWindowMs: 1000,
         };
 
         updatedRequests[index] = {

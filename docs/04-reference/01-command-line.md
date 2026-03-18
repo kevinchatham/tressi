@@ -16,7 +16,6 @@ Access system information and command assistance.
 
 - `--version`: Display the current version of the Tressi CLI.
 - `--help`: Display help information for the CLI or a specific command.
-- `--migrate`: Migrate configurations without prompting. Ideal for automated pipelines and headless environments.
 
 ### Run Load Tests
 
@@ -32,7 +31,6 @@ Execute a load test based on a JSON configuration schema.
 
 - `--export <path>`: Export test results to the specified directory.
 - `--silent`: Disable TUI and progress output. Optimized for automated pipelines and environments.
-- `--migrate`: Migrate the configuration file before running a test.
 
 **Remote Configurations:**
 
@@ -64,13 +62,33 @@ Start the management server and interactive dashboard.
 **Options:**
 
 - `--port <port>`: Specify the network port for the server. Defaults to `3108`.
-- `--migrate`: Migrate all configurations in the database.
 
 **Example:**
 
 - **Custom Server Port**:
   ```bash
   tressi serve --port 8080
+  ```
+
+### Migrate Configuration
+
+Migrate a configuration file to the current version.
+
+- `tressi migrate <config>`
+
+**Arguments:**
+
+- `<config>`: Path to the JSON configuration file to migrate.
+
+**Options:**
+
+- `--force`: Bypass confirmation prompts. Ideal for automated pipelines and headless environments.
+
+**Example:**
+
+- **Migrate Local File**:
+  ```bash
+  tressi migrate ./old-config.json --force
   ```
 
 ### Reset Database

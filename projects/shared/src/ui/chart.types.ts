@@ -85,6 +85,11 @@ export const CHART_OPTIONS: ChartOption[] = [
 export const DEFAULT_CHART_TYPE: ChartType = 'target_achieved';
 
 /**
+ * Default polling interval for line chart update mechanism
+ */
+export const DEFAULT_CHART_POLLING_INTERVAL = 1000;
+
+/**
  * Chart data structure for line charts
  * Supports both single series and multi-series data
  */

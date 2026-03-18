@@ -28,7 +28,7 @@ test.describe('Per-endpoint RPS Configuration Tests', () => {
 
       const results = await runLoadTest(config);
 
-      const peakRps = results.summary.global.peakRequestsPerSecond;
+      const peakRps = results.summary.global.averageRequestsPerSecond;
       const tolerance = expectedTotal * 0.1;
       expect(peakRps).toBeGreaterThanOrEqual(expectedTotal - tolerance);
       expect(peakRps).toBeLessThanOrEqual(expectedTotal + tolerance);
@@ -64,7 +64,7 @@ test.describe('Per-endpoint RPS Configuration Tests', () => {
 
       const results = await runLoadTest(config);
 
-      const peakRps = results.summary.global.peakRequestsPerSecond;
+      const peakRps = results.summary.global.averageRequestsPerSecond;
       const tolerance = expectedTotal * 0.1;
       expect(peakRps).toBeGreaterThanOrEqual(expectedTotal - tolerance);
       expect(peakRps).toBeLessThanOrEqual(expectedTotal + tolerance);

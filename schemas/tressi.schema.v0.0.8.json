@@ -63,5 +63,7 @@
       "additionalProperties": false
     }
   },
-  "$schema": "http://json-schema.org/draft-07/schema#"
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "deprecated": true,
+  "description": "This version of the schema is deprecated. Please migrate to v0.0.13 or higher."
 }

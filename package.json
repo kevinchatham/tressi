@@ -1,7 +1,7 @@
 {
   "name": "tressi",
-  "version": "0.0.16",
-  "description": "A modern load testing tool that brings professional API analysis to your workspace.",
+  "version": "0.0.17",
+  "description": "Deterministic load testing for API performance validation.",
   "license": "SEE LICENSE IN LICENSE",
   "author": "kevinchatham",
   "repository": {
@@ -67,6 +67,7 @@
     "test": "npm run test:cli && npm run test:ui && npm run test:e2e",
     "typecheck": "npm run typecheck -w projects/cli && npm run typecheck -w projects/shared",
     "ui:build": "npm run build -w projects/ui",
+    "ui:build:dev": "npm run build:dev -w projects/ui",
     "ui:serve": "npm run serve -w projects/ui"
   },
   "dependencies": {

@@ -1,6 +1,5 @@
 import { WorkerState } from '@tressi/shared/cli';
 import {
-  AggregatedMetrics,
   ResponseSamples,
   TestSummary,
   TressiConfig,
@@ -294,7 +293,7 @@ export class WorkerPoolManager {
    * It combines histogram data, counters, and network metrics from all workers
    * into a single comprehensive metrics object.
    */
-  getAggregatedResults(): AggregatedMetrics {
+  getAggregatedResults(): TestSummary {
     const endpoints = this._config.requests.map((req) => req.url);
     return this._metricsAggregator.getResults(this._workers.length, endpoints);
   }
@@ -343,11 +342,7 @@ export class WorkerPoolManager {
    * @returns TestSummary object
    */
   public getTestSummary(): TestSummary {
-    const endpoints = this._config.requests.map((req) => req.url);
-    return this._metricsAggregator.getTestSummary(
-      this._workers.length,
-      endpoints,
-    );
+    return this._metricsAggregator.getTestSummary();
   }
 
   /**

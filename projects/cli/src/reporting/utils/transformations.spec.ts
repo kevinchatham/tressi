@@ -1,11 +1,16 @@
-import { AggregatedMetrics, TressiConfig } from '@tressi/shared/common';
+import { TestSummary, TressiConfig } from '@tressi/shared/common';
 import { describe, expect, it } from 'vitest';
 
 import { transformAggregatedMetricToTestSummary } from './transformations';
 
 describe('transformAggregatedMetricToTestSummary', () => {
   it('should transform aggregated metrics to TestSummary', () => {
-    const metrics = {
+    const config = {
+      requests: [{ url: '/test', rps: 20 }],
+    } as unknown as TressiConfig;
+
+    const snapshot = {
+      configSnapshot: config,
       global: {
         totalRequests: 100,
         successfulRequests: 90,
@@ -17,13 +22,17 @@ describe('transformAggregatedMetricToTestSummary', () => {
         p95LatencyMs: 80,
         p99LatencyMs: 95,
         averageRequestsPerSecond: 10,
-        peakRequestsPerSecond: 20,
+        peakRequestsPerSecond: 10,
         networkBytesSent: 1000,
         networkBytesReceived: 2000,
         networkBytesPerSec: 200,
+        finalDurationSec: 10,
+        avgSystemCpuUsagePercent: 50,
+        avgProcessMemoryUsageMB: 100,
       },
-      endpoints: {
-        '/test': {
+      endpoints: [
+        {
+          url: '/test',
           totalRequests: 100,
           successfulRequests: 90,
           failedRequests: 10,
@@ -33,30 +42,18 @@ describe('transformAggregatedMetricToTestSummary', () => {
           p95LatencyMs: 80,
           p99LatencyMs: 95,
           averageRequestsPerSecond: 10,
-          peakRequestsPerSecond: 20,
+          peakRequestsPerSecond: 10,
           statusCodeDistribution: { 200: 90, 500: 10 },
           errorRate: 0.1,
+          targetAchieved: 0.5,
         },
-      },
-      cpuUsagePercent: 50,
-      memoryUsageMB: 100,
-    } as unknown as AggregatedMetrics;
+      ],
+    } as unknown as TestSummary;
 
-    const config = {
-      requests: [{ url: '/test', rps: 20 }],
-    } as unknown as TressiConfig;
-
-    const result = transformAggregatedMetricToTestSummary(
-      metrics,
-      10,
-      { '/test': 'GET' },
-      config,
-      1700000000000,
-      1700000010000,
-    );
+    const result = transformAggregatedMetricToTestSummary([snapshot]);
 
     expect(result.global.totalRequests).toBe(100);
     expect(result.endpoints[0].url).toBe('/test');
-    expect(result.endpoints[0].targetAchieved).toBe(1);
+    expect(result.endpoints[0].targetAchieved).toBe(0.5);
   });
 });

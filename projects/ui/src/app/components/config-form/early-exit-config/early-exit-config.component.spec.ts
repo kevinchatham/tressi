@@ -16,7 +16,7 @@ describe('EarlyExitConfigComponent', () => {
     enabled: true,
     errorRateThreshold: 0.5,
     exitStatusCodes: [500, 502],
-    monitoringWindowMs: 5000,
+    monitoringWindowMs: 1000,
   };
 
   beforeEach(async () => {

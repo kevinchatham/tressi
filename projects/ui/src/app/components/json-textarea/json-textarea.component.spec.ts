@@ -22,6 +22,7 @@ class MockCodeEditor {
   setup = input('');
   disabled = input(false);
   change = output<string>();
+  blur = output<void>();
 }
 
 describe('JsonTextareaComponent', () => {
@@ -89,20 +90,7 @@ describe('JsonTextareaComponent', () => {
   });
 
   describe('handleValueChange', () => {
-    it('should update value and emit change on valid JSON', () => {
-      const newValue = '{"a": 1, "b": "test"}';
-      const expectedParsed = { a: 1, b: 'test' };
-      const valueSpy = vi.fn();
-      component.valueChange.subscribe(valueSpy);
-
-      component.handleValueChange(newValue);
-
-      expect(component.value()).toEqual(expectedParsed);
-      expect(component.error()).toBeNull();
-      expect(valueSpy).toHaveBeenCalledWith(expectedParsed);
-    });
-
-    it('should set error on invalid JSON', () => {
+    it('should set error on invalid JSON but not update value', () => {
       const newValue = '{ invalid json }';
       const valueSpy = vi.fn();
       component.valueChange.subscribe(valueSpy);
@@ -110,7 +98,48 @@ describe('JsonTextareaComponent', () => {
       component.handleValueChange(newValue);
 
       expect(component.error()).toContain('Invalid JSON');
+      expect(component.value()).toStrictEqual({});
       expect(valueSpy).not.toHaveBeenCalled();
+    });
+
+    it('should clear error on valid JSON but not update value', () => {
+      component.error.set('Some error');
+      const newValue = '{"a": 1}';
+      const valueSpy = vi.fn();
+      component.valueChange.subscribe(valueSpy);
+
+      component.handleValueChange(newValue);
+
+      expect(component.error()).toBeNull();
+      expect(component.value()).toStrictEqual({});
+      expect(valueSpy).not.toHaveBeenCalled();
+    });
+
+    it('should handle empty or whitespace-only input by clearing error', () => {
+      component.error.set('Some error');
+      const valueSpy = vi.fn();
+      component.valueChange.subscribe(valueSpy);
+
+      component.handleValueChange('   ');
+
+      expect(component.error()).toBeNull();
+      expect(component.value()).toStrictEqual({});
+      expect(valueSpy).toHaveBeenCalled();
+    });
+  });
+
+  describe('handleBlur', () => {
+    it('should update value and emit change on valid JSON', () => {
+      const newValue = '{"a": 1, "b": "test"}';
+      const expectedParsed = { a: 1, b: 'test' };
+      const valueSpy = vi.fn();
+      component.valueChange.subscribe(valueSpy);
+
+      component.handleValueChange(newValue);
+      component.handleBlur();
+
+      expect(component.value()).toEqual(expectedParsed);
+      expect(valueSpy).toHaveBeenCalledWith(expectedParsed);
     });
 
     it('should handle empty or whitespace-only input', () => {
@@ -118,10 +147,25 @@ describe('JsonTextareaComponent', () => {
       component.valueChange.subscribe(valueSpy);
 
       component.handleValueChange('   ');
+      component.handleBlur();
 
-      expect(component.value()).toBeNull();
-      expect(component.error()).toBeNull();
-      expect(valueSpy).toHaveBeenCalledWith(null);
+      expect(component.value()).toStrictEqual({});
+      expect(valueSpy).toHaveBeenCalledWith({});
+    });
+
+    it('should not update value if there is a validation error', () => {
+      const initialValue = { initial: true };
+      component.value.set(initialValue);
+      const valueSpy = vi.fn();
+      component.valueChange.subscribe(valueSpy);
+
+      component.handleValueChange('{ invalid }');
+      expect(component.error()).not.toBeNull();
+
+      component.handleBlur();
+
+      expect(component.value()).toEqual(initialValue);
+      expect(valueSpy).not.toHaveBeenCalled();
     });
 
     it('should not process changes when disabled', () => {
@@ -131,7 +175,9 @@ describe('JsonTextareaComponent', () => {
       const valueSpy = vi.fn();
       component.valueChange.subscribe(valueSpy);
 
+      // Even if we call handleValueChange, it should return early if disabled
       component.handleValueChange('{"new": true}');
+      component.handleBlur();
 
       expect(component.value()).toEqual(initialValue);
       expect(valueSpy).not.toHaveBeenCalled();

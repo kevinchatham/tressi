@@ -3,6 +3,7 @@ import {
   ChartData,
   ChartOption,
   ChartType,
+  DEFAULT_CHART_POLLING_INTERVAL,
   DEFAULT_CHART_TYPE,
   PollingInterval,
 } from '@tressi/shared/ui';
@@ -34,7 +35,9 @@ export class PerformanceOverTimeComponent {
   readonly selectedChartType = input<ChartType>(DEFAULT_CHART_TYPE);
 
   /** Currently selected polling interval */
-  readonly pollingInterval = input<PollingInterval>(5000);
+  readonly pollingInterval = input<PollingInterval>(
+    DEFAULT_CHART_POLLING_INTERVAL,
+  );
 
   /** Available polling options */
   readonly pollingOptions = input<readonly { label: string; value: number }[]>(

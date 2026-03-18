@@ -2,10 +2,10 @@ import chalk from 'chalk';
 import { Command } from 'commander';
 
 import pkg from '../../../package.json';
+import { MigrateCommand } from './commands/migrate-command';
 import { ResetCommand } from './commands/reset-command';
 import { RunCommand } from './commands/run-command';
 import { ServeCommand } from './commands/serve-command';
-import { initializeDatabase } from './data/database';
 import { terminal } from './tui/terminal';
 
 /**
@@ -27,26 +27,8 @@ class TressiCLI {
   private _setupProgram(): void {
     this._program
       .name('tressi')
-      .description('A modern load testing tool for APIs.')
+      .description('Deterministic load testing for API performance validation.')
       .version(pkg.version);
-
-    this._program.option(
-      '-e, --export <path>',
-      'Export test results to the specified directory',
-    );
-    this._program.option(
-      '-s, --silent',
-      'Disable TUI and progress output',
-      false,
-    );
-
-    this._program.option(
-      '-m, --migrate',
-      'Migrate configurations without prompting',
-      false,
-    );
-
-    this._program.option('-f, --force', 'Force the database reset', false);
   }
 
   /**
@@ -59,15 +41,14 @@ class TressiCLI {
       .argument('<config>', 'Path or URL to JSON configuration file')
       .summary('Execute a load test')
       .description(RunCommand.getDescription())
-      .action(async (config, options, commandInstance) => {
+      .option(
+        '-e, --export <path>',
+        'Export test results to the specified directory',
+      )
+      .option('-s, --silent', 'Disable TUI and progress output', false)
+      .action(async (config, options) => {
         const command = new RunCommand();
-        const globalOptions = commandInstance.optsWithGlobals();
-        await command.execute(
-          config,
-          options.export || globalOptions.export,
-          options.silent || globalOptions.silent,
-          options.migrate || globalOptions.migrate,
-        );
+        await command.execute(config, options.export, options.silent);
       });
 
     // Serve command
@@ -76,13 +57,11 @@ class TressiCLI {
       .summary('Start the management server')
       .description(ServeCommand.getDescription())
       .option('-p, --port <port>', 'Server port (default: 3108)', '3108')
-      .action(async (options, commandInstance) => {
+      .action(async (options) => {
         const command = new ServeCommand();
-        const globalOptions = commandInstance.optsWithGlobals();
         const port = parseInt(options.port, 10);
         await command.execute({
           port,
-          migrate: options.migrate || globalOptions.migrate,
         });
       });
 
@@ -92,10 +71,21 @@ class TressiCLI {
       .summary('Reset the database')
       .description(ResetCommand.getDescription())
       .option('-f, --force', 'Bypass confirmation prompts.', false)
-      .action(async (options, commandInstance) => {
+      .action(async (options) => {
         const command = new ResetCommand();
-        const globalOptions = commandInstance.optsWithGlobals();
-        await command.execute(options.force || globalOptions.force);
+        await command.execute(options.force);
+      });
+
+    // Migrate command
+    this._program
+      .command('migrate')
+      .argument('<config>', 'Path to JSON configuration file')
+      .summary('Migrate a configuration file')
+      .description(MigrateCommand.getDescription())
+      .option('-f, --force', 'Bypass confirmation prompts.', false)
+      .action(async (config, options) => {
+        const command = new MigrateCommand();
+        await command.execute(config, options.force);
       });
   }
 
@@ -110,10 +100,7 @@ Commands:
   run <config>  Execute a load test using the specified configuration file
   serve         Start the management server
   reset         Reset the database
-
-Options:
-  -e, --export <path>  Export test results to the specified directory
-  -s, --silent         Disable TUI and progress output
+  migrate <config> Migrate a configuration file to the current version
 
 Examples:
   # Run a load test with a specific local configuration file
@@ -122,11 +109,8 @@ Examples:
   # Run a load test with a remote configuration file
   $ tressi run "https://example.com/tressi.config.json"
 
-  # Run a load test and export results to JSON
-  $ tressi run ./my-config.json --export ./results/test-results.json
-
-  # Run a load test silently and export to XLSX
-  $ tressi run ./my-config.json --silent --export ./results/test-results.xlsx
+  # Run a load test and export results
+  $ tressi run ./my-config.json --export ./results
 
   # Start the Tressi server on default port (3108 <-> c≈3x10^8 m/s)
   $ tressi serve
@@ -139,6 +123,12 @@ Examples:
 
   # Reset the Tressi database without confirmation
   $ tressi reset --force
+
+  # Migrate a configuration file
+  $ tressi migrate ./my-config.json
+
+  # Migrate a configuration file without confirmation
+  $ tressi migrate ./my-config.json --force
 `,
     );
   }
@@ -150,8 +140,6 @@ Examples:
     terminal.clear();
 
     try {
-      // Initialize database before any commands run
-      await initializeDatabase();
       await this._program.parseAsync(process.argv);
     } catch (error) {
       terminal.error(chalk.red(`CLI Error: ${(error as Error).message}`));

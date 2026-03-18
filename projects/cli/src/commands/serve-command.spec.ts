@@ -2,6 +2,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ServeCommand } from './serve-command';
 
+vi.mock('../data/database', () => ({
+  initializeDatabase: vi.fn().mockResolvedValue(undefined),
+}));
+
 const mockMigrationManager = {
   run: vi.fn(),
 };

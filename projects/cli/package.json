@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "build": "npm run generate:schema && npm run typecheck && tsup",
-    "run": "npm run build && node ./dist/cli.js",
+    "run": "npm run build && node ./dist/cli.js serve",
     "serve": "npm run build && node ./dist/cli.js serve",
     "generate:schema": "tsx generate-schema.ts",
     "test": "npm run typecheck:tests && vitest run --coverage",

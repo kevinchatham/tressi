@@ -1,6 +1,10 @@
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
-import { TestDocument, TestMetrics, TestStatus } from '@tressi/shared/common';
+import {
+  MetricDocument,
+  TestDocument,
+  TestStatus,
+} from '@tressi/shared/common';
 import { TestDetailResolvedData } from '@tressi/shared/ui';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -50,10 +54,7 @@ describe('testDetailResolver', () => {
       },
     } as unknown as TestDocument;
 
-    const mockMetrics: TestMetrics = {
-      global: [],
-      endpoints: [],
-    };
+    const mockMetrics: MetricDocument[] = [];
 
     // Mock the paramMap.get to return the testId
     (mockRoute.paramMap.get as () => string | null) = vi.fn(() => testId);

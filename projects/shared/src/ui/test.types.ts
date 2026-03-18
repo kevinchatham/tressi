@@ -1,4 +1,4 @@
-import { TestDocument, TestMetrics } from '../common';
+import { MetricDocument, TestDocument } from '../common';
 import { TestSummary } from '../common/reporting.types';
 
 /**
@@ -55,5 +55,5 @@ export const METRIC_TOOLTIPS: Record<string, string> = {
  */
 export type TestDetailResolvedData = {
   test: TestDocument;
-  metrics: TestMetrics;
+  metrics: MetricDocument[];
 };

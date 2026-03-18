@@ -8,25 +8,15 @@ import { JsonMigrationManager } from '../data/json-migration-manager';
 export class RunCommand {
   /**
    * Executes the run command.
-   * @param configPath Optional path to configuration file
-   * @param exportPath Optional path to export test results
-   * @param silent Optional flag to run in silent mode
-   * @param migrate Optional flag to automatically migrate outdated configurations
-   * @returns Promise that resolves when the command completes
-   * @throws Error when config loading or test execution fails
    */
   async execute(
-    configPath?: string,
+    configPath: string,
     exportPath?: string,
     silent?: boolean,
-    migrate?: boolean,
   ): Promise<void> {
-    // Run migrations before loading config
+    // Validate config version before loading
     const migrationManager = new JsonMigrationManager();
-    await migrationManager.migrateFile(
-      configPath || 'tressi.config.json',
-      migrate,
-    );
+    await migrationManager.validateVersion(configPath);
 
     const { config } = await loadConfig(configPath);
     await runLoadTest(config, exportPath, silent);

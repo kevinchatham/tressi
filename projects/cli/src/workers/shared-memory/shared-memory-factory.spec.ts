@@ -16,7 +16,7 @@ describe('SharedMemoryFactory', () => {
         enabled: false,
         errorRateThreshold: 0,
         exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
-        monitoringWindowMs: 5000,
+        monitoringWindowMs: 1000,
       },
     },
     {
@@ -30,7 +30,7 @@ describe('SharedMemoryFactory', () => {
         enabled: false,
         errorRateThreshold: 0,
         exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
-        monitoringWindowMs: 5000,
+        monitoringWindowMs: 1000,
       },
     },
     {
@@ -44,7 +44,7 @@ describe('SharedMemoryFactory', () => {
         enabled: false,
         errorRateThreshold: 0,
         exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
-        monitoringWindowMs: 5000,
+        monitoringWindowMs: 1000,
       },
     },
     {
@@ -58,7 +58,7 @@ describe('SharedMemoryFactory', () => {
         enabled: false,
         errorRateThreshold: 0,
         exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
-        monitoringWindowMs: 5000,
+        monitoringWindowMs: 1000,
       },
     },
   ];
@@ -339,7 +339,7 @@ describe('SharedMemoryFactory', () => {
             enabled: false,
             errorRateThreshold: 0,
             exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
-            monitoringWindowMs: 5000,
+            monitoringWindowMs: 1000,
           },
         }));
 

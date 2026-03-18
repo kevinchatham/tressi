@@ -24,7 +24,8 @@ on:
       older_than_days:
         description: 'Delete ANY run older than this many days (optional)'
         required: false
-        type: number
+        default: '30'
+        type: string
   schedule:
     - cron: '0 0 * * 0' # Every Sunday at midnight UTC
 
@@ -59,7 +60,7 @@ jobs:
             CUTOFF_ISO=$(date -u -d "$INPUT_DAYS days ago" +%Y-%m-%dT%H:%M:%SZ)
             RUNS=$(gh run list --status completed --limit 1000 --json id,createdAt --jq ".[] | select(.createdAt < \"$CUTOFF_ISO\") | .id")
           else
-            RUNS=$(gh run list --status completed --conclusion failure --limit 1000 --json id --jq '.[].id')
+            RUNS=$(gh run list --status completed --limit 1000 --json id,conclusion --jq '.[] | select(.conclusion == "failure") | .id')
           fi
 
           if [[ -z "$RUNS" ]]; then

@@ -62,6 +62,9 @@ describe('JsonMigrationManager', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.spyOn(process, 'exit').mockImplementation(() => {
+      throw new Error('process.exit called');
+    });
     // Reset MIGRATIONS object since it's shared across tests
     for (const key in JSON_MIGRATIONS) {
       delete JSON_MIGRATIONS[key];
@@ -134,7 +137,7 @@ describe('JsonMigrationManager', () => {
       vi.mocked(configStorage.getAll).mockResolvedValue([outdatedConfig]);
 
       // Mock a migration object
-      JSON_MIGRATIONS['0.0.13'] = {
+      JSON_MIGRATIONS['0.0.14'] = {
         summary: 'Test migration',
         up: vi.fn((config) => ({
           ...config,
@@ -145,7 +148,7 @@ describe('JsonMigrationManager', () => {
 
       await manager.run();
 
-      expect(JSON_MIGRATIONS['0.0.13'].up).toHaveBeenCalled();
+      expect(JSON_MIGRATIONS['0.0.14'].up).toHaveBeenCalled();
       expect(TressiConfigSchema.parse).toHaveBeenCalled();
       expect(configStorage.edit).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -171,7 +174,7 @@ describe('JsonMigrationManager', () => {
       vi.mocked(configStorage.getAll).mockResolvedValue([outdatedConfig]);
 
       // Force a migration failure
-      JSON_MIGRATIONS['0.0.13'] = {
+      JSON_MIGRATIONS['0.0.14'] = {
         summary: 'Failing migration',
         up: vi.fn(() => {
           throw new Error('Migration failed');
@@ -185,7 +188,7 @@ describe('JsonMigrationManager', () => {
 
       expect(errorSpy).toHaveBeenCalledWith(
         expect.stringContaining(
-          'Database migration complete with 1 failure(s)',
+          'Configuration migration complete with 1 failure(s)',
         ),
       );
       expect(errorSpy).toHaveBeenCalledWith(
@@ -237,7 +240,7 @@ describe('JsonMigrationManager', () => {
         } as ConfigDocument,
       ]);
 
-      await manager.run();
+      await expect(manager.run()).rejects.toThrow('process.exit called');
 
       expect(configStorage.edit).not.toHaveBeenCalled();
     });
@@ -254,7 +257,7 @@ describe('JsonMigrationManager', () => {
 
       vi.mocked(configStorage.getAll).mockResolvedValue([outdatedConfig]);
 
-      JSON_MIGRATIONS['0.0.13'] = {
+      JSON_MIGRATIONS['0.0.14'] = {
         summary: 'Test migration',
         up: vi.fn((config) => ({
           ...config,
@@ -332,7 +335,7 @@ describe('JsonMigrationManager', () => {
         }),
       );
 
-      JSON_MIGRATIONS['0.0.13'] = {
+      JSON_MIGRATIONS['0.0.14'] = {
         summary: 'Test migration',
         up: vi.fn((config) => ({
           ...config,
@@ -400,7 +403,9 @@ describe('JsonMigrationManager', () => {
         }),
       );
 
-      await manager.migrateFile(filePath);
+      await expect(manager.migrateFile(filePath)).rejects.toThrow(
+        'process.exit called',
+      );
 
       expect(fs.writeFile).not.toHaveBeenCalled();
     });
@@ -419,7 +424,9 @@ describe('JsonMigrationManager', () => {
         }),
       );
 
-      await manager.migrateFile(filePath);
+      await expect(manager.migrateFile(filePath)).rejects.toThrow(
+        'process.exit called',
+      );
 
       expect(fs.writeFile).not.toHaveBeenCalled();
     });
@@ -433,7 +440,7 @@ describe('JsonMigrationManager', () => {
         }),
       );
 
-      JSON_MIGRATIONS['0.0.13'] = {
+      JSON_MIGRATIONS['0.0.14'] = {
         summary: 'Test migration',
         up: vi.fn((config) => ({
           ...config,
@@ -452,6 +459,54 @@ describe('JsonMigrationManager', () => {
 
       expect(questionSpy).not.toHaveBeenCalled();
       expect(fs.writeFile).toHaveBeenCalled();
+    });
+
+    it('should handle non-patch version jumps', async () => {
+      vi.mocked(fs.access).mockResolvedValue(undefined);
+      vi.mocked(fs.readFile).mockResolvedValue(
+        JSON.stringify({
+          $schema:
+            'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.10.json',
+        }),
+      );
+
+      // Define migrations for 0.0.12 and 0.0.14 (skipping 0.0.11 and 0.0.13)
+      JSON_MIGRATIONS['0.0.12'] = {
+        summary: 'Jump 1',
+        up: vi.fn((config) => ({
+          ...config,
+          $schema: config.$schema.replace('0.0.10', '0.0.12'),
+          step1: true,
+        })),
+      };
+      JSON_MIGRATIONS['0.0.14'] = {
+        summary: 'Jump 2',
+        up: vi.fn((config) => ({
+          ...config,
+          $schema: config.$schema.replace('0.0.12', '0.0.14'),
+          step2: true,
+        })),
+      };
+
+      await manager.migrateFile(filePath, true);
+
+      expect(JSON_MIGRATIONS['0.0.12'].up).toHaveBeenCalled();
+      expect(JSON_MIGRATIONS['0.0.14'].up).toHaveBeenCalled();
+      expect(fs.writeFile).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.stringContaining('"step1": true'),
+        'utf-8',
+      );
+      expect(fs.writeFile).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.stringContaining('"step2": true'),
+        'utf-8',
+      );
+      expect(fs.writeFile).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.stringContaining('v0.0.14'),
+        'utf-8',
+      );
     });
   });
 });

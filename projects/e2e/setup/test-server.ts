@@ -44,6 +44,7 @@
  * MISCELLANEOUS:
  * - GET /rate-limit - 30% chance of returning 429 rate limit error
  * - GET /error-50-percent - 50% chance of returning 500 error
+ * - GET /chaos - Randomly misbehaves (latency, errors, malformed data, drops)
  * - GET / - Root endpoint with available endpoints documentation
  */
 /* eslint-disable no-console */
@@ -412,6 +413,53 @@ app.get('/error-50-percent', (c) => {
       timestamp: new Date().toISOString(),
     });
   }
+});
+
+// Chaos endpoint simulation
+app.get('/chaos', async (c) => {
+  const random = Math.random();
+
+  // 1% chance of connection drop (no response)
+  if (random < 0.01) {
+    if (!SILENT) {
+      console.log('Chaos: Dropping connection');
+    }
+
+    return new Promise(() => {});
+  }
+
+  // 2% chance of random delay (up to 10s)
+  if (random < 0.03) {
+    const delay = Math.random() * 10_000;
+    if (!SILENT) {
+      console.log(`Chaos: Delaying response by ${delay.toFixed(0)}ms`);
+    }
+    await new Promise((r) => setTimeout(r, delay));
+  }
+
+  // 2% chance of server error
+  if (random < 0.05) {
+    if (!SILENT) {
+      console.log('Chaos: Returning 500 error');
+    }
+    return c.json({ error: 'Chaos Error', message: 'Random failure' }, 500);
+  }
+
+  // 1% chance of malformed JSON
+  if (random < 0.06) {
+    if (!SILENT) {
+      console.log('Chaos: Returning malformed JSON');
+    }
+    return new Response('{ "malformed": ', {
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  return c.json({
+    status: 'success',
+    message: 'You survived the chaos',
+    timestamp: new Date().toISOString(),
+  });
 });
 
 // Headers endpoint

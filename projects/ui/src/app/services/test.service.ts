@@ -3,7 +3,6 @@ import {
   DeleteTestResponse,
   MetricDocument,
   TestDocument,
-  TestMetrics,
 } from '@tressi/shared/common';
 
 import { LogService } from './log.service';
@@ -91,9 +90,9 @@ export class TestService {
   /**
    * Get both global and endpoint metrics for a test
    * @param id The test ID to retrieve metrics for
-   * @returns Promise<TestMetrics> Object containing global and endpoint metrics
+   * @returns Promise<MetricDocument[]> Object containing global and endpoint metrics
    */
-  async getTestMetrics(id: string): Promise<TestMetrics> {
+  async getTestMetrics(id: string): Promise<MetricDocument[]> {
     try {
       const response = await this._metricsClient[':testId'].$get({
         param: { testId: id },
@@ -103,27 +102,7 @@ export class TestService {
         throw new Error(`Failed to load metrics: ${response.statusText}`);
       }
 
-      const allMetrics: MetricDocument[] = await response.json();
-
-      const global: MetricDocument[] = [];
-      const endpoints: MetricDocument[] = [];
-
-      allMetrics.forEach((m) => {
-        if (m.url === 'global') {
-          global.push(m);
-        } else {
-          endpoints.push(m);
-        }
-      });
-
-      // Sort metrics by timestamp (epoch)
-      global.sort((a, b) => a.epoch - b.epoch);
-      endpoints.sort((a, b) => a.epoch - b.epoch);
-
-      return {
-        global,
-        endpoints,
-      };
+      return await response.json();
     } catch (error) {
       this._logService.error('Failed to load test metrics:', error);
       throw error;

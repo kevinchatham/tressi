@@ -1,7 +1,6 @@
 import { TressiRequestConfig } from '../common/config.types';
 import type { IGlobalServerEvents, IRunnerEvents } from '../common/event.types';
-import { AggregatedMetrics } from '../common/metrics.types';
-import { LatencyHistogram } from '../common/reporting.types';
+import { LatencyHistogram, TestSummary } from '../common/reporting.types';
 import { EndpointState, WorkerState } from '../common/test.types';
 
 /**
@@ -122,7 +121,7 @@ export interface IEarlyExitCoordinator {
 export interface IMetricsAggregator {
   startPolling(intervalMs?: number): void;
   stopPolling(): void;
-  getResults(workersCount: number, endpoints: string[]): AggregatedMetrics;
+  getResults(workersCount: number, endpoints: string[]): TestSummary;
   recordResponseSample(
     runId: string,
     url: string,

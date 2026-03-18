@@ -28,15 +28,14 @@ export type TestsTable = {
   status: TestStatus;
   epoch_created_at: number;
   error: string | null;
-  summary: string | null; // JSON string of TestSummary
+  summary: string | null; // JSON string of TestSummary representing the final aggregation.
 };
 
 export type MetricsTable = {
   id: Generated<string>;
   test_id: string;
-  url: string; // 'global' for global metrics, or the endpoint URL
   epoch: number;
-  metric: string; // JSON string of Metric
+  metric: string; // JSON string of TestSummary representing a single point in time.
 };
 
 export type MigrationRow = Selectable<MigrationsTable>;
