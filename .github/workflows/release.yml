@@ -20,6 +20,7 @@ on:
 permissions:
   id-token: write
   contents: read
+  packages: write
 
 env:
   REGISTRY: ghcr.io
@@ -32,28 +33,17 @@ jobs:
     outputs:
       npm_publish: ${{ steps.check-npm.outputs.publish }}
       docker_publish: ${{ steps.check-docker.outputs.publish }}
+      create_release: ${{ steps.check-release.outputs.publish }}
       version: ${{ steps.check-npm.outputs.version }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Set up Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: 20
           registry-url: 'https://registry.npmjs.org/'
-
-      - name: Validate NPM Token
-        run: npm whoami
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.TRESSI_NPM_TOKEN }}
-
-      - name: Log into registry ${{ env.REGISTRY }}
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.TRESSI_GITHUB_TOKEN }}
 
       - name: Check NPM version status
         id: check-npm
@@ -73,6 +63,13 @@ jobs:
             echo "publish=false" >> $GITHUB_OUTPUT
           fi
 
+      - name: Log into registry ${{ env.REGISTRY }}
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Check Docker version status
         id: check-docker
         run: |
@@ -87,6 +84,20 @@ jobs:
             echo "publish=true" >> $GITHUB_OUTPUT
           fi
 
+      - name: Check GitHub Release status
+        id: check-release
+        run: |
+          TAG_NAME="v${{ steps.check-npm.outputs.version }}"
+          if gh release view "$TAG_NAME" > /dev/null 2>&1; then
+            echo "Release $TAG_NAME already exists. Skipping."
+            echo "publish=false" >> $GITHUB_OUTPUT
+          else
+            echo "Release $TAG_NAME does not exist. Proceeding."
+            echo "publish=true" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   publish-npm:
     name: Publish to NPM
     needs: pre-flight
@@ -94,14 +105,15 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      id-token: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Set up Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: 20
           registry-url: 'https://registry.npmjs.org/'
 
       - name: Install dependencies and build
@@ -110,22 +122,21 @@ jobs:
           npm run build
 
       - name: Publish to NPM
-        run: npm publish
+        run: npm publish --provenance --access public
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.TRESSI_NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   publish-docker:
     name: Publish Docker Image
-    needs: [pre-flight, publish-npm]
+    needs: pre-flight
     if: needs.pre-flight.outputs.docker_publish == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
-      id-token: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -135,7 +146,7 @@ jobs:
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
-          password: ${{ secrets.TRESSI_GITHUB_TOKEN }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Extract Docker metadata
         id: meta
@@ -143,19 +154,18 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=semver,pattern={{version}},value=v${{ needs.pre-flight.outputs.version }}
-            type=semver,pattern={{major}}.{{minor}},value=v${{ needs.pre-flight.outputs.version }}
-            type=ref,event=branch
-            type=sha
+            type=semver,pattern={{version}},value=${{ needs.pre-flight.outputs.version }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ needs.pre-flight.outputs.version }}
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
-          platforms: linux/amd64,linux/arm64
           context: .
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/amd64,linux/arm64
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -163,14 +173,14 @@ jobs:
     name: Create GitHub Release
     needs: [pre-flight, publish-npm, publish-docker]
     if: |
-      always() &&
-      (needs.publish-npm.result == 'success' && needs.publish-docker.result == 'success')
+      always() && 
+      needs.pre-flight.outputs.create_release == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Create GitHub Release
         run: |
@@ -178,4 +188,4 @@ jobs:
             --title "Release v${{ needs.pre-flight.outputs.version }}" \
             --generate-notes
         env:
-          GITHUB_TOKEN: ${{ secrets.TRESSI_GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
