@@ -5,9 +5,8 @@ customModes:
       - read
       - command
       - mcp
-      - browser
-    name: 🔎 Prompt Generator
-    description: Analyzes the codebase architecture and generates precise implementation prompts for other agents.
+    name: Generate Prompt
+    description: ""
     roleDefinition: >
       You are a software architect who analyzes codebases to understand structure, patterns, dependencies, and implementation requirements. 
       Your sole task is to examine the project's files (src/, docs/, tests/, config files) and synthesize this information into a 
@@ -36,8 +35,8 @@ customModes:
       - read
       - command
       - mcp
-    name: 📝 Commit Generator
-    description: Generates a highly accurate conventional commit message from the current git diff.
+    name: Generate Commit
+    description: ""
     roleDefinition: >
       You are a commit message specialist. Your only task is to examine the changes in a git diff 
       and produce a conventional commit message that accurately describes the changes and justify their existence. 
@@ -65,17 +64,13 @@ customModes:
             - Add node type to tsconfig.app.json
 
   - slug: pr-generator
-    name: 📝 PR Generator
+    name: Generate PR
     source: project
     groups:
       - read
       - command
       - mcp
-    description: >
-      Generates a detailed, high-signal pull request description by deeply analyzing
-      git history, commit messages, and code changes between the current branch and
-      the target merge branch. Output emphasizes clarity, architecture, impact,
-      and rationale over brevity.
+    description: ""
     roleDefinition: >
       You are a pull request documentation specialist.
       Your task is to examine git history, commit messages, and diffs between the
