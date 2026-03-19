@@ -115,7 +115,7 @@ jobs:
         with:
           node-version: 20
           registry-url: 'https://registry.npmjs.org/'
-          node-auth-token: ${{ secrets.NPM_TOKEN }}
+          node-auth-token: ${{ secrets.TRESSI_NPM_TOKEN }}
 
       - name: Install dependencies and build
         run: |
@@ -145,7 +145,7 @@ jobs:
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.TRESSI_GITHUB_TOKEN }}
 
       - name: Extract Docker metadata
         id: meta
