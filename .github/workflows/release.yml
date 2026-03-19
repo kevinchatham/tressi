@@ -68,7 +68,7 @@ jobs:
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.TRESSI_GITHUB_TOKEN }}
 
       - name: Check Docker version status
         id: check-docker
@@ -96,7 +96,7 @@ jobs:
             echo "publish=true" >> $GITHUB_OUTPUT
           fi
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.TRESSI_GITHUB_TOKEN }}
 
   publish-npm:
     name: Publish to NPM
@@ -189,4 +189,4 @@ jobs:
             --title "Release v${{ needs.pre-flight.outputs.version }}" \
             --generate-notes
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.TRESSI_GITHUB_TOKEN }}
