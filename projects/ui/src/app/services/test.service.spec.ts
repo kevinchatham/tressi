@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { TestDocument } from '@tressi/shared/common';
+import type { TestDocument } from '@tressi/shared/common';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 
 import { LogService } from './log.service';
@@ -31,19 +31,19 @@ describe('TestService', () => {
 
   beforeEach(() => {
     const mockTestsClient = {
-      $get: vi.fn(),
       ':id': {
-        $get: vi.fn(),
         $delete: vi.fn(),
+        $get: vi.fn(),
       },
+      $get: vi.fn(),
     };
 
     mockRPC = {
       client: {
-        tests: mockTestsClient,
         metrics: {
           ':testId': { $get: vi.fn() },
         },
+        tests: mockTestsClient,
       },
     } as unknown as typeof mockRPC; // Cast to our mock structure
 
@@ -66,14 +66,14 @@ describe('TestService', () => {
     it('should filter and sort tests by configId and creation date', async () => {
       // Use Partial<TestDocument> for type safety without defining every field
       const mockTests: Partial<TestDocument>[] = [
-        { id: '1', configId: 'config-A', epochCreatedAt: 1000 },
-        { id: '2', configId: 'config-A', epochCreatedAt: 3000 },
-        { id: '3', configId: 'config-B', epochCreatedAt: 2000 },
+        { configId: 'config-A', epochCreatedAt: 1000, id: '1' },
+        { configId: 'config-A', epochCreatedAt: 3000, id: '2' },
+        { configId: 'config-B', epochCreatedAt: 2000, id: '3' },
       ];
 
       mockRPC.client.tests.$get.mockResolvedValue({
-        ok: true,
         json: async () => mockTests,
+        ok: true,
       });
 
       const result = await service.getTestsByConfigId('config-A');
@@ -89,8 +89,8 @@ describe('TestService', () => {
       const mockTest = {
         summary: {
           global: {
-            epochStartedAt: 1000,
             epochEndedAt: 5000,
+            epochStartedAt: 1000,
           },
         },
       } as TestDocument; // Cast to the actual interface

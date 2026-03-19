@@ -1,10 +1,11 @@
-import { Component, TemplateRef, viewChild } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Component, type TemplateRef, viewChild } from '@angular/core';
+import { type ComponentFixture, TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { CollapsibleCardComponent } from './collapsible-card.component';
 
 @Component({
+  imports: [CollapsibleCardComponent],
   template: `
     <app-collapsible-card
       [title]="'Test Title'"
@@ -19,7 +20,6 @@ import { CollapsibleCardComponent } from './collapsible-card.component';
       <div id="main-content">Main Content</div>
     </app-collapsible-card>
   `,
-  imports: [CollapsibleCardComponent],
 })
 class TestHostComponent {
   collapsed = false;
@@ -48,9 +48,7 @@ describe('CollapsibleCardComponent', () => {
   });
 
   it('should display the title', () => {
-    const titleElement = fixture.nativeElement.querySelector(
-      '[data-e2e="collapsible-card-title"]',
-    );
+    const titleElement = fixture.nativeElement.querySelector('[data-e2e="collapsible-card-title"]');
     expect(titleElement.textContent).toContain('Test Title');
   });
 
@@ -104,9 +102,7 @@ describe('CollapsibleCardComponent', () => {
     fixture.componentRef.setInput('collapsed', true);
     fixture.detectChanges();
 
-    const contentArea = fixture.nativeElement.querySelector(
-      '.collapse-transition',
-    );
+    const contentArea = fixture.nativeElement.querySelector('.collapse-transition');
     expect(contentArea.classList.contains('collapse-collapsed')).toBe(true);
     expect(contentArea.classList.contains('collapse-expanded')).toBe(false);
   });
@@ -115,9 +111,7 @@ describe('CollapsibleCardComponent', () => {
     fixture.componentRef.setInput('collapsed', false);
     fixture.detectChanges();
 
-    const contentArea = fixture.nativeElement.querySelector(
-      '.collapse-transition',
-    );
+    const contentArea = fixture.nativeElement.querySelector('.collapse-transition');
     expect(contentArea.classList.contains('collapse-collapsed')).toBe(false);
     expect(contentArea.classList.contains('collapse-expanded')).toBe(true);
   });
@@ -136,15 +130,13 @@ describe('CollapsibleCardComponent with Content Projection', () => {
   });
 
   it('should project header content', () => {
-    const headerContent =
-      hostFixture.nativeElement.querySelector('#header-content');
+    const headerContent = hostFixture.nativeElement.querySelector('#header-content');
     expect(headerContent).toBeTruthy();
     expect(headerContent.textContent).toContain('Header Content');
   });
 
   it('should project main content', () => {
-    const mainContent =
-      hostFixture.nativeElement.querySelector('#main-content');
+    const mainContent = hostFixture.nativeElement.querySelector('#main-content');
     expect(mainContent).toBeTruthy();
     expect(mainContent.textContent).toContain('Main Content');
   });

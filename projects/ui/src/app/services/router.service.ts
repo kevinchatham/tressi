@@ -1,5 +1,5 @@
 import { Location } from '@angular/common';
-import { computed, inject, Injectable, signal } from '@angular/core';
+import { computed, Injectable, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import {
   NavigationCancel,
@@ -8,7 +8,7 @@ import {
   NavigationStart,
   Router,
 } from '@angular/router';
-import { AppRoute, AppRoutes } from '@tressi/shared/ui';
+import { type AppRoute, AppRoutes } from '@tressi/shared/ui';
 import { filter, map } from 'rxjs';
 
 import { LocalStorageService } from './local-storage.service';
@@ -48,15 +48,11 @@ export class AppRouterService {
     this.getCurrentUrl().includes(AppRoutes.SERVER_UNAVAILABLE),
   );
 
-  isOnDocsSubroute = computed(() =>
-    this.getCurrentUrl().includes(`/${AppRoutes.DOCS}/`),
-  );
+  isOnDocsSubroute = computed(() => this.getCurrentUrl().includes(`/${AppRoutes.DOCS}/`));
 
   /** Navigates to the dashboard, optionally for a specific configuration */
   toDashboard(configId?: string): void {
-    const path = configId
-      ? [`/${AppRoutes.DASHBOARD}`, configId]
-      : [`/${AppRoutes.DASHBOARD}`];
+    const path = configId ? [`/${AppRoutes.DASHBOARD}`, configId] : [`/${AppRoutes.DASHBOARD}`];
     this._router.navigate(path);
   }
 
@@ -124,13 +120,7 @@ export class AppRouterService {
     this._router.events
       .pipe(
         filter(
-          (
-            event,
-          ): event is
-            | NavigationStart
-            | NavigationEnd
-            | NavigationCancel
-            | NavigationError =>
+          (event): event is NavigationStart | NavigationEnd | NavigationCancel | NavigationError =>
             event instanceof NavigationStart ||
             event instanceof NavigationEnd ||
             event instanceof NavigationCancel ||

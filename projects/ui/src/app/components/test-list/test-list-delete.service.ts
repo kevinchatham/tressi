@@ -1,5 +1,5 @@
-import { inject, Injectable } from '@angular/core';
-import { DeleteResult } from '@tressi/shared/ui';
+import { Injectable, inject } from '@angular/core';
+import type { DeleteResult } from '@tressi/shared/ui';
 
 import { LogService } from '../../services/log.service';
 import { TestService } from '../../services/test.service';
@@ -24,28 +24,27 @@ export class TestListDeleteService {
       if (result.success) {
         this._logService.info(`Test ${testId} deleted successfully`);
         return {
-          success: true,
           deletedCount: 1,
-          failedCount: 0,
           errors: [],
+          failedCount: 0,
+          success: true,
         };
       } else {
         return {
-          success: false,
           deletedCount: 0,
-          failedCount: 1,
           errors: [`Failed to delete test ${testId}`],
+          failedCount: 1,
+          success: false,
         };
       }
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       this._logService.error(`Failed to delete test ${testId}:`, error);
       return {
-        success: false,
         deletedCount: 0,
-        failedCount: 1,
         errors: [errorMessage],
+        failedCount: 1,
+        success: false,
       };
     }
   }
@@ -58,10 +57,10 @@ export class TestListDeleteService {
   async deleteTests(testIds: string[]): Promise<DeleteResult> {
     if (testIds.length === 0) {
       return {
-        success: true,
         deletedCount: 0,
-        failedCount: 0,
         errors: [],
+        failedCount: 0,
+        success: true,
       };
     }
 
@@ -75,9 +74,7 @@ export class TestListDeleteService {
         (r) => r.status === 'fulfilled' && r.value.success,
       );
       const failedDeletions = results.filter(
-        (r) =>
-          r.status === 'rejected' ||
-          (r.status === 'fulfilled' && !r.value.success),
+        (r) => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.success),
       );
 
       const errors: string[] = [];
@@ -90,26 +87,23 @@ export class TestListDeleteService {
       });
 
       if (successfulDeletions.length > 0) {
-        this._logService.info(
-          `${successfulDeletions.length} tests deleted successfully`,
-        );
+        this._logService.info(`${successfulDeletions.length} tests deleted successfully`);
       }
 
       return {
-        success: failedDeletions.length === 0,
         deletedCount: successfulDeletions.length,
-        failedCount: failedDeletions.length,
         errors,
+        failedCount: failedDeletions.length,
+        success: failedDeletions.length === 0,
       };
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       this._logService.error('Failed to delete tests:', error);
       return {
-        success: false,
         deletedCount: 0,
-        failedCount: testIds.length,
         errors: [errorMessage],
+        failedCount: testIds.length,
+        success: false,
       };
     }
   }

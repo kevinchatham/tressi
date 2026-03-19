@@ -1,24 +1,35 @@
 import { Component, computed, input, model, output } from '@angular/core';
 import {
+  type ButtonColor,
+  type IconName,
   BUTTON_COLORS as SHARED_BUTTON_COLORS,
-  ButtonColor,
-  IconName,
 } from '@tressi/shared/ui';
 
 import { IconComponent } from '../icon/icon.component';
 
-export const BUTTON_COLORS = SHARED_BUTTON_COLORS;
+export const BUTTON_COLORS: readonly [
+  'primary',
+  'secondary',
+  'accent',
+  'rainbow',
+  'default',
+  'neutral',
+  'info',
+  'success',
+  'warning',
+  'error',
+] = SHARED_BUTTON_COLORS;
 
 @Component({
-  selector: 'app-button',
-  imports: [IconComponent],
-  templateUrl: './button.component.html',
-  styleUrl: './button.component.css',
   host: {
-    '[style.pointer-events]': 'disabled() ? "none" : "auto"',
     '[attr.data-e2e]': 'dataE2e()',
+    '[style.pointer-events]': 'disabled() ? "none" : "auto"',
     class: 'contents',
   },
+  imports: [IconComponent],
+  selector: 'app-button',
+  styleUrl: './button.component.css',
+  templateUrl: './button.component.html',
 })
 export class ButtonComponent {
   dataE2e = input<string | undefined>(undefined, { alias: 'data-e2e' });

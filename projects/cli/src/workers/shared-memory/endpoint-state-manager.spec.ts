@@ -105,12 +105,8 @@ describe('EndpointStateManager', () => {
     it('should throw error for invalid endpoint index', () => {
       const manager = new EndpointStateManager(3);
 
-      expect(() => manager.getEndpointState(-1)).toThrow(
-        'Invalid endpoint index: -1',
-      );
-      expect(() => manager.getEndpointState(3)).toThrow(
-        'Invalid endpoint index: 3',
-      );
+      expect(() => manager.getEndpointState(-1)).toThrow('Invalid endpoint index: -1');
+      expect(() => manager.getEndpointState(3)).toThrow('Invalid endpoint index: 3');
     });
   });
 
@@ -243,11 +239,9 @@ describe('EndpointStateManager', () => {
       // All states should be consistent
       for (let i = 0; i < 10; i++) {
         const state = manager.getEndpointState(i);
-        expect([
-          EndpointState.RUNNING,
-          EndpointState.STOPPED,
-          EndpointState.ERROR,
-        ]).toContain(state);
+        expect([EndpointState.RUNNING, EndpointState.STOPPED, EndpointState.ERROR]).toContain(
+          state,
+        );
       }
     });
   });

@@ -1,4 +1,4 @@
-import { TressiRequestConfig } from '@tressi/shared/common';
+import type { TressiRequestConfig } from '@tressi/shared/common';
 
 /**
  * WorkerRateLimiter - Token bucket rate limiter for controlling request throughput per endpoint.
@@ -70,24 +70,17 @@ export class WorkerRateLimiter {
    * // Returns up to 15 requests if tokens available
    * ```
    */
-  getAvailableRequests(
-    batchSize: number = 20,
-    testTimeElapsed: number = 0,
-  ): TressiRequestConfig[] {
+  getAvailableRequests(batchSize: number = 20, testTimeElapsed: number = 0): TressiRequestConfig[] {
     const available: TressiRequestConfig[] = [];
 
-    for (
-      let i = 0;
-      i < this._endpoints.length && available.length < batchSize;
-      i++
-    ) {
+    for (let i = 0; i < this._endpoints.length && available.length < batchSize; i++) {
       // Use testTimeElapsed for elapsed time calculation to support fake timers
       const elapsed = testTimeElapsed - this._lastRefill[i];
 
       const rps = this._calculateRps({
-        targetRps: this._endpoints[i].rps,
         elapsedMs: testTimeElapsed,
         rampUpDurationSec: this._rampUpDurationsSec[i],
+        targetRps: this._endpoints[i].rps,
       });
 
       const refill = Math.floor((elapsed / 1000) * rps);

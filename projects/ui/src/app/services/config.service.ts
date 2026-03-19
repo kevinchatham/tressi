@@ -1,5 +1,5 @@
-import { inject, Injectable } from '@angular/core';
-import { ConfigDocument, SaveConfigRequest } from '@tressi/shared/common';
+import { Injectable, inject } from '@angular/core';
+import type { ConfigDocument, SaveConfigRequest } from '@tressi/shared/common';
 
 import { RPCService } from './rpc.service';
 

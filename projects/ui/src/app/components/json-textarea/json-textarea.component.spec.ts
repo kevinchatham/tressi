@@ -1,6 +1,6 @@
 import { CodeEditor } from '@acrodata/code-editor';
 import { Component, input, output, signal } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { type ComponentFixture, TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ThemeService } from '../../services/theme.service';
@@ -9,8 +9,8 @@ import { JsonTextareaComponent } from './json-textarea.component';
 // Mock CodeEditor component to avoid loading heavy dependencies
 @Component({
   selector: 'code-editor',
-  template: '',
   standalone: true,
+  template: '',
 })
 class MockCodeEditor {
   value = input('');
@@ -32,16 +32,16 @@ describe('JsonTextareaComponent', () => {
 
   beforeEach(async () => {
     themeServiceMock = {
-      isDark: signal(false),
       base100: signal('#ffffff'),
+      baseContent: signal('#000000'),
+      info: signal('#00ffff'),
+      isDark: signal(false),
+      neutral: signal('#888888'),
       neutralContent: signal('#000000'),
       primary: signal('#0000ff'),
       secondary: signal('#00ff00'),
       success: signal('#00ff00'),
       warning: signal('#ffff00'),
-      info: signal('#00ffff'),
-      neutral: signal('#888888'),
-      baseContent: signal('#000000'),
     };
 
     await TestBed.configureTestingModule({
@@ -49,8 +49,8 @@ describe('JsonTextareaComponent', () => {
       providers: [{ provide: ThemeService, useValue: themeServiceMock }],
     })
       .overrideComponent(JsonTextareaComponent, {
-        remove: { imports: [CodeEditor] },
         add: { imports: [MockCodeEditor] },
+        remove: { imports: [CodeEditor] },
       })
       .compileComponents();
 
@@ -75,7 +75,7 @@ describe('JsonTextareaComponent', () => {
     });
 
     it('should return stringified JSON when value is an object', () => {
-      const val = { foo: 'bar', baz: 123 };
+      const val = { baz: 123, foo: 'bar' };
       component.value.set(val);
       expect(component.displayValue()).toBe(JSON.stringify(val, null, 2));
     });

@@ -1,5 +1,5 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ConfigDocument, defaultTressiConfig } from '@tressi/shared/common';
+import { type ComponentFixture, TestBed } from '@angular/core/testing';
+import { type ConfigDocument, defaultTressiConfig } from '@tressi/shared/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ExportConfigButtonComponent } from './export-config-button.component';
@@ -8,34 +8,14 @@ describe('ExportConfigButtonComponent', () => {
   let component: ExportConfigButtonComponent;
   let fixture: ComponentFixture<ExportConfigButtonComponent>;
 
-  const createMockConfig = (
-    overrides: Partial<ConfigDocument> = {},
-  ): ConfigDocument => ({
-    id: 'test-id',
-    name: 'Test Config',
+  const createMockConfig = (overrides: Partial<ConfigDocument> = {}): ConfigDocument => ({
     config: {
       ...defaultTressiConfig,
-      requests: [
-        {
-          url: 'https://example.com/api',
-          method: 'GET',
-          rps: 10,
-          rampUpDurationSec: 5,
-          earlyExit: {
-            enabled: false,
-            errorRateThreshold: 0,
-            exitStatusCodes: [],
-            monitoringWindowMs: 1000,
-          },
-          headers: {},
-          payload: {},
-        },
-      ],
       options: {
         ...defaultTressiConfig.options,
         durationSec: 60,
-        threads: 4,
         rampUpDurationSec: 2,
+        threads: 4,
         workerEarlyExit: {
           enabled: false,
           errorRateThreshold: 0,
@@ -43,9 +23,27 @@ describe('ExportConfigButtonComponent', () => {
           monitoringWindowMs: 1000,
         },
       },
+      requests: [
+        {
+          earlyExit: {
+            enabled: false,
+            errorRateThreshold: 0,
+            exitStatusCodes: [],
+            monitoringWindowMs: 1000,
+          },
+          headers: {},
+          method: 'GET',
+          payload: {},
+          rampUpDurationSec: 5,
+          rps: 10,
+          url: 'https://example.com/api',
+        },
+      ],
     },
     epochCreatedAt: 1700000000000,
     epochUpdatedAt: 1700000001000,
+    id: 'test-id',
+    name: 'Test Config',
     ...overrides,
   });
 
@@ -105,9 +103,7 @@ describe('ExportConfigButtonComponent', () => {
       createObjectURLSpy = vi
         .spyOn(URL, 'createObjectURL')
         .mockImplementation(() => 'blob:http://test');
-      revokeObjectURLSpy = vi
-        .spyOn(URL, 'revokeObjectURL')
-        .mockImplementation(() => undefined);
+      revokeObjectURLSpy = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
     });
 
     afterEach(() => {
@@ -131,9 +127,9 @@ describe('ExportConfigButtonComponent', () => {
 
     it('should use epochUpdatedAt for timestamp when available', async () => {
       const mockConfig = createMockConfig({
-        name: 'Test Config',
-        epochUpdatedAt: 1700000005000,
         epochCreatedAt: 1700000000000,
+        epochUpdatedAt: 1700000005000,
+        name: 'Test Config',
       });
       fixture.componentRef.setInput('config', mockConfig);
       fixture.detectChanges();
@@ -147,8 +143,8 @@ describe('ExportConfigButtonComponent', () => {
 
     it('should fallback to epochCreatedAt when epochUpdatedAt is null', async () => {
       const mockConfig = createMockConfig({
-        name: 'Test Config',
         epochUpdatedAt: null,
+        name: 'Test Config',
       });
       fixture.componentRef.setInput('config', mockConfig);
       fixture.detectChanges();
@@ -160,11 +156,11 @@ describe('ExportConfigButtonComponent', () => {
 
     it('should handle empty config object', async () => {
       const mockConfig = createMockConfig({
-        name: 'Empty Config',
         config: {
           ...defaultTressiConfig,
           requests: [],
         },
+        name: 'Empty Config',
       });
       fixture.componentRef.setInput('config', mockConfig);
       fixture.detectChanges();

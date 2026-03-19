@@ -1,10 +1,10 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { type ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import {
-  ConfigDocument,
+  type ConfigDocument,
   defaultTressiConfig,
   defaultTressiRequestConfig,
-  SaveConfigRequest,
+  type SaveConfigRequest,
 } from '@tressi/shared/common';
 import { AppRoutes } from '@tressi/shared/ui';
 import { describe, expect, it, vi } from 'vitest';
@@ -41,41 +41,41 @@ describe('ConfigsComponent', () => {
   };
 
   const mockConfig: ConfigDocument = {
-    id: 'config-1',
-    name: 'Test Config',
-    epochCreatedAt: Date.now(),
-    epochUpdatedAt: Date.now(),
     config: {
       ...defaultTressiConfig,
       requests: [
         {
           ...defaultTressiRequestConfig,
-          url: 'https://api.example.com/users',
           method: 'GET',
           rps: 10,
+          url: 'https://api.example.com/users',
         },
       ],
     },
+    epochCreatedAt: Date.now(),
+    epochUpdatedAt: Date.now(),
+    id: 'config-1',
+    name: 'Test Config',
   };
 
   const mockConfigs: ConfigDocument[] = [
     mockConfig,
     {
-      id: 'config-2',
-      name: 'Another Config',
-      epochCreatedAt: Date.now(),
-      epochUpdatedAt: Date.now(),
       config: {
         ...defaultTressiConfig,
         requests: [
           {
             ...defaultTressiRequestConfig,
-            url: 'https://api.example.com/posts',
             method: 'POST',
             rps: 20,
+            url: 'https://api.example.com/posts',
           },
         ],
       },
+      epochCreatedAt: Date.now(),
+      epochUpdatedAt: Date.now(),
+      id: 'config-2',
+      name: 'Another Config',
     },
   ];
 
@@ -90,22 +90,22 @@ describe('ConfigsComponent', () => {
     };
 
     mockAppRouter = {
-      updateUrl: vi.fn(),
-      toHome: vi.fn(),
-      toDashboard: vi.fn(),
       isOnDocs: vi.fn().mockReturnValue(false),
       isOnServerUnavailable: vi.fn().mockReturnValue(false),
+      toDashboard: vi.fn(),
+      toHome: vi.fn(),
+      updateUrl: vi.fn(),
     };
 
     mockToastService = {
-      show: vi.fn(),
       dismiss: vi.fn(),
+      show: vi.fn(),
     };
 
     mockTitleService = {
-      setTitle: vi.fn(),
-      resetTitle: vi.fn(),
       getTitle: vi.fn().mockReturnValue('Tressi'),
+      resetTitle: vi.fn(),
+      setTitle: vi.fn(),
     };
 
     await TestBed.configureTestingModule({
@@ -161,7 +161,6 @@ describe('ConfigsComponent', () => {
   it('should filter configs if any request URL matches', () => {
     const multiRequestConfig: ConfigDocument = {
       ...mockConfig,
-      id: 'multi',
       config: {
         ...mockConfig.config,
         requests: [
@@ -169,6 +168,7 @@ describe('ConfigsComponent', () => {
           { ...defaultTressiRequestConfig, url: 'https://b.com' },
         ],
       },
+      id: 'multi',
     };
     fixture.componentRef.setInput('configs', [multiRequestConfig]);
     fixture.detectChanges();
@@ -216,9 +216,7 @@ describe('ConfigsComponent', () => {
 
     it('should update URL to create route', () => {
       component.startCreate();
-      expect(mockAppRouter.updateUrl).toHaveBeenCalledWith(
-        AppRoutes.CONFIGS_CREATE,
-      );
+      expect(mockAppRouter.updateUrl).toHaveBeenCalledWith(AppRoutes.CONFIGS_CREATE);
     });
   });
 
@@ -317,9 +315,7 @@ describe('ConfigsComponent', () => {
     });
 
     it('should not close modal if deleteConfig fails', async () => {
-      mockConfigService.deleteConfig.mockRejectedValueOnce(
-        new Error('Delete failed'),
-      );
+      mockConfigService.deleteConfig.mockRejectedValueOnce(new Error('Delete failed'));
       component.showDeleteConfirm(mockConfig);
 
       try {
@@ -336,8 +332,8 @@ describe('ConfigsComponent', () => {
   describe('onConfigSaved', () => {
     it('should save the config using config service', async () => {
       const saveRequest: SaveConfigRequest = {
-        name: 'New Config',
         config: mockConfig.config,
+        name: 'New Config',
       };
       await component.onConfigSaved(saveRequest);
       expect(mockConfigService.saveConfig).toHaveBeenCalledWith(saveRequest);
@@ -352,8 +348,8 @@ describe('ConfigsComponent', () => {
       mockConfigService.saveConfig.mockResolvedValueOnce(newConfig);
 
       const saveRequest: SaveConfigRequest = {
-        name: 'New Config',
         config: mockConfig.config,
+        name: 'New Config',
       };
       await component.onConfigSaved(saveRequest);
 
@@ -369,9 +365,9 @@ describe('ConfigsComponent', () => {
       mockConfigService.saveConfig.mockResolvedValueOnce(updatedConfig);
 
       const saveRequest: SaveConfigRequest = {
+        config: mockConfig.config,
         id: 'config-1',
         name: 'Updated Config',
-        config: mockConfig.config,
       };
       await component.onConfigSaved(saveRequest);
 
@@ -380,20 +376,18 @@ describe('ConfigsComponent', () => {
 
     it('should cancel edit after saving', async () => {
       const saveRequest: SaveConfigRequest = {
-        name: 'New Config',
         config: mockConfig.config,
+        name: 'New Config',
       };
       await component.onConfigSaved(saveRequest);
       expect(component.showForm()).toBe(false);
     });
 
     it('should not cancel edit if saveConfig fails', async () => {
-      mockConfigService.saveConfig.mockRejectedValueOnce(
-        new Error('Save failed'),
-      );
+      mockConfigService.saveConfig.mockRejectedValueOnce(new Error('Save failed'));
       const saveRequest: SaveConfigRequest = {
-        name: 'New Config',
         config: mockConfig.config,
+        name: 'New Config',
       };
       component.startCreate();
 
@@ -436,8 +430,8 @@ describe('ConfigsComponent', () => {
   describe('onConfigImported', () => {
     it('should set currentConfig with imported config data', () => {
       const importedConfig: SaveConfigRequest = {
-        name: 'Imported Config',
         config: mockConfig.config,
+        name: 'Imported Config',
       };
       component.onConfigImported(importedConfig);
 
@@ -448,8 +442,8 @@ describe('ConfigsComponent', () => {
 
     it('should set empty id for new config', () => {
       const importedConfig: SaveConfigRequest = {
-        name: 'Imported Config',
         config: mockConfig.config,
+        name: 'Imported Config',
       };
       component.onConfigImported(importedConfig);
 
@@ -459,8 +453,8 @@ describe('ConfigsComponent', () => {
 
     it('should set showForm to true', () => {
       const importedConfig: SaveConfigRequest = {
-        name: 'Imported Config',
         config: mockConfig.config,
+        name: 'Imported Config',
       };
       component.onConfigImported(importedConfig);
 
@@ -471,10 +465,7 @@ describe('ConfigsComponent', () => {
   describe('onImportError', () => {
     it('should show error toast', () => {
       component.onImportError('Import failed');
-      expect(mockToastService.show).toHaveBeenCalledWith(
-        'Import failed',
-        'error',
-      );
+      expect(mockToastService.show).toHaveBeenCalledWith('Import failed', 'error');
     });
   });
 
@@ -529,9 +520,7 @@ describe('ConfigsComponent', () => {
       newFixture.detectChanges();
 
       expect(newComponent.showForm()).toBe(true);
-      expect(mockAppRouter.updateUrl).toHaveBeenCalledWith(
-        AppRoutes.CONFIGS_CREATE,
-      );
+      expect(mockAppRouter.updateUrl).toHaveBeenCalledWith(AppRoutes.CONFIGS_CREATE);
     });
   });
 

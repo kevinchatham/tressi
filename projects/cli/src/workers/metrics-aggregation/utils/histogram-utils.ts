@@ -1,5 +1,5 @@
 import { EMPTY_HISTOGRAM } from '@tressi/shared/cli';
-import { LatencyHistogram } from '@tressi/shared/common';
+import type { LatencyHistogram } from '@tressi/shared/common';
 
 export function convertWorkerHistogramToTestSummaryHistogram(
   histograms: LatencyHistogram[],
@@ -55,8 +55,7 @@ export function convertWorkerHistogramToTestSummaryHistogram(
   });
 
   const numBuckets = 10;
-  const buckets: { lowerBound: number; upperBound: number; count: number }[] =
-    [];
+  const buckets: { lowerBound: number; upperBound: number; count: number }[] = [];
 
   if (totalCount > 0) {
     if (max > min) {
@@ -70,9 +69,9 @@ export function convertWorkerHistogramToTestSummaryHistogram(
         const upperLog = logMin + (i + 1) * logBucketSize;
 
         buckets.push({
-          lowerBound: Math.pow(10, lowerLog) - 1,
-          upperBound: Math.pow(10, upperLog) - 1,
           count: 0,
+          lowerBound: 10 ** lowerLog - 1,
+          upperBound: 10 ** upperLog - 1,
         });
       }
 
@@ -110,21 +109,21 @@ export function convertWorkerHistogramToTestSummaryHistogram(
       }
     } else {
       buckets.push({
+        count: totalCount,
         lowerBound: min,
         upperBound: max,
-        count: totalCount,
       });
     }
   }
 
   return {
-    totalCount,
-    min,
+    buckets,
     max,
     mean: weightedMeanSum,
-    stdDev: weightedStdDevSum,
+    min,
     percentiles,
-    buckets,
+    stdDev: weightedStdDevSum,
+    totalCount,
   };
 }
 

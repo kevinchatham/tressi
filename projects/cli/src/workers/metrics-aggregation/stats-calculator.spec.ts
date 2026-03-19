@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  calculateEndpointLatencyStats,
-  calculateGlobalLatencyStats,
-} from './stats-calculator';
+import { calculateEndpointLatencyStats, calculateGlobalLatencyStats } from './stats-calculator';
 
 describe('StatsCalculator', () => {
   describe('calculateGlobalLatencyStats', () => {
@@ -18,24 +15,24 @@ describe('StatsCalculator', () => {
       const endpointHistograms = {
         url1: [
           {
-            totalCount: 10,
+            buckets: [],
+            max: 150,
             mean: 100,
             min: 50,
-            max: 150,
             percentiles: { 50: 90, 95: 140, 99: 145 },
             stdDev: 10,
-            buckets: [],
+            totalCount: 10,
           },
         ],
         url2: [
           {
-            totalCount: 20,
+            buckets: [],
+            max: 250,
             mean: 200,
             min: 150,
-            max: 250,
             percentiles: { 50: 190, 95: 240, 99: 245 },
             stdDev: 20,
-            buckets: [],
+            totalCount: 20,
           },
         ],
       };
@@ -60,22 +57,22 @@ describe('StatsCalculator', () => {
     it('should calculate stats for multiple histograms of same endpoint', () => {
       const histograms = [
         {
-          totalCount: 10,
+          buckets: [],
+          max: 150,
           mean: 100,
           min: 50,
-          max: 150,
           percentiles: { 50: 90, 95: 140, 99: 145 },
           stdDev: 10,
-          buckets: [],
+          totalCount: 10,
         },
         {
-          totalCount: 10,
+          buckets: [],
+          max: 250,
           mean: 200,
           min: 150,
-          max: 250,
           percentiles: { 50: 190, 95: 240, 99: 245 },
           stdDev: 20,
-          buckets: [],
+          totalCount: 10,
         },
       ];
 

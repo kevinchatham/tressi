@@ -1,5 +1,5 @@
-import { AgentConfig } from '@tressi/shared/common';
-import { Agent, Dispatcher } from 'undici';
+import type { AgentConfig } from '@tressi/shared/common';
+import { Agent, type Dispatcher } from 'undici';
 
 /**
  * Manages HTTP agents for different endpoints during load testing.
@@ -10,11 +10,11 @@ export class AgentManager {
   private _agents: Map<string, Dispatcher> = new Map();
   private _agentConfigs: Map<string, AgentConfig> = new Map();
   private _defaultConfig: AgentConfig = {
-    connections: 256, // Maximum connections per origin
-    keepAliveTimeout: 10000, // Keep connections alive longer
-    keepAliveMaxTimeout: 120000,
-    headersTimeout: 30000,
     bodyTimeout: 30000,
+    connections: 256, // Maximum connections per origin
+    headersTimeout: 30000,
+    keepAliveMaxTimeout: 120000,
+    keepAliveTimeout: 10000, // Keep connections alive longer
   };
 
   /**
@@ -93,4 +93,4 @@ export class AgentManager {
  * Global instance of AgentManager for convenience.
  * This provides a singleton instance that can be used throughout the application.
  */
-export const globalAgentManager = new AgentManager();
+export const globalAgentManager: AgentManager = new AgentManager();

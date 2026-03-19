@@ -1,4 +1,4 @@
-import { ServerEventMessage } from '@tressi/shared/common';
+import type { ServerEventMessage } from '@tressi/shared/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { SSEManager } from './sse-manager';
@@ -10,8 +10,8 @@ describe('SSEManager', () => {
   beforeEach(() => {
     sseManager = new SSEManager();
     mockController = {
-      enqueue: vi.fn(),
       close: vi.fn(),
+      enqueue: vi.fn(),
     } as unknown as ReadableStreamDefaultController;
     vi.clearAllMocks();
   });
@@ -35,13 +35,11 @@ describe('SSEManager', () => {
     it('should broadcast a message to all clients', () => {
       sseManager.addClient(mockController);
       const message = {
-        event: 'test',
         data: { foo: 'bar' },
+        event: 'test',
       } as unknown as ServerEventMessage;
       sseManager.broadcast(message);
-      expect(mockController.enqueue).toHaveBeenCalledWith(
-        `data: ${JSON.stringify(message)}\n\n`,
-      );
+      expect(mockController.enqueue).toHaveBeenCalledWith(`data: ${JSON.stringify(message)}\n\n`);
     });
 
     it('should remove client if enqueue fails', () => {
@@ -52,8 +50,8 @@ describe('SSEManager', () => {
       } as unknown as ReadableStreamDefaultController;
       sseManager.addClient(failingController);
       const message = {
-        event: 'test',
         data: { foo: 'bar' },
+        event: 'test',
       } as unknown as ServerEventMessage;
       sseManager.broadcast(message);
       expect(sseManager.getClientCount()).toBe(0);

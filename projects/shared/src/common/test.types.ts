@@ -1,11 +1,6 @@
-import { TestSummary } from './reporting.types';
+import type { TestSummary } from './reporting.types';
 
-export type TestStatus =
-  | 'running'
-  | 'completed'
-  | 'failed'
-  | 'cancelled'
-  | null;
+export type TestStatus = 'running' | 'completed' | 'failed' | 'cancelled' | null;
 
 /**
  * Options for running a load test.

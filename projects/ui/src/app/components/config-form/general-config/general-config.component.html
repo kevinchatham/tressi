@@ -4,9 +4,7 @@
     <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
       <!-- Configuration Name -->
       <fieldset class="fieldset">
-        <legend class="fieldset-legend text-xs font-bold uppercase opacity-70">
-          Name
-        </legend>
+        <legend class="fieldset-legend text-xs font-bold uppercase opacity-70">Name</legend>
         <input
           id="config-name"
           type="text"
@@ -15,9 +13,7 @@
           [formField]="form().name"
           data-e2e="config-name-input"
         />
-        <p class="label ml-2 py-0 text-xs opacity-60">
-          Display name for this test
-        </p>
+        <p class="label ml-2 py-0 text-xs opacity-60">Display name for this test</p>
         @if (form().name().touched() && form().name().invalid()) {
           <p class="label text-error ml-2 py-0 text-xs">
             @for (error of form().name().errors(); track error) {
@@ -29,9 +25,7 @@
 
       <!-- Duration -->
       <fieldset class="fieldset">
-        <legend class="fieldset-legend text-xs font-bold uppercase opacity-70">
-          Duration
-        </legend>
+        <legend class="fieldset-legend text-xs font-bold uppercase opacity-70">Duration</legend>
         <input
           type="number"
           class="input outline-none!"
@@ -45,10 +39,7 @@
           form().config.options.durationSec().invalid()
         ) {
           <p class="label text-error ml-2 py-0 text-xs">
-            @for (
-              error of form().config.options.durationSec().errors();
-              track error
-            ) {
+            @for (error of form().config.options.durationSec().errors(); track error) {
               {{ error.message }}
             }
           </p>
@@ -67,9 +58,7 @@
       <div class="space-y-4">
         <!-- Ramp Up Duration -->
         <fieldset class="fieldset">
-          <legend
-            class="fieldset-legend text-xs font-bold uppercase opacity-70"
-          >
+          <legend class="fieldset-legend text-xs font-bold uppercase opacity-70">
             Ramp Up Time
           </legend>
           <input
@@ -86,10 +75,7 @@
             form().config.options.rampUpDurationSec().invalid()
           ) {
             <p class="label text-error ml-2 py-0 text-xs">
-              @for (
-                error of form().config.options.rampUpDurationSec().errors();
-                track error
-              ) {
+              @for (error of form().config.options.rampUpDurationSec().errors(); track error) {
                 {{ error.message }}
               }
             </p>
@@ -97,9 +83,7 @@
         </fieldset>
 
         <fieldset class="fieldset">
-          <legend
-            class="fieldset-legend text-xs font-bold uppercase opacity-70"
-          >
+          <legend class="fieldset-legend text-xs font-bold uppercase opacity-70">
             Global Headers
           </legend>
           <app-json-textarea
@@ -112,14 +96,10 @@
             Merged with request level headers (request headers take precedence)
           </p>
           @if (
-            form().config.options.headers().touched() &&
-            form().config.options.headers().invalid()
+            form().config.options.headers().touched() && form().config.options.headers().invalid()
           ) {
             <p class="label text-error ml-2 py-0 text-xs">
-              @for (
-                error of form().config.options.headers().errors();
-                track error
-              ) {
+              @for (error of form().config.options.headers().errors(); track error) {
                 {{ error.message }}
               }
             </p>
@@ -137,9 +117,7 @@
             (addExitStatusCode)="addExitStatusCode.emit()"
             (removeExitStatusCode)="removeExitStatusCode.emit($event)"
           />
-          <p class="label ml-2 py-0 text-xs text-wrap opacity-60">
-            Applies to all requests
-          </p>
+          <p class="label ml-2 py-0 text-xs text-wrap opacity-60">Applies to all requests</p>
         </div>
       </div>
     </app-collapsible-card>
@@ -155,9 +133,7 @@
       <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
         <!-- Threads -->
         <fieldset class="fieldset">
-          <legend
-            class="fieldset-legend text-xs font-bold uppercase opacity-70"
-          >
+          <legend class="fieldset-legend text-xs font-bold uppercase opacity-70">
             Worker Threads
           </legend>
           <input
@@ -170,14 +146,10 @@
             Defaults to 4; limited by available system cores
           </p>
           @if (
-            form().config.options.threads().touched() &&
-            form().config.options.threads().invalid()
+            form().config.options.threads().touched() && form().config.options.threads().invalid()
           ) {
             <p class="label text-error ml-2 py-0 text-xs">
-              @for (
-                error of form().config.options.threads().errors();
-                track error
-              ) {
+              @for (error of form().config.options.threads().errors(); track error) {
                 {{ error.message }}
               }
             </p>
@@ -186,9 +158,7 @@
 
         <!-- Worker Memory Limit -->
         <fieldset class="fieldset">
-          <legend
-            class="fieldset-legend text-xs font-bold uppercase opacity-70"
-          >
+          <legend class="fieldset-legend text-xs font-bold uppercase opacity-70">
             Worker Memory Limit
           </legend>
           <input
@@ -197,18 +167,13 @@
             [formField]="form().config.options.workerMemoryLimit"
             placeholder="Memory per worker thread"
           />
-          <p class="label ml-2 py-0 text-xs opacity-60">
-            In MB; memory per worker thread
-          </p>
+          <p class="label ml-2 py-0 text-xs opacity-60">In MB; memory per worker thread</p>
           @if (
             form().config.options.workerMemoryLimit().touched() &&
             form().config.options.workerMemoryLimit().invalid()
           ) {
             <p class="label text-error ml-2 py-0 text-xs">
-              @for (
-                error of form().config.options.workerMemoryLimit().errors();
-                track error
-              ) {
+              @for (error of form().config.options.workerMemoryLimit().errors(); track error) {
                 {{ error.message }}
               }
             </p>

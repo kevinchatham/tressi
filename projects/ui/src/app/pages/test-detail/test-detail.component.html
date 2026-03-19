@@ -8,18 +8,14 @@
       [title]="'Delete'"
     />
     <div class="dropdown dropdown-center">
-      <app-button
-        [title]="'Export'"
-        [color]="'primary'"
-        [tabindex]="0"
-        [icon]="'save_as'"
-      />
+      <app-button [title]="'Export'" [color]="'primary'" [tabindex]="0" [icon]="'save_as'" />
       <ul
         tabindex="0"
         class="dropdown-content bg-base-100 rounded-box ring-base-content/10 z-50 mt-4 w-34 p-2 shadow-lg ring-1"
       >
         <li>
           <button
+            type="button"
             class="btn btn-ghost w-full justify-center"
             (click)="service.exportResults('json')"
           >
@@ -28,6 +24,7 @@
         </li>
         <li>
           <button
+            type="button"
             class="btn btn-ghost w-full justify-center"
             (click)="service.exportResults('xlsx')"
           >
@@ -36,6 +33,7 @@
         </li>
         <li>
           <button
+            type="button"
             class="btn btn-ghost w-full justify-center"
             (click)="service.exportResults('md')"
           >
@@ -58,14 +56,11 @@
       <div class="flex min-h-100 items-center justify-center p-8">
         <div class="max-w-md text-center">
           <app-icon name="warning" class="text-warning mb-4" />
-          <h2 class="text-base-content mb-2 text-xl font-semibold">
-            Failed to Load Test Details
-          </h2>
+          <h2 class="text-base-content mb-2 text-xl font-semibold">Failed to Load Test Details</h2>
           <p class="text-base-content/70 mb-4">{{ service.errorMessage() }}</p>
         </div>
       </div>
     }
-
     <!-- Test Details -->
     @if (!service.hasError() && service.test()) {
       <div class="flex flex-col gap-4">
@@ -90,10 +85,7 @@
                       : service.selectedEndpoint()
                   }}
                 </span>
-                <app-icon
-                  name="keyboard_arrow_down"
-                  class="text-base-content/30"
-                />
+                <app-icon name="keyboard_arrow_down" class="text-base-content/30" />
               </div>
               <ul
                 tabindex="0"
@@ -110,16 +102,11 @@
                   </a>
                 </li>
                 <div class="divider my-1"></div>
-                @for (
-                  endpoint of service.test()?.summary?.endpoints || [];
-                  track endpoint.url
-                ) {
+                @for (endpoint of service.test()?.summary?.endpoints || []; track endpoint.url) {
                   <li>
                     <a
                       (click)="onEndpointChangeValue(endpoint.url)"
-                      [class.active]="
-                        service.selectedEndpoint() === endpoint.url
-                      "
+                      [class.active]="service.selectedEndpoint() === endpoint.url"
                       class="flex max-w-2xl items-center gap-2"
                     >
                       <app-icon name="lan" />
@@ -169,7 +156,6 @@
           [collapsed]="performanceSummaryCollapsed()"
           (collapsedChange)="performanceSummaryCollapsed.set($event)"
         />
-
         <!-- Latency Distribution -->
         @if (service.histogram()) {
           <app-latency-distribution
@@ -178,14 +164,11 @@
             (collapsedChange)="latencyDistributionCollapsed.set($event)"
           />
         }
-
         <!-- Response Samples -->
         @if (service.endpointSummary()?.responseSamples) {
           <app-response-samples
             [responseSamples]="service.endpointSummary()?.responseSamples"
-            [statusCodeDistribution]="
-              service.endpointSummary()?.statusCodeDistribution
-            "
+            [statusCodeDistribution]="service.endpointSummary()?.statusCodeDistribution"
             [totalRequests]="service.endpointSummary()?.totalRequests"
             [collapsed]="responseSamplesCollapsed()"
             (collapsedChange)="responseSamplesCollapsed.set($event)"

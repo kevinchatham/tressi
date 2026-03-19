@@ -10,15 +10,12 @@
       />
     </label>
   </div>
-
   @if (isEnabled()) {
     <div class="mt-4 space-y-4">
       <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
         <!-- Error Rate Threshold -->
         <fieldset class="fieldset">
-          <legend
-            class="fieldset-legend text-xs font-bold uppercase opacity-70"
-          >
+          <legend class="fieldset-legend text-xs font-bold uppercase opacity-70">
             Error Rate Threshold
           </legend>
           <input
@@ -29,15 +26,9 @@
             step="0.01"
           />
           <p class="label ml-2 py-0 text-xs opacity-60">Range: 0.0 - 1.0</p>
-          @if (
-            form().errorRateThreshold().touched() &&
-            form().errorRateThreshold().invalid()
-          ) {
+          @if (form().errorRateThreshold().touched() && form().errorRateThreshold().invalid()) {
             <p class="label text-error ml-2">
-              @for (
-                error of form().errorRateThreshold().errors();
-                track error
-              ) {
+              @for (error of form().errorRateThreshold().errors(); track error) {
                 {{ error.message }}
               }
             </p>
@@ -46,9 +37,7 @@
 
         <!-- Monitoring Window -->
         <fieldset class="fieldset">
-          <legend
-            class="fieldset-legend text-xs font-bold uppercase opacity-70"
-          >
+          <legend class="fieldset-legend text-xs font-bold uppercase opacity-70">
             Monitoring Window
           </legend>
           <input
@@ -60,15 +49,9 @@
           <p class="label ml-2 py-0 text-xs opacity-60">
             Duration to monitor for errors (milliseconds)
           </p>
-          @if (
-            form().monitoringWindowMs().touched() &&
-            form().monitoringWindowMs().invalid()
-          ) {
+          @if (form().monitoringWindowMs().touched() && form().monitoringWindowMs().invalid()) {
             <p class="label text-error ml-2">
-              @for (
-                error of form().monitoringWindowMs().errors();
-                track error
-              ) {
+              @for (error of form().monitoringWindowMs().errors(); track error) {
                 {{ error.message }}
               }
             </p>
@@ -109,10 +92,7 @@
                 form().exitStatusCodes[$index]().invalid()
               ) {
                 <p class="label text-error ml-2">
-                  @for (
-                    error of form().exitStatusCodes[$index]().errors();
-                    track error
-                  ) {
+                  @for (error of form().exitStatusCodes[$index]().errors(); track error) {
                     {{ error.message }}
                   }
                 </p>

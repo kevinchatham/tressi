@@ -1,9 +1,5 @@
-import {
-  EndpointSummary,
-  StatusCodeMap,
-  TestSummary,
-} from '@tressi/shared/common';
-import { writeFile } from 'fs/promises';
+import { writeFile } from 'node:fs/promises';
+import type { EndpointSummary, StatusCodeMap, TestSummary } from '@tressi/shared/common';
 import * as xlsx from 'xlsx';
 
 import { validateXlsxPath } from '../utils/validation';
@@ -18,10 +14,9 @@ export class XlsxExporter {
    * @param path - Optional file path to write the Excel to (returns buffer if undefined)
    * @returns Buffer when path is undefined, void when path is provided
    */
-  async export(summary: TestSummary, path?: string): Promise<void | Buffer> {
+  async export(summary: TestSummary, path?: string): Promise<undefined | Buffer> {
     try {
-      const { summary: processedSummary, statusCodeMap } =
-        this._processData(summary);
+      const { summary: processedSummary, statusCodeMap } = this._processData(summary);
 
       const wb = xlsx.utils.book_new();
 
@@ -55,9 +50,7 @@ export class XlsxExporter {
         return xlsx.write(wb, { type: 'buffer' });
       }
     } catch (error) {
-      throw new Error(
-        `Failed to export test results to Excel: ${(error as Error).message}`,
-      );
+      throw new Error(`Failed to export test results to Excel: ${(error as Error).message}`);
     }
   }
 
@@ -72,15 +65,13 @@ export class XlsxExporter {
 
     // Aggregate status codes from all endpoints
     for (const endpoint of summary.endpoints) {
-      for (const [statusCode, count] of Object.entries(
-        endpoint.statusCodeDistribution,
-      )) {
+      for (const [statusCode, count] of Object.entries(endpoint.statusCodeDistribution)) {
         const code = parseInt(statusCode, 10);
         statusCodeMap[code] = (statusCodeMap[code] || 0) + count;
       }
     }
 
-    return { summary, statusCodeMap };
+    return { statusCodeMap, summary };
   }
 
   private _addTestSummarySheet(wb: xlsx.WorkBook, summary: TestSummary): void {
@@ -117,19 +108,14 @@ export class XlsxExporter {
     xlsx.utils.book_append_sheet(wb, wsSummary, 'Test Summary');
   }
 
-  private _addEndpointSummarySheet(
-    wb: xlsx.WorkBook,
-    endpoints: EndpointSummary[],
-  ): void {
+  private _addEndpointSummarySheet(wb: xlsx.WorkBook, endpoints: EndpointSummary[]): void {
     const formattedEndpoints = endpoints.map((endpoint) => ({
-      URL: endpoint.url,
-      Method: endpoint.method,
-      'Total Requests': endpoint.totalRequests,
-      Successful: endpoint.successfulRequests,
-      Failed: endpoint.failedRequests,
-      'Error Rate': endpoint.errorRate,
       'Avg RPS': endpoint.averageRequestsPerSecond,
-      'Peak RPS': endpoint.peakRequestsPerSecond,
+      'Error Rate': endpoint.errorRate,
+      Failed: endpoint.failedRequests,
+      'Max Latency (ms)': endpoint.maxLatencyMs,
+      Method: endpoint.method,
+      'Min Latency (ms)': endpoint.minLatencyMs,
       'P1 Latency (ms)': endpoint.histogram?.percentiles[1] || 0,
       'P5 Latency (ms)': endpoint.histogram?.percentiles[5] || 0,
       'P10 Latency (ms)': endpoint.histogram?.percentiles[10] || 0,
@@ -140,10 +126,12 @@ export class XlsxExporter {
       'P95 Latency (ms)': endpoint.p95LatencyMs,
       'P99 Latency (ms)': endpoint.p99LatencyMs,
       'P99.9 Latency (ms)': endpoint.histogram?.percentiles[99.9] || 0,
-      'Min Latency (ms)': endpoint.minLatencyMs,
-      'Max Latency (ms)': endpoint.maxLatencyMs,
-      'Theoretical Max RPS': endpoint.theoreticalMaxRps,
+      'Peak RPS': endpoint.peakRequestsPerSecond,
+      Successful: endpoint.successfulRequests,
       'Target Achieved (%)': endpoint.targetAchieved,
+      'Theoretical Max RPS': endpoint.theoreticalMaxRps,
+      'Total Requests': endpoint.totalRequests,
+      URL: endpoint.url,
     }));
 
     const wsEndpoints = xlsx.utils.json_to_sheet(formattedEndpoints);
@@ -154,26 +142,20 @@ export class XlsxExporter {
     wb: xlsx.WorkBook,
     statusCodeMap: Record<number, number>,
   ): void {
-    const statusCodeDistribution =
-      this._getStatusCodeDistribution(statusCodeMap);
+    const statusCodeDistribution = this._getStatusCodeDistribution(statusCodeMap);
 
-    const formattedStatusCodeDistribution = Object.entries(
-      statusCodeDistribution,
-    ).map(([category, count]) => ({
-      'Status Code Category': category,
-      Count: count,
-    }));
-
-    const wsStatusCode = xlsx.utils.json_to_sheet(
-      formattedStatusCodeDistribution,
+    const formattedStatusCodeDistribution = Object.entries(statusCodeDistribution).map(
+      ([category, count]) => ({
+        Count: count,
+        'Status Code Category': category,
+      }),
     );
+
+    const wsStatusCode = xlsx.utils.json_to_sheet(formattedStatusCodeDistribution);
     xlsx.utils.book_append_sheet(wb, wsStatusCode, 'Status Code Distribution');
   }
 
-  private _addLatencyDistributionSheet(
-    wb: xlsx.WorkBook,
-    summary: TestSummary,
-  ): void {
+  private _addLatencyDistributionSheet(wb: xlsx.WorkBook, summary: TestSummary): void {
     const { global: g } = summary;
 
     if (!g.histogram || g.histogram.totalCount === 0) {
@@ -185,58 +167,58 @@ export class XlsxExporter {
     // Sheet 1: Percentile Distribution
     const percentileData = [
       {
-        Percentile: 'Min',
         'Latency (ms)': h.min,
+        Percentile: 'Min',
         'Total Requests': h.totalCount,
       },
       {
-        Percentile: '1st',
         'Latency (ms)': h.percentiles[1] || 0,
+        Percentile: '1st',
         'Total Requests': h.totalCount,
       },
       {
-        Percentile: '5th',
         'Latency (ms)': h.percentiles[5] || 0,
+        Percentile: '5th',
         'Total Requests': h.totalCount,
       },
       {
-        Percentile: '10th',
         'Latency (ms)': h.percentiles[10] || 0,
+        Percentile: '10th',
         'Total Requests': h.totalCount,
       },
       {
-        Percentile: '25th',
         'Latency (ms)': h.percentiles[25] || 0,
+        Percentile: '25th',
         'Total Requests': h.totalCount,
       },
       {
-        Percentile: '50th',
         'Latency (ms)': h.percentiles[50] || 0,
+        Percentile: '50th',
         'Total Requests': h.totalCount,
       },
       {
-        Percentile: '75th',
         'Latency (ms)': h.percentiles[75] || 0,
+        Percentile: '75th',
         'Total Requests': h.totalCount,
       },
       {
-        Percentile: '90th',
         'Latency (ms)': h.percentiles[90] || 0,
+        Percentile: '90th',
         'Total Requests': h.totalCount,
       },
       {
-        Percentile: '95th',
         'Latency (ms)': h.percentiles[95] || 0,
+        Percentile: '95th',
         'Total Requests': h.totalCount,
       },
       {
-        Percentile: '99th',
         'Latency (ms)': h.percentiles[99] || 0,
+        Percentile: '99th',
         'Total Requests': h.totalCount,
       },
       {
-        Percentile: 'Max',
         'Latency (ms)': h.max,
+        Percentile: 'Max',
         'Total Requests': h.totalCount,
       },
     ];
@@ -248,10 +230,10 @@ export class XlsxExporter {
     if (h.buckets.length > 0) {
       const bucketData = h.buckets.map((bucket, index) => ({
         'Bucket #': index + 1,
-        'Lower Bound (ms)': bucket.lowerBound,
-        'Upper Bound (ms)': bucket.upperBound,
         Count: bucket.count,
-        Percentage: ((bucket.count / h.totalCount) * 100).toFixed(1) + '%',
+        'Lower Bound (ms)': bucket.lowerBound,
+        Percentage: `${((bucket.count / h.totalCount) * 100).toFixed(1)}%`,
+        'Upper Bound (ms)': bucket.upperBound,
       }));
 
       const wsBuckets = xlsx.utils.json_to_sheet(bucketData);
@@ -259,10 +241,7 @@ export class XlsxExporter {
     }
   }
 
-  private _addSampledResponsesSheet(
-    wb: xlsx.WorkBook,
-    endpoints: EndpointSummary[],
-  ): void {
+  private _addSampledResponsesSheet(wb: xlsx.WorkBook, endpoints: EndpointSummary[]): void {
     const samplesForSheet: Array<{
       URL: string;
       Method: string;
@@ -284,11 +263,11 @@ export class XlsxExporter {
         if (!seenStatusCodes.has(sample.statusCode)) {
           seenStatusCodes.add(sample.statusCode);
           samplesForSheet.push({
-            URL: endpoint.url,
             Method: endpoint.method,
-            'Status Code': sample.statusCode,
-            'Response Headers': JSON.stringify(sample.headers || {}),
             'Response Body': sample.body || '(No body captured)',
+            'Response Headers': JSON.stringify(sample.headers || {}),
+            'Status Code': sample.statusCode,
+            URL: endpoint.url,
           });
         }
       }
@@ -308,10 +287,7 @@ export class XlsxExporter {
     }
   }
 
-  private _addConfigurationSheet(
-    wb: xlsx.WorkBook,
-    config: TestSummary['configSnapshot'],
-  ): void {
+  private _addConfigurationSheet(wb: xlsx.WorkBook, config: TestSummary['configSnapshot']): void {
     const configData = Object.entries(config).map(([key, value]) => ({
       'Config Option': key,
       Value: typeof value === 'object' ? JSON.stringify(value) : String(value),

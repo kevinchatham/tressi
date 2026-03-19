@@ -14,8 +14,8 @@ describe('ThemeSwitcherComponent', () => {
         {
           provide: ThemeService,
           useValue: {
-            toggleTheme: vi.fn(),
             isDark: vi.fn().mockReturnValue(false),
+            toggleTheme: vi.fn(),
           },
         },
       ],

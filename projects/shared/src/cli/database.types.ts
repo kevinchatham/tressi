@@ -1,6 +1,6 @@
 import type { Generated, Selectable } from 'kysely';
 
-import { TestStatus } from '../common/test.types';
+import type { TestStatus } from '../common/test.types';
 
 export type Database = {
   configs: ConfigsTable;

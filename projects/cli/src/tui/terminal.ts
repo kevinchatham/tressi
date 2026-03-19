@@ -1,4 +1,4 @@
-/* eslint-disable no-console */
+/** biome-ignore-all lint/suspicious/noConsole: default */
 class Terminal {
   print(message?: unknown, ...optionalParams: unknown[]): void {
     console.log(message, ...optionalParams);
@@ -23,4 +23,4 @@ class Terminal {
   }
 }
 
-export const terminal = new Terminal();
+export const terminal: Terminal = new Terminal();

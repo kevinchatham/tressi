@@ -1,7 +1,9 @@
+/** biome-ignore-all lint/nursery/useExplicitType: hono */
+
+import os from 'node:os';
 import { sValidator } from '@hono/standard-validator';
-import { ISSEClientManager } from '@tressi/shared/cli';
+import type { ISSEClientManager } from '@tressi/shared/cli';
 import { Hono } from 'hono';
-import os from 'os';
 import z from 'zod';
 
 import { metricStorage } from '../../collections/metrics-collection';
@@ -13,7 +15,6 @@ import { createApiErrorResponse } from '../utils/error-response-generator';
  *
  * @param {ISSEClientManager} sseManager - Manager for handling SSE client connections
  */
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 function createMetricsApp(sseManager: ISSEClientManager) {
   return (
     new Hono()
@@ -26,12 +27,10 @@ function createMetricsApp(sseManager: ISSEClientManager) {
           start: (controller: ReadableStreamDefaultController): void => {
             sseManager.addClient(controller);
             const connectionMessage = {
-              type: 'connected',
               timestamp: Date.now(),
+              type: 'connected',
             };
-            controller.enqueue(
-              `data: ${JSON.stringify(connectionMessage)}\n\n`,
-            );
+            controller.enqueue(`data: ${JSON.stringify(connectionMessage)}\n\n`);
             c.req.raw.signal.addEventListener('abort', () => {
               sseManager.removeClient(controller);
             });
@@ -39,10 +38,10 @@ function createMetricsApp(sseManager: ISSEClientManager) {
         });
         return new Response(stream, {
           headers: {
-            'Content-Type': 'text/event-stream',
+            'Access-Control-Allow-Origin': '*',
             'Cache-Control': 'no-cache',
             Connection: 'keep-alive',
-            'Access-Control-Allow-Origin': '*',
+            'Content-Type': 'text/event-stream',
           },
         });
       })

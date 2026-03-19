@@ -39,10 +39,7 @@
             class="bg-base-100 rounded-xl p-4"
             [class.bg-base-300]="!selectedSummary()?.peakRequestsPerSecond"
           >
-            <div
-              class="text-base-content/70 mb-1 text-sm"
-              [attr.title]="tooltips['peakRps']"
-            >
+            <div class="text-base-content/70 mb-1 text-sm" [attr.title]="tooltips['peakRps']">
               Peak RPS
             </div>
             <div
@@ -54,21 +51,15 @@
 
           <!-- Average RPS -->
           <div class="bg-base-100 rounded-xl p-4">
-            <div
-              class="text-base-content/70 mb-1 text-sm"
-              [attr.title]="tooltips['avgRps']"
-            >
+            <div class="text-base-content/70 mb-1 text-sm" [attr.title]="tooltips['avgRps']">
               Average RPS
             </div>
             <div
               class="text-2xl font-bold"
               [appFormatRps]="selectedSummary()?.averageRequestsPerSecond"
             ></div>
-            <div class="text-base-content/60 mt-1 text-xs">
-              requests per sec
-            </div>
+            <div class="text-base-content/60 mt-1 text-xs">requests per sec</div>
           </div>
-
           <!-- Endpoint view: Theoretical Max RPS -->
           @if (endpointSummary()?.theoreticalMaxRps) {
             <div class="bg-base-100 rounded-xl p-4">
@@ -88,10 +79,7 @@
 
           <!-- Total Requests -->
           <div class="bg-base-100 rounded-xl p-4">
-            <div
-              class="text-base-content/70 mb-1 text-sm"
-              [attr.title]="tooltips['totalRequests']"
-            >
+            <div class="text-base-content/70 mb-1 text-sm" [attr.title]="tooltips['totalRequests']">
               Total Requests
             </div>
             <div
@@ -117,10 +105,7 @@
         <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-5">
           <!-- Min Latency -->
           <div class="bg-base-100 rounded-xl p-4">
-            <div
-              class="text-base-content/70 mb-1 text-sm"
-              [attr.title]="tooltips['minLatency']"
-            >
+            <div class="text-base-content/70 mb-1 text-sm" [attr.title]="tooltips['minLatency']">
               Min
             </div>
             <div
@@ -132,10 +117,7 @@
 
           <!-- P50 Latency -->
           <div class="bg-base-100 rounded-xl p-4">
-            <div
-              class="text-base-content/70 mb-1 text-sm"
-              [attr.title]="tooltips['p50Latency']"
-            >
+            <div class="text-base-content/70 mb-1 text-sm" [attr.title]="tooltips['p50Latency']">
               P50 (Median)
             </div>
             <div
@@ -147,10 +129,7 @@
 
           <!-- P95 Latency -->
           <div class="bg-base-100 rounded-xl p-4">
-            <div
-              class="text-base-content/70 mb-1 text-sm"
-              [attr.title]="tooltips['p95Latency']"
-            >
+            <div class="text-base-content/70 mb-1 text-sm" [attr.title]="tooltips['p95Latency']">
               P95
             </div>
             <div
@@ -162,10 +141,7 @@
 
           <!-- P99 Latency -->
           <div class="bg-base-100 rounded-xl p-4">
-            <div
-              class="text-base-content/70 mb-1 text-sm"
-              [attr.title]="tooltips['p99Latency']"
-            >
+            <div class="text-base-content/70 mb-1 text-sm" [attr.title]="tooltips['p99Latency']">
               P99
             </div>
             <div
@@ -177,10 +153,7 @@
 
           <!-- Max Latency -->
           <div class="bg-base-100 rounded-xl p-4">
-            <div
-              class="text-base-content/70 mb-1 text-sm"
-              [attr.title]="tooltips['maxLatency']"
-            >
+            <div class="text-base-content/70 mb-1 text-sm" [attr.title]="tooltips['maxLatency']">
               Max
             </div>
             <div
@@ -216,10 +189,7 @@
               <div class="text-base-content/60 mt-1 text-xs">of total</div>
             </div>
             <div class="bg-base-100 rounded-xl p-4">
-              <div
-                class="text-base-content/70 mb-1 text-sm"
-                [attr.title]="tooltips['errorRate']"
-              >
+              <div class="text-base-content/70 mb-1 text-sm" [attr.title]="tooltips['errorRate']">
                 Error Rate
               </div>
               <div
@@ -271,7 +241,6 @@
           </div>
         </section>
       </div>
-
       <!-- System Resources (Global Only) -->
       @if (globalSummary()) {
         <section>
@@ -287,10 +256,7 @@
           <div class="grid grid-cols-2 gap-4">
             <!-- CPU Usage -->
             <div class="bg-base-100 rounded-xl p-4">
-              <div
-                class="text-base-content/70 mb-1 text-sm"
-                [attr.title]="tooltips['cpuUsage']"
-              >
+              <div class="text-base-content/70 mb-1 text-sm" [attr.title]="tooltips['cpuUsage']">
                 CPU Usage
               </div>
               <div class="flex items-baseline gap-2">
@@ -301,29 +267,20 @@
                 <div
                   class="badge badge-sm border-none font-medium"
                   [ngClass]="
-                    getStateClasses(
-                      getCpuState(globalSummary()?.avgSystemCpuUsagePercent)
-                    ).bg +
+                    getStateClasses(getCpuState(globalSummary()?.avgSystemCpuUsagePercent)).bg +
                     ' ' +
-                    getStateClasses(
-                      getCpuState(globalSummary()?.avgSystemCpuUsagePercent)
-                    ).text
+                    getStateClasses(getCpuState(globalSummary()?.avgSystemCpuUsagePercent)).text
                   "
                 >
                   {{ getCpuState(globalSummary()?.avgSystemCpuUsagePercent) }}
                 </div>
               </div>
-              <div class="text-base-content/60 mt-1 text-xs">
-                avg utilization
-              </div>
+              <div class="text-base-content/60 mt-1 text-xs">avg utilization</div>
             </div>
 
             <!-- Memory Usage -->
             <div class="bg-base-100 rounded-xl p-4">
-              <div
-                class="text-base-content/70 mb-1 text-sm"
-                [attr.title]="tooltips['memoryUsage']"
-              >
+              <div class="text-base-content/70 mb-1 text-sm" [attr.title]="tooltips['memoryUsage']">
                 Memory Usage
               </div>
               <div class="flex items-baseline gap-2">
@@ -334,21 +291,15 @@
                 <div
                   class="badge badge-sm border-none font-medium"
                   [ngClass]="
-                    getStateClasses(
-                      getMemoryState(globalSummary()?.avgProcessMemoryUsageMB)
-                    ).bg +
+                    getStateClasses(getMemoryState(globalSummary()?.avgProcessMemoryUsageMB)).bg +
                     ' ' +
-                    getStateClasses(
-                      getMemoryState(globalSummary()?.avgProcessMemoryUsageMB)
-                    ).text
+                    getStateClasses(getMemoryState(globalSummary()?.avgProcessMemoryUsageMB)).text
                   "
                 >
                   {{ getMemoryState(globalSummary()?.avgProcessMemoryUsageMB) }}
                 </div>
               </div>
-              <div class="text-base-content/60 mt-1 text-xs">
-                avg consumption
-              </div>
+              <div class="text-base-content/60 mt-1 text-xs">avg consumption</div>
             </div>
           </div>
         </section>

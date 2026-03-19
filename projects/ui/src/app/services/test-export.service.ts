@@ -1,4 +1,4 @@
-import { inject, Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { LogService } from './log.service';
 import { RPCService } from './rpc.service';
@@ -8,10 +8,7 @@ export class TestExportService {
   private readonly _rpcService = inject(RPCService);
   private readonly _logService = inject(LogService);
 
-  async exportTest(
-    testId: string,
-    format: 'json' | 'xlsx' | 'md',
-  ): Promise<void> {
+  async exportTest(testId: string, format: 'json' | 'xlsx' | 'md'): Promise<void> {
     try {
       const response = await this._rpcService.client.tests[':id'].export.$get({
         param: { id: testId },
@@ -26,7 +23,7 @@ export class TestExportService {
       const filename = `test-${testId}.${format}`;
       this._downloadFile(blob, filename);
 
-      this._logService.info('Test exported successfully', { testId, format });
+      this._logService.info('Test exported successfully', { format, testId });
     } catch (error) {
       this._logService.error('Failed to export test', error);
       throw error;

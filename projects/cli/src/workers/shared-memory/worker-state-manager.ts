@@ -3,7 +3,7 @@
  * Provides atomic state transitions for worker coordination
  */
 
-import { IWorkerStateManager, WorkerState } from '@tressi/shared/cli';
+import { type IWorkerStateManager, WorkerState } from '@tressi/shared/cli';
 
 export class WorkerStateManager implements IWorkerStateManager {
   private readonly _sab: SharedArrayBuffer;
@@ -70,11 +70,7 @@ export class WorkerStateManager implements IWorkerStateManager {
    * @param timeoutMs Timeout in milliseconds
    * @returns true if state reached, false if timeout
    */
-  waitForState(
-    workerId: number,
-    targetState: WorkerState,
-    timeoutMs: number,
-  ): boolean {
+  waitForState(workerId: number, targetState: WorkerState, timeoutMs: number): boolean {
     if (workerId < 0 || workerId >= this._maxWorkers) {
       throw new Error(`Invalid worker ID: ${workerId}`);
     }
@@ -96,16 +92,10 @@ export class WorkerStateManager implements IWorkerStateManager {
       }
 
       // Use Atomics.wait for efficient blocking
-      const waitResult = Atomics.wait(
-        this._states,
-        workerId,
-        currentState,
-        remainingMs,
-      );
+      const waitResult = Atomics.wait(this._states, workerId, currentState, remainingMs);
 
       // If notified or timed out, continue loop to check state
       if (waitResult === 'not-equal') {
-        continue;
       }
     }
 

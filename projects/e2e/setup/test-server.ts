@@ -47,25 +47,25 @@
  * - GET /chaos - Randomly misbehaves (latency, errors, malformed data, drops)
  * - GET / - Root endpoint with available endpoints documentation
  */
-/* eslint-disable no-console */
-import { serve } from '@hono/node-server';
-import { program } from 'commander';
+/** biome-ignore-all lint/suspicious/noConsole: default */
+import { type ServerType, serve } from '@hono/node-server';
+import { type OptionValues, program } from 'commander';
 import { Hono } from 'hono';
 import { compress } from 'hono/compress';
 import { logger } from 'hono/logger';
+import type { BlankEnv, BlankSchema } from 'hono/types';
+import type { ContentfulStatusCode } from 'hono/utils/http-status';
 
-const app = new Hono();
+const app: Hono<BlankEnv, BlankSchema, '/'> = new Hono();
 
 program
-  .option('-p, --port <number>', 'Port to run the server on', (val) =>
-    parseInt(val, 10),
-  )
+  .option('-p, --port <number>', 'Port to run the server on', (val) => parseInt(val, 10))
   .option('-s, --silent', 'Disable logging', false)
   .parse(process.argv);
 
-const options = program.opts();
-const PORT = parseInt(options.port || 5000);
-const SILENT = options.silent;
+const options: OptionValues = program.opts();
+const PORT: number = parseInt(options.port || 5000, 10);
+const SILENT = options.silent as boolean;
 
 // Middleware
 if (!SILENT) {
@@ -75,7 +75,7 @@ app.use('*', compress());
 
 // Request tracking for metrics
 let requestCount = 0;
-const startTime = Date.now();
+const startTime: number = Date.now();
 
 // Middleware to track requests
 app.use('*', async (_c, next) => {
@@ -86,10 +86,10 @@ app.use('*', async (_c, next) => {
 // Health check endpoint
 app.get('/health', (c) => {
   return c.json({
-    status: 'healthy',
-    uptime: Date.now() - startTime,
     requests: requestCount,
+    status: 'healthy',
     timestamp: new Date().toISOString(),
+    uptime: Date.now() - startTime,
   });
 });
 
@@ -97,7 +97,7 @@ app.get('/health', (c) => {
 app.get('/status/:code', (c) => {
   const code = parseInt(c.req.param('code'), 10);
 
-  if (isNaN(code) || code < 100 || code > 599) {
+  if (Number.isNaN(code) || code < 100 || code > 599) {
     return c.json(
       {
         error: 'Invalid status code',
@@ -135,50 +135,36 @@ app.get('/status/:code', (c) => {
 
   return c.json(
     {
-      status: code,
       message: statusMessages[code] || 'Unknown Status',
+      status: code,
       timestamp: new Date().toISOString(),
     },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    code as any,
+    code as ContentfulStatusCode,
   );
 });
 
 // Convenience endpoints for common status codes
-app.get('/success', (c) => c.json({ status: 'success', message: 'OK' }, 200));
+app.get('/success', (c) => c.json({ message: 'OK', status: 'success' }, 200));
 app.get('/created', (c) =>
-  c.json({ status: 'created', message: 'Resource created successfully' }, 201),
+  c.json({ message: 'Resource created successfully', status: 'created' }, 201),
 );
 app.get('/accepted', (c) =>
-  c.json(
-    { status: 'accepted', message: 'Request accepted for processing' },
-    202,
-  ),
+  c.json({ message: 'Request accepted for processing', status: 'accepted' }, 202),
 );
-app.get('/bad-request', (c) =>
-  c.json({ status: 'error', message: 'Bad Request' }, 400),
-);
-app.get('/unauthorized', (c) =>
-  c.json({ status: 'error', message: 'Unauthorized' }, 401),
-);
-app.get('/forbidden', (c) =>
-  c.json({ status: 'error', message: 'Forbidden' }, 403),
-);
-app.get('/not-found', (c) =>
-  c.json({ status: 'error', message: 'Not Found' }, 404),
-);
-app.get('/server-error', (c) =>
-  c.json({ status: 'error', message: 'Internal Server Error' }, 500),
-);
+app.get('/bad-request', (c) => c.json({ message: 'Bad Request', status: 'error' }, 400));
+app.get('/unauthorized', (c) => c.json({ message: 'Unauthorized', status: 'error' }, 401));
+app.get('/forbidden', (c) => c.json({ message: 'Forbidden', status: 'error' }, 403));
+app.get('/not-found', (c) => c.json({ message: 'Not Found', status: 'error' }, 404));
+app.get('/server-error', (c) => c.json({ message: 'Internal Server Error', status: 'error' }, 500));
 app.get('/service-unavailable', (c) =>
-  c.json({ status: 'error', message: 'Service Unavailable' }, 503),
+  c.json({ message: 'Service Unavailable', status: 'error' }, 503),
 );
 
 // Delay endpoint
 app.get('/delay/:ms', async (c) => {
   const delay = parseInt(c.req.param('ms'), 10);
 
-  if (isNaN(delay) || delay < 0) {
+  if (Number.isNaN(delay) || delay < 0) {
     return c.json({ error: 'Invalid delay parameter' }, 400);
   }
 
@@ -188,8 +174,8 @@ app.get('/delay/:ms', async (c) => {
   await new Promise((resolve) => setTimeout(resolve, actualDelay));
 
   return c.json({
-    status: 'success',
     delay: actualDelay,
+    status: 'success',
     timestamp: new Date().toISOString(),
   });
 });
@@ -211,7 +197,7 @@ app.get('/chunked', () => {
   const encoder = new TextEncoder();
 
   const stream = new ReadableStream({
-    start(controller): void {
+    start(controller: ReadableStreamDefaultController<unknown>): void {
       let counter = 0;
       const interval = setInterval(() => {
         controller.enqueue(encoder.encode(`Chunk ${++counter}\n`));
@@ -238,8 +224,8 @@ app.get('/random-size', (c) => {
   const data = 'a'.repeat(size);
 
   return c.json({
-    size,
     data,
+    size,
     timestamp: new Date().toISOString(),
   });
 });
@@ -247,13 +233,11 @@ app.get('/random-size', (c) => {
 // Echo endpoints
 app.get('/echo', (c) => {
   return c.json({
+    headers: Object.fromEntries(c.req.raw.headers as unknown as Iterable<[string, string]>),
     method: c.req.method,
-    url: c.req.url,
-    headers: Object.fromEntries(
-      c.req.raw.headers as unknown as Iterable<[string, string]>,
-    ),
     query: Object.fromEntries(new URL(c.req.url).searchParams.entries()),
     timestamp: new Date().toISOString(),
+    url: c.req.url,
   });
 });
 
@@ -271,14 +255,12 @@ app.post('/echo', async (c) => {
   }
 
   return c.json({
-    method: c.req.method,
-    url: c.req.url,
-    headers: Object.fromEntries(
-      c.req.raw.headers as unknown as Iterable<[string, string]>,
-    ),
-    query: Object.fromEntries(new URL(c.req.url).searchParams.entries()),
     body,
+    headers: Object.fromEntries(c.req.raw.headers as unknown as Iterable<[string, string]>),
+    method: c.req.method,
+    query: Object.fromEntries(new URL(c.req.url).searchParams.entries()),
     timestamp: new Date().toISOString(),
+    url: c.req.url,
   });
 });
 
@@ -291,8 +273,7 @@ app.get('/redirect/:code', (c) => {
     return c.json(
       {
         error: 'Missing URL parameter',
-        message:
-          'Provide URL as query parameter: /redirect/301?url=https://example.com',
+        message: 'Provide URL as query parameter: /redirect/301?url=https://example.com',
       },
       400,
     );
@@ -315,7 +296,7 @@ app.get('/redirect/:code', (c) => {
 app.get('/payload/:size', (c) => {
   const sizeKB = parseInt(c.req.param('size'), 10);
 
-  if (isNaN(sizeKB) || sizeKB < 1 || sizeKB > 100) {
+  if (Number.isNaN(sizeKB) || sizeKB < 1 || sizeKB > 100) {
     return c.json(
       {
         error: 'Invalid size',
@@ -327,10 +308,10 @@ app.get('/payload/:size', (c) => {
 
   const data = 'a'.repeat(sizeKB * 1024);
   return c.json({
-    size: sizeKB,
-    unit: 'KB',
     data,
+    size: sizeKB,
     timestamp: new Date().toISOString(),
+    unit: 'KB',
   });
 });
 
@@ -339,7 +320,7 @@ app.get('/slow-response', () => {
   const encoder = new TextEncoder();
 
   const stream = new ReadableStream({
-    async start(controller): Promise<void> {
+    async start(controller: ReadableStreamDefaultController<unknown>): Promise<void> {
       const totalParts = 10;
       let currentPart = 0;
 
@@ -348,9 +329,7 @@ app.get('/slow-response', () => {
       const interval = setInterval(() => {
         if (currentPart > 0) controller.enqueue(encoder.encode(','));
         controller.enqueue(
-          encoder.encode(
-            `{"part":${currentPart + 1},"data":"chunk${currentPart + 1}"}`,
-          ),
+          encoder.encode(`{"part":${currentPart + 1},"data":"chunk${currentPart + 1}"}`),
         );
 
         currentPart++;
@@ -386,8 +365,8 @@ app.get('/rate-limit', (c) => {
     );
   } else {
     return c.json({
-      status: 'success',
       message: 'Request allowed',
+      status: 'success',
       timestamp: new Date().toISOString(),
     });
   }
@@ -408,8 +387,8 @@ app.get('/error-50-percent', (c) => {
     );
   } else {
     return c.json({
-      status: 'success',
       message: 'Request successful',
+      status: 'success',
       timestamp: new Date().toISOString(),
     });
   }
@@ -456,8 +435,8 @@ app.get('/chaos', async (c) => {
   }
 
   return c.json({
-    status: 'success',
     message: 'You survived the chaos',
+    status: 'success',
     timestamp: new Date().toISOString(),
   });
 });
@@ -465,13 +444,10 @@ app.get('/chaos', async (c) => {
 // Headers endpoint
 app.get('/headers', (c) => {
   return c.json({
-    headers: Object.fromEntries(
-      c.req.raw.headers as unknown as Iterable<[string, string]>,
-    ),
-    ip:
-      c.req.header('x-forwarded-for') || c.req.header('x-real-ip') || 'unknown',
-    protocol: new URL(c.req.url).protocol.replace(':', ''),
+    headers: Object.fromEntries(c.req.raw.headers as unknown as Iterable<[string, string]>),
     hostname: c.req.header('host') || 'unknown',
+    ip: c.req.header('x-forwarded-for') || c.req.header('x-real-ip') || 'unknown',
+    protocol: new URL(c.req.url).protocol.replace(':', ''),
     timestamp: new Date().toISOString(),
   });
 });
@@ -479,8 +455,7 @@ app.get('/headers', (c) => {
 // IP endpoint
 app.get('/ip', (c) => {
   return c.json({
-    ip:
-      c.req.header('x-forwarded-for') || c.req.header('x-real-ip') || 'unknown',
+    ip: c.req.header('x-forwarded-for') || c.req.header('x-real-ip') || 'unknown',
     timestamp: new Date().toISOString(),
   });
 });
@@ -488,19 +463,19 @@ app.get('/ip', (c) => {
 // Metrics endpoint
 app.get('/metrics', (c) => {
   return c.json({
-    uptime: Date.now() - startTime,
-    requests: requestCount,
     memory: process.memoryUsage(),
+    requests: requestCount,
     timestamp: new Date().toISOString(),
+    uptime: Date.now() - startTime,
   });
 });
 
 // Config endpoint
 app.get('/config', (c) => {
   return c.json({
-    port: PORT,
-    nodeVersion: process.version,
     environment: process.env.NODE_ENV || 'development',
+    nodeVersion: process.version,
+    port: PORT,
     timestamp: new Date().toISOString(),
   });
 });
@@ -508,36 +483,36 @@ app.get('/config', (c) => {
 // Root endpoint
 app.get('/', (c) => {
   return c.json({
-    message: 'Tressi Test Server',
-    version: '1.0.0',
     endpoints: {
-      status: '/status/:code - Returns specified HTTP status code',
-      success: '/success - 200 OK',
-      created: '/created - 201 Created',
       accepted: '/accepted - 202 Accepted',
       badRequest: '/bad-request - 400 Bad Request',
-      unauthorized: '/unauthorized - 401 Unauthorized',
+      chunked: '/chunked - Chunked transfer encoding',
+      config: '/config - Server configuration',
+      created: '/created - 201 Created',
+      delay: '/delay/:ms - Delayed response',
+      echo: '/echo - Echoes request data',
+      error50Percent: '/error-50-percent - 50% chance of 500 error',
       forbidden: '/forbidden - 403 Forbidden',
+      headers: '/headers - Returns request headers',
+      health: '/health - Health check',
+      ip: '/ip - Returns client IP',
+      metrics: '/metrics - Basic metrics',
       notFound: '/not-found - 404 Not Found',
+      payload: '/payload/:size - Returns response of specified size (KB)',
+      randomSize: '/random-size - Random response size',
+      rateLimit: '/rate-limit - Simulates rate limiting',
+      redirect: '/redirect/:code?url= - Redirect testing',
       serverError: '/server-error - 500 Internal Server Error',
       serviceUnavailable: '/service-unavailable - 503 Service Unavailable',
-      delay: '/delay/:ms - Delayed response',
-      timeout: '/timeout - Never responds',
-      chunked: '/chunked - Chunked transfer encoding',
-      randomSize: '/random-size - Random response size',
-      echo: '/echo - Echoes request data',
-      redirect: '/redirect/:code?url= - Redirect testing',
-      payload: '/payload/:size - Returns response of specified size (KB)',
       slowResponse: '/slow-response - Slow incremental response',
-      rateLimit: '/rate-limit - Simulates rate limiting',
-      error50Percent: '/error-50-percent - 50% chance of 500 error',
-      headers: '/headers - Returns request headers',
-      ip: '/ip - Returns client IP',
-      health: '/health - Health check',
-      metrics: '/metrics - Basic metrics',
-      config: '/config - Server configuration',
+      status: '/status/:code - Returns specified HTTP status code',
+      success: '/success - 200 OK',
+      timeout: '/timeout - Never responds',
+      unauthorized: '/unauthorized - 401 Unauthorized',
     },
+    message: 'Tressi Test Server',
     timestamp: new Date().toISOString(),
+    version: '1.0.0',
   });
 });
 
@@ -545,8 +520,6 @@ app.get('/', (c) => {
 app.notFound((c) => {
   return c.json(
     {
-      error: 'Not Found',
-      message: 'The requested endpoint does not exist',
       availableEndpoints: [
         '/health',
         '/status/:code',
@@ -575,6 +548,8 @@ app.notFound((c) => {
         '/config',
         '/',
       ],
+      error: 'Not Found',
+      message: 'The requested endpoint does not exist',
       timestamp: new Date().toISOString(),
     },
     404,
@@ -587,10 +562,7 @@ app.onError((err, c) => {
   return c.json(
     {
       error: 'Internal Server Error',
-      message:
-        process.env.NODE_ENV === 'development'
-          ? err.message
-          : 'Something went wrong',
+      message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong',
       timestamp: new Date().toISOString(),
     },
     500,
@@ -603,14 +575,10 @@ if (!SILENT) {
   console.log('Available endpoints:');
   console.log('\n📊 Health & Metrics:');
   console.log('  GET  /health - Health check with uptime and request count');
-  console.log(
-    '  GET  /metrics - Server metrics (uptime, requests, memory usage)',
-  );
+  console.log('  GET  /metrics - Server metrics (uptime, requests, memory usage)');
   console.log('  GET  /config - Server configuration details');
   console.log('\n🔢 Status Code Testing:');
-  console.log(
-    '  GET  /status/:code - Returns specified HTTP status code (100-599)',
-  );
+  console.log('  GET  /status/:code - Returns specified HTTP status code (100-599)');
   console.log('  GET  /success - 200 OK');
   console.log('  GET  /created - 201 Created');
   console.log('  GET  /accepted - 202 Accepted');
@@ -621,47 +589,29 @@ if (!SILENT) {
   console.log('  GET  /server-error - 500 Internal Server Error');
   console.log('  GET  /service-unavailable - 503 Service Unavailable');
   console.log('\n⏱️  Timing & Performance:');
-  console.log(
-    '  GET  /delay/:ms - Delays response by specified milliseconds (max 30s)',
-  );
+  console.log('  GET  /delay/:ms - Delays response by specified milliseconds (max 30s)');
   console.log('  GET  /timeout - Never responds (for timeout testing)');
-  console.log(
-    '  GET  /slow-response - Slow incremental JSON response over 5 seconds',
-  );
-  console.log(
-    '  GET  /chunked - Chunked transfer encoding with 5 chunks over 5 seconds',
-  );
+  console.log('  GET  /slow-response - Slow incremental JSON response over 5 seconds');
+  console.log('  GET  /chunked - Chunked transfer encoding with 5 chunks over 5 seconds');
   console.log('\n📦 Response Size Testing:');
-  console.log(
-    '  GET  /random-size - Returns random response size (100-10100 bytes)',
-  );
-  console.log(
-    '  GET  /payload/:size - Returns response of specified size in KB (1-100 KB)',
-  );
+  console.log('  GET  /random-size - Returns random response size (100-10100 bytes)');
+  console.log('  GET  /payload/:size - Returns response of specified size in KB (1-100 KB)');
   console.log('\n🔍 Request Inspection:');
-  console.log(
-    '  GET  /echo - Echoes request data (method, URL, headers, query)',
-  );
+  console.log('  GET  /echo - Echoes request data (method, URL, headers, query)');
   console.log('  POST /echo - Echoes request data including body');
   console.log('  GET  /headers - Returns request headers and client info');
   console.log('  GET  /ip - Returns client IP address');
   console.log('\n🔄 Redirect Testing:');
-  console.log(
-    '  GET  /redirect/:code?url= - Redirects to specified URL with given status code',
-  );
+  console.log('  GET  /redirect/:code?url= - Redirects to specified URL with given status code');
   console.log('       Valid codes: 301, 302, 303, 307, 308');
   console.log('\n🚦 Miscellaneous:');
-  console.log(
-    '  GET  /rate-limit - 30% chance of returning 429 rate limit error',
-  );
+  console.log('  GET  /rate-limit - 30% chance of returning 429 rate limit error');
   console.log('  GET  /error-50-percent - 50% chance of returning 500 error');
-  console.log(
-    '  GET  / - Root endpoint with available endpoints documentation',
-  );
+  console.log('  GET  / - Root endpoint with available endpoints documentation');
   console.log('\nPress Ctrl+C to stop the server');
 }
 
-const server = serve({
+const server: ServerType = serve({
   fetch: app.fetch,
   port: PORT as number,
 });

@@ -1,5 +1,5 @@
-import { signal, WritableSignal } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { signal, type WritableSignal } from '@angular/core';
+import { type ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -47,9 +47,9 @@ describe('AppComponent', () => {
     };
 
     toastServiceSpy = {
+      showToast: signal(false),
       toastMessage: signal(''),
       toastType: signal('info'),
-      showToast: signal(false),
     };
 
     await TestBed.configureTestingModule({
@@ -81,9 +81,7 @@ describe('AppComponent', () => {
   it('should render child components', () => {
     const loading = fixture.debugElement.query(By.css('app-loading'));
     const toast = fixture.debugElement.query(By.css('app-toast'));
-    const pwaInstaller = fixture.debugElement.query(
-      By.css('app-pwa-installer'),
-    );
+    const pwaInstaller = fixture.debugElement.query(By.css('app-pwa-installer'));
     const routerOutlet = fixture.debugElement.query(By.css('router-outlet'));
 
     expect(loading).toBeTruthy();

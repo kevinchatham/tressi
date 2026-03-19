@@ -29,16 +29,14 @@ describe('TressiServer', () => {
       vi.mocked(testStorage.stopAllRunningTests).mockResolvedValue(0);
 
       const mockServer = {
+        close: vi.fn(),
         on: vi.fn((event, cb) => {
           if (event === 'listening') {
             setTimeout(cb, 0);
           }
         }),
-        close: vi.fn(),
       };
-      vi.mocked(serve).mockReturnValue(
-        mockServer as unknown as ReturnType<typeof serve>,
-      );
+      vi.mocked(serve).mockReturnValue(mockServer as unknown as ReturnType<typeof serve>);
 
       await server.start();
 
@@ -48,9 +46,7 @@ describe('TressiServer', () => {
 
     it('should handle errors during start', async () => {
       const server = new TressiServer(3000);
-      vi.mocked(testStorage.stopAllRunningTests).mockRejectedValue(
-        new Error('DB Error'),
-      );
+      vi.mocked(testStorage.stopAllRunningTests).mockRejectedValue(new Error('DB Error'));
 
       const mockServer = {
         on: vi.fn((event, cb) => {
@@ -59,9 +55,7 @@ describe('TressiServer', () => {
           }
         }),
       };
-      vi.mocked(serve).mockReturnValue(
-        mockServer as unknown as ReturnType<typeof serve>,
-      );
+      vi.mocked(serve).mockReturnValue(mockServer as unknown as ReturnType<typeof serve>);
 
       await expect(server.start()).rejects.toThrow('Server Error');
     });
@@ -72,16 +66,14 @@ describe('TressiServer', () => {
       const server = new TressiServer(3000);
 
       const mockServer = {
+        close: vi.fn((cb) => cb()),
         on: vi.fn((event, cb) => {
           if (event === 'listening') {
             setTimeout(cb, 0);
           }
         }),
-        close: vi.fn((cb) => cb()),
       };
-      vi.mocked(serve).mockReturnValue(
-        mockServer as unknown as ReturnType<typeof serve>,
-      );
+      vi.mocked(serve).mockReturnValue(mockServer as unknown as ReturnType<typeof serve>);
 
       // Start first to initialize server
       vi.mocked(testStorage.stopAllRunningTests).mockResolvedValue(0);

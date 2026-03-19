@@ -1,4 +1,4 @@
-import { Directive, effect, ElementRef, inject, input } from '@angular/core';
+import { Directive, ElementRef, effect, inject, input } from '@angular/core';
 
 @Directive({
   selector: '[appFormatNetwork]',
@@ -12,11 +12,7 @@ export class FormatNetworkThroughputDirective {
   constructor() {
     effect(() => {
       const bytesPerSec = this.value();
-      if (
-        bytesPerSec === undefined ||
-        bytesPerSec === null ||
-        bytesPerSec === 0
-      ) {
+      if (bytesPerSec === undefined || bytesPerSec === null || bytesPerSec === 0) {
         this._el.nativeElement.textContent = '0 B/s';
         return;
       }
@@ -26,19 +22,13 @@ export class FormatNetworkThroughputDirective {
       if (absValue < 1024) {
         this._el.nativeElement.textContent = `${Math.round(bytesPerSec)} B/s`;
       } else if (absValue < 1024 * 1024) {
-        this._el.nativeElement.textContent = `${(bytesPerSec / 1024).toFixed(
-          1,
-        )} KB/s`;
+        this._el.nativeElement.textContent = `${(bytesPerSec / 1024).toFixed(1)} KB/s`;
       } else if (absValue < 1024 * 1024 * 1024) {
-        this._el.nativeElement.textContent = `${(
-          bytesPerSec /
-          (1024 * 1024)
-        ).toFixed(1)} MB/s`;
+        this._el.nativeElement.textContent = `${(bytesPerSec / (1024 * 1024)).toFixed(1)} MB/s`;
       } else {
-        this._el.nativeElement.textContent = `${(
-          bytesPerSec /
-          (1024 * 1024 * 1024)
-        ).toFixed(2)} GB/s`;
+        this._el.nativeElement.textContent = `${(bytesPerSec / (1024 * 1024 * 1024)).toFixed(
+          2,
+        )} GB/s`;
       }
     });
   }

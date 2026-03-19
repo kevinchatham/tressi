@@ -1,8 +1,8 @@
 import { runInInjectionContext, signal } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { type ComponentFixture, TestBed } from '@angular/core/testing';
 import { form } from '@angular/forms/signals';
-import { defaultTressiConfig, SaveConfigRequest } from '@tressi/shared/common';
-import { ModifyConfigRequestFormType } from '@tressi/shared/ui';
+import { defaultTressiConfig, type SaveConfigRequest } from '@tressi/shared/common';
+import type { ModifyConfigRequestFormType } from '@tressi/shared/ui';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { GeneralConfigComponent } from './general-config.component';
@@ -13,8 +13,8 @@ describe('GeneralConfigComponent', () => {
   let mockForm: ModifyConfigRequestFormType;
 
   const mockModel: SaveConfigRequest = {
-    name: 'Test Config',
     config: defaultTressiConfig,
+    name: 'Test Config',
   };
 
   beforeEach(async () => {

@@ -1,12 +1,12 @@
 import { Component } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { type ComponentFixture, TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { FormatLatencyDirective } from './format-latency.directive';
 
 @Component({
-  standalone: true,
   imports: [FormatLatencyDirective],
+  standalone: true,
   template: `<div [appFormatLatency]="value"></div>`,
 })
 class TestHostComponent {

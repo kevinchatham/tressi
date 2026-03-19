@@ -1,16 +1,16 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
+import type { Procedure } from '@vitest/spy';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { ServeCommand } from './serve-command';
 
 vi.mock('../data/database', () => ({
   initializeDatabase: vi.fn().mockResolvedValue(undefined),
 }));
 
-const mockMigrationManager = {
+const mockMigrationManager: { run: Mock<Procedure> } = {
   run: vi.fn(),
 };
 
-const mockServer = {
+const mockServer: { start: Mock<Procedure>; stop: Mock<Procedure> } = {
   start: vi.fn(),
   stop: vi.fn(),
 };
@@ -45,7 +45,7 @@ describe('ServeCommand', () => {
     mockMigrationManager.run.mockResolvedValue({});
     mockServer.start.mockResolvedValue({});
 
-    await command.execute({ port: 3000, migrate: true });
+    await command.execute({ migrate: true, port: 3000 });
 
     expect(mockMigrationManager.run).toHaveBeenCalledWith(true);
     expect(mockServer.start).toHaveBeenCalled();
@@ -55,8 +55,6 @@ describe('ServeCommand', () => {
     const command = new ServeCommand();
     mockServer.start.mockRejectedValue(new Error('Server Error'));
 
-    await expect(command.execute({})).rejects.toThrow(
-      'Failed to start server: Server Error',
-    );
+    await expect(command.execute({})).rejects.toThrow('Failed to start server: Server Error');
   });
 });

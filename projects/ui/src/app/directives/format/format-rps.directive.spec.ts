@@ -1,12 +1,12 @@
 import { Component, signal } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { type ComponentFixture, TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { FormatRpsDirective } from './format-rps.directive';
 
 @Component({
-  standalone: true,
   imports: [FormatRpsDirective],
+  standalone: true,
   template: `<div [appFormatRps]="rps()"></div>`,
 })
 class TestHostComponent {
@@ -48,10 +48,10 @@ describe('FormatRpsDirective', () => {
 
   it('should format RPS correctly with locale string', async () => {
     const testCases = [
-      { input: 1, expected: '1/s' },
-      { input: 999, expected: '999/s' },
-      { input: 1000, expected: '1,000/s' },
-      { input: 1234567, expected: '1,234,567/s' },
+      { expected: '1/s', input: 1 },
+      { expected: '999/s', input: 999 },
+      { expected: '1,000/s', input: 1000 },
+      { expected: '1,234,567/s', input: 1234567 },
     ];
 
     for (const { input, expected } of testCases) {

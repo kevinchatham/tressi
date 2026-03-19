@@ -43,11 +43,7 @@ describe('RunCommand', () => {
     await command.execute('custom.json', 'results.json', true);
 
     expect(loadConfigMock).toHaveBeenCalledWith('custom.json');
-    expect(runLoadTestMock).toHaveBeenCalledWith(
-      { name: 'test' },
-      'results.json',
-      true,
-    );
+    expect(runLoadTestMock).toHaveBeenCalledWith({ name: 'test' }, 'results.json', true);
   });
 
   it('should throw error if config loading fails', async () => {
@@ -55,8 +51,6 @@ describe('RunCommand', () => {
     const loadConfigMock = vi.mocked(loadConfig);
     loadConfigMock.mockRejectedValue(new Error('Config Error'));
 
-    await expect(command.execute('tressi.config.json')).rejects.toThrow(
-      'Config Error',
-    );
+    await expect(command.execute('tressi.config.json')).rejects.toThrow('Config Error');
   });
 });

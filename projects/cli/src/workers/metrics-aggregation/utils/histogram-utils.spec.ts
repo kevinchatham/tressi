@@ -11,22 +11,22 @@ describe('HistogramUtils', () => {
     it('should merge multiple histograms into one', () => {
       const histograms = [
         {
-          totalCount: 10,
-          min: 10,
+          buckets: [{ count: 10, lowerBound: 0, upperBound: 100 }],
           max: 100,
           mean: 50,
-          stdDev: 5,
+          min: 10,
           percentiles: { 50: 50 },
-          buckets: [{ lowerBound: 0, upperBound: 100, count: 10 }],
+          stdDev: 5,
+          totalCount: 10,
         },
         {
-          totalCount: 10,
-          min: 20,
+          buckets: [{ count: 10, lowerBound: 0, upperBound: 200 }],
           max: 200,
           mean: 110,
-          stdDev: 10,
+          min: 20,
           percentiles: { 50: 110 },
-          buckets: [{ lowerBound: 0, upperBound: 200, count: 10 }],
+          stdDev: 10,
+          totalCount: 10,
         },
       ];
 

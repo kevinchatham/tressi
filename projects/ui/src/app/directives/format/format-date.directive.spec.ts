@@ -1,12 +1,12 @@
 import { Component, signal } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { type ComponentFixture, TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { FormatDateDirective } from './format-date.directive';
 
 @Component({
-  standalone: true,
   imports: [FormatDateDirective],
+  standalone: true,
   template: `<div [appFormatDate]="date()"></div>`,
 })
 class TestHostComponent {

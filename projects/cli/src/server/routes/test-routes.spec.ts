@@ -1,4 +1,4 @@
-import { TestDocument } from '@tressi/shared/common';
+import type { TestDocument } from '@tressi/shared/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { metricStorage } from '../../collections/metrics-collection';
@@ -7,11 +7,11 @@ import app from './test-routes';
 
 vi.mock('../../collections/test-collection', () => ({
   testStorage: {
+    create: vi.fn(),
+    delete: vi.fn(),
+    edit: vi.fn(),
     getAll: vi.fn(),
     getById: vi.fn(),
-    create: vi.fn(),
-    edit: vi.fn(),
-    delete: vi.fn(),
   },
 }));
 
@@ -33,7 +33,7 @@ vi.mock('../../core/test-executor', () => ({
 }));
 
 vi.mock('../utils/error-response-generator', () => ({
-  createApiErrorResponse: vi.fn((message, code) => ({ message, code })),
+  createApiErrorResponse: vi.fn((message, code) => ({ code, message })),
 }));
 
 describe('test-routes', () => {
@@ -43,9 +43,7 @@ describe('test-routes', () => {
 
   it('GET / should return all tests', async () => {
     const mockTests = [{ id: '1', status: 'completed' }];
-    vi.mocked(testStorage.getAll).mockResolvedValue(
-      mockTests as unknown as TestDocument[],
-    );
+    vi.mocked(testStorage.getAll).mockResolvedValue(mockTests as unknown as TestDocument[]);
 
     const res = await app.request('/');
     expect(res.status).toBe(200);
@@ -54,9 +52,7 @@ describe('test-routes', () => {
 
   it('GET /:id should return a test', async () => {
     const mockTest = { id: '1', status: 'completed' };
-    vi.mocked(testStorage.getById).mockResolvedValue(
-      mockTest as unknown as TestDocument,
-    );
+    vi.mocked(testStorage.getById).mockResolvedValue(mockTest as unknown as TestDocument);
 
     const res = await app.request('/1');
     expect(res.status).toBe(200);
@@ -72,6 +68,6 @@ describe('test-routes', () => {
 
     const res = await app.request('/1', { method: 'DELETE' });
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ success: true, metricsDeleted: 1 });
+    expect(await res.json()).toEqual({ metricsDeleted: 1, success: true });
   });
 });

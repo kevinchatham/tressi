@@ -1,25 +1,12 @@
+import { CommonModule } from '@angular/common';
+import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
+import { applyEach, form, required, type SchemaPathTree, validate } from '@angular/forms/signals';
 import {
-  Component,
-  computed,
-  effect,
-  inject,
-  input,
-  output,
-  signal,
-} from '@angular/core';
-import {
-  applyEach,
-  form,
-  required,
-  SchemaPathTree,
-  validate,
-} from '@angular/forms/signals';
-import {
-  ConfigDocument,
+  type ConfigDocument,
   defaultTressiConfig,
   requestDefaults,
-  SaveConfigRequest,
-  TressiRequestConfig,
+  type SaveConfigRequest,
+  type TressiRequestConfig,
   validateConfig,
 } from '@tressi/shared/common';
 
@@ -35,13 +22,14 @@ function RequestSchema(request: SchemaPathTree<TressiRequestConfig>): void {
 }
 
 @Component({
-  selector: 'app-config-form',
   imports: [
+    CommonModule,
     IconComponent,
     GeneralConfigComponent,
     RequestsConfigComponent,
     ButtonComponent,
   ],
+  selector: 'app-config-form',
   templateUrl: './config-form.component.html',
 })
 export class ConfigFormComponent {
@@ -289,8 +277,7 @@ export class ConfigFormComponent {
     this.model.update((model) => {
       const updatedRequests = [...(model.config.requests ?? [])];
       if (updatedRequests[requestIndex]?.earlyExit) {
-        const currentCodes =
-          updatedRequests[requestIndex].earlyExit!.exitStatusCodes ?? [];
+        const currentCodes = updatedRequests[requestIndex].earlyExit!.exitStatusCodes ?? [];
         updatedRequests[requestIndex] = {
           ...updatedRequests[requestIndex],
           earlyExit: {
@@ -314,8 +301,7 @@ export class ConfigFormComponent {
     this.model.update((model) => {
       const updatedRequests = [...(model.config.requests ?? [])];
       if (updatedRequests[requestIndex]?.earlyExit?.exitStatusCodes) {
-        const currentCodes =
-          updatedRequests[requestIndex].earlyExit!.exitStatusCodes!;
+        const currentCodes = updatedRequests[requestIndex].earlyExit!.exitStatusCodes!;
         updatedRequests[requestIndex] = {
           ...updatedRequests[requestIndex],
           earlyExit: {
@@ -340,8 +326,8 @@ export class ConfigFormComponent {
     config.requests = [{ ...requestDefaults }];
 
     const defaultConfig: SaveConfigRequest = {
-      name: this._nameService.generate(),
       config,
+      name: this._nameService.generate(),
     };
     return defaultConfig;
   }

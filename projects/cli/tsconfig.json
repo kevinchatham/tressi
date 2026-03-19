@@ -1,8 +1,5 @@
 {
+  "exclude": ["node_modules", "dist", "coverage"],
   "files": [],
-  "references": [
-    { "path": "./tsconfig.app.json" },
-    { "path": "./tsconfig.tests.json" }
-  ],
-  "exclude": ["node_modules", "dist", "coverage"]
+  "references": [{ "path": "./tsconfig.app.json" }, { "path": "./tsconfig.tests.json" }]
 }

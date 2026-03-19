@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { type ComponentFixture, TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ButtonComponent } from '../../components/button/button.component';
@@ -34,9 +34,7 @@ describe('WelcomeComponent', () => {
   });
 
   it('should have logoSrc defined', () => {
-    expect(fixture.componentInstance.logoSrc).toBe(
-      '/media/tressi-logo-512.png',
-    );
+    expect(fixture.componentInstance.logoSrc).toBe('/media/tressi-logo-512.png');
   });
 
   it('should render the logo with correct alt text', () => {

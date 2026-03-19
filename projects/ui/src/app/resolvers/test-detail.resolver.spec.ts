@@ -1,11 +1,7 @@
 import { TestBed } from '@angular/core/testing';
-import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
-import {
-  MetricDocument,
-  TestDocument,
-  TestStatus,
-} from '@tressi/shared/common';
-import { TestDetailResolvedData } from '@tressi/shared/ui';
+import type { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
+import type { MetricDocument, TestDocument, TestStatus } from '@tressi/shared/common';
+import type { TestDetailResolvedData } from '@tressi/shared/ui';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { TestService } from '../services/test.service';
@@ -40,16 +36,16 @@ describe('testDetailResolver', () => {
     const testId = 'test123';
 
     const mockTest = {
-      id: testId,
       configId: 'config1',
-      name: 'Test Run',
-      status: 'completed' as TestStatus,
       epochCreatedAt: Date.now(),
       error: null,
+      id: testId,
+      name: 'Test Run',
+      status: 'completed' as TestStatus,
       summary: {
         global: {
-          epochStartedAt: Date.now() - 10000,
           epochEndedAt: Date.now(),
+          epochStartedAt: Date.now() - 10000,
         },
       },
     } as unknown as TestDocument;
@@ -78,9 +74,7 @@ describe('testDetailResolver', () => {
     (mockRoute.paramMap.get as () => string | null) = vi.fn(() => null);
 
     await expect(
-      TestBed.runInInjectionContext(() =>
-        testDetailResolver(mockRoute, mockState),
-      ),
+      TestBed.runInInjectionContext(() => testDetailResolver(mockRoute, mockState)),
     ).rejects.toThrow('Test ID is required for resolution');
   });
 });

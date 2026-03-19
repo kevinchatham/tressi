@@ -6,10 +6,10 @@ import { logoSrc } from '../../constants';
 import { AppRouterService } from '../../services/router.service';
 
 @Component({
-  selector: 'app-welcome',
-  imports: [RouterModule, ButtonComponent],
-  templateUrl: './welcome.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [RouterModule, ButtonComponent],
+  selector: 'app-welcome',
+  templateUrl: './welcome.component.html',
 })
 export class WelcomeComponent {
   readonly appRouter = inject(AppRouterService);

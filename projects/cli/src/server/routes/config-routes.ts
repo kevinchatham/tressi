@@ -1,5 +1,7 @@
+/** biome-ignore-all lint/nursery/useExplicitType: hono */
+
 import { sValidator } from '@hono/standard-validator';
-import { TressiConfig, validateConfig } from '@tressi/shared/common';
+import { type TressiConfig, validateConfig } from '@tressi/shared/common';
 import { Hono } from 'hono';
 import z from 'zod';
 
@@ -39,17 +41,11 @@ const app = new Hono()
     try {
       const id = c.req.param('id');
       if (!id) {
-        return c.json(
-          createApiErrorResponse('Configuration ID is required', 'MISSING_ID'),
-          400,
-        );
+        return c.json(createApiErrorResponse('Configuration ID is required', 'MISSING_ID'), 400);
       }
       const config = await configStorage.getById(id);
       if (!config) {
-        return c.json(
-          createApiErrorResponse('Configuration not found', 'NOT_FOUND'),
-          404,
-        );
+        return c.json(createApiErrorResponse('Configuration not found', 'NOT_FOUND'), 404);
       }
       return c.json(config);
     } catch (error) {
@@ -74,9 +70,9 @@ const app = new Hono()
     sValidator(
       'json',
       z.object({
+        config: z.custom<TressiConfig>(),
         id: z.string().optional(),
         name: z.string(),
-        config: z.custom<TressiConfig>(),
       }),
     ),
     async (c) => {
@@ -89,13 +85,13 @@ const app = new Hono()
 
         const saved = model.id
           ? await configStorage.edit({
+              config: model.config,
               id: model.id,
               name: model.name,
-              config: model.config,
             })
           : await configStorage.create({
-              name: model.name,
               config: model.config,
+              name: model.name,
             });
         return c.json(saved, 201);
       } catch (error) {
@@ -119,17 +115,11 @@ const app = new Hono()
     try {
       const id = c.req.param('id');
       if (!id) {
-        return c.json(
-          createApiErrorResponse('Configuration ID is required', 'MISSING_ID'),
-          400,
-        );
+        return c.json(createApiErrorResponse('Configuration ID is required', 'MISSING_ID'), 400);
       }
       const success = await configStorage.delete(id);
       if (!success) {
-        return c.json(
-          createApiErrorResponse('Configuration not found', 'NOT_FOUND'),
-          404,
-        );
+        return c.json(createApiErrorResponse('Configuration not found', 'NOT_FOUND'), 404);
       }
       return c.json({ success: true });
     } catch (error) {

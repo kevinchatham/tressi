@@ -1,4 +1,4 @@
-import { RequestResult, TressiRequestConfig } from '@tressi/shared/common';
+import type { RequestResult, TressiRequestConfig } from '@tressi/shared/common';
 import { request as undiciRequest } from 'undici';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -8,9 +8,9 @@ import { ResponseSampler } from './response-sampler';
 
 // Mock the undici request function
 vi.mock('undici', () => ({
-  request: vi.fn(),
   Agent: vi.fn().mockImplementation(() => ({})),
   Dispatcher: {},
+  request: vi.fn(),
 }));
 
 // Mock the globalAgentManager
@@ -21,22 +21,20 @@ vi.mock('./agent-manager', () => ({
 }));
 
 // Helper to create a minimal request config with required fields
-function createRequestConfig(
-  overrides: Partial<TressiRequestConfig> = {},
-): TressiRequestConfig {
+function createRequestConfig(overrides: Partial<TressiRequestConfig> = {}): TressiRequestConfig {
   const defaults: TressiRequestConfig = {
-    url: 'http://example.com/api/test',
-    method: 'GET',
-    headers: {},
-    payload: {},
-    rps: 1,
-    rampUpDurationSec: 0,
     earlyExit: {
       enabled: false,
       errorRateThreshold: 0,
       exitStatusCodes: [],
       monitoringWindowMs: 0,
     },
+    headers: {},
+    method: 'GET',
+    payload: {},
+    rampUpDurationSec: 0,
+    rps: 1,
+    url: 'http://example.com/api/test',
   };
   return { ...defaults, ...overrides } as TressiRequestConfig;
 }
@@ -52,30 +50,27 @@ describe('RequestExecutor', () => {
     mockResponseSampler = new ResponseSampler();
     executor = new RequestExecutor(mockResponseSampler, 100);
     mockRequest = undiciRequest as ReturnType<typeof vi.fn>;
-    shouldSampleResponseSpy = vi.spyOn(
-      mockResponseSampler,
-      'shouldSampleResponse',
-    );
+    shouldSampleResponseSpy = vi.spyOn(mockResponseSampler, 'shouldSampleResponse');
   });
 
   describe('executeRequest', () => {
     it('should execute a successful GET request', async () => {
       const mockResponse = {
-        statusCode: 200,
         body: {
           text: vi.fn().mockResolvedValue('{"message":"success"}'),
         },
         headers: {
-          'content-type': 'application/json',
           'content-length': '26',
+          'content-type': 'application/json',
         },
+        statusCode: 200,
       };
       mockRequest.mockResolvedValue(mockResponse);
       shouldSampleResponseSpy.mockReturnValue(true);
 
       const config = createRequestConfig({
-        url: 'http://example.com/api/users',
         method: 'GET',
+        url: 'http://example.com/api/users',
       });
 
       const result = await executor.executeRequest(config);
@@ -89,21 +84,21 @@ describe('RequestExecutor', () => {
 
     it('should execute a successful POST request with payload', async () => {
       const mockResponse = {
-        statusCode: 201,
         body: {
           text: vi.fn().mockResolvedValue('{"id":1}'),
         },
         headers: {
           'content-type': 'application/json',
         },
+        statusCode: 201,
       };
       mockRequest.mockResolvedValue(mockResponse);
       shouldSampleResponseSpy.mockReturnValue(true);
 
       const config = createRequestConfig({
-        url: 'http://example.com/api/users',
         method: 'POST',
-        payload: { name: 'John', email: 'john@example.com' },
+        payload: { email: 'john@example.com', name: 'John' },
+        url: 'http://example.com/api/users',
       });
 
       const result = await executor.executeRequest(config);
@@ -118,8 +113,8 @@ describe('RequestExecutor', () => {
       mockRequest.mockRejectedValue(new Error('Network error'));
 
       const config = createRequestConfig({
-        url: 'http://example.com/api/users',
         method: 'GET',
+        url: 'http://example.com/api/users',
       });
 
       const result = await executor.executeRequest(config);
@@ -132,20 +127,20 @@ describe('RequestExecutor', () => {
 
     it('should handle non-2xx status codes as unsuccessful', async () => {
       const mockResponse = {
-        statusCode: 404,
         body: {
           text: vi.fn().mockResolvedValue('{"error":"Not found"}'),
         },
         headers: {
           'content-type': 'application/json',
         },
+        statusCode: 404,
       };
       mockRequest.mockResolvedValue(mockResponse);
       shouldSampleResponseSpy.mockReturnValue(true);
 
       const config = createRequestConfig({
-        url: 'http://example.com/api/users/999',
         method: 'GET',
+        url: 'http://example.com/api/users/999',
       });
 
       const result = await executor.executeRequest(config);
@@ -156,18 +151,18 @@ describe('RequestExecutor', () => {
 
     it('should handle 5xx server errors', async () => {
       const mockResponse = {
-        statusCode: 500,
         body: {
           text: vi.fn().mockResolvedValue('Internal Server Error'),
         },
         headers: {},
+        statusCode: 500,
       };
       mockRequest.mockResolvedValue(mockResponse);
       shouldSampleResponseSpy.mockReturnValue(true);
 
       const config = createRequestConfig({
-        url: 'http://example.com/api/users',
         method: 'GET',
+        url: 'http://example.com/api/users',
       });
 
       const result = await executor.executeRequest(config);
@@ -178,20 +173,20 @@ describe('RequestExecutor', () => {
 
     it('should handle 3xx redirect status codes', async () => {
       const mockResponse = {
-        statusCode: 301,
         body: {
           text: vi.fn().mockResolvedValue(''),
         },
         headers: {
           location: 'http://example.com/new-location',
         },
+        statusCode: 301,
       };
       mockRequest.mockResolvedValue(mockResponse);
       shouldSampleResponseSpy.mockReturnValue(false);
 
       const config = createRequestConfig({
-        url: 'http://example.com/api/users',
         method: 'GET',
+        url: 'http://example.com/api/users',
       });
 
       const result = await executor.executeRequest(config);
@@ -207,18 +202,18 @@ describe('RequestExecutor', () => {
         (_url: string, options: { headers: Record<string, string> }) => {
           capturedHeaders = { ...options.headers };
           return Promise.resolve({
-            statusCode: 200,
             body: { text: vi.fn().mockResolvedValue('{}') },
             headers: {},
+            statusCode: 200,
           });
         },
       );
       shouldSampleResponseSpy.mockReturnValue(false);
 
       const config = createRequestConfig({
-        url: 'http://example.com/api/users',
-        method: 'GET',
         headers: { 'X-Request-Id': 'req-123' },
+        method: 'GET',
+        url: 'http://example.com/api/users',
       });
 
       const globalHeaders = {
@@ -240,19 +235,19 @@ describe('RequestExecutor', () => {
 
     it('should not include payload for GET requests', async () => {
       const mockResponse = {
-        statusCode: 200,
         body: {
           text: vi.fn().mockResolvedValue('{}'),
         },
         headers: {},
+        statusCode: 200,
       };
       mockRequest.mockResolvedValue(mockResponse);
       shouldSampleResponseSpy.mockReturnValue(false);
 
       const config = createRequestConfig({
-        url: 'http://example.com/api/users',
         method: 'GET',
         payload: { shouldNotBeSent: true },
+        url: 'http://example.com/api/users',
       });
 
       await executor.executeRequest(config);
@@ -267,19 +262,19 @@ describe('RequestExecutor', () => {
 
     it('should not include payload for DELETE requests', async () => {
       const mockResponse = {
-        statusCode: 204,
         body: {
           text: vi.fn().mockResolvedValue(''),
         },
         headers: {},
+        statusCode: 204,
       };
       mockRequest.mockResolvedValue(mockResponse);
       shouldSampleResponseSpy.mockReturnValue(false);
 
       const config = createRequestConfig({
-        url: 'http://example.com/api/users/1',
         method: 'DELETE',
         payload: { shouldNotBeSent: true },
+        url: 'http://example.com/api/users/1',
       });
 
       await executor.executeRequest(config);
@@ -294,20 +289,20 @@ describe('RequestExecutor', () => {
 
     it('should include payload for POST requests', async () => {
       const mockResponse = {
-        statusCode: 201,
         body: {
           text: vi.fn().mockResolvedValue('{}'),
         },
         headers: {},
+        statusCode: 201,
       };
       mockRequest.mockResolvedValue(mockResponse);
       shouldSampleResponseSpy.mockReturnValue(false);
 
       const payload = { name: 'Test User' };
       const config = createRequestConfig({
-        url: 'http://example.com/api/users',
         method: 'POST',
         payload,
+        url: 'http://example.com/api/users',
       });
 
       await executor.executeRequest(config);
@@ -322,20 +317,20 @@ describe('RequestExecutor', () => {
 
     it('should include payload for PUT requests', async () => {
       const mockResponse = {
-        statusCode: 200,
         body: {
           text: vi.fn().mockResolvedValue('{}'),
         },
         headers: {},
+        statusCode: 200,
       };
       mockRequest.mockResolvedValue(mockResponse);
       shouldSampleResponseSpy.mockReturnValue(false);
 
       const payload = { name: 'Updated User' };
       const config = createRequestConfig({
-        url: 'http://example.com/api/users/1',
         method: 'PUT',
         payload,
+        url: 'http://example.com/api/users/1',
       });
 
       await executor.executeRequest(config);
@@ -350,20 +345,20 @@ describe('RequestExecutor', () => {
 
     it('should include payload for PATCH requests', async () => {
       const mockResponse = {
-        statusCode: 200,
         body: {
           text: vi.fn().mockResolvedValue('{}'),
         },
         headers: {},
+        statusCode: 200,
       };
       mockRequest.mockResolvedValue(mockResponse);
       shouldSampleResponseSpy.mockReturnValue(false);
 
       const payload = { name: 'Patched User' };
       const config = createRequestConfig({
-        url: 'http://example.com/api/users/1',
         method: 'PATCH',
         payload,
+        url: 'http://example.com/api/users/1',
       });
 
       await executor.executeRequest(config);
@@ -378,19 +373,19 @@ describe('RequestExecutor', () => {
 
     it('should not include null payload', async () => {
       const mockResponse = {
-        statusCode: 200,
         body: {
           text: vi.fn().mockResolvedValue('{}'),
         },
         headers: {},
+        statusCode: 200,
       };
       mockRequest.mockResolvedValue(mockResponse);
       shouldSampleResponseSpy.mockReturnValue(false);
 
       const config = createRequestConfig({
-        url: 'http://example.com/api/users',
         method: 'POST',
         payload: null as unknown as TressiRequestConfig['payload'],
+        url: 'http://example.com/api/users',
       });
 
       await executor.executeRequest(config);
@@ -405,19 +400,19 @@ describe('RequestExecutor', () => {
 
     it('should not include undefined payload', async () => {
       const mockResponse = {
-        statusCode: 200,
         body: {
           text: vi.fn().mockResolvedValue('{}'),
         },
         headers: {},
+        statusCode: 200,
       };
       mockRequest.mockResolvedValue(mockResponse);
       shouldSampleResponseSpy.mockReturnValue(false);
 
       const config = createRequestConfig({
-        url: 'http://example.com/api/users',
         method: 'POST',
         payload: undefined as unknown as TressiRequestConfig['payload'],
+        url: 'http://example.com/api/users',
       });
 
       await executor.executeRequest(config);
@@ -432,19 +427,19 @@ describe('RequestExecutor', () => {
 
     it('should not include empty object payload', async () => {
       const mockResponse = {
-        statusCode: 200,
         body: {
           text: vi.fn().mockResolvedValue('{}'),
         },
         headers: {},
+        statusCode: 200,
       };
       mockRequest.mockResolvedValue(mockResponse);
       shouldSampleResponseSpy.mockReturnValue(false);
 
       const config = createRequestConfig({
-        url: 'http://example.com/api/users',
         method: 'POST',
         payload: {},
+        url: 'http://example.com/api/users',
       });
 
       await executor.executeRequest(config);
@@ -459,19 +454,19 @@ describe('RequestExecutor', () => {
 
     it('should not include empty array payload', async () => {
       const mockResponse = {
-        statusCode: 200,
         body: {
           text: vi.fn().mockResolvedValue('{}'),
         },
         headers: {},
+        statusCode: 200,
       };
       mockRequest.mockResolvedValue(mockResponse);
       shouldSampleResponseSpy.mockReturnValue(false);
 
       const config = createRequestConfig({
-        url: 'http://example.com/api/users',
         method: 'POST',
         payload: [],
+        url: 'http://example.com/api/users',
       });
 
       await executor.executeRequest(config);
@@ -486,19 +481,19 @@ describe('RequestExecutor', () => {
 
     it('should not include whitespace-only string payload', async () => {
       const mockResponse = {
-        statusCode: 200,
         body: {
           text: vi.fn().mockResolvedValue('{}'),
         },
         headers: {},
+        statusCode: 200,
       };
       mockRequest.mockResolvedValue(mockResponse);
       shouldSampleResponseSpy.mockReturnValue(false);
 
       const config = createRequestConfig({
-        url: 'http://example.com/api/users',
         method: 'POST',
         payload: '   ' as unknown as TressiRequestConfig['payload'],
+        url: 'http://example.com/api/users',
       });
 
       await executor.executeRequest(config);
@@ -513,18 +508,18 @@ describe('RequestExecutor', () => {
 
     it('should handle response body read error gracefully', async () => {
       const mockResponse = {
-        statusCode: 200,
         body: {
           text: vi.fn().mockRejectedValue(new Error('Read error')),
         },
         headers: {},
+        statusCode: 200,
       };
       mockRequest.mockResolvedValue(mockResponse);
       shouldSampleResponseSpy.mockReturnValue(true);
 
       const config = createRequestConfig({
-        url: 'http://example.com/api/users',
         method: 'GET',
+        url: 'http://example.com/api/users',
       });
 
       const result = await executor.executeRequest(config);
@@ -535,20 +530,20 @@ describe('RequestExecutor', () => {
 
     it('should use content-length header when body is not read', async () => {
       const mockResponse = {
-        statusCode: 200,
         body: {
           text: vi.fn().mockResolvedValue('{}'),
         },
         headers: {
           'content-length': '1000',
         },
+        statusCode: 200,
       };
       mockRequest.mockResolvedValue(mockResponse);
       shouldSampleResponseSpy.mockReturnValue(false);
 
       const config = createRequestConfig({
-        url: 'http://example.com/api/users',
         method: 'GET',
+        url: 'http://example.com/api/users',
       });
 
       const result = await executor.executeRequest(config);
@@ -558,11 +553,11 @@ describe('RequestExecutor', () => {
 
     it('should use default method GET when not specified', async () => {
       const mockResponse = {
-        statusCode: 200,
         body: {
           text: vi.fn().mockResolvedValue('{}'),
         },
         headers: {},
+        statusCode: 200,
       };
       mockRequest.mockResolvedValue(mockResponse);
       shouldSampleResponseSpy.mockReturnValue(false);
@@ -583,18 +578,18 @@ describe('RequestExecutor', () => {
 
     it('should handle case-insensitive HTTP methods', async () => {
       const mockResponse = {
-        statusCode: 200,
         body: {
           text: vi.fn().mockResolvedValue('{}'),
         },
         headers: {},
+        statusCode: 200,
       };
       mockRequest.mockResolvedValue(mockResponse);
       shouldSampleResponseSpy.mockReturnValue(false);
 
       const config = createRequestConfig({
-        url: 'http://example.com/api/users',
         method: 'post' as unknown as TressiRequestConfig['method'],
+        url: 'http://example.com/api/users',
       });
 
       await executor.executeRequest(config);
@@ -609,44 +604,42 @@ describe('RequestExecutor', () => {
 
     it('should track bytes sent correctly', async () => {
       const mockResponse = {
-        statusCode: 201,
         body: {
           text: vi.fn().mockResolvedValue('{}'),
         },
         headers: {},
+        statusCode: 201,
       };
       mockRequest.mockResolvedValue(mockResponse);
       shouldSampleResponseSpy.mockReturnValue(false);
 
       const payload = { name: 'Test' };
       const config = createRequestConfig({
-        url: 'http://example.com/api/users',
         method: 'POST',
         payload,
+        url: 'http://example.com/api/users',
       });
 
       const result = await executor.executeRequest(config);
 
-      expect(result.bytesSent).toBe(
-        Buffer.byteLength(JSON.stringify(payload), 'utf8'),
-      );
+      expect(result.bytesSent).toBe(Buffer.byteLength(JSON.stringify(payload), 'utf8'));
     });
 
     it('should track bytes received correctly', async () => {
       const bodyContent = '{"message":"test response"}';
       const mockResponse = {
-        statusCode: 200,
         body: {
           text: vi.fn().mockResolvedValue(bodyContent),
         },
         headers: {},
+        statusCode: 200,
       };
       mockRequest.mockResolvedValue(mockResponse);
       shouldSampleResponseSpy.mockReturnValue(true);
 
       const config = createRequestConfig({
-        url: 'http://example.com/api/users',
         method: 'GET',
+        url: 'http://example.com/api/users',
       });
 
       const result = await executor.executeRequest(config);
@@ -656,18 +649,18 @@ describe('RequestExecutor', () => {
 
     it('should set timestamp on successful request', async () => {
       const mockResponse = {
-        statusCode: 200,
         body: {
           text: vi.fn().mockResolvedValue('{}'),
         },
         headers: {},
+        statusCode: 200,
       };
       mockRequest.mockResolvedValue(mockResponse);
       shouldSampleResponseSpy.mockReturnValue(false);
 
       const config = createRequestConfig({
-        url: 'http://example.com/api/users',
         method: 'GET',
+        url: 'http://example.com/api/users',
       });
 
       const beforeTime = performance.now();
@@ -682,8 +675,8 @@ describe('RequestExecutor', () => {
       mockRequest.mockRejectedValue(new Error('Network error'));
 
       const config = createRequestConfig({
-        url: 'http://example.com/api/users',
         method: 'GET',
+        url: 'http://example.com/api/users',
       });
 
       const beforeTime = performance.now();
@@ -699,25 +692,23 @@ describe('RequestExecutor', () => {
       process.env.NODE_ENV = 'production';
 
       const mockResponse = {
-        statusCode: 200,
         body: {
           text: vi.fn().mockResolvedValue('{}'),
         },
         headers: {},
+        statusCode: 200,
       };
       mockRequest.mockResolvedValue(mockResponse);
       shouldSampleResponseSpy.mockReturnValue(false);
 
       const config = createRequestConfig({
-        url: 'http://example.com/api/users',
         method: 'GET',
+        url: 'http://example.com/api/users',
       });
 
       await executor.executeRequest(config);
 
-      expect(globalAgentManager.getAgent).toHaveBeenCalledWith(
-        'http://example.com/api/users',
-      );
+      expect(globalAgentManager.getAgent).toHaveBeenCalledWith('http://example.com/api/users');
       expect(mockRequest).toHaveBeenCalledWith(
         'http://example.com/api/users',
         expect.objectContaining({
@@ -733,18 +724,18 @@ describe('RequestExecutor', () => {
       process.env.NODE_ENV = 'test';
 
       const mockResponse = {
-        statusCode: 200,
         body: {
           text: vi.fn().mockResolvedValue('{}'),
         },
         headers: {},
+        statusCode: 200,
       };
       mockRequest.mockResolvedValue(mockResponse);
       shouldSampleResponseSpy.mockReturnValue(false);
 
       const config = createRequestConfig({
-        url: 'http://example.com/api/users',
         method: 'GET',
+        url: 'http://example.com/api/users',
       });
 
       await executor.executeRequest(config);
@@ -762,20 +753,20 @@ describe('RequestExecutor', () => {
 
     it('should handle array content-length header', async () => {
       const mockResponse = {
-        statusCode: 200,
         body: {
           text: vi.fn().mockResolvedValue('{}'),
         },
         headers: {
           'content-length': ['500', '1000'],
         },
+        statusCode: 200,
       };
       mockRequest.mockResolvedValue(mockResponse);
       shouldSampleResponseSpy.mockReturnValue(false);
 
       const config = createRequestConfig({
-        url: 'http://example.com/api/users',
         method: 'GET',
+        url: 'http://example.com/api/users',
       });
 
       const result = await executor.executeRequest(config);
@@ -785,20 +776,20 @@ describe('RequestExecutor', () => {
 
     it('should handle non-numeric content-length header', async () => {
       const mockResponse = {
-        statusCode: 200,
         body: {
           text: vi.fn().mockResolvedValue('{}'),
         },
         headers: {
           'content-length': 'invalid',
         },
+        statusCode: 200,
       };
       mockRequest.mockResolvedValue(mockResponse);
       shouldSampleResponseSpy.mockReturnValue(false);
 
       const config = createRequestConfig({
-        url: 'http://example.com/api/users',
         method: 'GET',
+        url: 'http://example.com/api/users',
       });
 
       const result = await executor.executeRequest(config);
@@ -808,16 +799,16 @@ describe('RequestExecutor', () => {
 
     it('should handle empty response body', async () => {
       const mockResponse = {
-        statusCode: 204,
         body: null,
         headers: {},
+        statusCode: 204,
       };
       mockRequest.mockResolvedValue(mockResponse);
       shouldSampleResponseSpy.mockReturnValue(false);
 
       const config = createRequestConfig({
-        url: 'http://example.com/api/users',
         method: 'DELETE',
+        url: 'http://example.com/api/users',
       });
 
       const result = await executor.executeRequest(config);
@@ -828,18 +819,18 @@ describe('RequestExecutor', () => {
 
     it('should not sample response when shouldSampleResponse returns false', async () => {
       const mockResponse = {
-        statusCode: 200,
         body: {
           text: vi.fn().mockResolvedValue('{"should not be read": true}'),
         },
         headers: {},
+        statusCode: 200,
       };
       mockRequest.mockResolvedValue(mockResponse);
       shouldSampleResponseSpy.mockReturnValue(false);
 
       const config = createRequestConfig({
-        url: 'http://example.com/api/users',
         method: 'GET',
+        url: 'http://example.com/api/users',
       });
 
       const result = await executor.executeRequest(config);
@@ -852,16 +843,16 @@ describe('RequestExecutor', () => {
   describe('releaseResultObject', () => {
     it('should release result object back to pool', () => {
       const result: RequestResult = {
-        method: 'GET',
-        url: 'http://example.com',
-        status: 200,
-        latencyMs: 100,
-        success: true,
         body: 'test',
-        headers: {},
-        timestamp: Date.now(),
-        bytesSent: 0,
         bytesReceived: 0,
+        bytesSent: 0,
+        headers: {},
+        latencyMs: 100,
+        method: 'GET',
+        status: 200,
+        success: true,
+        timestamp: Date.now(),
+        url: 'http://example.com',
       };
 
       executor.releaseResultObject(result);
@@ -877,29 +868,29 @@ describe('RequestExecutor', () => {
       const smallPoolExecutor = new RequestExecutor(mockResponseSampler, 1);
 
       const result1: RequestResult = {
-        method: 'GET',
-        url: 'http://example.com',
-        status: 200,
-        latencyMs: 100,
-        success: true,
         body: 'test',
-        headers: {},
-        timestamp: Date.now(),
-        bytesSent: 0,
         bytesReceived: 0,
+        bytesSent: 0,
+        headers: {},
+        latencyMs: 100,
+        method: 'GET',
+        status: 200,
+        success: true,
+        timestamp: Date.now(),
+        url: 'http://example.com',
       };
 
       const result2: RequestResult = {
-        method: 'POST',
-        url: 'http://example.com',
-        status: 201,
-        latencyMs: 100,
-        success: true,
         body: 'test2',
-        headers: {},
-        timestamp: Date.now(),
-        bytesSent: 0,
         bytesReceived: 0,
+        bytesSent: 0,
+        headers: {},
+        latencyMs: 100,
+        method: 'POST',
+        status: 201,
+        success: true,
+        timestamp: Date.now(),
+        url: 'http://example.com',
       };
 
       smallPoolExecutor.releaseResultObject(result1);
@@ -915,18 +906,18 @@ describe('RequestExecutor', () => {
   describe('object pooling', () => {
     it('should reuse headers objects from pool', async () => {
       const mockResponse = {
-        statusCode: 200,
         body: {
           text: vi.fn().mockResolvedValue('{}'),
         },
         headers: {},
+        statusCode: 200,
       };
       mockRequest.mockResolvedValue(mockResponse);
       shouldSampleResponseSpy.mockReturnValue(false);
 
       const config = createRequestConfig({
-        url: 'http://example.com/api/users',
         method: 'GET',
+        url: 'http://example.com/api/users',
       });
 
       // Execute multiple requests
@@ -940,18 +931,18 @@ describe('RequestExecutor', () => {
 
     it('should reuse result objects from pool', async () => {
       const mockResponse = {
-        statusCode: 200,
         body: {
           text: vi.fn().mockResolvedValue('{}'),
         },
         headers: {},
+        statusCode: 200,
       };
       mockRequest.mockResolvedValue(mockResponse);
       shouldSampleResponseSpy.mockReturnValue(false);
 
       const config = createRequestConfig({
-        url: 'http://example.com/api/users',
         method: 'GET',
+        url: 'http://example.com/api/users',
       });
 
       // Execute multiple requests and release results
@@ -972,28 +963,22 @@ describe('RequestExecutor', () => {
 
   describe('edge cases', () => {
     it('should handle request with all HTTP methods', async () => {
-      const methods: TressiRequestConfig['method'][] = [
-        'GET',
-        'POST',
-        'PUT',
-        'PATCH',
-        'DELETE',
-      ];
+      const methods: TressiRequestConfig['method'][] = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
 
       for (const method of methods) {
         const mockResponse = {
-          statusCode: 200,
           body: {
             text: vi.fn().mockResolvedValue('{}'),
           },
           headers: {},
+          statusCode: 200,
         };
         mockRequest.mockResolvedValue(mockResponse);
         shouldSampleResponseSpy.mockReturnValue(false);
 
         const config = createRequestConfig({
-          url: 'http://example.com/api/test',
           method,
+          url: 'http://example.com/api/test',
         });
 
         const result = await executor.executeRequest(config);
@@ -1003,43 +988,40 @@ describe('RequestExecutor', () => {
 
     it('should handle HTTPS URLs', async () => {
       const mockResponse = {
-        statusCode: 200,
         body: {
           text: vi.fn().mockResolvedValue('{}'),
         },
         headers: {},
+        statusCode: 200,
       };
       mockRequest.mockResolvedValue(mockResponse);
       shouldSampleResponseSpy.mockReturnValue(false);
 
       const config = createRequestConfig({
-        url: 'https://api.example.com/users',
         method: 'GET',
+        url: 'https://api.example.com/users',
       });
 
       const result = await executor.executeRequest(config);
 
       expect(result.url).toBe('https://api.example.com/users');
-      expect(mockRequest).toHaveBeenCalledWith(
-        'https://api.example.com/users',
-        expect.anything(),
-      );
+      expect(mockRequest).toHaveBeenCalledWith('https://api.example.com/users', expect.anything());
     });
 
     it('should handle URLs with query parameters', async () => {
       const mockResponse = {
-        statusCode: 200,
         body: {
           text: vi.fn().mockResolvedValue('{}'),
         },
         headers: {},
+        statusCode: 200,
       };
       mockRequest.mockResolvedValue(mockResponse);
       shouldSampleResponseSpy.mockReturnValue(false);
 
       const config = createRequestConfig({
-        url: 'http://example.com/api/users?page=1&limit=10&sort=name',
         method: 'GET',
+        url: 'http://example.com/api/users?page=1&limit=10&sort=name',
       });
 
       const result = await executor.executeRequest(config);
@@ -1050,18 +1032,18 @@ describe('RequestExecutor', () => {
 
     it('should handle URLs with ports', async () => {
       const mockResponse = {
-        statusCode: 200,
         body: {
           text: vi.fn().mockResolvedValue('{}'),
         },
         headers: {},
+        statusCode: 200,
       };
       mockRequest.mockResolvedValue(mockResponse);
       shouldSampleResponseSpy.mockReturnValue(false);
 
       const config = createRequestConfig({
-        url: 'http://localhost:8080/api/users',
         method: 'GET',
+        url: 'http://localhost:8080/api/users',
       });
 
       const result = await executor.executeRequest(config);
@@ -1071,19 +1053,19 @@ describe('RequestExecutor', () => {
 
     it('should handle numeric payload', async () => {
       const mockResponse = {
-        statusCode: 200,
         body: {
           text: vi.fn().mockResolvedValue('{}'),
         },
         headers: {},
+        statusCode: 200,
       };
       mockRequest.mockResolvedValue(mockResponse);
       shouldSampleResponseSpy.mockReturnValue(false);
 
       const config = createRequestConfig({
-        url: 'http://example.com/api/users',
         method: 'POST',
         payload: 42 as unknown as TressiRequestConfig['payload'],
+        url: 'http://example.com/api/users',
       });
 
       await executor.executeRequest(config);
@@ -1098,19 +1080,19 @@ describe('RequestExecutor', () => {
 
     it('should handle boolean payload', async () => {
       const mockResponse = {
-        statusCode: 200,
         body: {
           text: vi.fn().mockResolvedValue('{}'),
         },
         headers: {},
+        statusCode: 200,
       };
       mockRequest.mockResolvedValue(mockResponse);
       shouldSampleResponseSpy.mockReturnValue(false);
 
       const config = createRequestConfig({
-        url: 'http://example.com/api/users',
         method: 'POST',
         payload: true as unknown as TressiRequestConfig['payload'],
+        url: 'http://example.com/api/users',
       });
 
       await executor.executeRequest(config);
@@ -1125,20 +1107,20 @@ describe('RequestExecutor', () => {
 
     it('should handle array payload', async () => {
       const mockResponse = {
-        statusCode: 201,
         body: {
           text: vi.fn().mockResolvedValue('{}'),
         },
         headers: {},
+        statusCode: 201,
       };
       mockRequest.mockResolvedValue(mockResponse);
       shouldSampleResponseSpy.mockReturnValue(false);
 
       const payload = [{ id: 1 }, { id: 2 }, { id: 3 }];
       const config = createRequestConfig({
-        url: 'http://example.com/api/users',
         method: 'POST',
         payload,
+        url: 'http://example.com/api/users',
       });
 
       await executor.executeRequest(config);
@@ -1153,11 +1135,11 @@ describe('RequestExecutor', () => {
 
     it('should handle non-JSON-serializable payload gracefully', async () => {
       const mockResponse = {
-        statusCode: 200,
         body: {
           text: vi.fn().mockResolvedValue('{}'),
         },
         headers: {},
+        statusCode: 200,
       };
       mockRequest.mockResolvedValue(mockResponse);
       shouldSampleResponseSpy.mockReturnValue(false);
@@ -1167,9 +1149,9 @@ describe('RequestExecutor', () => {
       circular.self = circular;
 
       const config = createRequestConfig({
-        url: 'http://example.com/api/users',
         method: 'POST',
         payload: circular as unknown as TressiRequestConfig['payload'],
+        url: 'http://example.com/api/users',
       });
 
       await executor.executeRequest(config);

@@ -1,9 +1,9 @@
-import { TressiConfig } from '@tressi/shared/common';
+import { performance } from 'node:perf_hooks';
+import type { TressiConfig } from '@tressi/shared/common';
 import ora from 'ora';
-import { performance } from 'perf_hooks';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { Runner } from '../core/runner';
+import type { Runner } from '../core/runner';
 import { MinimalTUI } from './minimal-tui';
 
 vi.mock('ora', () => ({
@@ -27,15 +27,15 @@ describe('MinimalTUI', () => {
   beforeEach(() => {
     config = { options: { durationSec: 10 } } as unknown as TressiConfig;
     runner = {
-      getStartTime: vi.fn(() => 1000),
       getAggregatedMetrics: vi.fn(() => ({
-        memoryUsageMB: 100,
         cpuUsagePercent: 10,
         global: {
           averageRequestsPerSecond: 50,
           p50LatencyMs: 10,
         },
+        memoryUsageMB: 100,
       })),
+      getStartTime: vi.fn(() => 1000),
     } as unknown as Runner;
     vi.clearAllMocks();
     vi.mocked(performance.now).mockReturnValue(2000);
@@ -65,9 +65,7 @@ describe('MinimalTUI', () => {
     const tui = new MinimalTUI(config, false);
     tui.start(runner);
     // Trigger the interval manually if possible, or call private method
-    (
-      tui as unknown as { _updateDisplay: (runner: Runner) => void }
-    )._updateDisplay(runner);
+    (tui as unknown as { _updateDisplay: (runner: Runner) => void })._updateDisplay(runner);
     const mockOra = vi.mocked(ora);
     const spinnerInstance = mockOra.mock.results[0].value;
     expect(spinnerInstance.text).toContain('50 rps');

@@ -12,22 +12,16 @@ describe('ResponseSampleStore', () => {
   });
 
   it('should record and retrieve samples', () => {
-    store.recordResponseSample(
-      runId,
-      url,
-      200,
-      { 'content-type': 'text/plain' },
-      'body1',
-    );
+    store.recordResponseSample(runId, url, 200, { 'content-type': 'text/plain' }, 'body1');
 
     const samples = store.getCollectedResponseSamples(runId);
     const endpointSamples = samples.get(url);
 
     expect(endpointSamples).toHaveLength(1);
     expect(endpointSamples![0]).toEqual({
-      statusCode: 200,
-      headers: { 'content-type': 'text/plain' },
       body: 'body1',
+      headers: { 'content-type': 'text/plain' },
+      statusCode: 200,
     });
   });
 

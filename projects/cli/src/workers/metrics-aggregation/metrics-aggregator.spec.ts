@@ -1,4 +1,4 @@
-import { IHdrHistogramManager, IStatsCounterManager } from '@tressi/shared/cli';
+import type { IHdrHistogramManager, IStatsCounterManager } from '@tressi/shared/cli';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { MetricsAggregator } from './metrics-aggregator';
@@ -24,38 +24,38 @@ describe('MetricsAggregator', () => {
     // Mock stats counter managers
     mockStatsCounterManagers = [
       {
-        getEndpointsCount: vi.fn().mockReturnValue(2),
-        getEndpointCounters: vi.fn().mockReturnValue({
-          successCount: 0,
-          failureCount: 0,
-          bytesSent: 0,
-          bytesReceived: 0,
-          statusCodeCounts: {},
-          sampledStatusCodes: [],
-          bodySampleIndices: [],
-        }),
         getAllEndpointCounters: vi.fn().mockReturnValue([]),
+        getEndpointCounters: vi.fn().mockReturnValue({
+          bodySampleIndices: [],
+          bytesReceived: 0,
+          bytesSent: 0,
+          failureCount: 0,
+          sampledStatusCodes: [],
+          statusCodeCounts: {},
+          successCount: 0,
+        }),
+        getEndpointsCount: vi.fn().mockReturnValue(2),
+        recordBytesReceived: vi.fn(),
+        recordBytesSent: vi.fn(),
         recordRequest: vi.fn(),
         recordStatusCode: vi.fn(),
-        recordBytesSent: vi.fn(),
-        recordBytesReceived: vi.fn(),
       },
       {
-        getEndpointsCount: vi.fn().mockReturnValue(1),
-        getEndpointCounters: vi.fn().mockReturnValue({
-          successCount: 0,
-          failureCount: 0,
-          bytesSent: 0,
-          bytesReceived: 0,
-          statusCodeCounts: {},
-          sampledStatusCodes: [],
-          bodySampleIndices: [],
-        }),
         getAllEndpointCounters: vi.fn().mockReturnValue([]),
+        getEndpointCounters: vi.fn().mockReturnValue({
+          bodySampleIndices: [],
+          bytesReceived: 0,
+          bytesSent: 0,
+          failureCount: 0,
+          sampledStatusCodes: [],
+          statusCodeCounts: {},
+          successCount: 0,
+        }),
+        getEndpointsCount: vi.fn().mockReturnValue(1),
+        recordBytesReceived: vi.fn(),
+        recordBytesSent: vi.fn(),
         recordRequest: vi.fn(),
         recordStatusCode: vi.fn(),
-        recordBytesSent: vi.fn(),
-        recordBytesReceived: vi.fn(),
       },
     ];
 
@@ -128,75 +128,67 @@ describe('MetricsAggregator', () => {
     });
 
     it('should return aggregated metrics with no data', () => {
-      vi.mocked(
-        mockStatsCounterManagers[0].getAllEndpointCounters,
-      ).mockReturnValue([
+      vi.mocked(mockStatsCounterManagers[0].getAllEndpointCounters).mockReturnValue([
         {
-          successCount: 0,
-          failureCount: 0,
-          bytesSent: 0,
-          bytesReceived: 0,
-          statusCodeCounts: {},
-          sampledStatusCodes: [],
           bodySampleIndices: [],
+          bytesReceived: 0,
+          bytesSent: 0,
+          failureCount: 0,
+          sampledStatusCodes: [],
+          statusCodeCounts: {},
+          successCount: 0,
         },
         {
-          successCount: 0,
-          failureCount: 0,
-          bytesSent: 0,
-          bytesReceived: 0,
-          statusCodeCounts: {},
-          sampledStatusCodes: [],
           bodySampleIndices: [],
+          bytesReceived: 0,
+          bytesSent: 0,
+          failureCount: 0,
+          sampledStatusCodes: [],
+          statusCodeCounts: {},
+          successCount: 0,
         },
       ]);
-      vi.mocked(
-        mockStatsCounterManagers[1].getAllEndpointCounters,
-      ).mockReturnValue([
+      vi.mocked(mockStatsCounterManagers[1].getAllEndpointCounters).mockReturnValue([
         {
-          successCount: 0,
-          failureCount: 0,
-          bytesSent: 0,
-          bytesReceived: 0,
-          statusCodeCounts: {},
-          sampledStatusCodes: [],
           bodySampleIndices: [],
+          bytesReceived: 0,
+          bytesSent: 0,
+          failureCount: 0,
+          sampledStatusCodes: [],
+          statusCodeCounts: {},
+          successCount: 0,
         },
       ]);
 
-      vi.mocked(
-        mockHdrHistogramManagers[0].getAllEndpointHistograms,
-      ).mockReturnValue([
+      vi.mocked(mockHdrHistogramManagers[0].getAllEndpointHistograms).mockReturnValue([
         {
-          totalCount: 0,
+          buckets: [],
+          max: 0,
           mean: 0,
           min: 0,
-          max: 0,
           percentiles: {},
           stdDev: 0,
-          buckets: [],
+          totalCount: 0,
         },
         {
-          totalCount: 0,
+          buckets: [],
+          max: 0,
           mean: 0,
           min: 0,
-          max: 0,
           percentiles: {},
           stdDev: 0,
-          buckets: [],
+          totalCount: 0,
         },
       ]);
-      vi.mocked(
-        mockHdrHistogramManagers[1].getAllEndpointHistograms,
-      ).mockReturnValue([
+      vi.mocked(mockHdrHistogramManagers[1].getAllEndpointHistograms).mockReturnValue([
         {
-          totalCount: 0,
+          buckets: [],
+          max: 0,
           mean: 0,
           min: 0,
-          max: 0,
           percentiles: {},
           stdDev: 0,
-          buckets: [],
+          totalCount: 0,
         },
       ]);
 
@@ -213,87 +205,79 @@ describe('MetricsAggregator', () => {
     });
 
     it('should aggregate metrics from all workers', () => {
-      vi.mocked(
-        mockStatsCounterManagers[0].getAllEndpointCounters,
-      ).mockReturnValue([
+      vi.mocked(mockStatsCounterManagers[0].getAllEndpointCounters).mockReturnValue([
         {
-          successCount: 10,
-          failureCount: 2,
-          bytesSent: 5000,
-          bytesReceived: 10000,
-          statusCodeCounts: { 200: 8, 404: 2 },
-          sampledStatusCodes: [],
           bodySampleIndices: [],
+          bytesReceived: 10000,
+          bytesSent: 5000,
+          failureCount: 2,
+          sampledStatusCodes: [],
+          statusCodeCounts: { 200: 8, 404: 2 },
+          successCount: 10,
         },
         {
-          successCount: 5,
-          failureCount: 1,
-          bytesSent: 2500,
-          bytesReceived: 5000,
-          statusCodeCounts: { 200: 5 },
-          sampledStatusCodes: [],
           bodySampleIndices: [],
+          bytesReceived: 5000,
+          bytesSent: 2500,
+          failureCount: 1,
+          sampledStatusCodes: [],
+          statusCodeCounts: { 200: 5 },
+          successCount: 5,
         },
       ]);
-      vi.mocked(
-        mockStatsCounterManagers[1].getAllEndpointCounters,
-      ).mockReturnValue([
+      vi.mocked(mockStatsCounterManagers[1].getAllEndpointCounters).mockReturnValue([
         {
-          successCount: 15,
-          failureCount: 3,
-          bytesSent: 7500,
-          bytesReceived: 15000,
-          statusCodeCounts: { 200: 12, 500: 3 },
-          sampledStatusCodes: [],
           bodySampleIndices: [],
+          bytesReceived: 15000,
+          bytesSent: 7500,
+          failureCount: 3,
+          sampledStatusCodes: [],
+          statusCodeCounts: { 200: 12, 500: 3 },
+          successCount: 15,
         },
       ]);
 
-      vi.mocked(
-        mockHdrHistogramManagers[0].getAllEndpointHistograms,
-      ).mockReturnValue([
+      vi.mocked(mockHdrHistogramManagers[0].getAllEndpointHistograms).mockReturnValue([
         {
-          totalCount: 12,
+          buckets: [
+            { count: 2, lowerBound: 0, upperBound: 50 },
+            { count: 6, lowerBound: 50, upperBound: 100 },
+            { count: 4, lowerBound: 100, upperBound: 200 },
+          ],
+          max: 200,
           mean: 100,
           min: 50,
-          max: 200,
           percentiles: { 50: 95, 95: 180, 99: 195 },
           stdDev: 50,
-          buckets: [
-            { lowerBound: 0, upperBound: 50, count: 2 },
-            { lowerBound: 50, upperBound: 100, count: 6 },
-            { lowerBound: 100, upperBound: 200, count: 4 },
-          ],
+          totalCount: 12,
         },
         {
-          totalCount: 6,
+          buckets: [
+            { count: 2, lowerBound: 0, upperBound: 100 },
+            { count: 3, lowerBound: 100, upperBound: 200 },
+            { count: 1, lowerBound: 200, upperBound: 300 },
+          ],
+          max: 300,
           mean: 150,
           min: 80,
-          max: 300,
           percentiles: { 50: 140, 95: 280, 99: 295 },
           stdDev: 75,
-          buckets: [
-            { lowerBound: 0, upperBound: 100, count: 2 },
-            { lowerBound: 100, upperBound: 200, count: 3 },
-            { lowerBound: 200, upperBound: 300, count: 1 },
-          ],
+          totalCount: 6,
         },
       ]);
-      vi.mocked(
-        mockHdrHistogramManagers[1].getAllEndpointHistograms,
-      ).mockReturnValue([
+      vi.mocked(mockHdrHistogramManagers[1].getAllEndpointHistograms).mockReturnValue([
         {
-          totalCount: 18,
+          buckets: [
+            { count: 3, lowerBound: 0, upperBound: 60 },
+            { count: 9, lowerBound: 60, upperBound: 120 },
+            { count: 6, lowerBound: 120, upperBound: 250 },
+          ],
+          max: 250,
           mean: 120,
           min: 60,
-          max: 250,
           percentiles: { 50: 115, 95: 220, 99: 240 },
           stdDev: 60,
-          buckets: [
-            { lowerBound: 0, upperBound: 60, count: 3 },
-            { lowerBound: 60, upperBound: 120, count: 9 },
-            { lowerBound: 120, upperBound: 250, count: 6 },
-          ],
+          totalCount: 18,
         },
       ]);
 
@@ -306,30 +290,24 @@ describe('MetricsAggregator', () => {
       expect(results.global.totalRequests).toBe(36);
       expect(results.global.successfulRequests).toBe(30);
       expect(results.global.failedRequests).toBe(6);
-      expect(
-        results.endpoints.find((e) => e.url === 'http://example.com/api/1'),
-      ).toBeDefined();
-      expect(
-        results.endpoints.find((e) => e.url === 'http://example.com/api/2'),
-      ).toBeDefined();
-      expect(
-        results.endpoints.find((e) => e.url === 'http://example.com/api/3'),
-      ).toBeDefined();
+      expect(results.endpoints.find((e) => e.url === 'http://example.com/api/1')).toBeDefined();
+      expect(results.endpoints.find((e) => e.url === 'http://example.com/api/2')).toBeDefined();
+      expect(results.endpoints.find((e) => e.url === 'http://example.com/api/3')).toBeDefined();
     });
   });
 
   describe('Timestamp Management', () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // biome-ignore lint/suspicious/noExplicitAny: test
     let mockConfig: any;
 
     beforeEach(() => {
       mockConfig = {
         requests: [
           {
-            url: 'http://example.com',
+            duration: 60,
             method: 'GET',
             rps: 10,
-            duration: 60,
+            url: 'http://example.com',
           },
         ],
       };
@@ -396,39 +374,35 @@ describe('MetricsAggregator', () => {
       aggregator.setStartTime(startTime);
 
       // First poll (or initial state)
-      vi.mocked(
-        mockStatsCounterManagers[0].getAllEndpointCounters,
-      ).mockReturnValue([
+      vi.mocked(mockStatsCounterManagers[0].getAllEndpointCounters).mockReturnValue([
         {
-          successCount: 0,
-          failureCount: 0,
-          bytesSent: 0,
-          bytesReceived: 0,
-          statusCodeCounts: {},
-          sampledStatusCodes: [],
           bodySampleIndices: [],
+          bytesReceived: 0,
+          bytesSent: 0,
+          failureCount: 0,
+          sampledStatusCodes: [],
+          statusCodeCounts: {},
+          successCount: 0,
         },
         {
-          successCount: 0,
-          failureCount: 0,
-          bytesSent: 0,
-          bytesReceived: 0,
-          statusCodeCounts: {},
-          sampledStatusCodes: [],
           bodySampleIndices: [],
+          bytesReceived: 0,
+          bytesSent: 0,
+          failureCount: 0,
+          sampledStatusCodes: [],
+          statusCodeCounts: {},
+          successCount: 0,
         },
       ]);
-      vi.mocked(
-        mockStatsCounterManagers[1].getAllEndpointCounters,
-      ).mockReturnValue([
+      vi.mocked(mockStatsCounterManagers[1].getAllEndpointCounters).mockReturnValue([
         {
-          successCount: 0,
-          failureCount: 0,
-          bytesSent: 0,
-          bytesReceived: 0,
-          statusCodeCounts: {},
-          sampledStatusCodes: [],
           bodySampleIndices: [],
+          bytesReceived: 0,
+          bytesSent: 0,
+          failureCount: 0,
+          sampledStatusCodes: [],
+          statusCodeCounts: {},
+          successCount: 0,
         },
       ]);
 
@@ -437,39 +411,35 @@ describe('MetricsAggregator', () => {
       // Advance time and increase request counts
       vi.setSystemTime(pollTime);
 
-      vi.mocked(
-        mockStatsCounterManagers[0].getAllEndpointCounters,
-      ).mockReturnValue([
+      vi.mocked(mockStatsCounterManagers[0].getAllEndpointCounters).mockReturnValue([
         {
-          successCount: 5,
-          failureCount: 0,
-          bytesSent: 0,
-          bytesReceived: 0,
-          statusCodeCounts: {},
-          sampledStatusCodes: [],
           bodySampleIndices: [],
+          bytesReceived: 0,
+          bytesSent: 0,
+          failureCount: 0,
+          sampledStatusCodes: [],
+          statusCodeCounts: {},
+          successCount: 5,
         },
         {
-          successCount: 5,
-          failureCount: 0,
-          bytesSent: 0,
-          bytesReceived: 0,
-          statusCodeCounts: {},
-          sampledStatusCodes: [],
           bodySampleIndices: [],
+          bytesReceived: 0,
+          bytesSent: 0,
+          failureCount: 0,
+          sampledStatusCodes: [],
+          statusCodeCounts: {},
+          successCount: 5,
         },
       ]);
-      vi.mocked(
-        mockStatsCounterManagers[1].getAllEndpointCounters,
-      ).mockReturnValue([
+      vi.mocked(mockStatsCounterManagers[1].getAllEndpointCounters).mockReturnValue([
         {
-          successCount: 10,
-          failureCount: 0,
-          bytesSent: 0,
-          bytesReceived: 0,
-          statusCodeCounts: {},
-          sampledStatusCodes: [],
           bodySampleIndices: [],
+          bytesReceived: 0,
+          bytesSent: 0,
+          failureCount: 0,
+          sampledStatusCodes: [],
+          statusCodeCounts: {},
+          successCount: 10,
         },
       ]);
 
@@ -496,39 +466,35 @@ describe('MetricsAggregator', () => {
       aggregator.setEndpoints(['url1', 'url2', 'url3']);
 
       // Initial state via getResults
-      vi.mocked(
-        mockStatsCounterManagers[0].getAllEndpointCounters,
-      ).mockReturnValue([
+      vi.mocked(mockStatsCounterManagers[0].getAllEndpointCounters).mockReturnValue([
         {
-          successCount: 0,
-          failureCount: 0,
-          bytesSent: 0,
-          bytesReceived: 0,
-          statusCodeCounts: {},
-          sampledStatusCodes: [],
           bodySampleIndices: [],
+          bytesReceived: 0,
+          bytesSent: 0,
+          failureCount: 0,
+          sampledStatusCodes: [],
+          statusCodeCounts: {},
+          successCount: 0,
         },
         {
-          successCount: 0,
-          failureCount: 0,
-          bytesSent: 0,
-          bytesReceived: 0,
-          statusCodeCounts: {},
-          sampledStatusCodes: [],
           bodySampleIndices: [],
+          bytesReceived: 0,
+          bytesSent: 0,
+          failureCount: 0,
+          sampledStatusCodes: [],
+          statusCodeCounts: {},
+          successCount: 0,
         },
       ]);
-      vi.mocked(
-        mockStatsCounterManagers[1].getAllEndpointCounters,
-      ).mockReturnValue([
+      vi.mocked(mockStatsCounterManagers[1].getAllEndpointCounters).mockReturnValue([
         {
-          successCount: 0,
-          failureCount: 0,
-          bytesSent: 0,
-          bytesReceived: 0,
-          statusCodeCounts: {},
-          sampledStatusCodes: [],
           bodySampleIndices: [],
+          bytesReceived: 0,
+          bytesSent: 0,
+          failureCount: 0,
+          sampledStatusCodes: [],
+          statusCodeCounts: {},
+          successCount: 0,
         },
       ]);
 
@@ -544,39 +510,35 @@ describe('MetricsAggregator', () => {
       // url2 (index 1): worker 1, local 0 -> 1 + 0*2 = 1
       // url3 (index 2): worker 0, local 1 -> 0 + 1*2 = 2
 
-      vi.mocked(
-        mockStatsCounterManagers[0].getAllEndpointCounters,
-      ).mockReturnValue([
+      vi.mocked(mockStatsCounterManagers[0].getAllEndpointCounters).mockReturnValue([
         {
-          successCount: 10,
-          failureCount: 0,
-          bytesSent: 0,
-          bytesReceived: 0,
-          statusCodeCounts: {},
-          sampledStatusCodes: [],
           bodySampleIndices: [],
+          bytesReceived: 0,
+          bytesSent: 0,
+          failureCount: 0,
+          sampledStatusCodes: [],
+          statusCodeCounts: {},
+          successCount: 10,
         }, // url1
         {
-          successCount: 0,
-          failureCount: 0,
-          bytesSent: 0,
-          bytesReceived: 0,
-          statusCodeCounts: {},
-          sampledStatusCodes: [],
           bodySampleIndices: [],
+          bytesReceived: 0,
+          bytesSent: 0,
+          failureCount: 0,
+          sampledStatusCodes: [],
+          statusCodeCounts: {},
+          successCount: 0,
         }, // url3
       ]);
-      vi.mocked(
-        mockStatsCounterManagers[1].getAllEndpointCounters,
-      ).mockReturnValue([
+      vi.mocked(mockStatsCounterManagers[1].getAllEndpointCounters).mockReturnValue([
         {
-          successCount: 5,
-          failureCount: 0,
-          bytesSent: 0,
-          bytesReceived: 0,
-          statusCodeCounts: {},
-          sampledStatusCodes: [],
           bodySampleIndices: [],
+          bytesReceived: 0,
+          bytesSent: 0,
+          failureCount: 0,
+          sampledStatusCodes: [],
+          statusCodeCounts: {},
+          successCount: 5,
         }, // url2
       ]);
 
@@ -599,26 +561,24 @@ describe('MetricsAggregator', () => {
 
       aggregator.setStartTime(startTime);
 
-      vi.mocked(
-        mockStatsCounterManagers[0].getAllEndpointCounters,
-      ).mockReturnValue([
+      vi.mocked(mockStatsCounterManagers[0].getAllEndpointCounters).mockReturnValue([
         {
-          successCount: 10,
-          failureCount: 0,
-          bytesSent: 0,
-          bytesReceived: 0,
-          statusCodeCounts: {},
-          sampledStatusCodes: [],
           bodySampleIndices: [],
+          bytesReceived: 0,
+          bytesSent: 0,
+          failureCount: 0,
+          sampledStatusCodes: [],
+          statusCodeCounts: {},
+          successCount: 10,
         },
         {
-          successCount: 0,
-          failureCount: 0,
-          bytesSent: 0,
-          bytesReceived: 0,
-          statusCodeCounts: {},
-          sampledStatusCodes: [],
           bodySampleIndices: [],
+          bytesReceived: 0,
+          bytesSent: 0,
+          failureCount: 0,
+          sampledStatusCodes: [],
+          statusCodeCounts: {},
+          successCount: 0,
         },
       ]);
 

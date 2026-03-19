@@ -2,12 +2,8 @@ import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import * as readline from 'node:readline/promises';
 
-import { VersionedTressiConfig } from '@tressi/shared/cli';
-import {
-  ConfigDocument,
-  TressiConfig,
-  TressiConfigSchema,
-} from '@tressi/shared/common';
+import type { VersionedTressiConfig } from '@tressi/shared/cli';
+import { type ConfigDocument, type TressiConfig, TressiConfigSchema } from '@tressi/shared/common';
 import chalk from 'chalk';
 import Table from 'cli-table3';
 import ora from 'ora';
@@ -45,7 +41,7 @@ export class JsonMigrationManager {
    * Checks for outdated configurations in the database and prompts the user to migrate them.
    * @param force If true, skip the confirmation prompt and migrate automatically.
    */
-  async run(force = false): Promise<void> {
+  async run(force: boolean = false): Promise<void> {
     const configs = await configStorage.getAll();
     const currentVersion = pkg.version;
     const failures: string[] = [];
@@ -54,68 +50,50 @@ export class JsonMigrationManager {
 
     for (const doc of configs) {
       try {
-        const configVersion = JsonMigrationManager.getVersion(
-          doc.config.$schema,
-        );
+        const configVersion = JsonMigrationManager.getVersion(doc.config.$schema);
         if (semver.lt(configVersion, currentVersion)) {
           outdated.push(doc);
         }
       } catch (error) {
-        const message =
-          error instanceof Error ? error.message : 'Unknown error';
-        terminal.error(
-          `Configuration "${doc.name}" in database is invalid: ${message}`,
-        );
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        terminal.error(`Configuration "${doc.name}" in database is invalid: ${message}`);
         failures.push(`${doc.name}: ${message}`);
       }
     }
 
     if (outdated.length === 0) {
       if (failures.length > 0) {
-        terminal.error(
-          `Found ${failures.length} invalid configuration(s) in database.`,
-        );
+        terminal.error(`Found ${failures.length} invalid configuration(s) in database.`);
       }
       return;
     }
 
     if (!force) {
-      terminal.print(
-        `\n${chalk.bold.blue('📄 Tressi Configuration Migration Required')}`,
-      );
-      terminal.print(
-        `${chalk.dim('Target Version: ')} ${chalk.green(currentVersion)}\n`,
-      );
+      terminal.print(`\n${chalk.bold.blue('📄 Tressi Configuration Migration Required')}`);
+      terminal.print(`${chalk.dim('Target Version: ')} ${chalk.green(currentVersion)}\n`);
 
       // Show summaries for all outdated configs
       for (const doc of outdated) {
         try {
-          const configVersion = JsonMigrationManager.getVersion(
-            doc.config.$schema,
-          );
-          const { summaries, migratedData } = await this._migrateConfig(
-            doc.config,
-          );
+          const configVersion = JsonMigrationManager.getVersion(doc.config.$schema);
+          const { summaries, migratedData } = await this._migrateConfig(doc.config);
           terminal.print(
             `${chalk.bold(`Changes for "${doc.name}"`)} ${chalk.dim(`(v${configVersion} → v${currentVersion})`)}:`,
           );
 
           const table = new Table({
-            head: [chalk.cyan('Migration Summary')],
             colWidths: [75],
+            head: [chalk.cyan('Migration Summary')],
             wordWrap: true,
           });
 
-          summaries.forEach((s) => table.push([s]));
+          summaries.forEach((s) => void table.push([s]));
           terminal.print(table.toString());
 
           this._displayDiff(doc.config, migratedData);
         } catch (error) {
-          const message =
-            error instanceof Error ? error.message : 'Unknown error';
-          terminal.error(
-            `Could not calculate migration changes for "${doc.name}": ${message}`,
-          );
+          const message = error instanceof Error ? error.message : 'Unknown error';
+          terminal.error(`Could not calculate migration changes for "${doc.name}": ${message}`);
         }
       }
 
@@ -140,21 +118,16 @@ export class JsonMigrationManager {
         const { migratedData } = await this._migrateConfig(doc.config);
 
         await configStorage.edit({
+          config: migratedData,
           id: doc.id,
           name: doc.name,
-          config: migratedData,
         });
 
         spinner.succeed(`Successfully migrated: ${chalk.cyan(doc.name)}`);
         spinner.start();
       } catch (error) {
-        const message =
-          error instanceof Error ? error.message : 'Unknown error';
-        spinner.fail(
-          chalk.red(
-            `Failed to migrate configuration "${doc.name}": ${message}`,
-          ),
-        );
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        spinner.fail(chalk.red(`Failed to migrate configuration "${doc.name}": ${message}`));
         failures.push(`${doc.name}: ${message}`);
         spinner.start();
       }
@@ -211,18 +184,10 @@ export class JsonMigrationManager {
     }
 
     if (configVersion !== currentVersion) {
-      terminal.print(
-        `\n${chalk.bold.red('❌ Configuration Version Mismatch')}`,
-      );
-      terminal.print(
-        `${chalk.dim('File:           ')} ${chalk.white(filePath)}`,
-      );
-      terminal.print(
-        `${chalk.dim('Config Version: ')} ${chalk.yellow(`v${configVersion}`)}`,
-      );
-      terminal.print(
-        `${chalk.dim('Tressi Version: ')} ${chalk.green(`v${currentVersion}`)}`,
-      );
+      terminal.print(`\n${chalk.bold.red('❌ Configuration Version Mismatch')}`);
+      terminal.print(`${chalk.dim('File:           ')} ${chalk.white(filePath)}`);
+      terminal.print(`${chalk.dim('Config Version: ')} ${chalk.yellow(`v${configVersion}`)}`);
+      terminal.print(`${chalk.dim('Tressi Version: ')} ${chalk.green(`v${currentVersion}`)}`);
       terminal.print(
         `\nTo run this configuration, please use Tressi ${chalk.cyan(`v${configVersion}`)} or update the configuration to ${chalk.cyan(`v${currentVersion}`)}.`,
       );
@@ -235,7 +200,7 @@ export class JsonMigrationManager {
    * @param filePath Path to the configuration file.
    * @param force If true, skip the confirmation prompt and migrate automatically.
    */
-  async migrateFile(filePath: string, force = false): Promise<void> {
+  async migrateFile(filePath: string, force: boolean = false): Promise<void> {
     const absolutePath = path.resolve(filePath);
     const currentVersion = pkg.version;
 
@@ -278,23 +243,17 @@ export class JsonMigrationManager {
 
     if (!force) {
       terminal.print(`\n${chalk.bold.blue('📄 File Migration Required')}`);
-      terminal.print(
-        `${chalk.dim('File:           ')} ${chalk.white(filePath)}`,
-      );
-      terminal.print(
-        `${chalk.dim('Current Version:')} ${chalk.yellow(configVersion)}`,
-      );
-      terminal.print(
-        `${chalk.dim('Target Version: ')} ${chalk.green(currentVersion)}\n`,
-      );
+      terminal.print(`${chalk.dim('File:           ')} ${chalk.white(filePath)}`);
+      terminal.print(`${chalk.dim('Current Version:')} ${chalk.yellow(configVersion)}`);
+      terminal.print(`${chalk.dim('Target Version: ')} ${chalk.green(currentVersion)}\n`);
 
       const table = new Table({
-        head: [chalk.cyan('Migration Summary')],
         colWidths: [75],
+        head: [chalk.cyan('Migration Summary')],
         wordWrap: true,
       });
 
-      summaries.forEach((s) => table.push([s]));
+      summaries.forEach((s) => void table.push([s]));
       terminal.print(table.toString());
 
       this._displayDiff(config, migratedData);
@@ -320,11 +279,7 @@ export class JsonMigrationManager {
       await fs.copyFile(absolutePath, backupPath);
       spinner.text = `Created backup at "${chalk.dim(`${filePath}.bak`)}"`;
 
-      await fs.writeFile(
-        absolutePath,
-        JSON.stringify(migratedData, null, 2),
-        'utf-8',
-      );
+      await fs.writeFile(absolutePath, JSON.stringify(migratedData, null, 2), 'utf-8');
       spinner.succeed(`Successfully migrated "${chalk.cyan(filePath)}".`);
     } catch (error) {
       spinner.fail(
@@ -379,13 +334,9 @@ export class JsonMigrationManager {
     const migratedData = TressiConfigSchema.parse(data);
 
     // Check if Zod added any defaults that weren't in the manual migrations
-    const zodAddedFields = Object.keys(migratedData).filter(
-      (key) => !(key in data),
-    );
+    const zodAddedFields = Object.keys(migratedData).filter((key) => !(key in data));
     if (zodAddedFields.length > 0) {
-      summaries.push(
-        `Injected default values for new fields: ${zodAddedFields.join(', ')}`,
-      );
+      summaries.push(`Injected default values for new fields: ${zodAddedFields.join(', ')}`);
     }
 
     return { migratedData, summaries };
@@ -398,9 +349,7 @@ export class JsonMigrationManager {
     const oldLines = JSON.stringify(oldObj, null, 2).split('\n');
     const newLines = JSON.stringify(newObj, null, 2).split('\n');
 
-    terminal.print(
-      `\n${chalk.bgRed.white(' OLD ')} ${chalk.bgGreen.white(' NEW ')}`,
-    );
+    terminal.print(`\n${chalk.bgRed.white(' OLD ')} ${chalk.bgGreen.white(' NEW ')}`);
 
     // Simple diffing logic (line by line)
     // Note: This is a basic implementation for visualization purposes.

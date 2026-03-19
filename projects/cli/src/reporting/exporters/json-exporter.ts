@@ -1,5 +1,5 @@
-import { TestSummary } from '@tressi/shared/common';
-import { writeFile } from 'fs/promises';
+import { writeFile } from 'node:fs/promises';
+import type { TestSummary } from '@tressi/shared/common';
 
 import { validateJsonPath } from '../utils/validation';
 
@@ -12,7 +12,7 @@ export class JsonExporter {
    * @param path - undefined (returns JSON string instead of writing to file)
    * @param summary - Test summary data
    */
-  async export(summary: TestSummary, path?: string): Promise<void | string> {
+  async export(summary: TestSummary, path?: string): Promise<undefined | string> {
     try {
       const jsonContent = JSON.stringify(summary, null, 2);
 
@@ -24,9 +24,7 @@ export class JsonExporter {
         return jsonContent; // Returns string when path is undefined
       }
     } catch (error) {
-      throw new Error(
-        `Failed to export test summary to JSON: ${(error as Error).message}`,
-      );
+      throw new Error(`Failed to export test summary to JSON: ${(error as Error).message}`);
     }
   }
 }

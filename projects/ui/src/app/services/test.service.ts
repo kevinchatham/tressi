@@ -1,9 +1,5 @@
-import { inject, Injectable } from '@angular/core';
-import {
-  DeleteTestResponse,
-  MetricDocument,
-  TestDocument,
-} from '@tressi/shared/common';
+import { Injectable, inject } from '@angular/core';
+import type { DeleteTestResponse, MetricDocument, TestDocument } from '@tressi/shared/common';
 
 import { LogService } from './log.service';
 import { RPCService } from './rpc.service';
@@ -31,9 +27,7 @@ export class TestService {
       }
 
       const allTests: TestDocument[] = await response.json();
-      const filteredTests = allTests.filter(
-        (test) => test.configId === configId,
-      );
+      const filteredTests = allTests.filter((test) => test.configId === configId);
 
       // Sort by creation time, most recent first
       return filteredTests.sort((a, b) => b.epochCreatedAt - a.epochCreatedAt);

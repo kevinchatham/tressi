@@ -35,20 +35,20 @@ describe('TestListComponent', () => {
         {
           provide: TestListColumnsService,
           useValue: {
-            visibleColumns: vi.fn(),
             columnGroups: vi.fn(),
             currentSort: vi.fn(),
+            visibleColumns: vi.fn(),
           },
         },
         {
           provide: TestListSelectionService,
           useValue: {
-            selectedTestsSet: vi.fn(),
+            clearSelection: vi.fn(),
             getSelectedCount: vi.fn(),
+            hasRunningTestsSelected: vi.fn(),
             isAllSelected: vi.fn(),
             isSomeSelected: vi.fn(),
-            hasRunningTestsSelected: vi.fn(),
-            clearSelection: vi.fn(),
+            selectedTestsSet: vi.fn(),
           },
         },
         { provide: TestListDeleteService, useValue: {} },

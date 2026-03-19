@@ -27,10 +27,7 @@
               title="Polling Interval"
             >
               @for (option of pollingOptions(); track option.value) {
-                <option
-                  [value]="option.value"
-                  [selected]="pollingInterval() === option.value"
-                >
+                <option [value]="option.value" [selected]="pollingInterval() === option.value">
                   {{ option.label }}
                 </option>
               }
@@ -48,10 +45,7 @@
               title="Chart Type"
             >
               @for (option of chartOptions(); track option.value) {
-                <option
-                  [value]="option.value"
-                  [selected]="selectedChartType() === option.value"
-                >
+                <option [value]="option.value" [selected]="selectedChartType() === option.value">
                   {{ option.label }}
                 </option>
               }

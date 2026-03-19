@@ -9,7 +9,7 @@ import {
   output,
   signal,
 } from '@angular/core';
-import { FormValueControl } from '@angular/forms/signals';
+import type { FormValueControl } from '@angular/forms/signals';
 import { HighlightStyle, syntaxHighlighting } from '@codemirror/language';
 import { languages } from '@codemirror/language-data';
 import { EditorView } from '@codemirror/view';
@@ -18,10 +18,10 @@ import { tags } from '@lezer/highlight';
 import { ThemeService } from '../../services/theme.service';
 
 @Component({
-  selector: 'app-json-textarea',
-  templateUrl: './json-textarea.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CodeEditor],
+  selector: 'app-json-textarea',
+  templateUrl: './json-textarea.component.html',
 })
 export class JsonTextareaComponent<T> implements FormValueControl<T> {
   value = model<T>({} as T);
@@ -63,13 +63,6 @@ export class JsonTextareaComponent<T> implements FormValueControl<T> {
   daisyThemeBase = computed(() =>
     EditorView.theme(
       {
-        '&.cm-editor': {
-          backgroundColor: this._themeService.base100(),
-          color: this._themeService.neutralContent(),
-          height: 'auto',
-          borderRadius: '8px',
-          padding: '8px',
-        },
         '.cm-content': {},
         '.cm-cursor': {
           borderLeftColor: this._themeService.primary(),
@@ -77,16 +70,22 @@ export class JsonTextareaComponent<T> implements FormValueControl<T> {
         },
         '.cm-gutters': {
           backgroundColor: this._themeService.base100(),
-          color: this._themeService.neutralContent(),
           border: 'none',
+          color: this._themeService.neutralContent(),
         },
-        '&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground':
-          {
-            backgroundColor: this._themeService.primary(),
-            opacity: 0.1,
-          },
         '.cm-selectionBackground': {
           backgroundColor: 'transparent',
+        },
+        '&.cm-editor': {
+          backgroundColor: this._themeService.base100(),
+          borderRadius: '8px',
+          color: this._themeService.neutralContent(),
+          height: 'auto',
+          padding: '8px',
+        },
+        '&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground': {
+          backgroundColor: this._themeService.primary(),
+          opacity: 0.1,
         },
       },
       { dark: this._themeService.isDark() },
@@ -95,25 +94,23 @@ export class JsonTextareaComponent<T> implements FormValueControl<T> {
 
   daisyHighlightStyle = computed(() =>
     HighlightStyle.define([
-      { tag: tags.string, color: this._themeService.secondary() },
-      { tag: tags.number, color: this._themeService.success() },
-      { tag: tags.keyword, color: this._themeService.primary() },
-      { tag: tags.operator, color: this._themeService.baseContent() },
-      { tag: tags.brace, color: this._themeService.warning() },
+      { color: this._themeService.secondary(), tag: tags.string },
+      { color: this._themeService.success(), tag: tags.number },
+      { color: this._themeService.primary(), tag: tags.keyword },
+      { color: this._themeService.baseContent(), tag: tags.operator },
+      { color: this._themeService.warning(), tag: tags.brace },
       {
-        tag: tags.null,
         color: this._themeService.primary(),
         fontStyle: 'italic',
+        tag: tags.null,
       },
-      { tag: tags.bool, color: this._themeService.primary() },
-      { tag: tags.propertyName, color: this._themeService.info() },
-      { tag: tags.comment, color: this._themeService.neutral() + 'aa' },
+      { color: this._themeService.primary(), tag: tags.bool },
+      { color: this._themeService.info(), tag: tags.propertyName },
+      { color: `${this._themeService.neutral()}aa`, tag: tags.comment },
     ]),
   );
 
-  daisySyntaxHighlighting = computed(() =>
-    syntaxHighlighting(this.daisyHighlightStyle()),
-  );
+  daisySyntaxHighlighting = computed(() => syntaxHighlighting(this.daisyHighlightStyle()));
 
   daisyTheme = computed(() => [
     this.daisyThemeBase(),
@@ -141,9 +138,7 @@ export class JsonTextareaComponent<T> implements FormValueControl<T> {
       JSON.parse(newValue);
       this.error.set(null);
     } catch (e) {
-      this.error.set(
-        `Invalid JSON: ${e instanceof Error ? e.message : 'Unknown error'}`,
-      );
+      this.error.set(`Invalid JSON: ${e instanceof Error ? e.message : 'Unknown error'}`);
     }
   }
 

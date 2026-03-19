@@ -24,11 +24,11 @@ describe('createApiErrorResponse', () => {
 
     expect(response).toEqual({
       error: {
-        message,
         code,
         details,
-        timestamp: expect.any(Number),
+        message,
         path,
+        timestamp: expect.any(Number),
       },
     });
   });

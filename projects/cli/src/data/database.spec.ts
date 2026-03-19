@@ -1,3 +1,5 @@
+/** biome-ignore-all lint/nursery/useExplicitType: vi.hoisted */
+
 import { describe, expect, it, vi } from 'vitest';
 
 import { initializeDatabase } from './database';
@@ -7,7 +9,7 @@ const { DatabaseMigrationManager, constructorSpy } = vi.hoisted(() => {
     run = vi.fn().mockResolvedValue(undefined);
   }
   const constructorSpy = vi.fn(MockMigrationManager);
-  return { DatabaseMigrationManager: constructorSpy, constructorSpy };
+  return { constructorSpy, DatabaseMigrationManager: constructorSpy };
 });
 
 vi.mock('./database-migration-manager', () => ({

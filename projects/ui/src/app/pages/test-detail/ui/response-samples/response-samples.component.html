@@ -11,19 +11,16 @@
           <div class="mb-4 flex flex-wrap gap-2">
             @for (code of getAvailableStatusCodes(); track code) {
               <button
+                type="button"
                 class="btn btn-sm flex items-center gap-2"
                 [class.btn-primary]="selectedStatusCode() === code"
                 [class.btn-ghost]="selectedStatusCode() !== code"
                 (click)="selectedStatusCode.set(code)"
               >
                 <app-icon [name]="getCategoryIcon(code)" class="text-sm" />
-                <span class="font-mono font-bold">{{
-                  code === 'all' ? 'All' : code
-                }}</span>
+                <span class="font-mono font-bold">{{ code === 'all' ? 'All' : code }}</span>
                 @if (code !== 'all') {
-                  <span class="text-xs"
-                    >(<span [appFormatNumber]="getCount(code)"></span>)</span
-                  >
+                  <span class="text-xs">(<span [appFormatNumber]="getCount(code)"></span>)</span>
                   <span
                     class="text-xs opacity-70"
                     [appFormatPercentage]="getPercentage(code) / 100"
@@ -40,18 +37,12 @@
                 <!-- Sample Header -->
                 <div class="mb-3 flex items-center justify-between">
                   <div class="flex items-center gap-2">
-                    <span
-                      class="badge"
-                      [class]="getStatusCodeClasses(sample.statusCode)"
-                    >
+                    <span class="badge" [class]="getStatusCodeClasses(sample.statusCode)">
                       {{ sample.statusCode }}
                     </span>
-                    <span class="text-base-content/70 text-sm">
-                      Status Code
-                    </span>
+                    <span class="text-base-content/70 text-sm"> Status Code </span>
                   </div>
                 </div>
-
                 <!-- Response Headers -->
                 @if (hasHeaders(sample.headers)) {
                   <div class="mb-3">
@@ -66,13 +57,10 @@
                     />
                   </div>
                 }
-
                 <!-- Response Body -->
                 @if (sample.body) {
                   <div>
-                    <h4 class="text-base-content/80 mb-2 text-sm font-semibold">
-                      Response Body
-                    </h4>
+                    <h4 class="text-base-content/80 mb-2 text-sm font-semibold">Response Body</h4>
                     <app-json-textarea
                       [value]="formatBody(sample.body)"
                       [rows]="10"
@@ -84,7 +72,6 @@
               </div>
             }
           </div>
-
           <!-- Show more indicator -->
           @if ((responseSamples() || []).length > maxSamplesPerCode * 5) {
             <div class="text-base-content/60 mt-2 text-center text-sm">

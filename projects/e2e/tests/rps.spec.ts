@@ -1,30 +1,22 @@
 import { runLoadTest } from '@tressi/cli';
-import {
-  defaultTressiConfig,
-  defaultTressiRequestConfig,
-} from '@tressi/shared/common';
+import { defaultTressiConfig, defaultTressiRequestConfig } from '@tressi/shared/common';
 
 import { expect, test } from '../setup/fixtures';
 
 test.describe('Per-endpoint RPS Configuration Tests', () => {
   test.describe('Accuracy validation', () => {
-    test('should maintain reasonable accuracy for single endpoint', async ({
-      testServer,
-    }) => {
+    test('should maintain reasonable accuracy for single endpoint', async ({ testServer }) => {
       const config = defaultTressiConfig;
 
       config.requests = [
         {
           ...defaultTressiRequestConfig,
-          url: `${testServer}/success`,
           rps: 75,
+          url: `${testServer}/success`,
         },
       ];
 
-      const expectedTotal = config.requests.reduce(
-        (sum, request) => sum + request.rps,
-        0,
-      );
+      const expectedTotal = config.requests.reduce((sum, request) => sum + request.rps, 0);
 
       const results = await runLoadTest(config);
 
@@ -34,33 +26,28 @@ test.describe('Per-endpoint RPS Configuration Tests', () => {
       expect(peakRps).toBeLessThanOrEqual(expectedTotal + tolerance);
     });
 
-    test('should maintain reasonable accuracy for multiple endpoints', async ({
-      testServer,
-    }) => {
+    test('should maintain reasonable accuracy for multiple endpoints', async ({ testServer }) => {
       const config = defaultTressiConfig;
 
       config.requests = [
         {
           ...defaultTressiRequestConfig,
-          url: `${testServer}/success`,
           rps: 30,
+          url: `${testServer}/success`,
         },
         {
           ...defaultTressiRequestConfig,
-          url: `${testServer}/delay/100`,
           rps: 20,
+          url: `${testServer}/delay/100`,
         },
         {
           ...defaultTressiRequestConfig,
-          url: `${testServer}/payload/10`,
           rps: 10,
+          url: `${testServer}/payload/10`,
         },
       ];
 
-      const expectedTotal = config.requests.reduce(
-        (sum, request) => sum + request.rps,
-        0,
-      );
+      const expectedTotal = config.requests.reduce((sum, request) => sum + request.rps, 0);
 
       const results = await runLoadTest(config);
 

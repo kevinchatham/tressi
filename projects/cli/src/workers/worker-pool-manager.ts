@@ -1,22 +1,22 @@
+import { randomUUID } from 'node:crypto';
+import os from 'node:os';
+import { Worker } from 'node:worker_threads';
 import { WorkerState } from '@tressi/shared/cli';
-import {
+import type {
   ResponseSamples,
   TestSummary,
   TressiConfig,
   TressiRequestConfig,
 } from '@tressi/shared/common';
-import { randomUUID } from 'crypto';
-import os from 'os';
-import { Worker } from 'worker_threads';
 
 import { FileUtils } from '../utils/file-utils';
 import { EarlyExitCoordinator } from './early-exit-coordinator';
 import { MetricsAggregator } from './metrics-aggregation/metrics-aggregator';
-import { EndpointStateManager } from './shared-memory/endpoint-state-manager';
-import { HdrHistogramManager } from './shared-memory/hdr-histogram-manager';
+import type { EndpointStateManager } from './shared-memory/endpoint-state-manager';
+import type { HdrHistogramManager } from './shared-memory/hdr-histogram-manager';
 import { SharedMemoryFactory } from './shared-memory/shared-memory-factory';
-import { StatsCounterManager } from './shared-memory/stats-counter-manager';
-import { WorkerStateManager } from './shared-memory/worker-state-manager';
+import type { StatsCounterManager } from './shared-memory/stats-counter-manager';
+import type { WorkerStateManager } from './shared-memory/worker-state-manager';
 
 /**
  * WorkerPoolManager - Core orchestration component for managing worker threads in Tressi load testing.
@@ -57,21 +57,16 @@ export class WorkerPoolManager {
   constructor(private _config: TressiConfig) {
     const cpuCount = os.cpus().length;
     const requestedThreads = _config.options.threads ?? cpuCount;
-    const maxWorkers =
-      requestedThreads > cpuCount ? cpuCount : requestedThreads;
+    const maxWorkers = requestedThreads > cpuCount ? cpuCount : requestedThreads;
 
     this._maxWorkers = maxWorkers;
     this._endpoints = _config.requests;
 
     // Create managers using new SharedMemoryFactory
-    const managers = SharedMemoryFactory.createManagers(
-      this._maxWorkers,
-      this._endpoints,
-      {
-        ringBufferSize: 100,
-        bodySampleBufferSize: 1000,
-      },
-    );
+    const managers = SharedMemoryFactory.createManagers(this._maxWorkers, this._endpoints, {
+      bodySampleBufferSize: 1000,
+      ringBufferSize: 100,
+    });
 
     this._workerStateManager = managers.workerState;
     this._endpointStateManager = managers.endpointState;
@@ -119,21 +114,21 @@ export class WorkerPoolManager {
       const endpointOffset = this._getEndpointOffset(i);
 
       const worker = new Worker(workerPath, {
-        workerData: {
-          workerId: i,
-          assignedEndpoints,
-          endpointOffset,
-          statsBuffer: this._statsCounterManagers[i].getSharedBuffer(),
-          histogramBuffer: this._hdrHistogramManagers[i].getSharedBuffer(),
-          workerStateBuffer: this._workerStateManager.getSharedBuffer(),
-          endpointStateBuffer: this._endpointStateManager.getSharedBuffer(),
-          memoryLimit: this._config.options.workerMemoryLimit,
-          totalWorkers: actualWorkers,
-          durationSec: this._config.options.durationSec || 10,
-          rampUpDurationSec: this._config.options.rampUpDurationSec || 0,
-        },
         resourceLimits: {
           maxOldGenerationSizeMb: this._config.options.workerMemoryLimit,
+        },
+        workerData: {
+          assignedEndpoints,
+          durationSec: this._config.options.durationSec || 10,
+          endpointOffset,
+          endpointStateBuffer: this._endpointStateManager.getSharedBuffer(),
+          histogramBuffer: this._hdrHistogramManagers[i].getSharedBuffer(),
+          memoryLimit: this._config.options.workerMemoryLimit,
+          rampUpDurationSec: this._config.options.rampUpDurationSec || 0,
+          statsBuffer: this._statsCounterManagers[i].getSharedBuffer(),
+          totalWorkers: actualWorkers,
+          workerId: i,
+          workerStateBuffer: this._workerStateManager.getSharedBuffer(),
         },
       });
 
@@ -223,10 +218,7 @@ export class WorkerPoolManager {
   private _distributeEndpoints(): TressiRequestConfig[][] {
     const endpoints = this._config.requests;
     const workers = Math.min(this._maxWorkers, endpoints.length);
-    const distribution: TressiRequestConfig[][] = Array.from(
-      { length: workers },
-      () => [],
-    );
+    const distribution: TressiRequestConfig[][] = Array.from({ length: workers }, () => []);
 
     endpoints.forEach((endpoint, index) => {
       const workerIndex = index % workers;
@@ -269,16 +261,10 @@ export class WorkerPoolManager {
     const actualWorkers = this._workers.length;
 
     for (let i = 0; i < actualWorkers; i++) {
-      const ready = this._workerStateManager.waitForState(
-        i,
-        WorkerState.RUNNING,
-        5000,
-      );
+      const ready = this._workerStateManager.waitForState(i, WorkerState.RUNNING, 5000);
 
       if (!ready) {
-        process.stderr.write(
-          `Warning: Worker ${i} failed to reach ready state\n`,
-        );
+        process.stderr.write(`Warning: Worker ${i} failed to reach ready state\n`);
       }
     }
   }
@@ -303,8 +289,7 @@ export class WorkerPoolManager {
    * @returns Record of endpoint URL to body samples
    */
   getResponseSamples(): ResponseSamples {
-    const responseSamplesMap =
-      this._metricsAggregator.getCollectedResponseSamples(this._runId);
+    const responseSamplesMap = this._metricsAggregator.getCollectedResponseSamples(this._runId);
 
     const result: ResponseSamples = {};
     responseSamplesMap.forEach((samples, url) => {
@@ -359,15 +344,13 @@ export class WorkerPoolManager {
    * Uses a polling approach with 100ms intervals for responsive completion detection.
    */
   async waitForWorkersComplete(): Promise<void> {
-    const maxDurationMs =
-      (this._config.options.durationSec || 10) * 1000 + 5000;
+    const maxDurationMs = (this._config.options.durationSec || 10) * 1000 + 5000;
     const startTime = Date.now();
     const actualWorkers = this._workers.length;
 
     while (true) {
       // Check if all endpoints are stopped
-      const allEndpointsStopped =
-        this._endpointStateManager.getRunningEndpointsCount() === 0;
+      const allEndpointsStopped = this._endpointStateManager.getRunningEndpointsCount() === 0;
       if (allEndpointsStopped) {
         process.stdout.write('All endpoints stopped - terminating test\n');
         break;
@@ -444,9 +427,7 @@ export class WorkerPoolManager {
     while (true) {
       const allExited = Array.from({ length: actualWorkers }, (_, i) => {
         const state = this._workerStateManager.getWorkerState(i);
-        return (
-          state === WorkerState.TERMINATED || state === WorkerState.FINISHED
-        );
+        return state === WorkerState.TERMINATED || state === WorkerState.FINISHED;
       }).every(Boolean);
 
       if (allExited) break;

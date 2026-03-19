@@ -1,13 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  type Mock,
-  vi,
-} from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 
 import { LogService } from './log.service';
 import { RPCService } from './rpc.service';
@@ -31,7 +23,7 @@ describe('TestExportService', () => {
       client: { tests: { ':id': { export: { $get: Mock } } } };
     };
 
-    mockLog = { info: vi.fn(), error: vi.fn() };
+    mockLog = { error: vi.fn(), info: vi.fn() };
 
     // Mock URL methods
     vi.stubGlobal('URL', {
@@ -41,20 +33,14 @@ describe('TestExportService', () => {
 
     // Mock document.createElement for download link
     const mockAnchor = {
-      href: '',
-      download: '',
       click: vi.fn(),
+      download: '',
+      href: '',
     };
 
-    vi.spyOn(document, 'createElement').mockReturnValue(
-      mockAnchor as unknown as HTMLAnchorElement,
-    );
-    vi.spyOn(document.body, 'appendChild').mockImplementation(
-      () => ({}) as unknown as Node,
-    );
-    vi.spyOn(document.body, 'removeChild').mockImplementation(
-      () => ({}) as unknown as Node,
-    );
+    vi.spyOn(document, 'createElement').mockReturnValue(mockAnchor as unknown as HTMLAnchorElement);
+    vi.spyOn(document.body, 'appendChild').mockImplementation(() => ({}) as unknown as Node);
+    vi.spyOn(document.body, 'removeChild').mockImplementation(() => ({}) as unknown as Node);
 
     TestBed.configureTestingModule({
       providers: [
@@ -76,8 +62,8 @@ describe('TestExportService', () => {
     it('should successfully export a test in JSON format', async () => {
       const mockBlob = new Blob(['{}'], { type: 'application/json' });
       mockRPC.client.tests[':id'].export.$get.mockResolvedValue({
-        ok: true,
         blob: async () => mockBlob,
+        ok: true,
       });
 
       await service.exportTest('test-123', 'json');
@@ -88,8 +74,8 @@ describe('TestExportService', () => {
       });
       expect(document.createElement).toHaveBeenCalledWith('a');
       expect(mockLog.info).toHaveBeenCalledWith('Test exported successfully', {
-        testId: 'test-123',
         format: 'json',
+        testId: 'test-123',
       });
     });
 

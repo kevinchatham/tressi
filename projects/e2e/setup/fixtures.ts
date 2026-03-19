@@ -1,4 +1,13 @@
-import { test as base } from '@playwright/test';
+/** biome-ignore-all lint/correctness/noEmptyPattern: {}: object */
+import {
+  test as base,
+  type Page,
+  type PlaywrightTestArgs,
+  type PlaywrightTestOptions,
+  type PlaywrightWorkerArgs,
+  type PlaywrightWorkerOptions,
+  type TestType,
+} from '@playwright/test';
 
 import { ConfigsPage } from '../pages/configs.page';
 import { DashboardPage } from '../pages/dashboard.page';
@@ -17,13 +26,19 @@ type PageFixtures = {
   testDetailPage: TestDetailPage;
 };
 
-export const test = base.extend<PageFixtures, WorkerFixtures>({
-  baseURL: async ({ cliServer }, use) => {
+export const test: TestType<
+  PlaywrightTestArgs & PlaywrightTestOptions & PageFixtures,
+  PlaywrightWorkerArgs & PlaywrightWorkerOptions & WorkerFixtures
+> = base.extend<PageFixtures, WorkerFixtures>({
+  baseURL: async (
+    { cliServer }: { cliServer: string },
+    use: (r: string | undefined) => Promise<void>,
+  ) => {
     await use(cliServer);
   },
 
   cliServer: [
-    async ({}, use): Promise<void> => {
+    async ({}: object, use: (r: string) => Promise<void>): Promise<void> => {
       const manager = new CliServerManager();
       const baseURL = await manager.start();
       await use(baseURL);
@@ -32,8 +47,44 @@ export const test = base.extend<PageFixtures, WorkerFixtures>({
     { scope: 'worker' },
   ],
 
+  configsPage: async ({ page }: { page: Page }, use: (r: ConfigsPage) => Promise<void>) => {
+    page.on('console', (msg) => {
+      // biome-ignore lint/suspicious/noConsole: default
+      console.log(`BROWSER CONSOLE [${msg.type()}]: ${msg.text()}`);
+    });
+    page.on('pageerror', (err) => {
+      // biome-ignore lint/suspicious/noConsole: default
+      console.log(`BROWSER PAGE ERROR: ${err.message}`);
+    });
+    await use(new ConfigsPage(page));
+  },
+
+  dashboardPage: async ({ page }: { page: Page }, use: (r: DashboardPage) => Promise<void>) => {
+    page.on('console', (msg) => {
+      // biome-ignore lint/suspicious/noConsole: default
+      console.log(`BROWSER CONSOLE [${msg.type()}]: ${msg.text()}`);
+    });
+    page.on('pageerror', (err) => {
+      // biome-ignore lint/suspicious/noConsole: default
+      console.log(`BROWSER PAGE ERROR: ${err.message}`);
+    });
+    await use(new DashboardPage(page));
+  },
+
+  testDetailPage: async ({ page }: { page: Page }, use: (r: TestDetailPage) => Promise<void>) => {
+    page.on('console', (msg) => {
+      // biome-ignore lint/suspicious/noConsole: default
+      console.log(`BROWSER CONSOLE [${msg.type()}]: ${msg.text()}`);
+    });
+    page.on('pageerror', (err) => {
+      // biome-ignore lint/suspicious/noConsole: default
+      console.log(`BROWSER PAGE ERROR: ${err.message}`);
+    });
+    await use(new TestDetailPage(page));
+  },
+
   testServer: [
-    async ({}, use): Promise<void> => {
+    async ({}: object, use: (r: string) => Promise<void>): Promise<void> => {
       const manager = new TestServerManager();
       const baseURL = await manager.start();
       await use(baseURL);
@@ -41,42 +92,6 @@ export const test = base.extend<PageFixtures, WorkerFixtures>({
     },
     { scope: 'worker' },
   ],
-
-  configsPage: async ({ page }, use) => {
-    page.on('console', (msg) => {
-      // eslint-disable-next-line no-console
-      console.log(`BROWSER CONSOLE [${msg.type()}]: ${msg.text()}`);
-    });
-    page.on('pageerror', (err) => {
-      // eslint-disable-next-line no-console
-      console.log(`BROWSER PAGE ERROR: ${err.message}`);
-    });
-    await use(new ConfigsPage(page));
-  },
-
-  dashboardPage: async ({ page }, use) => {
-    page.on('console', (msg) => {
-      // eslint-disable-next-line no-console
-      console.log(`BROWSER CONSOLE [${msg.type()}]: ${msg.text()}`);
-    });
-    page.on('pageerror', (err) => {
-      // eslint-disable-next-line no-console
-      console.log(`BROWSER PAGE ERROR: ${err.message}`);
-    });
-    await use(new DashboardPage(page));
-  },
-
-  testDetailPage: async ({ page }, use) => {
-    page.on('console', (msg) => {
-      // eslint-disable-next-line no-console
-      console.log(`BROWSER CONSOLE [${msg.type()}]: ${msg.text()}`);
-    });
-    page.on('pageerror', (err) => {
-      // eslint-disable-next-line no-console
-      console.log(`BROWSER PAGE ERROR: ${err.message}`);
-    });
-    await use(new TestDetailPage(page));
-  },
 });
 
 export { expect } from '@playwright/test';

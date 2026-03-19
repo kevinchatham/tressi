@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { type ComponentFixture, TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ToastService } from '../../../../services/toast.service';
@@ -52,10 +52,7 @@ describe('MetadataComponent', () => {
     it('should show error toast if no config snapshot', async () => {
       fixture.componentRef.setInput('configSnapshot', null);
       await component.copyConfig();
-      expect(toastServiceSpy.show).toHaveBeenCalledWith(
-        'No configuration to copy',
-        'error',
-      );
+      expect(toastServiceSpy.show).toHaveBeenCalledWith('No configuration to copy', 'error');
     });
 
     it('should copy config to clipboard and show success toast', async () => {
@@ -84,15 +81,10 @@ describe('MetadataComponent', () => {
 
     it('should show error toast if copy fails', async () => {
       fixture.componentRef.setInput('configSnapshot', mockConfig);
-      vi.spyOn(navigator.clipboard, 'writeText').mockRejectedValueOnce(
-        new Error('fail'),
-      );
+      vi.spyOn(navigator.clipboard, 'writeText').mockRejectedValueOnce(new Error('fail'));
 
       await component.copyConfig();
-      expect(toastServiceSpy.show).toHaveBeenCalledWith(
-        'Failed to copy configuration',
-        'error',
-      );
+      expect(toastServiceSpy.show).toHaveBeenCalledWith('Failed to copy configuration', 'error');
     });
   });
 });

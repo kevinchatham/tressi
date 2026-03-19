@@ -1,6 +1,6 @@
 import { inject } from '@angular/core';
-import { ResolveFn } from '@angular/router';
-import { TestDetailResolvedData } from '@tressi/shared/ui';
+import type { ActivatedRouteSnapshot, ResolveFn } from '@angular/router';
+import type { TestDetailResolvedData } from '@tressi/shared/ui';
 
 import { TestService } from '../services/test.service';
 
@@ -9,7 +9,7 @@ import { TestService } from '../services/test.service';
  * Ensures the test detail page has all initial data before transitioning.
  */
 export const testDetailResolver: ResolveFn<TestDetailResolvedData> = async (
-  route,
+  route: ActivatedRouteSnapshot,
 ) => {
   const testService = inject(TestService);
   const testId = route.paramMap.get('testId');
@@ -23,5 +23,5 @@ export const testDetailResolver: ResolveFn<TestDetailResolvedData> = async (
     testService.getTestMetrics(testId),
   ]);
 
-  return { test, metrics };
+  return { metrics, test };
 };

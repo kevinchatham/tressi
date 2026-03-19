@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { type ComponentFixture, TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { LoadingComponent } from './loading.component';
@@ -28,9 +28,7 @@ describe('LoadingComponent', () => {
 
   it('should not render initially', () => {
     expect(component.shouldRender()).toBe(false);
-    const overlay = fixture.nativeElement.querySelector(
-      '[data-e2e="loading-overlay"]',
-    );
+    const overlay = fixture.nativeElement.querySelector('[data-e2e="loading-overlay"]');
     expect(overlay).toBeFalsy();
   });
 
@@ -40,9 +38,7 @@ describe('LoadingComponent', () => {
 
     expect(component.shouldRender()).toBe(true);
     expect(component.isFadingOut()).toBe(false);
-    const overlay = fixture.nativeElement.querySelector(
-      '[data-e2e="loading-overlay"]',
-    );
+    const overlay = fixture.nativeElement.querySelector('[data-e2e="loading-overlay"]');
     expect(overlay).toBeTruthy();
   });
 

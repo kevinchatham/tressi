@@ -1,4 +1,4 @@
-import { EndpointState, IEndpointStateManager } from '@tressi/shared/cli';
+import { EndpointState, type IEndpointStateManager } from '@tressi/shared/cli';
 
 /**
  * EndpointStateManager - Track per-endpoint states for selective stopping

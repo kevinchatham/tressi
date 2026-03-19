@@ -1,9 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  inject,
-  OnInit,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, type OnInit } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 
 import { LoadingComponent } from './components/loading/loading.component';
@@ -15,15 +10,10 @@ import { ThemeService } from './services/theme.service';
 import { TitleService } from './services/title.service';
 
 @Component({
-  selector: 'app-root',
-  imports: [
-    RouterOutlet,
-    LoadingComponent,
-    ToastComponent,
-    PwaInstallerComponent,
-  ],
-  templateUrl: './app.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [RouterOutlet, LoadingComponent, ToastComponent, PwaInstallerComponent],
+  selector: 'app-root',
+  templateUrl: './app.component.html',
 })
 export class AppComponent implements OnInit {
   private readonly _titleService = inject(TitleService);

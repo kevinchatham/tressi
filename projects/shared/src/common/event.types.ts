@@ -1,20 +1,20 @@
-import { TressiConfig } from './config.types';
-import { TestSummary } from './reporting.types';
-import { TestStatus } from './test.types';
+import type { TressiConfig } from './config.types';
+import type { TestSummary } from './reporting.types';
+import type { TestStatus } from './test.types';
 
 /**
  * Server-Sent Events event names
  * Grouped to avoid magic strings throughout the codebase
  */
 export const ServerEvents = {
+  CONNECTED: 'connected',
   METRICS: 'metrics',
   TEST: {
-    STARTED: 'test:started',
+    CANCELLED: 'test:cancelled',
     COMPLETED: 'test:completed',
     FAILED: 'test:failed',
-    CANCELLED: 'test:cancelled',
+    STARTED: 'test:started',
   },
-  CONNECTED: 'connected',
 } as const;
 
 /**
@@ -45,16 +45,16 @@ export type TestEventData = {
 
 export interface IGlobalServerEvents {
   metrics: (data: { testId?: string; testSummary: TestSummary }) => void;
-  'test:started': (data: TestEventData) => void;
+  'test:cancelled': (data: TestEventData) => void;
   'test:completed': (data: TestEventData) => void;
   'test:failed': (data: TestEventData) => void;
-  'test:cancelled': (data: TestEventData) => void;
+  'test:started': (data: TestEventData) => void;
 }
 
 export interface IRunnerEvents {
-  start: (data: { config: TressiConfig; startTime: number }) => void;
   complete: (results: TestSummary) => void;
   error: (err: unknown) => void;
+  start: (data: { config: TressiConfig; startTime: number }) => void;
 }
 
 export type ServerEventMessage =

@@ -1,5 +1,5 @@
-import { signal, WritableSignal } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { signal, type WritableSignal } from '@angular/core';
+import { type ComponentFixture, TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 
 import { PwaService } from '../../services/pwa.service';

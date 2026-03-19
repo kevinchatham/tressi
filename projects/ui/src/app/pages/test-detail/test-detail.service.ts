@@ -1,5 +1,5 @@
-import { computed, inject, Injectable, OnDestroy, signal } from '@angular/core';
-import {
+import { computed, Injectable, inject, type OnDestroy, signal } from '@angular/core';
+import type {
   ConfigDocument,
   EndpointSummary,
   GlobalSummary,
@@ -8,13 +8,13 @@ import {
   TestEventData,
 } from '@tressi/shared/common';
 import {
-  ChartType,
+  type ChartType,
   DEFAULT_CHART_POLLING_INTERVAL,
   DEFAULT_CHART_TYPE,
-  PollingInterval,
+  type PollingInterval,
+  type TestSummaryData,
 } from '@tressi/shared/ui';
-import { TestSummaryData } from '@tressi/shared/ui';
-import { Subscription } from 'rxjs';
+import type { Subscription } from 'rxjs';
 
 import { ConfigService } from '../../services/config.service';
 import { EventService } from '../../services/event.service';
@@ -41,9 +41,7 @@ export class TestDetailService implements OnDestroy {
   // UI State Signals (shared)
   readonly selectedEndpoint = signal<string>('global');
   readonly selectedChartType = signal<ChartType>(DEFAULT_CHART_TYPE);
-  readonly selectedPollingInterval = signal<PollingInterval>(
-    DEFAULT_CHART_POLLING_INTERVAL,
-  );
+  readonly selectedPollingInterval = signal<PollingInterval>(DEFAULT_CHART_POLLING_INTERVAL);
   readonly hasError = signal(false);
   readonly errorMessage = signal('');
   readonly configError = signal<string>('');
@@ -51,22 +49,18 @@ export class TestDetailService implements OnDestroy {
   // Computed Signals
   readonly isRealTime = computed(() => this.test()?.status === 'running');
 
-  readonly selectedSummary = computed(
-    (): GlobalSummary | EndpointSummary | null => {
-      const test = this.test();
-      if (!test?.summary) return null;
+  readonly selectedSummary = computed((): GlobalSummary | EndpointSummary | null => {
+    const test = this.test();
+    if (!test?.summary) return null;
 
-      const isGlobal = this.selectedEndpoint() === 'global';
-      if (isGlobal) {
-        return test.summary.global;
-      } else {
-        const endpointUrl = this.selectedEndpoint();
-        return (
-          test.summary.endpoints?.find((e) => e.url === endpointUrl) || null
-        );
-      }
-    },
-  );
+    const isGlobal = this.selectedEndpoint() === 'global';
+    if (isGlobal) {
+      return test.summary.global;
+    } else {
+      const endpointUrl = this.selectedEndpoint();
+      return test.summary.endpoints?.find((e) => e.url === endpointUrl) || null;
+    }
+  });
 
   readonly endpointSummary = computed((): EndpointSummary | null => {
     const summary = this.selectedSummary();
@@ -106,9 +100,7 @@ export class TestDetailService implements OnDestroy {
     if (Array.isArray(data)) {
       return data.length > 0;
     } else if (typeof data === 'object' && data !== null) {
-      return Object.values(data).some(
-        (series) => Array.isArray(series) && series.length > 0,
-      );
+      return Object.values(data).some((series) => Array.isArray(series) && series.length > 0);
     }
     return false;
   });
@@ -118,18 +110,15 @@ export class TestDetailService implements OnDestroy {
   private _testEventsSubscription: Subscription | null = null;
   private _pollingTimerId: ReturnType<typeof setInterval> | null = null;
 
-  initialize(data: {
-    test: TestDocument;
-    metrics: MetricDocument[] | null;
-  }): void {
+  initialize(data: { test: TestDocument; metrics: MetricDocument[] | null }): void {
     this.testId.set(data.test.id);
     this.test.set(data.test);
     this.metrics.set(data.metrics);
 
     if (data.test.summary?.global) {
       this.testTimeRange.set({
-        min: data.test.summary.global.epochStartedAt,
         max: data.test.summary.global.epochEndedAt,
+        min: data.test.summary.global.epochStartedAt,
       });
     }
 
@@ -149,9 +138,7 @@ export class TestDetailService implements OnDestroy {
       if (!configData) this.configError.set('Configuration not found');
     } catch (error) {
       this.config.set(null);
-      this.configError.set(
-        error instanceof Error ? error.message : 'Failed to load configuration',
-      );
+      this.configError.set(error instanceof Error ? error.message : 'Failed to load configuration');
       this._logService.error('Failed to load configuration', error);
     }
   }
@@ -183,41 +170,36 @@ export class TestDetailService implements OnDestroy {
     if (!testId) return;
     this._cleanupSubscriptions();
 
-    this._metricsStreamSubscription = this._eventService
-      .getMetricsStream()
-      .subscribe({
-        next: (data: TestSummaryData) => {
-          if (data.testId === testId) {
-            const currentTest = this.test();
-            if (currentTest) {
-              this.test.set({ ...currentTest, summary: data.testSummary });
-            }
+    this._metricsStreamSubscription = this._eventService.getMetricsStream().subscribe({
+      error: (error: unknown) => this._logService.error('Realtime metrics error:', error),
+      next: (data: TestSummaryData) => {
+        if (data.testId === testId) {
+          const currentTest = this.test();
+          if (currentTest) {
+            this.test.set({ ...currentTest, summary: data.testSummary });
           }
-        },
-        error: (error) =>
-          this._logService.error('Realtime metrics error:', error),
-      });
+        }
+      },
+    });
 
-    this._testEventsSubscription = this._eventService
-      .getTestEventsStream()
-      .subscribe({
-        next: (event: TestEventData) => {
-          if (event.testId === testId) {
-            const currentTest = this.test();
-            if (currentTest) {
-              this.test.set({ ...currentTest, status: event.status });
-            }
-            if (
-              event.status === 'completed' ||
-              event.status === 'failed' ||
-              event.status === 'cancelled'
-            ) {
-              this._cleanupSubscriptions();
-            }
+    this._testEventsSubscription = this._eventService.getTestEventsStream().subscribe({
+      error: (error: unknown) => this._logService.error('Test events error:', error),
+      next: (event: TestEventData) => {
+        if (event.testId === testId) {
+          const currentTest = this.test();
+          if (currentTest) {
+            this.test.set({ ...currentTest, status: event.status });
           }
-        },
-        error: (error) => this._logService.error('Test events error:', error),
-      });
+          if (
+            event.status === 'completed' ||
+            event.status === 'failed' ||
+            event.status === 'cancelled'
+          ) {
+            this._cleanupSubscriptions();
+          }
+        }
+      },
+    });
   }
 
   async exportResults(format: 'json' | 'xlsx' | 'md'): Promise<void> {
@@ -230,17 +212,12 @@ export class TestDetailService implements OnDestroy {
     }
   }
 
-  private _mapMetricsToData(
-    metrics: MetricDocument[],
-    metricType: ChartType,
-  ): number[] {
+  private _mapMetricsToData(metrics: MetricDocument[], metricType: ChartType): number[] {
     switch (metricType) {
       case 'peak_throughput':
         return metrics.map((m) => m.metric?.global?.peakRequestsPerSecond || 0);
       case 'average_throughput':
-        return metrics.map(
-          (m) => m.metric?.global?.averageRequestsPerSecond || 0,
-        );
+        return metrics.map((m) => m.metric?.global?.averageRequestsPerSecond || 0);
       case 'latency':
         return metrics.map((m) => m.metric?.global?.p50LatencyMs || 0);
       case 'latency_p95':
@@ -252,8 +229,7 @@ export class TestDetailService implements OnDestroy {
       case 'success_rate':
         return metrics.map(
           (m) =>
-            ((m.metric?.global?.successfulRequests || 0) /
-              (m.metric?.global?.totalRequests || 1)) *
+            ((m.metric?.global?.successfulRequests || 0) / (m.metric?.global?.totalRequests || 1)) *
             100,
         );
       case 'failed_requests':
@@ -265,9 +241,7 @@ export class TestDetailService implements OnDestroy {
       case 'network_bytes_received':
         return metrics.map((m) => m.metric?.global?.networkBytesReceived || 0);
       case 'target_achieved':
-        return metrics.map(
-          (m) => (m.metric?.global?.targetAchieved || 0) * 100,
-        );
+        return metrics.map((m) => (m.metric?.global?.targetAchieved || 0) * 100);
       default:
         return [];
     }
@@ -287,9 +261,7 @@ export class TestDetailService implements OnDestroy {
       case 'peak_throughput':
         return metrics.map((m) => getEndpoint(m)?.peakRequestsPerSecond || 0);
       case 'average_throughput':
-        return metrics.map(
-          (m) => getEndpoint(m)?.averageRequestsPerSecond || 0,
-        );
+        return metrics.map((m) => getEndpoint(m)?.averageRequestsPerSecond || 0);
       case 'latency':
         return metrics.map((m) => getEndpoint(m)?.p50LatencyMs || 0);
       case 'latency_p95':

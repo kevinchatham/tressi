@@ -1,4 +1,4 @@
-import { AgentConfig } from '@tressi/shared/common';
+import type { AgentConfig } from '@tressi/shared/common';
 import { Agent } from 'undici';
 import { beforeEach, describe, expect, it } from 'vitest';
 

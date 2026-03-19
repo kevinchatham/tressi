@@ -1,5 +1,5 @@
-import { EndpointLatencyStats, GlobalLatencyStats } from '@tressi/shared/cli';
-import { LatencyHistogram } from '@tressi/shared/common';
+import type { EndpointLatencyStats, GlobalLatencyStats } from '@tressi/shared/cli';
+import type { LatencyHistogram } from '@tressi/shared/common';
 
 export function calculateGlobalLatencyStats(
   endpointHistograms: Record<string, LatencyHistogram[]>,
@@ -17,8 +17,8 @@ export function calculateGlobalLatencyStats(
   if (allHistograms.length === 0) {
     return {
       averageLatency: 0,
-      minLatency: 0,
       maxLatency: 0,
+      minLatency: 0,
       p50Latency: 0,
       p95Latency: 0,
       p99Latency: 0,
@@ -47,8 +47,8 @@ export function calculateGlobalLatencyStats(
 
   return {
     averageLatency,
-    minLatency: minLatency === Infinity ? 0 : minLatency,
     maxLatency,
+    minLatency: minLatency === Infinity ? 0 : minLatency,
     p50Latency: weightedP50,
     p95Latency: weightedP95,
     p99Latency: weightedP99,
@@ -66,8 +66,8 @@ export function calculateEndpointLatencyStats(
   if (histograms.length === 0) {
     return {
       averageLatency: 0,
-      minLatency: 0,
       maxLatency: 0,
+      minLatency: 0,
       p50Latency: 0,
       p95Latency: 0,
       p99Latency: 0,
@@ -97,8 +97,8 @@ export function calculateEndpointLatencyStats(
 
   return {
     averageLatency,
-    minLatency: minLatency === Infinity ? 0 : minLatency,
     maxLatency,
+    minLatency: minLatency === Infinity ? 0 : minLatency,
     p50Latency: weightedP50,
     p95Latency: weightedP95,
     p99Latency: weightedP99,

@@ -15,8 +15,8 @@ describe('EventService', () => {
   beforeEach(() => {
     mockEventSource = {
       close: vi.fn(),
-      onmessage: null,
       onerror: null,
+      onmessage: null,
     };
 
     // Use a class for the mock constructor
@@ -58,8 +58,8 @@ describe('EventService', () => {
 
       const event = {
         data: JSON.stringify({
-          event: ServerEvents.METRICS,
           data: { testId: '123' },
+          event: ServerEvents.METRICS,
         }),
       };
       mockEventSource.onmessage?.(event);
@@ -77,8 +77,8 @@ describe('EventService', () => {
 
       const event = {
         data: JSON.stringify({
-          event: ServerEvents.TEST.STARTED,
           data: { status: 'started' },
+          event: ServerEvents.TEST.STARTED,
         }),
       };
       mockEventSource.onmessage?.(event);
@@ -96,8 +96,8 @@ describe('EventService', () => {
 
       const event = {
         data: JSON.stringify({
-          event: ServerEvents.CONNECTED,
           data: { timestamp: 12345 },
+          event: ServerEvents.CONNECTED,
         }),
       };
       mockEventSource.onmessage?.(event);

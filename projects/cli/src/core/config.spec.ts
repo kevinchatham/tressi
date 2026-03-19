@@ -1,5 +1,5 @@
+import { promises as fs } from 'node:fs';
 import { validateConfig } from '@tressi/shared/common';
-import { promises as fs } from 'fs';
 import { request } from 'undici';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -12,8 +12,8 @@ vi.mock('@tressi/shared/common', () => ({
 vi.mock('fs', () => ({
   promises: {
     access: vi.fn(),
-    readFile: vi.fn(),
     constants: { R_OK: 4 },
+    readFile: vi.fn(),
   },
 }));
 
@@ -31,8 +31,8 @@ describe('TressiConfigLoader', () => {
       name: 'test',
     } as unknown as import('@tressi/shared/common').TressiConfig;
     vi.mocked(validateConfig).mockReturnValue({
-      success: true,
       data: mockConfig,
+      success: true,
     } as unknown as ReturnType<typeof validateConfig>);
 
     const result = await loadConfig(mockConfig);
@@ -45,8 +45,8 @@ describe('TressiConfigLoader', () => {
       name: 'test',
     } as unknown as import('@tressi/shared/common').TressiConfig;
     vi.mocked(validateConfig).mockReturnValue({
-      success: false,
       error: { message: 'Invalid' },
+      success: false,
     } as unknown as ReturnType<typeof validateConfig>);
 
     await expect(loadConfig(mockConfig)).rejects.toThrow('Invalid');
@@ -57,12 +57,12 @@ describe('TressiConfigLoader', () => {
       name: 'test',
     } as unknown as import('@tressi/shared/common').TressiConfig;
     vi.mocked(request).mockResolvedValue({
-      statusCode: 200,
       body: { json: vi.fn().mockResolvedValue(mockConfig) },
+      statusCode: 200,
     } as unknown as Awaited<ReturnType<typeof request>>);
     vi.mocked(validateConfig).mockReturnValue({
-      success: true,
       data: mockConfig,
+      success: true,
     } as unknown as ReturnType<typeof validateConfig>);
 
     const result = await loadConfig('https://example.com/config.json');
@@ -85,12 +85,10 @@ describe('TressiConfigLoader', () => {
       name: 'test',
     } as unknown as import('@tressi/shared/common').TressiConfig;
     vi.mocked(fs.access).mockResolvedValue(undefined as never);
-    vi.mocked(fs.readFile).mockResolvedValue(
-      JSON.stringify(mockConfig) as never,
-    );
+    vi.mocked(fs.readFile).mockResolvedValue(JSON.stringify(mockConfig) as never);
     vi.mocked(validateConfig).mockReturnValue({
-      success: true,
       data: mockConfig,
+      success: true,
     } as unknown as ReturnType<typeof validateConfig>);
 
     const result = await loadConfig('tressi.config.json');
@@ -101,8 +99,6 @@ describe('TressiConfigLoader', () => {
   it('should throw error if file not found', async () => {
     vi.mocked(fs.access).mockRejectedValue(new Error('Not found'));
 
-    await expect(loadConfig('nonexistent.json')).rejects.toThrow(
-      'Configuration file not found',
-    );
+    await expect(loadConfig('nonexistent.json')).rejects.toThrow('Configuration file not found');
   });
 });

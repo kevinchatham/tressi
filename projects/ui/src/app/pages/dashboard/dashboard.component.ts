@@ -4,12 +4,12 @@ import {
   effect,
   inject,
   input,
-  OnDestroy,
-  OnInit,
+  type OnDestroy,
+  type OnInit,
   signal,
   viewChild,
 } from '@angular/core';
-import { ConfigDocument } from '@tressi/shared/common';
+import type { ConfigDocument, TestEventData } from '@tressi/shared/common';
 import { Subject, takeUntil } from 'rxjs';
 import { ButtonComponent } from 'src/app/components/button/button.component';
 
@@ -22,13 +22,8 @@ import { LogService } from '../../services/log.service';
 import { AppRouterService } from '../../services/router.service';
 
 @Component({
+  imports: [HeaderComponent, TestListComponent, StartButtonComponent, ButtonComponent],
   selector: 'app-dashboard',
-  imports: [
-    HeaderComponent,
-    TestListComponent,
-    StartButtonComponent,
-    ButtonComponent,
-  ],
   templateUrl: './dashboard.component.html',
 })
 export class DashboardComponent implements OnInit, OnDestroy {
@@ -97,8 +92,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
 
     const routeConfigId = this.configId();
-    const lastSelectedConfig =
-      this._localStorageService.preferences().lastSelectedConfig;
+    const lastSelectedConfig = this._localStorageService.preferences().lastSelectedConfig;
 
     if (routeConfigId) {
       const configFromRoute = configs.find((c) => c.id === routeConfigId);
@@ -120,9 +114,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     lastSelectedConfig: ConfigDocument | null | undefined,
   ): void {
     if (lastSelectedConfig) {
-      const existingConfig = configs.find(
-        (c) => c.id === lastSelectedConfig.id,
-      );
+      const existingConfig = configs.find((c) => c.id === lastSelectedConfig.id);
       if (existingConfig) {
         this.onConfigSelect(existingConfig.id);
         return;
@@ -195,7 +187,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
       .getTestEventsStream()
       .pipe(takeUntil(this._destroy$))
       .subscribe({
-        next: (event) => {
+        error: (error: unknown) => {
+          this._logService.error('Failed to handle test event:', error);
+        },
+        next: (event: TestEventData) => {
           if (event.status === 'running') {
             this.isTestRunning.set(true);
           } else if (
@@ -205,9 +200,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
           ) {
             this.isTestRunning.set(false);
           }
-        },
-        error: (error) => {
-          this._logService.error('Failed to handle test event:', error);
         },
       });
   }

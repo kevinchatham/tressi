@@ -3,10 +3,10 @@ import { Component, inject } from '@angular/core';
 import { PwaService } from '../../services/pwa.service';
 
 @Component({
-  selector: 'app-pwa-installer',
   imports: [],
-  templateUrl: './pwa-installer.component.html',
+  selector: 'app-pwa-installer',
   styleUrl: './pwa-installer.component.css',
+  templateUrl: './pwa-installer.component.html',
 })
 export class PwaInstallerComponent {
   readonly pwaService = inject(PwaService);

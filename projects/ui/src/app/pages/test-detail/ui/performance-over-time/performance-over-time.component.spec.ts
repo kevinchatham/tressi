@@ -1,5 +1,5 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ChartType, PollingInterval } from '@tressi/shared/ui';
+import { type ComponentFixture, TestBed } from '@angular/core/testing';
+import type { ChartType, PollingInterval } from '@tressi/shared/ui';
 import { describe, expect, it, vi } from 'vitest';
 
 import { PerformanceOverTimeComponent } from './performance-over-time.component';

@@ -1,13 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  type Mock,
-  vi,
-} from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 
 import { LocalStorageService } from './local-storage.service';
 import { PwaService } from './pwa.service';
@@ -26,15 +18,12 @@ describe('PwaService', () => {
     });
 
     mockLocalStorage = {
-      preferences: vi.fn().mockReturnValue({ pwaPromptDismissed: false }),
       dismissPwaPrompt: vi.fn(),
+      preferences: vi.fn().mockReturnValue({ pwaPromptDismissed: false }),
     };
 
     TestBed.configureTestingModule({
-      providers: [
-        PwaService,
-        { provide: LocalStorageService, useValue: mockLocalStorage },
-      ],
+      providers: [PwaService, { provide: LocalStorageService, useValue: mockLocalStorage }],
     });
 
     service = TestBed.inject(PwaService);
@@ -49,10 +38,7 @@ describe('PwaService', () => {
       'beforeinstallprompt',
       expect.any(Function),
     );
-    expect(window.addEventListener).toHaveBeenCalledWith(
-      'appinstalled',
-      expect.any(Function),
-    );
+    expect(window.addEventListener).toHaveBeenCalledWith('appinstalled', expect.any(Function));
   });
 
   describe('canInstall', () => {
@@ -84,9 +70,9 @@ describe('PwaService', () => {
   describe('installPwa', () => {
     it('should trigger prompt and handle acceptance', async () => {
       const mockEvent = {
+        preventDefault: vi.fn(),
         prompt: vi.fn(),
         userChoice: Promise.resolve({ outcome: 'accepted' }),
-        preventDefault: vi.fn(),
       };
 
       eventListeners['beforeinstallprompt'](mockEvent);
@@ -99,9 +85,9 @@ describe('PwaService', () => {
 
     it('should trigger prompt and handle dismissal', async () => {
       const mockEvent = {
+        preventDefault: vi.fn(),
         prompt: vi.fn(),
         userChoice: Promise.resolve({ outcome: 'dismissed' }),
-        preventDefault: vi.fn(),
       };
 
       eventListeners['beforeinstallprompt'](mockEvent);

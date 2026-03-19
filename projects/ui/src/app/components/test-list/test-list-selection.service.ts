@@ -52,10 +52,7 @@ export class TestListSelectionService {
    * @returns true if all test IDs are selected, false otherwise
    */
   isAllSelected(allTestIds: string[]): boolean {
-    return (
-      allTestIds.length > 0 &&
-      allTestIds.every((id) => this._selectedTests().has(id))
-    );
+    return allTestIds.length > 0 && allTestIds.every((id) => this._selectedTests().has(id));
   }
 
   /**
@@ -73,9 +70,7 @@ export class TestListSelectionService {
    */
   hasRunningTestsSelected(tests: TestDocument[]): boolean {
     const selectedIds = this._selectedTests();
-    return tests.some(
-      (test) => selectedIds.has(test.id) && test.status === 'running',
-    );
+    return tests.some((test) => selectedIds.has(test.id) && test.status === 'running');
   }
 
   /**

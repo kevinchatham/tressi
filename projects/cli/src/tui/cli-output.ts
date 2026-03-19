@@ -1,8 +1,4 @@
-import {
-  TestSummary,
-  TressiConfig,
-  TressiOptionsConfig,
-} from '@tressi/shared/common';
+import type { TestSummary, TressiConfig, TressiOptionsConfig } from '@tressi/shared/common';
 import chalk from 'chalk';
 import Table from 'cli-table3';
 
@@ -32,32 +28,25 @@ export function printSummary(
 /**
  * Prints report information including version and export details.
  */
-function printReportInfo(
-  summary: TestSummary,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _options: TressiOptionsConfig,
-): void {
+function printReportInfo(summary: TestSummary, _options: TressiOptionsConfig): void {
   const reportInfoTable = new Table({
-    head: ['Metric', 'Value'],
     colWidths: [20, 35],
+    head: ['Metric', 'Value'],
   });
   reportInfoTable.push(['Version', summary.tressiVersion]);
-  terminal.print('\n' + chalk.bold('Report Information'));
+  terminal.print(`\n${chalk.bold('Report Information')}`);
   terminal.print(reportInfoTable.toString());
 }
 
 /**
  * Prints the run configuration including workers, duration, and RPS settings.
  */
-function printRunConfiguration(
-  options: TressiOptionsConfig,
-  config: TressiConfig,
-): void {
+function printRunConfiguration(options: TressiOptionsConfig, config: TressiConfig): void {
   const { durationSec = 10, rampUpDurationSec, threads } = options;
 
   const configTable = new Table({
-    head: ['Option', 'Setting'],
     colWidths: [20, 20],
+    head: ['Option', 'Setting'],
   });
   const totalRps = config.requests.reduce(
     (sum: number, req: { rps?: number }) => sum + (req.rps || 0),
@@ -71,7 +60,7 @@ function printRunConfiguration(
     configTable.push(['ramp up Time', `${rampUpDurationSec}s`]);
   }
 
-  terminal.print('\n' + chalk.bold('Run Configuration'));
+  terminal.print(`\n${chalk.bold('Run Configuration')}`);
   terminal.print(configTable.toString());
 }
 
@@ -82,8 +71,8 @@ function printGlobalSummary(summary: TestSummary): void {
   const { global: globalSummary } = summary;
 
   const summaryTable = new Table({
-    head: ['Stat', 'Value'],
     colWidths: [30, 20],
+    head: ['Stat', 'Value'],
   });
 
   summaryTable.push(
@@ -101,7 +90,7 @@ function printGlobalSummary(summary: TestSummary): void {
     ['Max Latency', `${globalSummary.maxLatencyMs}ms`],
   );
 
-  terminal.print('\n' + chalk.bold('Global Test Summary'));
+  terminal.print(`\n${chalk.bold('Global Test Summary')}`);
   terminal.print(summaryTable.toString());
 }
 
@@ -113,22 +102,20 @@ function printEndpointSummary(summary: TestSummary): void {
   if (endpoints.length === 0) return;
 
   const endpointSummaryTable = new Table({
-    head: ['Endpoint', 'Success', 'Failed'],
     colWidths: [50, 10, 10],
+    head: ['Endpoint', 'Success', 'Failed'],
   });
 
   const endpointLatencyTable = new Table({
-    head: ['Endpoint', 'Avg', 'Min', 'Max', 'P95', 'P99'],
     colWidths: [50, 10, 10, 10, 10, 10],
+    head: ['Endpoint', 'Avg', 'Min', 'Max', 'P95', 'P99'],
   });
 
   for (const endpoint of endpoints) {
     const url = endpoint.url;
     const maxUrlLength = 48; // Account for table padding
     const displayUrl =
-      url.length > maxUrlLength
-        ? `...${url.slice(url.length - (maxUrlLength - 3))}`
-        : url;
+      url.length > maxUrlLength ? `...${url.slice(url.length - (maxUrlLength - 3))}` : url;
 
     endpointSummaryTable.push([
       displayUrl,
@@ -146,9 +133,9 @@ function printEndpointSummary(summary: TestSummary): void {
     ]);
   }
 
-  terminal.print('\n' + chalk.bold('Endpoint Summary'));
+  terminal.print(`\n${chalk.bold('Endpoint Summary')}`);
   terminal.print(endpointSummaryTable.toString());
 
-  terminal.print('\n' + chalk.bold('Endpoint Latency'));
+  terminal.print(`\n${chalk.bold('Endpoint Latency')}`);
   terminal.print(endpointLatencyTable.toString());
 }

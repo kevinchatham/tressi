@@ -36,16 +36,14 @@ describe('ChartSyncService', () => {
       const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
       service.setAsMaster('unregistered-chart');
       expect(service.lastInteractedChartId()).toBeNull();
-      expect(warnSpy).toHaveBeenCalledWith(
-        'Chart unregistered-chart not registered',
-      );
+      expect(warnSpy).toHaveBeenCalledWith('Chart unregistered-chart not registered');
       warnSpy.mockRestore();
     });
   });
 
   describe('broadcastState', () => {
     it('should update state when broadcasted', () => {
-      service.broadcastState({ xAxisMin: 100, xAxisMax: 200 });
+      service.broadcastState({ xAxisMax: 200, xAxisMin: 100 });
       expect(service.getState().xAxisMin).toBe(100);
       expect(service.getState().xAxisMax).toBe(200);
     });

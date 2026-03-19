@@ -1,23 +1,15 @@
-<div
-  class="flex min-h-screen flex-col items-center justify-center px-6 pt-32 pb-6"
->
+<div class="flex min-h-screen flex-col items-center justify-center px-6 pt-32 pb-6">
   <!-- Logo -->
   <img [src]="logoSrc" alt="Tressi Logo" class="mb-4 size-20" />
   <div class="w-full max-w-lg space-y-8 text-center">
     <!-- Hero Heading -->
     <div class="flex flex-col items-center">
-      <h1 class="mb-4 text-lg font-bold">
-        Tressi is offline, please start the server
-      </h1>
+      <h1 class="mb-4 text-lg font-bold">Tressi is offline, please start the server</h1>
       <div class="mockup-code mx-auto mb-4 w-full max-w-xs text-left">
         <pre data-prefix=">"><code>npx tressi serve</code></pre>
       </div>
-      <span class="text-base-content/50 text-xs">
-        {{ retryMessage() }}
-      </span>
-      <span
-        class="text-base-content/50 loading loading-infinity size-12"
-      ></span>
+      <span class="text-base-content/50 text-xs"> {{ retryMessage() }} </span>
+      <span class="text-base-content/50 loading loading-infinity size-12"></span>
     </div>
   </div>
   <div class="mt-auto text-center">

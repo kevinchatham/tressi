@@ -1,36 +1,32 @@
 import { TestBed } from '@angular/core/testing';
-import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
-import { MarkdownSlugs } from '@tressi/shared/common';
-import { ClientResponse } from 'hono/client';
+import type { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
+import type { MarkdownSlugs } from '@tressi/shared/common';
+import type { ClientResponse } from 'hono/client';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { RPCService } from '../services/rpc.service';
 import { docsResolver } from './docs.resolver';
 
 // Create a mock ClientResponse that matches the hono interface
-function createMockClientResponse<T>(
-  body: string,
-  status: number,
-): ClientResponse<T> {
+function createMockClientResponse<T>(body: string, status: number): ClientResponse<T> {
   const response = {
+    arrayBuffer: async (): Promise<ArrayBuffer> => new ArrayBuffer(0),
+    blob: async (): Promise<Blob> => new Blob([body]),
     body: null,
     bodyUsed: false,
+    bytes: async (): Promise<Uint8Array> => new Uint8Array(),
+    clone: (): Response => new Response(null, { status }),
+    formData: async (): Promise<FormData> => new FormData(),
+    headers: new Headers(),
+    json: async (): Promise<T> => JSON.parse(body),
     ok: status >= 200 && status < 300,
+    redirect: (_url: string, status: number): Response => new Response(null, { status }),
     redirected: false,
     status,
     statusText: status === 200 ? 'OK' : 'Server Error',
-    type: 'basic',
-    headers: new Headers(),
-    url: 'http://localhost',
-    redirect: (_url: string, status: number): Response =>
-      new Response(null, { status }),
-    clone: (): Response => new Response(null, { status }),
-    bytes: async (): Promise<Uint8Array> => new Uint8Array(),
-    json: async (): Promise<T> => JSON.parse(body),
     text: async (): Promise<string> => body,
-    blob: async (): Promise<Blob> => new Blob([body]),
-    formData: async (): Promise<FormData> => new FormData(),
-    arrayBuffer: async (): Promise<ArrayBuffer> => new ArrayBuffer(0),
+    type: 'basic',
+    url: 'http://localhost',
   };
 
   return response as unknown as ClientResponse<T>;
@@ -66,28 +62,23 @@ describe('docsResolver', () => {
 
     const mockDocs: MarkdownSlugs = {
       '01-getting-started': {
-        path: 'docs/01-getting-started',
-        realPath: '/docs/01-getting-started',
         docs: [
           {
-            slug: '01-intro.md',
-            sectionSlug: '01-getting-started',
             realPath: 'docs/01-getting-started/01-intro.md',
+            sectionSlug: '01-getting-started',
+            slug: '01-intro.md',
           },
         ],
+        path: 'docs/01-getting-started',
+        realPath: '/docs/01-getting-started',
       },
     };
 
-    const mockResponse = createMockClientResponse<MarkdownSlugs>(
-      JSON.stringify(mockDocs),
-      200,
-    );
+    const mockResponse = createMockClientResponse<MarkdownSlugs>(JSON.stringify(mockDocs), 200);
 
     getDocsMock.mockResolvedValue(mockResponse);
 
-    const resolved = await TestBed.runInInjectionContext(() =>
-      docsResolver(mockRoute, mockState),
-    );
+    const resolved = await TestBed.runInInjectionContext(() => docsResolver(mockRoute, mockState));
 
     expect(resolved).toEqual(mockDocs);
     expect(getDocsMock).toHaveBeenCalledTimes(1);

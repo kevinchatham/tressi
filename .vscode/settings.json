@@ -24,9 +24,9 @@
     "zoomin",
     "zoomout"
   ],
-  "typescript.tsserver.experimental.enableProjectDiagnostics": true,
-  "typescript.validate.enable": true,
-  "typescript.preferences.includePackageJsonAutoImports": "on",
-  "typescript.suggest.autoImports": true,
-  "typescript.updateImportsOnFileMove.enabled": "always"
+  "js/ts.preferences.includePackageJsonAutoImports": "on",
+  "js/ts.suggest.autoImports": true,
+  "js/ts.tsserver.experimental.enableProjectDiagnostics": true,
+  "js/ts.updateImportsOnFileMove.enabled": "always",
+  "js/ts.validate.enable": true
 }

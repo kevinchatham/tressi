@@ -1,13 +1,12 @@
 import { Component, inject, output } from '@angular/core';
-import { validateConfig } from '@tressi/shared/common';
-import { SaveConfigRequest } from '@tressi/shared/common';
+import { type SaveConfigRequest, validateConfig } from '@tressi/shared/common';
 
 import { NameService } from '../../services/name.service';
 import { ButtonComponent } from '../button/button.component';
 
 @Component({
-  selector: 'app-import-config-button',
   imports: [ButtonComponent],
+  selector: 'app-import-config-button',
   templateUrl: './import-config-button.component.html',
 })
 export class ImportConfigButtonComponent {
@@ -42,8 +41,8 @@ export class ImportConfigButtonComponent {
 
       // Convert TressiConfig to ModifyConfigRequest
       const importedConfig: SaveConfigRequest = {
-        name: this._generateNameFromFile(file.name),
         config: validation.data,
+        name: this._generateNameFromFile(file.name),
       };
 
       this.configImported.emit(importedConfig);

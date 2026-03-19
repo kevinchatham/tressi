@@ -11,47 +11,27 @@ describe('ResponseSampler', () => {
 
   describe('shouldSampleResponse', () => {
     it('should sample first response for a given endpoint and status code', () => {
-      const result = sampler.shouldSampleResponse(
-        'GET',
-        'http://example.com/api/users',
-        200,
-      );
+      const result = sampler.shouldSampleResponse('GET', 'http://example.com/api/users', 200);
       expect(result).toBe(true);
     });
 
     it('should not sample duplicate status codes for the same endpoint', () => {
       // First request - should sample
-      const firstResult = sampler.shouldSampleResponse(
-        'GET',
-        'http://example.com/api/users',
-        200,
-      );
+      const firstResult = sampler.shouldSampleResponse('GET', 'http://example.com/api/users', 200);
       expect(firstResult).toBe(true);
 
       // Second request with same status code - should not sample
-      const secondResult = sampler.shouldSampleResponse(
-        'GET',
-        'http://example.com/api/users',
-        200,
-      );
+      const secondResult = sampler.shouldSampleResponse('GET', 'http://example.com/api/users', 200);
       expect(secondResult).toBe(false);
     });
 
     it('should sample different status codes for the same endpoint', () => {
       // First 200 response - should sample
-      const result200 = sampler.shouldSampleResponse(
-        'GET',
-        'http://example.com/api/users',
-        200,
-      );
+      const result200 = sampler.shouldSampleResponse('GET', 'http://example.com/api/users', 200);
       expect(result200).toBe(true);
 
       // First 404 response - should sample (different status code)
-      const result404 = sampler.shouldSampleResponse(
-        'GET',
-        'http://example.com/api/users',
-        404,
-      );
+      const result404 = sampler.shouldSampleResponse('GET', 'http://example.com/api/users', 404);
       expect(result404).toBe(true);
 
       // Second 404 response - should not sample
@@ -65,63 +45,35 @@ describe('ResponseSampler', () => {
 
     it('should differentiate between different HTTP methods on the same URL', () => {
       // GET request - should sample
-      const getResult = sampler.shouldSampleResponse(
-        'GET',
-        'http://example.com/api/users',
-        200,
-      );
+      const getResult = sampler.shouldSampleResponse('GET', 'http://example.com/api/users', 200);
       expect(getResult).toBe(true);
 
       // POST request with same URL and status - should sample (different method)
-      const postResult = sampler.shouldSampleResponse(
-        'POST',
-        'http://example.com/api/users',
-        200,
-      );
+      const postResult = sampler.shouldSampleResponse('POST', 'http://example.com/api/users', 200);
       expect(postResult).toBe(true);
 
       // Second GET request - should not sample
-      const getResult2 = sampler.shouldSampleResponse(
-        'GET',
-        'http://example.com/api/users',
-        200,
-      );
+      const getResult2 = sampler.shouldSampleResponse('GET', 'http://example.com/api/users', 200);
       expect(getResult2).toBe(false);
     });
 
     it('should differentiate between different endpoints', () => {
       // First endpoint - should sample
-      const result1 = sampler.shouldSampleResponse(
-        'GET',
-        'http://example.com/api/users',
-        200,
-      );
+      const result1 = sampler.shouldSampleResponse('GET', 'http://example.com/api/users', 200);
       expect(result1).toBe(true);
 
       // Different endpoint - should sample
-      const result2 = sampler.shouldSampleResponse(
-        'GET',
-        'http://example.com/api/posts',
-        200,
-      );
+      const result2 = sampler.shouldSampleResponse('GET', 'http://example.com/api/posts', 200);
       expect(result2).toBe(true);
 
       // Second request to first endpoint - should not sample
-      const result3 = sampler.shouldSampleResponse(
-        'GET',
-        'http://example.com/api/users',
-        200,
-      );
+      const result3 = sampler.shouldSampleResponse('GET', 'http://example.com/api/users', 200);
       expect(result3).toBe(false);
     });
 
     it('should handle error status codes', () => {
       // First 500 error - should sample
-      const result500 = sampler.shouldSampleResponse(
-        'GET',
-        'http://example.com/api/users',
-        500,
-      );
+      const result500 = sampler.shouldSampleResponse('GET', 'http://example.com/api/users', 500);
       expect(result500).toBe(true);
 
       // Second 500 error - should not sample
@@ -133,20 +85,12 @@ describe('ResponseSampler', () => {
       expect(result500Again).toBe(false);
 
       // First 400 error - should sample (different status)
-      const result400 = sampler.shouldSampleResponse(
-        'GET',
-        'http://example.com/api/users',
-        400,
-      );
+      const result400 = sampler.shouldSampleResponse('GET', 'http://example.com/api/users', 400);
       expect(result400).toBe(true);
     });
 
     it('should handle redirect status codes', () => {
-      const result301 = sampler.shouldSampleResponse(
-        'GET',
-        'http://example.com/api/users',
-        301,
-      );
+      const result301 = sampler.shouldSampleResponse('GET', 'http://example.com/api/users', 301);
       expect(result301).toBe(true);
 
       const result301Again = sampler.shouldSampleResponse(
@@ -156,41 +100,21 @@ describe('ResponseSampler', () => {
       );
       expect(result301Again).toBe(false);
 
-      const result302 = sampler.shouldSampleResponse(
-        'GET',
-        'http://example.com/api/users',
-        302,
-      );
+      const result302 = sampler.shouldSampleResponse('GET', 'http://example.com/api/users', 302);
       expect(result302).toBe(true);
     });
 
     it('should handle various HTTP methods', () => {
-      const methods = [
-        'GET',
-        'POST',
-        'PUT',
-        'PATCH',
-        'DELETE',
-        'HEAD',
-        'OPTIONS',
-      ];
+      const methods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'];
 
       methods.forEach((method) => {
-        const result = sampler.shouldSampleResponse(
-          method,
-          'http://example.com/api/users',
-          200,
-        );
+        const result = sampler.shouldSampleResponse(method, 'http://example.com/api/users', 200);
         expect(result).toBe(true);
       });
 
       // Second request for each method - should not sample
       methods.forEach((method) => {
-        const result = sampler.shouldSampleResponse(
-          method,
-          'http://example.com/api/users',
-          200,
-        );
+        const result = sampler.shouldSampleResponse(method, 'http://example.com/api/users', 200);
         expect(result).toBe(false);
       });
     });
@@ -205,13 +129,8 @@ describe('ResponseSampler', () => {
       expect(result2).toBe(false);
 
       // Same endpoint with different query params - should sample (different URL)
-      const urlWithDifferentQuery =
-        'http://example.com/api/users?page=2&limit=10';
-      const result3 = sampler.shouldSampleResponse(
-        'GET',
-        urlWithDifferentQuery,
-        200,
-      );
+      const urlWithDifferentQuery = 'http://example.com/api/users?page=2&limit=10';
+      const result3 = sampler.shouldSampleResponse('GET', urlWithDifferentQuery, 200);
       expect(result3).toBe(true);
     });
 
@@ -251,11 +170,7 @@ describe('ResponseSampler', () => {
       const result = sampler.shouldSampleResponse('POST', localhostUrl, 201);
       expect(result).toBe(true);
 
-      const resultAgain = sampler.shouldSampleResponse(
-        'POST',
-        localhostUrl,
-        201,
-      );
+      const resultAgain = sampler.shouldSampleResponse('POST', localhostUrl, 201);
       expect(resultAgain).toBe(false);
     });
 
@@ -270,8 +185,7 @@ describe('ResponseSampler', () => {
     });
 
     it('should handle deeply nested paths', () => {
-      const deepPath =
-        'http://example.com/api/v1/users/123/posts/456/comments/789';
+      const deepPath = 'http://example.com/api/v1/users/123/posts/456/comments/789';
 
       const result = sampler.shouldSampleResponse('GET', deepPath, 200);
       expect(result).toBe(true);

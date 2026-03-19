@@ -18,8 +18,7 @@ describe('ReportingUtils', () => {
         999: 1,
       };
 
-      const result =
-        ReportingUtils.getStatusCodeDistributionByCategory(statusCodeMap);
+      const result = ReportingUtils.getStatusCodeDistributionByCategory(statusCodeMap);
 
       expect(result).toEqual({
         '2xx': 15,
@@ -47,8 +46,7 @@ describe('ReportingUtils', () => {
         500: 500000,
       };
 
-      const result =
-        ReportingUtils.getStatusCodeDistributionByCategory(statusCodeMap);
+      const result = ReportingUtils.getStatusCodeDistributionByCategory(statusCodeMap);
 
       expect(result['2xx']).toBe(1000000);
       expect(result['5xx']).toBe(500000);

@@ -23,12 +23,8 @@ describe('MigrateCommand', () => {
 
     await command.execute(configPath, force);
 
-    const migrationManagerInstance =
-      vi.mocked(JsonMigrationManager).mock.instances[0];
-    expect(migrationManagerInstance.migrateFile).toHaveBeenCalledWith(
-      configPath,
-      force,
-    );
+    const migrationManagerInstance = vi.mocked(JsonMigrationManager).mock.instances[0];
+    expect(migrationManagerInstance.migrateFile).toHaveBeenCalledWith(configPath, force);
   });
 
   it('should call migrateFile with default force value (false)', async () => {
@@ -37,11 +33,7 @@ describe('MigrateCommand', () => {
 
     await command.execute(configPath);
 
-    const migrationManagerInstance =
-      vi.mocked(JsonMigrationManager).mock.instances[0];
-    expect(migrationManagerInstance.migrateFile).toHaveBeenCalledWith(
-      configPath,
-      false,
-    );
+    const migrationManagerInstance = vi.mocked(JsonMigrationManager).mock.instances[0];
+    expect(migrationManagerInstance.migrateFile).toHaveBeenCalledWith(configPath, false);
   });
 });

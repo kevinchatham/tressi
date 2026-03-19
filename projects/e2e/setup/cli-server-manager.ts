@@ -1,7 +1,7 @@
-import type { ChildProcess } from 'child_process';
-import fs from 'fs';
-import * as http from 'http';
-import * as path from 'path';
+import type { ChildProcess } from 'node:child_process';
+import fs from 'node:fs';
+import * as http from 'node:http';
+import * as path from 'node:path';
 import kill from 'tree-kill';
 
 import { execute, killPort } from '../utils';
@@ -16,12 +16,12 @@ export class CliServerManager {
     const dbPath = path.resolve(__dirname, '../tressi.test.db');
 
     if (fs.existsSync(dbPath)) {
-      // eslint-disable-next-line no-console
+      // biome-ignore lint/suspicious/noConsole: default
       console.log(`Resetting ${dbPath}`);
       fs.rmSync(dbPath);
     }
 
-    // eslint-disable-next-line no-console
+    // biome-ignore lint/suspicious/noConsole: default
     console.log(`Starting Tressi CLI server on port ${this._port}...`);
 
     // Ensure the port is clean before starting
@@ -29,12 +29,12 @@ export class CliServerManager {
 
     this._process = execute('node', {
       args: ['cli.js', 'serve', '--port', this._port.toString()],
+      cwd: cliDir,
       env: {
         ...process.env,
         TRESSI_DB_PATH: dbPath,
       },
       stdio: 'pipe',
-      cwd: cliDir,
     });
 
     await this._waitForReady(baseURL);
@@ -42,8 +42,8 @@ export class CliServerManager {
   }
 
   async stop(): Promise<void> {
-    if (this._process && this._process.pid) {
-      // eslint-disable-next-line no-console
+    if (this._process?.pid) {
+      // biome-ignore lint/suspicious/noConsole: default
       console.log('Stopping Tressi CLI server...');
       const pid = this._process.pid;
       await new Promise<void>((resolve) => {

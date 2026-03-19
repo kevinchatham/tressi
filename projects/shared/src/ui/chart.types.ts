@@ -1,4 +1,4 @@
-import {
+import type {
   ApexAxisChartSeries,
   ApexChart,
   ApexDataLabels,
@@ -59,24 +59,24 @@ export type ChartOption = {
  */
 export const CHART_OPTIONS: ChartOption[] = [
   // Throughput Category
-  { value: 'target_achieved', label: 'Target Achieved' },
-  { value: 'peak_throughput', label: 'Peak RPS' },
-  { value: 'average_throughput', label: 'Average RPS' },
+  { label: 'Target Achieved', value: 'target_achieved' },
+  { label: 'Peak RPS', value: 'peak_throughput' },
+  { label: 'Average RPS', value: 'average_throughput' },
 
   // Latency Category
-  { value: 'latency', label: 'P50 Latency' },
-  { value: 'latency_p95', label: 'P95 Latency' },
-  { value: 'latency_p99', label: 'P99 Latency' },
+  { label: 'P50 Latency', value: 'latency' },
+  { label: 'P95 Latency', value: 'latency_p95' },
+  { label: 'P99 Latency', value: 'latency_p99' },
 
   // Reliability Category
-  { value: 'success_rate', label: 'Success Rate' },
-  { value: 'error_rate', label: 'Error Rate' },
-  { value: 'failed_requests', label: 'Failed Requests' },
+  { label: 'Success Rate', value: 'success_rate' },
+  { label: 'Error Rate', value: 'error_rate' },
+  { label: 'Failed Requests', value: 'failed_requests' },
 
   // Network Category
-  { value: 'network_throughput', label: 'Bytes Throughput' },
-  { value: 'network_bytes_sent', label: 'Bytes Sent' },
-  { value: 'network_bytes_received', label: 'Bytes Received' },
+  { label: 'Bytes Throughput', value: 'network_throughput' },
+  { label: 'Bytes Sent', value: 'network_bytes_sent' },
+  { label: 'Bytes Received', value: 'network_bytes_received' },
 ];
 
 /**

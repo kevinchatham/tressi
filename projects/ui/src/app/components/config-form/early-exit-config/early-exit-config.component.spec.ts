@@ -1,8 +1,8 @@
 import { runInInjectionContext, signal } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { type ComponentFixture, TestBed } from '@angular/core/testing';
 import { form } from '@angular/forms/signals';
-import { TressiEarlyExitConfig } from '@tressi/shared/common';
-import { EarlyExitConfigRequestFormType } from '@tressi/shared/ui';
+import type { TressiEarlyExitConfig } from '@tressi/shared/common';
+import type { EarlyExitConfigRequestFormType } from '@tressi/shared/ui';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { EarlyExitConfigComponent } from './early-exit-config.component';

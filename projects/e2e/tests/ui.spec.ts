@@ -7,7 +7,7 @@ test.describe('Full-Stack Journey', () => {
     dashboardPage,
     testDetailPage,
   }) => {
-    // eslint-disable-next-line no-console
+    // biome-ignore lint/suspicious/noConsole: default
     console.log(`Using CLI server at ${cliServer}`);
 
     // 1. Open Configs Page (goto handles synchronization)
@@ -16,11 +16,7 @@ test.describe('Full-Stack Journey', () => {
     await configsPage.waitForLoaded();
 
     // 2. Create a new configuration
-    await configsPage.createConfig(
-      'E2E UI Test Config',
-      '10',
-      `${cliServer}/api/health`,
-    );
+    await configsPage.createConfig('E2E UI Test Config', '10', `${cliServer}/api/health`);
 
     // 3. Verify config card exists and click "Use"
     await configsPage.useConfig('E2E UI Test Config');

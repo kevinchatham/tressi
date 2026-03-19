@@ -1,5 +1,5 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { LatencyHistogram } from '@tressi/shared/common';
+import { type ComponentFixture, TestBed } from '@angular/core/testing';
+import type { LatencyHistogram } from '@tressi/shared/common';
 import { describe, expect, it } from 'vitest';
 
 import { LatencyDistributionComponent } from './latency-distribution.component';
@@ -9,11 +9,16 @@ describe('LatencyDistributionComponent', () => {
   let fixture: ComponentFixture<LatencyDistributionComponent>;
 
   const mockHistogram: LatencyHistogram = {
-    totalCount: 1000,
-    min: 10,
+    buckets: [
+      { count: 100, lowerBound: 0, upperBound: 20 },
+      { count: 200, lowerBound: 20, upperBound: 40 },
+      { count: 400, lowerBound: 40, upperBound: 60 },
+      { count: 200, lowerBound: 60, upperBound: 80 },
+      { count: 100, lowerBound: 80, upperBound: 100 },
+    ],
     max: 120,
     mean: 50,
-    stdDev: 20,
+    min: 10,
     percentiles: {
       1: 12,
       5: 15,
@@ -25,13 +30,8 @@ describe('LatencyDistributionComponent', () => {
       95: 100,
       99: 115,
     },
-    buckets: [
-      { lowerBound: 0, upperBound: 20, count: 100 },
-      { lowerBound: 20, upperBound: 40, count: 200 },
-      { lowerBound: 40, upperBound: 60, count: 400 },
-      { lowerBound: 60, upperBound: 80, count: 200 },
-      { lowerBound: 80, upperBound: 100, count: 100 },
-    ],
+    stdDev: 20,
+    totalCount: 1000,
   };
 
   beforeEach(async () => {
@@ -58,8 +58,8 @@ describe('LatencyDistributionComponent', () => {
     const unsortedHistogram: LatencyHistogram = {
       ...mockHistogram,
       buckets: [
-        { lowerBound: 20, upperBound: 40, count: 200 },
-        { lowerBound: 0, upperBound: 20, count: 100 },
+        { count: 200, lowerBound: 20, upperBound: 40 },
+        { count: 100, lowerBound: 0, upperBound: 20 },
       ],
     };
     fixture.componentRef.setInput('histogram', unsortedHistogram);
@@ -108,7 +108,7 @@ describe('LatencyDistributionComponent', () => {
 
   it('should return min/max', () => {
     fixture.componentRef.setInput('histogram', mockHistogram);
-    expect(component.getMinMax()).toEqual({ min: 10, max: 120 });
+    expect(component.getMinMax()).toEqual({ max: 120, min: 10 });
   });
 
   it('should format latency correctly', () => {

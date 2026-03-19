@@ -39,11 +39,7 @@
               type="checkbox"
               class="checkbox checkbox-sm mr-2"
               [checked]="col.visible"
-              [disabled]="
-                col.key === 'select' ||
-                col.key === 'status' ||
-                col.key === 'actions'
-              "
+              [disabled]="col.key === 'select' || col.key === 'status' || col.key === 'actions'"
               (change)="onToggleColumn(col.key)"
             />
             <span class="text-xs select-none">{{ col.label }}</span>

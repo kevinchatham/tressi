@@ -30,11 +30,7 @@ export class ResponseSampler {
    * // First 404 response for /api/users -> sample (returns true)
    * ```
    */
-  shouldSampleResponse(
-    method: string,
-    url: string,
-    statusCode: number,
-  ): boolean {
+  shouldSampleResponse(method: string, url: string, statusCode: number): boolean {
     const endpointKey = this._getEndpointKey(method, url);
     const sampledCodesForEndpoint = this._getResponseSamplingSet(endpointKey);
 

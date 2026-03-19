@@ -1,5 +1,5 @@
-import { ISSEClientManager } from '@tressi/shared/cli';
-import { MetricDocument } from '@tressi/shared/common';
+import type { ISSEClientManager } from '@tressi/shared/cli';
+import type { MetricDocument } from '@tressi/shared/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { metricStorage } from '../../collections/metrics-collection';
@@ -14,8 +14,8 @@ vi.mock('../../collections/metrics-collection', () => ({
 describe('metrics-routes', () => {
   const mockSseManager = {
     addClient: vi.fn(),
-    removeClient: vi.fn(),
     broadcast: vi.fn(),
+    removeClient: vi.fn(),
   } as unknown as ISSEClientManager;
 
   beforeEach(() => {

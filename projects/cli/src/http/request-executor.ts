@@ -1,9 +1,9 @@
-import { RequestResult, TressiRequestConfig } from '@tressi/shared/common';
-import { performance } from 'perf_hooks';
+import { performance } from 'node:perf_hooks';
+import type { RequestResult, TressiRequestConfig } from '@tressi/shared/common';
 import { request } from 'undici';
 
 import { globalAgentManager } from './agent-manager';
-import { ResponseSampler } from './response-sampler';
+import type { ResponseSampler } from './response-sampler';
 
 /**
  * Executes HTTP requests and handles the complete request lifecycle.
@@ -45,25 +45,21 @@ export class RequestExecutor {
         : undefined;
 
       // Calculate request body size for bandwidth tracking
-      const bytesSent = requestBody
-        ? Buffer.byteLength(requestBody, 'utf8')
-        : 0;
+      const bytesSent = requestBody ? Buffer.byteLength(requestBody, 'utf8') : 0;
 
       // Use per-endpoint agents in production, global dispatcher in tests
       const dispatcher =
-        process.env.NODE_ENV !== 'test'
-          ? globalAgentManager.getAgent(req.url)
-          : undefined; // When undefined, undici will use the global dispatcher
+        process.env.NODE_ENV !== 'test' ? globalAgentManager.getAgent(req.url) : undefined; // When undefined, undici will use the global dispatcher
 
       const {
         statusCode,
         body: responseBody,
         headers: responseHeaders,
       } = await request(req.url, {
-        method: req.method || 'GET',
-        headers,
         body: requestBody,
         dispatcher,
+        headers,
+        method: req.method || 'GET',
       });
 
       const method = req.method || 'GET';
@@ -95,9 +91,7 @@ export class RequestExecutor {
       // Calculate total bytes received from headers if available
       const contentLength = responseHeaders['content-length'];
       if (contentLength && !responseBodySize) {
-        const contentLengthValue = Array.isArray(contentLength)
-          ? contentLength[0]
-          : contentLength;
+        const contentLengthValue = Array.isArray(contentLength) ? contentLength[0] : contentLength;
         responseBodySize = parseInt(contentLengthValue, 10) || 0;
       }
 
@@ -118,11 +112,8 @@ export class RequestExecutor {
       const latencyMs = Math.max(0, performance.now() - start);
 
       // Calculate request body size for bandwidth tracking (even in error case)
-      const requestBody =
-        req.payload === undefined ? undefined : JSON.stringify(req.payload);
-      const bytesSent = requestBody
-        ? Buffer.byteLength(requestBody, 'utf8')
-        : 0;
+      const requestBody = req.payload === undefined ? undefined : JSON.stringify(req.payload);
+      const bytesSent = requestBody ? Buffer.byteLength(requestBody, 'utf8') : 0;
 
       // Populate result object for error case
       result.method = req.method || 'GET';
@@ -211,7 +202,7 @@ export class RequestExecutor {
       return false;
     }
 
-    if (payload instanceof Array) {
+    if (Array.isArray(payload)) {
       return payload.length > 0;
     }
 

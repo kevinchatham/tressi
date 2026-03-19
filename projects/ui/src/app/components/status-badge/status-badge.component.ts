@@ -1,13 +1,13 @@
 import { NgClass } from '@angular/common';
 import { Component, input } from '@angular/core';
-import { TestStatus } from '@tressi/shared/common';
-import { IconName } from '@tressi/shared/ui';
+import type { TestStatus } from '@tressi/shared/common';
+import type { IconName } from '@tressi/shared/ui';
 
 import { IconComponent } from '../icon/icon.component';
 
 @Component({
-  selector: 'app-status-badge',
   imports: [IconComponent, NgClass],
+  selector: 'app-status-badge',
   templateUrl: './status-badge.component.html',
 })
 export class StatusBadgeComponent {
@@ -53,8 +53,7 @@ export class StatusBadgeComponent {
 
   getDisplayText(): string {
     return (
-      (this.status() || 'unknown').charAt(0).toUpperCase() +
-      (this.status() || 'unknown').slice(1)
+      (this.status() || 'unknown').charAt(0).toUpperCase() + (this.status() || 'unknown').slice(1)
     );
   }
 }

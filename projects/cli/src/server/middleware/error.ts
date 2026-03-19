@@ -1,4 +1,6 @@
-import { ErrorApiResponse } from '@tressi/shared/common';
+/** biome-ignore-all lint/nursery/useExplicitType: hono */
+
+import type { ErrorApiResponse } from '@tressi/shared/common';
 import type { MiddlewareHandler } from 'hono';
 
 /**
@@ -11,14 +13,10 @@ export function createErrorHandler(): MiddlewareHandler {
     } catch (error) {
       const errorResponse: ErrorApiResponse = {
         error: {
-          message:
-            error instanceof Error ? error.message : 'Internal server error',
-          code:
-            error instanceof Error && 'code' in error
-              ? String(error.code)
-              : undefined,
-          timestamp: Date.now(),
+          code: error instanceof Error && 'code' in error ? String(error.code) : undefined,
+          message: error instanceof Error ? error.message : 'Internal server error',
           path: c.req.path,
+          timestamp: Date.now(),
         },
       };
 
@@ -30,10 +28,7 @@ export function createErrorHandler(): MiddlewareHandler {
           if ([400, 401, 403, 404, 409, 422, 500].includes(statusNum)) {
             status = statusNum as 400 | 401 | 403 | 404 | 409 | 422 | 500;
           }
-        } else if (
-          error.message.includes('not found') ||
-          error.message.includes('Not found')
-        ) {
+        } else if (error.message.includes('not found') || error.message.includes('Not found')) {
           status = 404;
         }
       }

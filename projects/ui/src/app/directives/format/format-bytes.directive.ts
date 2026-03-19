@@ -1,4 +1,4 @@
-import { Directive, effect, ElementRef, inject, input } from '@angular/core';
+import { Directive, ElementRef, effect, inject, input } from '@angular/core';
 
 @Directive({
   selector: '[appFormatBytes]',
@@ -24,14 +24,9 @@ export class FormatBytesDirective {
       } else if (absValue < 1024 * 1024) {
         this._el.nativeElement.textContent = `${(bytes / 1024).toFixed(1)} KB`;
       } else if (absValue < 1024 * 1024 * 1024) {
-        this._el.nativeElement.textContent = `${(bytes / (1024 * 1024)).toFixed(
-          1,
-        )} MB`;
+        this._el.nativeElement.textContent = `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
       } else {
-        this._el.nativeElement.textContent = `${(
-          bytes /
-          (1024 * 1024 * 1024)
-        ).toFixed(2)} GB`;
+        this._el.nativeElement.textContent = `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
       }
     });
   }

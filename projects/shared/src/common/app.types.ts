@@ -1,4 +1,4 @@
-import { createApp } from '../../../cli/src/server/routes';
+import type { createApp } from '../../../cli/src/server/routes';
 
 /**
  * Type-only export of the AppType to prevent Angular compiler from pulling in

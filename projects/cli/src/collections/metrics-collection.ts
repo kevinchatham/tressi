@@ -1,23 +1,23 @@
-import { MetricRow } from '@tressi/shared/cli';
-import { MetricCreate, MetricDocument } from '@tressi/shared/common';
+import type { MetricRow } from '@tressi/shared/cli';
+import type { MetricCreate, MetricDocument } from '@tressi/shared/common';
 
 import { db } from '../data/database';
 
 function mapMetricFromDb(row: MetricRow): MetricDocument {
   return {
-    id: row.id,
-    testId: row.test_id,
-    metric: JSON.parse(row.metric),
     epoch: row.epoch,
+    id: row.id,
+    metric: JSON.parse(row.metric),
+    testId: row.test_id,
   };
 }
 
 function mapMetricToDb(doc: MetricDocument): MetricRow {
   return {
-    id: doc.id,
-    test_id: doc.testId,
-    metric: JSON.stringify(doc.metric),
     epoch: doc.epoch,
+    id: doc.id,
+    metric: JSON.stringify(doc.metric),
+    test_id: doc.testId,
   };
 }
 
@@ -66,10 +66,10 @@ class MetricCollection {
   async create(input: MetricCreate): Promise<MetricDocument> {
     try {
       const metricDoc: MetricDocument = {
-        id: crypto.randomUUID(),
-        testId: input.testId,
-        metric: input.metric,
         epoch: input.epoch,
+        id: crypto.randomUUID(),
+        metric: input.metric,
+        testId: input.testId,
       };
       await db.insertInto('metrics').values(mapMetricToDb(metricDoc)).execute();
       return metricDoc;
@@ -83,18 +83,15 @@ class MetricCollection {
   async createBatch(inputs: MetricCreate[]): Promise<MetricDocument[]> {
     try {
       const metricDocs: MetricDocument[] = inputs.map((input) => ({
-        id: crypto.randomUUID(),
-        testId: input.testId,
-        metric: input.metric,
         epoch: input.epoch,
+        id: crypto.randomUUID(),
+        metric: input.metric,
+        testId: input.testId,
       }));
       if (metricDocs.length === 0) {
         return [];
       }
-      await db
-        .insertInto('metrics')
-        .values(metricDocs.map(mapMetricToDb))
-        .execute();
+      await db.insertInto('metrics').values(metricDocs.map(mapMetricToDb)).execute();
       return metricDocs;
     } catch (error) {
       throw new Error(
@@ -110,10 +107,7 @@ class MetricCollection {
         return false;
       }
 
-      const result = await db
-        .deleteFrom('metrics')
-        .where('id', '=', id)
-        .executeTakeFirst();
+      const result = await db.deleteFrom('metrics').where('id', '=', id).executeTakeFirst();
       return result.numDeletedRows > 0;
     } catch (error) {
       throw new Error(
@@ -137,4 +131,4 @@ class MetricCollection {
   }
 }
 
-export const metricStorage = new MetricCollection();
+export const metricStorage: MetricCollection = new MetricCollection();

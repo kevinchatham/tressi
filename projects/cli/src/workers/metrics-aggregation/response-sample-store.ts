@@ -1,13 +1,11 @@
-import { ResponseSample } from '@tressi/shared/cli';
+import type { ResponseSample } from '@tressi/shared/cli';
 
 export class ResponseSampleStore {
   // Store for body samples collected during test
   // Map<url, ResponseSample[]>
   private _samples = new Map<string, Map<string, ResponseSample[]>>();
 
-  public getCollectedResponseSamples(
-    runId: string,
-  ): Map<string, ResponseSample[]> {
+  public getCollectedResponseSamples(runId: string): Map<string, ResponseSample[]> {
     return this._samples.get(runId) || new Map();
   }
 
@@ -29,15 +27,13 @@ export class ResponseSampleStore {
 
     const endpointSamples = samples.get(url)!;
 
-    const existingSampleIndex = endpointSamples.findIndex(
-      (s) => s.statusCode === statusCode,
-    );
+    const existingSampleIndex = endpointSamples.findIndex((s) => s.statusCode === statusCode);
 
     if (existingSampleIndex === -1) {
       endpointSamples.push({
-        statusCode,
-        headers,
         body,
+        headers,
+        statusCode,
       });
     }
   }

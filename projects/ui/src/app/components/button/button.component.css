@@ -1,12 +1,8 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 
 /* Outline button */
 .btn-rainbow-outline {
   --btn-fg: inherit !important;
-  position: relative;
-  background: transparent;
-  transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  transform: translateZ(0);
 
   /* Define intermediate colors using color-mix in oklch for smooth transitions */
   --rainbow-mid-primary-secondary: color-mix(
@@ -14,16 +10,15 @@
     var(--color-primary) 50%,
     var(--color-secondary)
   );
-  --rainbow-mid-primary-accent: color-mix(
-    in oklch,
-    var(--color-primary) 50%,
-    var(--color-accent)
-  );
+  --rainbow-mid-primary-accent: color-mix(in oklch, var(--color-primary) 50%, var(--color-accent));
   --rainbow-mid-accent-secondary: color-mix(
     in oklch,
     var(--color-accent) 50%,
     var(--color-secondary)
   );
+  position: relative;
+  color: transparent !important;
+  background: transparent;
 
   /* Text gradient */
   background-image: linear-gradient(
@@ -35,16 +30,18 @@
     var(--rainbow-mid-primary-secondary) 90%,
     var(--color-primary) 100%
   );
-  background-size: 200% 100%;
-  background-clip: text;
   -webkit-background-clip: text;
-  color: transparent !important;
+  background-clip: text;
+  background-size: 200% 100%;
+  transform: translateZ(0);
+  transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   animation: slide 3s linear infinite;
 }
 
 /* Ensure icons inside rainbow buttons inherit the gradient and clipping */
 .btn-rainbow-outline ::ng-deep app-icon span,
 .btn-rainbow-ghost ::ng-deep app-icon span {
+  color: transparent !important;
   background-image: linear-gradient(
     90deg,
     var(--color-primary) 0%,
@@ -54,29 +51,28 @@
     var(--rainbow-mid-primary-secondary) 90%,
     var(--color-primary) 100%
   ) !important;
-  background-size: 200% 100% !important;
-  background-clip: text !important;
   -webkit-background-clip: text !important;
-  color: transparent !important;
+  background-clip: text !important;
+  background-size: 200% 100% !important;
   animation: slide 3s linear infinite !important;
 }
 
 /* Reset icon color on hover for rainbow buttons */
 .btn-rainbow-outline:hover ::ng-deep app-icon span,
 .btn-rainbow-ghost:hover ::ng-deep app-icon span {
+  color: var(--color-primary-content) !important;
   background-image: none !important;
   -webkit-background-clip: initial !important;
   background-clip: initial !important;
-  color: var(--color-primary-content) !important;
   animation: none !important;
 }
 
 /* Rainbow border */
 .btn-rainbow-outline::before {
-  content: '';
   position: absolute;
   inset: 0;
   padding: 1px; /* border thickness */
+  content: "";
 
   background: linear-gradient(
     90deg,
@@ -89,19 +85,20 @@
     var(--color-primary) 100%
   );
   background-size: 200% 100%;
-  animation: slide 3s linear infinite;
   border-radius: 9999px;
   mask:
     linear-gradient(#fff 0 0) content-box,
     linear-gradient(#fff 0 0);
   mask-composite: exclude;
+  animation: slide 3s linear infinite;
 }
 
 /* Hover background layer */
 .btn-rainbow-outline::after {
-  content: '';
   position: absolute;
   inset: 0;
+  z-index: -1;
+  content: "";
   background: linear-gradient(
     90deg,
     var(--color-primary) 0%,
@@ -116,15 +113,14 @@
   border-radius: 9999px;
   opacity: 0;
   transition: opacity 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  z-index: -1;
   animation: slide 3s linear infinite;
 }
 
 .btn-rainbow-outline:hover {
+  color: var(--color-primary-content) !important;
   background-image: none;
   -webkit-background-clip: initial !important;
   background-clip: initial !important;
-  color: var(--color-primary-content) !important;
   animation: none !important;
 }
 
@@ -135,10 +131,6 @@
 /* Ghost button */
 .btn-rainbow-ghost {
   --btn-fg: inherit !important;
-  position: relative;
-  background: transparent;
-  transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  transform: translateZ(0);
 
   /* Define intermediate colors using color-mix in oklch for smooth transitions */
   --rainbow-mid-primary-secondary: color-mix(
@@ -146,16 +138,15 @@
     var(--color-primary) 50%,
     var(--color-secondary)
   );
-  --rainbow-mid-primary-accent: color-mix(
-    in oklch,
-    var(--color-primary) 50%,
-    var(--color-accent)
-  );
+  --rainbow-mid-primary-accent: color-mix(in oklch, var(--color-primary) 50%, var(--color-accent));
   --rainbow-mid-accent-secondary: color-mix(
     in oklch,
     var(--color-accent) 50%,
     var(--color-secondary)
   );
+  position: relative;
+  color: transparent !important;
+  background: transparent;
 
   /* Text gradient */
   background-image: linear-gradient(
@@ -167,19 +158,20 @@
     var(--rainbow-mid-primary-secondary) 90%,
     var(--color-primary) 100%
   );
-  background-size: 200% 100%;
-  background-clip: text;
   -webkit-background-clip: text;
-  color: transparent !important;
+  background-clip: text;
+  background-size: 200% 100%;
+  transform: translateZ(0);
+  transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   animation: slide 3s linear infinite;
 }
 
 /* Rainbow border */
 .btn-rainbow-ghost::before {
-  content: '';
   position: absolute;
   inset: 1;
   padding: 0px; /* border thickness */
+  content: "";
 
   background: linear-gradient(
     90deg,
@@ -192,19 +184,20 @@
     var(--color-primary) 100%
   );
   background-size: 200% 100%;
-  animation: slide 3s linear infinite;
   border-radius: 9999px;
   mask:
     linear-gradient(#fff 0 0) content-box,
     linear-gradient(#fff 0 0);
   mask-composite: exclude;
+  animation: slide 3s linear infinite;
 }
 
 /* Hover background layer */
 .btn-rainbow-ghost::after {
-  content: '';
   position: absolute;
   inset: 0;
+  z-index: -1;
+  content: "";
   background: linear-gradient(
     90deg,
     var(--color-primary) 0%,
@@ -219,15 +212,14 @@
   border-radius: 9999px;
   opacity: 0;
   transition: opacity 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  z-index: -1;
   animation: slide 3s linear infinite;
 }
 
 .btn-rainbow-ghost:hover {
+  color: var(--color-primary-content) !important;
   background-image: none;
   -webkit-background-clip: initial !important;
   background-clip: initial !important;
-  color: var(--color-primary-content) !important;
   animation: none !important;
 }
 

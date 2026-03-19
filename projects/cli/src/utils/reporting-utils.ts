@@ -4,9 +4,7 @@ export class ReportingUtils {
    * @param statusCodeMap A record where keys are status codes and values are their counts.
    * @returns An object containing the counts for each status code category.
    */
-  static getStatusCodeDistributionByCategory(
-    statusCodeMap: Record<number, number>,
-  ): {
+  static getStatusCodeDistributionByCategory(statusCodeMap: Record<number, number>): {
     '2xx': number;
     '3xx': number;
     '4xx': number;

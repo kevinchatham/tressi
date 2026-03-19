@@ -1,5 +1,5 @@
-import { inject, Injectable, linkedSignal, signal } from '@angular/core';
-import { ColumnConfig, ColumnKey, SortConfig } from '@tressi/shared/ui';
+import { Injectable, inject, linkedSignal, signal } from '@angular/core';
+import { type ColumnConfig, ColumnKey, type SortConfig } from '@tressi/shared/ui';
 
 import { LocalStorageService } from '../../services/local-storage.service';
 import { LogService } from '../../services/log.service';
@@ -13,9 +13,7 @@ export class TestListColumnsService {
   private readonly _defaultColumns: ColumnConfig[] = DEFAULT_COLUMN_CONFIGS;
   private readonly _sortConfig = signal<SortConfig | null>(null);
 
-  private readonly _columns = signal<ColumnConfig[]>(
-    this._loadColumnPreferences(),
-  );
+  private readonly _columns = signal<ColumnConfig[]>(this._loadColumnPreferences());
 
   /**
    * Computed signal that returns the visible columns in the correct order.
@@ -23,8 +21,7 @@ export class TestListColumnsService {
    * followed by configurable visible columns sorted by their order property.
    */
   readonly visibleColumns = linkedSignal({
-    source: this._columns,
-    computation: (columns) => {
+    computation: (columns: ColumnConfig[]) => {
       const allColumns = columns;
       const fixedColumns = allColumns.filter(
         (col) => col.key === ColumnKey.SELECT || col.key === ColumnKey.STATUS,
@@ -41,6 +38,7 @@ export class TestListColumnsService {
 
       return [...fixedColumns, ...configurableColumns];
     },
+    source: this._columns,
   });
 
   /**
@@ -48,27 +46,23 @@ export class TestListColumnsService {
    * Excludes action, status, and select columns from grouping.
    */
   readonly columnGroups = linkedSignal({
-    source: this._columns,
-    computation: (columns) => {
+    computation: (columns: ColumnConfig[]) => {
       const groups: Record<string, ColumnConfig[]> = {
         basic: [],
-        latency: [],
-        request: [],
-        network: [],
         configuration: [],
+        latency: [],
+        network: [],
         performance: [],
+        request: [],
       };
       columns.forEach((col) => {
-        if (
-          col.key !== 'actions' &&
-          col.key !== ColumnKey.STATUS &&
-          col.key !== ColumnKey.SELECT
-        ) {
+        if (col.key !== 'actions' && col.key !== ColumnKey.STATUS && col.key !== ColumnKey.SELECT) {
           groups[col.group]?.push(col);
         }
       });
       return groups;
     },
+    source: this._columns,
   });
 
   /**
@@ -120,9 +114,7 @@ export class TestListColumnsService {
    */
   toggleColumn(key: string): void {
     this._columns.update((cols) =>
-      cols.map((col) =>
-        col.key === key ? { ...col, visible: !col.visible } : col,
-      ),
+      cols.map((col) => (col.key === key ? { ...col, visible: !col.visible } : col)),
     );
     this._saveColumnPreferences();
   }
@@ -164,9 +156,7 @@ export class TestListColumnsService {
    * @param width - The new width in pixels
    */
   updateColumnWidth(key: string, width: number): void {
-    this._columns.update((cols) =>
-      cols.map((col) => (col.key === key ? { ...col, width } : col)),
-    );
+    this._columns.update((cols) => cols.map((col) => (col.key === key ? { ...col, width } : col)));
     this._saveColumnPreferences();
   }
 

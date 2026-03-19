@@ -18,8 +18,8 @@ describe('TestListDeleteService', () => {
       deleteTest: vi.fn(),
     };
     logServiceMock = {
-      info: vi.fn(),
       error: vi.fn(),
+      info: vi.fn(),
     };
 
     TestBed.configureTestingModule({

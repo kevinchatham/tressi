@@ -1,6 +1,6 @@
 import * as fs from 'node:fs/promises';
 
-import { ConfigDocument, TressiConfigSchema } from '@tressi/shared/common';
+import { type ConfigDocument, TressiConfigSchema } from '@tressi/shared/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { configStorage } from '../collections/config-collection';
@@ -9,16 +9,13 @@ import { JSON_MIGRATIONS } from './migrations';
 
 vi.mock('../collections/config-collection', () => ({
   configStorage: {
-    getAll: vi.fn(),
     edit: vi.fn(),
+    getAll: vi.fn(),
   },
 }));
 
 vi.mock('@tressi/shared/common', async () => {
-  const actual = (await vi.importActual('@tressi/shared/common')) as Record<
-    string,
-    unknown
-  >;
+  const actual = (await vi.importActual('@tressi/shared/common')) as Record<string, unknown>;
   return {
     ...actual,
     TressiConfigSchema: {
@@ -41,20 +38,20 @@ vi.mock('../../../../package.json', () => ({
 
 vi.mock('node:readline/promises', () => ({
   createInterface: vi.fn(() => ({
-    question: vi.fn().mockResolvedValue('y'),
     close: vi.fn(),
+    question: vi.fn().mockResolvedValue('y'),
   })),
 }));
 
 vi.mock('node:fs/promises', () => ({
   access: vi.fn(),
-  readFile: vi.fn(),
-  writeFile: vi.fn(),
-  copyFile: vi.fn(),
   constants: {
     R_OK: 4,
     W_OK: 2,
   },
+  copyFile: vi.fn(),
+  readFile: vi.fn(),
+  writeFile: vi.fn(),
 }));
 
 describe('JsonMigrationManager', () => {
@@ -86,9 +83,7 @@ describe('JsonMigrationManager', () => {
     });
 
     it('should throw for invalid URL format', () => {
-      expect(() => JsonMigrationManager.getVersion('invalid')).toThrow(
-        'Invalid "$schema" format',
-      );
+      expect(() => JsonMigrationManager.getVersion('invalid')).toThrow('Invalid "$schema" format');
     });
 
     it('should throw for null or undefined', () => {
@@ -105,14 +100,14 @@ describe('JsonMigrationManager', () => {
     it('should do nothing if no configurations are outdated', async () => {
       vi.mocked(configStorage.getAll).mockResolvedValue([
         {
-          id: '1',
-          name: 'Test',
           config: {
             $schema:
               'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.14.json',
           },
           epochCreatedAt: 0,
           epochUpdatedAt: 0,
+          id: '1',
+          name: 'Test',
         } as ConfigDocument,
       ]);
 
@@ -123,8 +118,6 @@ describe('JsonMigrationManager', () => {
 
     it('should migrate outdated configurations', async () => {
       const outdatedConfig = {
-        id: '1',
-        name: 'Outdated',
         config: {
           $schema:
             'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json',
@@ -132,6 +125,8 @@ describe('JsonMigrationManager', () => {
         },
         epochCreatedAt: 0,
         epochUpdatedAt: 0,
+        id: '1',
+        name: 'Outdated',
       } as unknown as ConfigDocument;
 
       vi.mocked(configStorage.getAll).mockResolvedValue([outdatedConfig]);
@@ -152,23 +147,23 @@ describe('JsonMigrationManager', () => {
       expect(TressiConfigSchema.parse).toHaveBeenCalled();
       expect(configStorage.edit).toHaveBeenCalledWith(
         expect.objectContaining({
-          id: '1',
           config: expect.objectContaining({
-            newField: 'value',
             $schema: expect.stringContaining('v0.0.14'),
+            newField: 'value',
           }),
+          id: '1',
         }),
       );
     });
 
     it('should summarize failures at the end', async () => {
       const outdatedConfig = {
-        id: '1',
-        name: 'Outdated',
         config: {
           $schema:
             'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json',
         },
+        id: '1',
+        name: 'Outdated',
       } as unknown as ConfigDocument;
 
       vi.mocked(configStorage.getAll).mockResolvedValue([outdatedConfig]);
@@ -187,23 +182,19 @@ describe('JsonMigrationManager', () => {
       await manager.run();
 
       expect(errorSpy).toHaveBeenCalledWith(
-        expect.stringContaining(
-          'Configuration migration complete with 1 failure(s)',
-        ),
+        expect.stringContaining('Configuration migration complete with 1 failure(s)'),
       );
-      expect(errorSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Outdated: Migration failed'),
-      );
+      expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('Outdated: Migration failed'));
     });
 
     it('should handle invalid configurations in database', async () => {
       vi.mocked(configStorage.getAll).mockResolvedValue([
         {
-          id: '1',
-          name: 'Invalid',
           config: {
             // Missing $schema
           },
+          id: '1',
+          name: 'Invalid',
         } as unknown as ConfigDocument,
       ]);
 
@@ -225,18 +216,18 @@ describe('JsonMigrationManager', () => {
     it('should skip migration if user declines', async () => {
       const { createInterface } = await import('node:readline/promises');
       vi.mocked(createInterface).mockReturnValue({
-        question: vi.fn().mockResolvedValue('n'),
         close: vi.fn(),
+        question: vi.fn().mockResolvedValue('n'),
       } as unknown as ReturnType<typeof createInterface>);
 
       vi.mocked(configStorage.getAll).mockResolvedValue([
         {
-          id: '1',
-          name: 'Outdated',
           config: {
             $schema:
               'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json',
           },
+          id: '1',
+          name: 'Outdated',
         } as ConfigDocument,
       ]);
 
@@ -247,12 +238,12 @@ describe('JsonMigrationManager', () => {
 
     it('should migrate automatically if force is true', async () => {
       const outdatedConfig = {
-        id: '1',
-        name: 'Outdated',
         config: {
           $schema:
             'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json',
         },
+        id: '1',
+        name: 'Outdated',
       } as unknown as ConfigDocument;
 
       vi.mocked(configStorage.getAll).mockResolvedValue([outdatedConfig]);
@@ -268,8 +259,8 @@ describe('JsonMigrationManager', () => {
       const { createInterface } = await import('node:readline/promises');
       const questionSpy = vi.fn().mockResolvedValue('y');
       vi.mocked(createInterface).mockReturnValue({
-        question: questionSpy,
         close: vi.fn(),
+        question: questionSpy,
       } as unknown as ReturnType<typeof createInterface>);
 
       await manager.run(true);
@@ -346,8 +337,8 @@ describe('JsonMigrationManager', () => {
 
       const { createInterface } = await import('node:readline/promises');
       vi.mocked(createInterface).mockReturnValue({
-        question: vi.fn().mockResolvedValue('y'),
         close: vi.fn(),
+        question: vi.fn().mockResolvedValue('y'),
       } as unknown as ReturnType<typeof createInterface>);
 
       await manager.migrateFile(filePath);
@@ -375,8 +366,8 @@ describe('JsonMigrationManager', () => {
 
       const { createInterface } = await import('node:readline/promises');
       vi.mocked(createInterface).mockReturnValue({
-        question: vi.fn().mockResolvedValue('y'),
         close: vi.fn(),
+        question: vi.fn().mockResolvedValue('y'),
       } as unknown as ReturnType<typeof createInterface>);
 
       await manager.migrateFile(filePath);
@@ -391,8 +382,8 @@ describe('JsonMigrationManager', () => {
     it('should skip file migration if user declines', async () => {
       const { createInterface } = await import('node:readline/promises');
       vi.mocked(createInterface).mockReturnValue({
-        question: vi.fn().mockResolvedValue('n'),
         close: vi.fn(),
+        question: vi.fn().mockResolvedValue('n'),
       } as unknown as ReturnType<typeof createInterface>);
 
       vi.mocked(fs.access).mockResolvedValue(undefined);
@@ -403,9 +394,7 @@ describe('JsonMigrationManager', () => {
         }),
       );
 
-      await expect(manager.migrateFile(filePath)).rejects.toThrow(
-        'process.exit called',
-      );
+      await expect(manager.migrateFile(filePath)).rejects.toThrow('process.exit called');
 
       expect(fs.writeFile).not.toHaveBeenCalled();
     });
@@ -424,9 +413,7 @@ describe('JsonMigrationManager', () => {
         }),
       );
 
-      await expect(manager.migrateFile(filePath)).rejects.toThrow(
-        'process.exit called',
-      );
+      await expect(manager.migrateFile(filePath)).rejects.toThrow('process.exit called');
 
       expect(fs.writeFile).not.toHaveBeenCalled();
     });
@@ -451,8 +438,8 @@ describe('JsonMigrationManager', () => {
       const { createInterface } = await import('node:readline/promises');
       const questionSpy = vi.fn().mockResolvedValue('y');
       vi.mocked(createInterface).mockReturnValue({
-        question: questionSpy,
         close: vi.fn(),
+        question: questionSpy,
       } as unknown as ReturnType<typeof createInterface>);
 
       await manager.migrateFile(filePath, true);

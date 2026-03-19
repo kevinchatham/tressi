@@ -3,10 +3,10 @@ import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import * as readline from 'node:readline/promises';
 
-import { Database } from '@tressi/shared/cli';
+import type { Database } from '@tressi/shared/cli';
 import chalk from 'chalk';
 import Table from 'cli-table3';
-import { Kysely } from 'kysely';
+import type { Kysely } from 'kysely';
 import ora from 'ora';
 import semver from 'semver';
 
@@ -43,28 +43,20 @@ export class DatabaseMigrationManager {
 
     // Find all migrations between current and target version
     const pendingVersions = Object.keys(DATABASE_MIGRATIONS)
-      .filter(
-        (v) => semver.gt(v, currentVersion) && semver.lte(v, targetVersion),
-      )
+      .filter((v) => semver.gt(v, currentVersion) && semver.lte(v, targetVersion))
       .sort(semver.compare);
 
     if (pendingVersions.length === 0) {
       return;
     }
 
-    terminal.print(
-      `\n${chalk.bold.blue('📦 Tressi Database Migration Required')}`,
-    );
-    terminal.print(
-      `${chalk.dim('Current Version:')} ${chalk.yellow(currentVersion)}`,
-    );
-    terminal.print(
-      `${chalk.dim('Target Version: ')} ${chalk.green(targetVersion)}\n`,
-    );
+    terminal.print(`\n${chalk.bold.blue('📦 Tressi Database Migration Required')}`);
+    terminal.print(`${chalk.dim('Current Version:')} ${chalk.yellow(currentVersion)}`);
+    terminal.print(`${chalk.dim('Target Version: ')} ${chalk.green(targetVersion)}\n`);
 
     const table = new Table({
-      head: [chalk.cyan('Version'), chalk.cyan('Summary')],
       colWidths: [15, 60],
+      head: [chalk.cyan('Version'), chalk.cyan('Summary')],
       wordWrap: true,
     });
 
@@ -107,11 +99,8 @@ export class DatabaseMigrationManager {
         spinner.succeed(`Applied database migration ${chalk.cyan(v)}`);
         spinner.start();
       } catch (error) {
-        const message =
-          error instanceof Error ? error.message : 'Unknown error';
-        spinner.fail(
-          chalk.red(`Failed to apply database migration ${v}: ${message}`),
-        );
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        spinner.fail(chalk.red(`Failed to apply database migration ${v}: ${message}`));
         throw error; // Halt if a migration fails to prevent data corruption
       }
     }
@@ -128,10 +117,7 @@ export class DatabaseMigrationManager {
     const rootDir = join(homedir(), '.tressi');
     const dbPath = process.env['TRESSI_DB_PATH'] || join(rootDir, 'tressi.db');
     const timestamp = Date.now();
-    const backupPath = join(
-      dirname(dbPath),
-      `tressi-${version}-${timestamp}.db.bak`,
-    );
+    const backupPath = join(dirname(dbPath), `tressi-${version}-${timestamp}.db.bak`);
 
     try {
       await copyFile(dbPath, backupPath);
@@ -139,9 +125,7 @@ export class DatabaseMigrationManager {
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
       terminal.error(chalk.red(`Failed to create database backup: ${message}`));
-      throw new Error(
-        `Database migration halted: Could not create backup. ${message}`,
-      );
+      throw new Error(`Database migration halted: Could not create backup. ${message}`);
     }
   }
 
@@ -162,15 +146,12 @@ export class DatabaseMigrationManager {
   /**
    * Updates the database version in the migrations table.
    */
-  private async _updateVersion(
-    version: string,
-    trx: Kysely<Database>,
-  ): Promise<void> {
+  private async _updateVersion(version: string, trx: Kysely<Database>): Promise<void> {
     await trx
       .insertInto('migrations')
       .values({
-        version,
         applied_at: Date.now(),
+        version,
       })
       .execute();
   }

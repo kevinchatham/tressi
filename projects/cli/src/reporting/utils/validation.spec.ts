@@ -1,10 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  validateJsonPath,
-  validateMarkdownPath,
-  validateXlsxPath,
-} from './validation';
+import { validateJsonPath, validateMarkdownPath, validateXlsxPath } from './validation';
 
 describe('validation', () => {
   describe('validateJsonPath', () => {
@@ -12,9 +8,7 @@ describe('validation', () => {
       expect(() => validateJsonPath('test.json')).not.toThrow();
     });
     it('should throw for invalid extension', () => {
-      expect(() => validateJsonPath('test.txt')).toThrow(
-        'File path must have .json extension',
-      );
+      expect(() => validateJsonPath('test.txt')).toThrow('File path must have .json extension');
     });
   });
 
@@ -23,9 +17,7 @@ describe('validation', () => {
       expect(() => validateXlsxPath('test.xlsx')).not.toThrow();
     });
     it('should throw for invalid extension', () => {
-      expect(() => validateXlsxPath('test.json')).toThrow(
-        'File path must have .xlsx extension',
-      );
+      expect(() => validateXlsxPath('test.json')).toThrow('File path must have .xlsx extension');
     });
   });
 
@@ -34,9 +26,7 @@ describe('validation', () => {
       expect(() => validateMarkdownPath('test.md')).not.toThrow();
     });
     it('should throw for invalid extension', () => {
-      expect(() => validateMarkdownPath('test.json')).toThrow(
-        'File path must have .md extension',
-      );
+      expect(() => validateMarkdownPath('test.json')).toThrow('File path must have .md extension');
     });
   });
 });

@@ -1,4 +1,4 @@
-import { Directive, effect, ElementRef, inject, input } from '@angular/core';
+import { Directive, ElementRef, effect, inject, input } from '@angular/core';
 
 @Directive({
   selector: '[appFormatDate]',
@@ -19,7 +19,7 @@ export class FormatDateDirective {
 
       try {
         const date = new Date(dateValue);
-        if (isNaN(date.getTime())) {
+        if (Number.isNaN(date.getTime())) {
           this._el.nativeElement.textContent = '—';
           return;
         }

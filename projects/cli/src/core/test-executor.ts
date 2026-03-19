@@ -1,12 +1,12 @@
-import {
+import path from 'node:path';
+import type {
   LoadTestOptions,
   LoadTestResult,
   TestSummary,
+  TressiConfig,
 } from '@tressi/shared/common';
-import { TressiConfig } from '@tressi/shared/common';
 import chalk from 'chalk';
 import ora from 'ora';
-import path from 'path';
 
 import { JsonExporter } from '../reporting/exporters/json-exporter';
 import { MarkdownExporter } from '../reporting/exporters/markdown-exporter';
@@ -87,7 +87,7 @@ async function executeLoadTest(
     throw new Error('Test failed: One or more error thresholds were exceeded.');
   }
 
-  return { summary, isCanceled };
+  return { isCanceled, summary };
 }
 
 /**
@@ -98,23 +98,16 @@ function checkThresholds(summary: TestSummary): boolean {
   const globalExitConfig = configSnapshot.options.workerEarlyExit;
 
   for (const endpoint of endpoints) {
-    const requestConfig = configSnapshot.requests.find(
-      (r) => r.url === endpoint.url,
-    );
+    const requestConfig = configSnapshot.requests.find((r) => r.url === endpoint.url);
     if (!requestConfig) continue;
 
     // Determine effective early exit config for this endpoint
     const earlyExit =
-      requestConfig.earlyExit !== undefined
-        ? requestConfig.earlyExit
-        : globalExitConfig;
+      requestConfig.earlyExit !== undefined ? requestConfig.earlyExit : globalExitConfig;
 
-    if (earlyExit && earlyExit.enabled) {
+    if (earlyExit?.enabled) {
       // Check error rate threshold
-      if (
-        earlyExit.errorRateThreshold > 0 &&
-        endpoint.errorRate >= earlyExit.errorRateThreshold
-      ) {
+      if (earlyExit.errorRateThreshold > 0 && endpoint.errorRate >= earlyExit.errorRateThreshold) {
         return true;
       }
 
@@ -138,7 +131,7 @@ function checkThresholds(summary: TestSummary): boolean {
 async function handleCLIExport(
   summary: TestSummary,
   exportPath?: string,
-  silent = false,
+  silent: boolean = false,
 ): Promise<void> {
   if (!exportPath) return;
 
@@ -149,8 +142,7 @@ async function handleCLIExport(
       }).start();
 
   try {
-    const baseExportName =
-      typeof exportPath === 'string' ? exportPath : 'tressi-report';
+    const baseExportName = typeof exportPath === 'string' ? exportPath : 'tressi-report';
 
     const reportDir = path.isAbsolute(baseExportName)
       ? baseExportName
@@ -172,9 +164,7 @@ async function handleCLIExport(
 
     exportSpinner?.succeed(`Successfully exported results to ${reportDir}`);
   } catch (err) {
-    exportSpinner?.fail(
-      chalk.red(`Failed to export results: ${(err as Error).message}`),
-    );
+    exportSpinner?.fail(chalk.red(`Failed to export results: ${(err as Error).message}`));
   }
 }
 
@@ -188,8 +178,8 @@ export async function runLoadTest(
 ): Promise<LoadTestResult> {
   return executeLoadTest(config, {
     enableTUI: !silent,
-    setupSignalHandlers: true,
     exportPath,
+    setupSignalHandlers: true,
     silent,
   });
 }
@@ -198,9 +188,7 @@ export async function runLoadTest(
  * Execute a load test from UI/server
  * Looks up config from testId and executes load test
  */
-export async function runLoadTestForServer(
-  testId: string,
-): Promise<LoadTestResult> {
+export async function runLoadTestForServer(testId: string): Promise<LoadTestResult> {
   // Import here to avoid circular dependency
   const { testStorage } = await import('../collections/test-collection');
   const { configStorage } = await import('../collections/config-collection');

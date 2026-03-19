@@ -1,9 +1,9 @@
-import { computed, inject, Injectable, signal } from '@angular/core';
-import { ALL_THEMES, Theme } from '@tressi/shared/ui';
+import { computed, Injectable, inject, signal } from '@angular/core';
+import { ALL_THEMES, type Theme } from '@tressi/shared/ui';
 
 import { LocalStorageService } from './local-storage.service';
 
-export const AllThemes = ALL_THEMES;
+export const AllThemes: readonly ['shine', 'storm'] = ALL_THEMES;
 
 @Injectable({
   providedIn: 'root',
@@ -13,9 +13,7 @@ export class ThemeService {
 
   readonly isDark = computed(() => this.getTheme() === 'storm');
 
-  readonly getTheme = computed(
-    () => this._localStorageService.preferences().selectedTheme,
-  );
+  readonly getTheme = computed(() => this._localStorageService.preferences().selectedTheme);
 
   private readonly _primary = signal<string>('');
   readonly primary = computed(() => this._primary());
@@ -106,111 +104,83 @@ export class ThemeService {
     // Listen for theme changes (DaisyUI adds data-theme attribute)
     const observer = new MutationObserver(() => this._extractTheme());
     observer.observe(document.documentElement, {
-      attributes: true,
       attributeFilter: ['data-theme'],
+      attributes: true,
     });
   }
 
   private _extractTheme(): void {
     const computedStyle = getComputedStyle(document.documentElement);
     this._primary.set(
-      computedStyle.getPropertyValue('--color-primary').trim() ||
-        'oklch(81% 0.111 293.571)',
+      computedStyle.getPropertyValue('--color-primary').trim() || 'oklch(81% 0.111 293.571)',
     );
     this._primaryContent.set(
       computedStyle.getPropertyValue('--color-primary-content').trim() ||
         'oklch(28% 0.141 291.089)',
     );
     this._secondary.set(
-      computedStyle.getPropertyValue('--color-secondary').trim() ||
-        'oklch(78% 0.115 274.713)',
+      computedStyle.getPropertyValue('--color-secondary').trim() || 'oklch(78% 0.115 274.713)',
     );
     this._secondaryContent.set(
       computedStyle.getPropertyValue('--color-secondary-content').trim() ||
         'oklch(25% 0.09 281.288)',
     );
     this._accent.set(
-      computedStyle.getPropertyValue('--color-accent').trim() ||
-        'oklch(78% 0.115 274.713)',
+      computedStyle.getPropertyValue('--color-accent').trim() || 'oklch(78% 0.115 274.713)',
     );
     this._accentContent.set(
-      computedStyle.getPropertyValue('--color-accent-content').trim() ||
-        'oklch(25% 0.09 281.288)',
+      computedStyle.getPropertyValue('--color-accent-content').trim() || 'oklch(25% 0.09 281.288)',
     );
     this._base100.set(
-      computedStyle.getPropertyValue('--color-base-100').trim() ||
-        'oklch(98% 0.001 106.423)',
+      computedStyle.getPropertyValue('--color-base-100').trim() || 'oklch(98% 0.001 106.423)',
     );
     this._base200.set(
-      computedStyle.getPropertyValue('--color-base-200').trim() ||
-        'oklch(97% 0.001 106.424)',
+      computedStyle.getPropertyValue('--color-base-200').trim() || 'oklch(97% 0.001 106.424)',
     );
     this._base300.set(
-      computedStyle.getPropertyValue('--color-base-300').trim() ||
-        'oklch(92% 0.003 48.717)',
+      computedStyle.getPropertyValue('--color-base-300').trim() || 'oklch(92% 0.003 48.717)',
     );
     this._baseContent.set(
-      computedStyle.getPropertyValue('--color-base-content').trim() ||
-        'oklch(21% 0.006 56.043)',
+      computedStyle.getPropertyValue('--color-base-content').trim() || 'oklch(21% 0.006 56.043)',
     );
     this._neutral.set(
-      computedStyle.getPropertyValue('--color-neutral').trim() ||
-        'oklch(14% 0.004 49.25)',
+      computedStyle.getPropertyValue('--color-neutral').trim() || 'oklch(14% 0.004 49.25)',
     );
     this._neutralContent.set(
       computedStyle.getPropertyValue('--color-neutral-content').trim() ||
         'oklch(98% 0.001 106.423)',
     );
     this._info.set(
-      computedStyle.getPropertyValue('--color-info').trim() ||
-        'oklch(68% 0.169 237.323)',
+      computedStyle.getPropertyValue('--color-info').trim() || 'oklch(68% 0.169 237.323)',
     );
     this._infoContent.set(
-      computedStyle.getPropertyValue('--color-info-content').trim() ||
-        'oklch(97% 0.013 236.62)',
+      computedStyle.getPropertyValue('--color-info-content').trim() || 'oklch(97% 0.013 236.62)',
     );
     this._success.set(
-      computedStyle.getPropertyValue('--color-success').trim() ||
-        'oklch(69% 0.17 162.48)',
+      computedStyle.getPropertyValue('--color-success').trim() || 'oklch(69% 0.17 162.48)',
     );
     this._successContent.set(
       computedStyle.getPropertyValue('--color-success-content').trim() ||
         'oklch(97% 0.021 166.113)',
     );
     this._warning.set(
-      computedStyle.getPropertyValue('--color-warning').trim() ||
-        'oklch(70% 0.213 47.604)',
+      computedStyle.getPropertyValue('--color-warning').trim() || 'oklch(70% 0.213 47.604)',
     );
     this._warningContent.set(
-      computedStyle.getPropertyValue('--color-warning-content').trim() ||
-        'oklch(98% 0.016 73.684)',
+      computedStyle.getPropertyValue('--color-warning-content').trim() || 'oklch(98% 0.016 73.684)',
     );
     this._error.set(
-      computedStyle.getPropertyValue('--color-error').trim() ||
-        'oklch(63% 0.237 25.331)',
+      computedStyle.getPropertyValue('--color-error').trim() || 'oklch(63% 0.237 25.331)',
     );
     this._errorContent.set(
-      computedStyle.getPropertyValue('--color-error-content').trim() ||
-        'oklch(97% 0.013 17.38)',
+      computedStyle.getPropertyValue('--color-error-content').trim() || 'oklch(97% 0.013 17.38)',
     );
-    this._radiusSelector.set(
-      computedStyle.getPropertyValue('--radius-selector').trim() || '2rem',
-    );
-    this._radiusField.set(
-      computedStyle.getPropertyValue('--radius-field').trim() || '1rem',
-    );
-    this._radiusBox.set(
-      computedStyle.getPropertyValue('--radius-box').trim() || '2rem',
-    );
-    this._sizeSelector.set(
-      computedStyle.getPropertyValue('--size-selector').trim() || '0.25rem',
-    );
-    this._sizeField.set(
-      computedStyle.getPropertyValue('--size-field').trim() || '0.25rem',
-    );
-    this._border.set(
-      computedStyle.getPropertyValue('--border').trim() || '2px',
-    );
+    this._radiusSelector.set(computedStyle.getPropertyValue('--radius-selector').trim() || '2rem');
+    this._radiusField.set(computedStyle.getPropertyValue('--radius-field').trim() || '1rem');
+    this._radiusBox.set(computedStyle.getPropertyValue('--radius-box').trim() || '2rem');
+    this._sizeSelector.set(computedStyle.getPropertyValue('--size-selector').trim() || '0.25rem');
+    this._sizeField.set(computedStyle.getPropertyValue('--size-field').trim() || '0.25rem');
+    this._border.set(computedStyle.getPropertyValue('--border').trim() || '2px');
     this._depth.set(computedStyle.getPropertyValue('--depth').trim() || '0');
     this._noise.set(computedStyle.getPropertyValue('--noise').trim() || '1');
   }
@@ -225,12 +195,12 @@ export class ThemeService {
     border: string;
   } {
     return {
+      background: this._base200(),
+      border: this._neutral(),
+      grid: this._base300(),
       primary: this._primary(),
       secondary: this._secondary(),
-      background: this._base200(),
-      grid: this._base300(),
       text: this._baseContent(),
-      border: this._neutral(),
     };
   }
 
@@ -254,10 +224,7 @@ export class ThemeService {
 
   loadInitialTheme(): void {
     const preferences = this._localStorageService.preferences();
-    document.documentElement.setAttribute(
-      'data-theme',
-      preferences.selectedTheme,
-    );
+    document.documentElement.setAttribute('data-theme', preferences.selectedTheme);
     this._extractTheme();
   }
 }

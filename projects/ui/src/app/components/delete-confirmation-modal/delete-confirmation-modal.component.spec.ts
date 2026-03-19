@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { type ComponentFixture, TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DeleteConfirmationModalComponent } from './delete-confirmation-modal.component';
@@ -233,12 +233,8 @@ describe('DeleteConfirmationModalComponent', () => {
       fixture.componentRef.setInput('itemLabel', 'Test Item');
       fixture.componentRef.setInput('bulkCount', null);
       fixture.detectChanges();
-      const body = fixture.nativeElement.querySelector(
-        '.text-base-content\\/80',
-      );
-      expect(body.textContent).toContain(
-        'Are you sure you want to delete this',
-      );
+      const body = fixture.nativeElement.querySelector('.text-base-content\\/80');
+      expect(body.textContent).toContain('Are you sure you want to delete this');
       expect(body.textContent).toContain('test item');
     });
 
@@ -246,12 +242,8 @@ describe('DeleteConfirmationModalComponent', () => {
       fixture.componentRef.setInput('itemLabel', 'Test Item');
       fixture.componentRef.setInput('bulkCount', 5);
       fixture.detectChanges();
-      const body = fixture.nativeElement.querySelector(
-        '.text-base-content\\/80',
-      );
-      expect(body.textContent).toContain(
-        'Are you sure you want to delete these',
-      );
+      const body = fixture.nativeElement.querySelector('.text-base-content\\/80');
+      expect(body.textContent).toContain('Are you sure you want to delete these');
       expect(body.textContent).toContain('5');
       expect(body.textContent).toContain('test item');
     });
@@ -266,8 +258,8 @@ describe('DeleteConfirmationModalComponent', () => {
       const buttons = fixture.nativeElement.querySelectorAll('app-button');
       expect(buttons.length).toBeGreaterThanOrEqual(1);
       // Check that one of the buttons has the cancel functionality
-      const cancelButton = (Array.from(buttons) as Element[]).find(
-        (btn: Element) => btn.textContent?.includes('Cancel'),
+      const cancelButton = (Array.from(buttons) as Element[]).find((btn: Element) =>
+        btn.textContent?.includes('Cancel'),
       );
       expect(cancelButton).toBeTruthy();
     });
@@ -276,16 +268,14 @@ describe('DeleteConfirmationModalComponent', () => {
       const buttons = fixture.nativeElement.querySelectorAll('app-button');
       expect(buttons.length).toBeGreaterThanOrEqual(1);
       // Check that one of the buttons has the delete functionality
-      const deleteButton = (Array.from(buttons) as Element[]).find(
-        (btn: Element) => btn.textContent?.includes('Delete'),
+      const deleteButton = (Array.from(buttons) as Element[]).find((btn: Element) =>
+        btn.textContent?.includes('Delete'),
       );
       expect(deleteButton).toBeTruthy();
     });
 
     it('should render warning icon', () => {
-      const icon = fixture.nativeElement.querySelector(
-        'app-icon[name="warning"]',
-      );
+      const icon = fixture.nativeElement.querySelector('app-icon[name="warning"]');
       expect(icon).toBeTruthy();
     });
 
@@ -293,8 +283,8 @@ describe('DeleteConfirmationModalComponent', () => {
       fixture.componentRef.setInput('isOpen', true);
       fixture.detectChanges();
       const buttons = fixture.nativeElement.querySelectorAll('app-button');
-      const cancelButton = (Array.from(buttons) as Element[]).find(
-        (btn: Element) => btn.textContent?.includes('Cancel'),
+      const cancelButton = (Array.from(buttons) as Element[]).find((btn: Element) =>
+        btn.textContent?.includes('Cancel'),
       );
       expect(cancelButton).toBeTruthy();
     });
@@ -303,8 +293,8 @@ describe('DeleteConfirmationModalComponent', () => {
       fixture.componentRef.setInput('isOpen', true);
       fixture.detectChanges();
       const buttons = fixture.nativeElement.querySelectorAll('app-button');
-      const deleteButton = (Array.from(buttons) as Element[]).find(
-        (btn: Element) => btn.textContent?.includes('Delete'),
+      const deleteButton = (Array.from(buttons) as Element[]).find((btn: Element) =>
+        btn.textContent?.includes('Delete'),
       );
       expect(deleteButton).toBeTruthy();
     });
@@ -331,9 +321,7 @@ describe('DeleteConfirmationModalComponent', () => {
       fixture.componentRef.setInput('itemLabel', 'File');
       fixture.componentRef.setInput('bulkCount', 10);
       fixture.detectChanges();
-      const body = fixture.nativeElement.querySelector(
-        '.text-base-content\\/80',
-      );
+      const body = fixture.nativeElement.querySelector('.text-base-content\\/80');
       expect(body.textContent).toContain('10');
       expect(body.textContent).toContain('file');
     });
@@ -342,9 +330,7 @@ describe('DeleteConfirmationModalComponent', () => {
       fixture.componentRef.setInput('itemLabel', 'User');
       fixture.componentRef.setInput('bulkCount', null);
       fixture.detectChanges();
-      const body = fixture.nativeElement.querySelector(
-        '.text-base-content\\/80',
-      );
+      const body = fixture.nativeElement.querySelector('.text-base-content\\/80');
       expect(body.textContent).toContain('user');
     });
   });

@@ -1,10 +1,10 @@
-import {
+import type {
   EarlyExitThresholds,
   IEarlyExitCoordinator,
   IEndpointStateManager,
   IStatsCounterManager,
 } from '@tressi/shared/cli';
-import { TressiConfig } from '@tressi/shared/common';
+import type { TressiConfig } from '@tressi/shared/common';
 
 /**
  * EarlyExitCoordinator - Monitors test execution and triggers early termination based on configurable thresholds.
@@ -65,10 +65,7 @@ export class EarlyExitCoordinator implements IEarlyExitCoordinator {
 
       if (requestConfig?.enabled) {
         // Use request-level configuration (takes precedence regardless of global flag)
-        const window = Math.max(
-          1000,
-          requestConfig.monitoringWindowMs || globalMonitoringWindow,
-        );
+        const window = Math.max(1000, requestConfig.monitoringWindowMs || globalMonitoringWindow);
         minMonitoringWindow = Math.min(minMonitoringWindow, window);
 
         perEndpointMap.set(request.url, {
@@ -90,8 +87,8 @@ export class EarlyExitCoordinator implements IEarlyExitCoordinator {
     });
 
     return {
-      perEndpoint: perEndpointMap,
       monitoringWindowMs: minMonitoringWindow,
+      perEndpoint: perEndpointMap,
     };
   }
 
@@ -228,15 +225,11 @@ export class EarlyExitCoordinator implements IEarlyExitCoordinator {
    * which workers check before executing requests.
    */
   private _triggerEndpointEarlyExit(endpoints: string[]): void {
-    process.stdout.write(
-      `🚨 Endpoint early exit triggered for: ${endpoints.join(', ')}\n`,
-    );
+    process.stdout.write(`🚨 Endpoint early exit triggered for: ${endpoints.join(', ')}\n`);
 
     // Stop individual endpoints instead of global stop
     endpoints.forEach((endpointUrl) => {
-      const endpointIndex = this._config.requests.findIndex(
-        (req) => req.url === endpointUrl,
-      );
+      const endpointIndex = this._config.requests.findIndex((req) => req.url === endpointUrl);
       if (endpointIndex !== -1) {
         this._endpointStateManager.stopEndpoint(endpointIndex);
       }

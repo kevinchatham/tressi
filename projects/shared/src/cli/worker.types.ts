@@ -1,6 +1,6 @@
-import { TressiRequestConfig } from '../common/config.types';
+import type { TressiRequestConfig } from '../common/config.types';
 import type { IGlobalServerEvents, IRunnerEvents } from '../common/event.types';
-import { LatencyHistogram, TestSummary } from '../common/reporting.types';
+import type { LatencyHistogram, TestSummary } from '../common/reporting.types';
 import { EndpointState, WorkerState } from '../common/test.types';
 
 /**
@@ -71,31 +71,31 @@ export type EarlyExitThresholds = {
 
 export interface ISSEClientManager {
   addClient(controller: ReadableStreamDefaultController): void;
-  removeClient(controller: ReadableStreamDefaultController): void;
   broadcast(data: unknown): void;
   getClientCount(): number;
+  removeClient(controller: ReadableStreamDefaultController): void;
 }
 
-export { EndpointState, WorkerState };
 export type { IGlobalServerEvents, IRunnerEvents };
+export { EndpointState, WorkerState };
 
 export interface IStatsCounterManager {
-  getEndpointsCount(): number;
-  getEndpointCounters(index: number): EndpointCounters;
   getAllEndpointCounters(): EndpointCounters[];
+  getEndpointCounters(index: number): EndpointCounters;
+  getEndpointsCount(): number;
+  recordBytesReceived(endpointIndex: number, bytes: number): void;
+  recordBytesSent(endpointIndex: number, bytes: number): void;
   recordRequest(endpointIndex: number, success: boolean): void;
   recordStatusCode(endpointIndex: number, statusCode: number): void;
-  recordBytesSent(endpointIndex: number, bytes: number): void;
-  recordBytesReceived(endpointIndex: number, bytes: number): void;
 }
 
 export interface IEndpointStateManager {
-  isEndpointRunning(index: number): boolean;
-  stopEndpoint(index: number): void;
+  getEndpointState?(index: number): number;
   getRunningEndpointsCount(): number;
   getTotalEndpoints(): number;
-  getEndpointState?(index: number): number;
+  isEndpointRunning(index: number): boolean;
   setEndpointState?(index: number, state: number): void;
+  stopEndpoint(index: number): void;
 }
 
 export interface IHdrHistogramManager {
@@ -104,13 +104,9 @@ export interface IHdrHistogramManager {
 }
 
 export interface IWorkerStateManager {
-  setWorkerState(workerId: number, state: WorkerState): void;
   getWorkerState(workerId: number): WorkerState;
-  waitForState(
-    workerId: number,
-    state: WorkerState,
-    timeoutMs: number,
-  ): boolean;
+  setWorkerState(workerId: number, state: WorkerState): void;
+  waitForState(workerId: number, state: WorkerState, timeoutMs: number): boolean;
 }
 
 export interface IEarlyExitCoordinator {
@@ -119,8 +115,8 @@ export interface IEarlyExitCoordinator {
 }
 
 export interface IMetricsAggregator {
-  startPolling(intervalMs?: number): void;
-  stopPolling(): void;
+  cleanupResponseSamples(runId: string): void;
+  getCollectedResponseSamples(runId: string): Map<string, ResponseSample[]>;
   getResults(workersCount: number, endpoints: string[]): TestSummary;
   recordResponseSample(
     runId: string,
@@ -129,8 +125,8 @@ export interface IMetricsAggregator {
     headers: Record<string, string>,
     body: string,
   ): void;
-  getCollectedResponseSamples(runId: string): Map<string, ResponseSample[]>;
-  cleanupResponseSamples(runId: string): void;
+  startPolling(intervalMs?: number): void;
+  stopPolling(): void;
 }
 
 export type AggregatedWorkerData = {
@@ -145,13 +141,13 @@ export type AggregatedWorkerData = {
 };
 
 export const EMPTY_HISTOGRAM: LatencyHistogram = {
-  totalCount: 0,
-  min: 0,
+  buckets: [],
   max: 0,
   mean: 0,
-  stdDev: 0,
+  min: 0,
   percentiles: {},
-  buckets: [],
+  stdDev: 0,
+  totalCount: 0,
 };
 
 export type GlobalLatencyStats = {

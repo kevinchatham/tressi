@@ -1,5 +1,5 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ConfigDocument } from '@tressi/shared/common';
+import { type ComponentFixture, TestBed } from '@angular/core/testing';
+import type { ConfigDocument } from '@tressi/shared/common';
 import { Subject } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -33,7 +33,6 @@ describe('StartButtonComponent', () => {
       error: vi.fn(),
     };
     mockRPCService = {
-      getTestStatus: vi.fn().mockResolvedValue({ isRunning: false }),
       client: {
         test: {
           $post: vi.fn(),
@@ -42,6 +41,7 @@ describe('StartButtonComponent', () => {
           },
         },
       },
+      getTestStatus: vi.fn().mockResolvedValue({ isRunning: false }),
     };
 
     await TestBed.configureTestingModule({
@@ -64,8 +64,8 @@ describe('StartButtonComponent', () => {
 
   it('should start test', async () => {
     const mockConfig: ConfigDocument = {
-      id: '1',
       config: { name: 'test' },
+      id: '1',
     } as unknown as ConfigDocument;
     fixture.componentRef.setInput('config', mockConfig);
     fixture.detectChanges();

@@ -1,6 +1,6 @@
-import { TressiConfig } from '@tressi/shared/common';
+import { performance } from 'node:perf_hooks';
+import type { TressiConfig } from '@tressi/shared/common';
 import ora from 'ora';
-import { performance } from 'perf_hooks';
 
 import type { Runner } from '../core/runner';
 
@@ -16,7 +16,7 @@ export class MinimalTUI {
   constructor(config: TressiConfig, silent?: boolean) {
     this._config = config;
     this._silent = silent ?? false;
-    this._spinner = ora({ text: 'Test starting...', isSilent: silent });
+    this._spinner = ora({ isSilent: silent, text: 'Test starting...' });
   }
 
   /**
@@ -86,10 +86,7 @@ export class MinimalTUI {
     const startTime = runner.getStartTime();
     const durationSec = this._config.options.durationSec || 10;
     const elapsedSec = Math.trunc(
-      Math.min(
-        startTime > 0 ? (performance.now() - startTime) / 1000 : 0,
-        durationSec,
-      ),
+      Math.min(startTime > 0 ? (performance.now() - startTime) / 1000 : 0, durationSec),
     );
 
     let metricsText = '';
@@ -98,7 +95,7 @@ export class MinimalTUI {
       // Use aggregated metrics directly as requested in comments
       const aggregatedMetrics = runner.getAggregatedMetrics();
       const {
-        averageRequestsPerSecond: averageRequestsPerSecond,
+        averageRequestsPerSecond,
         p50LatencyMs,
         avgProcessMemoryUsageMB: memoryUsageMB,
         avgSystemCpuUsagePercent: cpuUsagePercent,
@@ -110,9 +107,7 @@ export class MinimalTUI {
     }
 
     const timeText = `[${elapsedSec}s/${durationSec}s]`;
-    const spinnerText = metricsText
-      ? `${timeText} ${metricsText}`
-      : `${timeText} Test running...`;
+    const spinnerText = metricsText ? `${timeText} ${metricsText}` : `${timeText} Test running...`;
 
     this._spinner.text = spinnerText;
   }

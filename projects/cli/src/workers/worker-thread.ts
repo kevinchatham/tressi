@@ -1,6 +1,6 @@
-import { WorkerData, WorkerState } from '@tressi/shared/cli';
-import { TressiRequestConfig } from '@tressi/shared/common';
-import { parentPort, workerData } from 'worker_threads';
+import { parentPort, workerData } from 'node:worker_threads';
+import { type WorkerData, WorkerState } from '@tressi/shared/cli';
+import type { TressiRequestConfig } from '@tressi/shared/common';
 
 import { RequestExecutor } from '../http/request-executor';
 import { ResponseSampler } from '../http/response-sampler';
@@ -68,21 +68,12 @@ export class WorkerThread {
       data.histogramBuffer,
     );
 
-    this._workerStateManager = new WorkerStateManager(
-      this._totalWorkers,
-      data.workerStateBuffer,
-    );
+    this._workerStateManager = new WorkerStateManager(this._totalWorkers, data.workerStateBuffer);
 
     const totalEndpoints = data.endpointStateBuffer.byteLength / 4; // 4 bytes per Int32
-    this._endpointStateManager = new EndpointStateManager(
-      totalEndpoints,
-      data.endpointStateBuffer,
-    );
+    this._endpointStateManager = new EndpointStateManager(totalEndpoints, data.endpointStateBuffer);
 
-    this._rateLimiter = new WorkerRateLimiter(
-      this._assignedEndpoints,
-      data.rampUpDurationSec,
-    );
+    this._rateLimiter = new WorkerRateLimiter(this._assignedEndpoints, data.rampUpDurationSec);
     this._requestExecutor = new RequestExecutor(new ResponseSampler(), 1000);
     this._startTime = Date.now();
     this._durationMs = data.durationSec * 1000;
@@ -106,13 +97,10 @@ export class WorkerThread {
    */
   async start(): Promise<void> {
     this._isRunning = true;
-    this._workerStateManager.setWorkerState(
-      this._workerId,
-      WorkerState.RUNNING,
-    );
+    this._workerStateManager.setWorkerState(this._workerId, WorkerState.RUNNING);
 
     // Pipeline configuration
-    const PIPELINE_DEPTH = 15; // Number of concurrent requests
+    const pipelineDepth = 15; // Number of concurrent requests
     const inFlightRequests = new Set<Promise<void>>();
 
     while (this._isRunning) {
@@ -121,10 +109,7 @@ export class WorkerThread {
       if (this._allEndpointsStopped()) break;
 
       // Get batch of available requests (NON-BLOCKING)
-      const requests = this._rateLimiter.getAvailableRequests(
-        PIPELINE_DEPTH,
-        elapsed,
-      );
+      const requests = this._rateLimiter.getAvailableRequests(pipelineDepth, elapsed);
 
       if (requests.length > 0) {
         // CRITICAL: Fire requests WITHOUT waiting - TRUE PIPELINING
@@ -132,9 +117,7 @@ export class WorkerThread {
           const localEndpointIndex = this._getLocalEndpointIndex(request);
           const globalEndpointIndex = this._endpointOffset + localEndpointIndex;
 
-          if (
-            this._endpointStateManager.isEndpointRunning(globalEndpointIndex)
-          ) {
+          if (this._endpointStateManager.isEndpointRunning(globalEndpointIndex)) {
             // Add small stagger to smooth out traffic (2ms between requests)
             const pipelineDelay = index * 2;
 
@@ -146,9 +129,7 @@ export class WorkerThread {
             );
 
             inFlightRequests.add(requestPromise);
-            requestPromise.finally(() =>
-              inFlightRequests.delete(requestPromise),
-            );
+            requestPromise.finally(() => inFlightRequests.delete(requestPromise));
           }
         });
 
@@ -163,10 +144,7 @@ export class WorkerThread {
 
     // Wait for all in-flight requests to complete
     await Promise.allSettled(inFlightRequests);
-    this._workerStateManager.setWorkerState(
-      this._workerId,
-      WorkerState.FINISHED,
-    );
+    this._workerStateManager.setWorkerState(this._workerId, WorkerState.FINISHED);
   }
 
   /**
@@ -190,11 +168,7 @@ export class WorkerThread {
     if (delayMs > 0) {
       await new Promise((resolve) => setTimeout(resolve, delayMs));
     }
-    await this._executeRequest(
-      request,
-      localEndpointIndex,
-      globalEndpointIndex,
-    );
+    await this._executeRequest(request, localEndpointIndex, globalEndpointIndex);
   }
 
   /**
@@ -226,31 +200,19 @@ export class WorkerThread {
       const latency = performance.now() - startTime;
 
       // Record success/failure
-      this._statsCounterManager.recordRequest(
-        localEndpointIndex,
-        result.success,
-      );
+      this._statsCounterManager.recordRequest(localEndpointIndex, result.success);
 
       // Record status code
       if (result.status) {
-        this._statsCounterManager.recordStatusCode(
-          localEndpointIndex,
-          result.status,
-        );
+        this._statsCounterManager.recordStatusCode(localEndpointIndex, result.status);
       }
 
       // Record network metrics
       if (result.bytesSent !== undefined) {
-        this._statsCounterManager.recordBytesSent(
-          localEndpointIndex,
-          result.bytesSent,
-        );
+        this._statsCounterManager.recordBytesSent(localEndpointIndex, result.bytesSent);
       }
       if (result.bytesReceived !== undefined) {
-        this._statsCounterManager.recordBytesReceived(
-          localEndpointIndex,
-          result.bytesReceived,
-        );
+        this._statsCounterManager.recordBytesReceived(localEndpointIndex, result.bytesReceived);
       }
 
       // Record latency
@@ -259,13 +221,13 @@ export class WorkerThread {
       // Send body sample to main thread if response body exists
       if (result.body && result.status && parentPort) {
         parentPort.postMessage({
-          type: 'bodySample',
-          endpointIndex: globalEndpointIndex,
-          statusCode: result.status,
           body: result.body,
+          endpointIndex: globalEndpointIndex,
           headers: result.headers,
-          url: request.url,
           method: request.method || 'GET',
+          statusCode: result.status,
+          type: 'bodySample',
+          url: request.url,
         });
       }
 
@@ -304,9 +266,7 @@ export class WorkerThread {
    * Returns 0 as fallback for safety (though this should not occur in normal operation).
    */
   private _getLocalEndpointIndex(request: TressiRequestConfig): number {
-    const index = this._assignedEndpoints.findIndex(
-      (ep) => ep.url === request.url,
-    );
+    const index = this._assignedEndpoints.findIndex((ep) => ep.url === request.url);
     if (index === -1) {
       return 0;
     }
@@ -319,20 +279,14 @@ if (parentPort) {
   const worker = new WorkerThread();
 
   worker.start().catch((error: Error) => {
-    process.stderr.write(
-      `Worker ${workerData.workerId} error: ${error.message}\n`,
-    );
-    process.stderr.write(
-      `Worker ${workerData.workerId} stack: ${error.stack}\n`,
-    );
+    process.stderr.write(`Worker ${workerData.workerId} error: ${error.message}\n`);
+    process.stderr.write(`Worker ${workerData.workerId} stack: ${error.stack}\n`);
     process.exit(1);
   });
 
   // Add global error handler
   process.on('uncaughtException', (error) => {
-    process.stderr.write(
-      `Worker ${workerData.workerId} uncaught: ${error.message}\n`,
-    );
+    process.stderr.write(`Worker ${workerData.workerId} uncaught: ${error.message}\n`);
     process.exit(1);
   });
 }

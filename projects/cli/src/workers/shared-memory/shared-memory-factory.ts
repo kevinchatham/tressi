@@ -3,8 +3,8 @@
  * Provides static method to create all required managers for the new architecture
  */
 
-import { SharedMemoryOptions } from '@tressi/shared/cli';
-import { TressiRequestConfig } from '@tressi/shared/common';
+import type { SharedMemoryOptions } from '@tressi/shared/cli';
+import type { TressiRequestConfig } from '@tressi/shared/common';
 
 import { EndpointStateManager } from './endpoint-state-manager';
 import { HdrHistogramManager } from './hdr-histogram-manager';
@@ -47,7 +47,7 @@ export class SharedMemoryFactory {
     const statsCounter: StatsCounterManager[] = [];
 
     // Distribute endpoints to workers
-    const workerEndpoints = this._distributeEndpoints(workersCount, endpoints);
+    const workerEndpoints = SharedMemoryFactory._distributeEndpoints(workersCount, endpoints);
 
     // Create per-worker managers with their assigned endpoint count
     for (let workerId = 0; workerId < workersCount; workerId++) {
@@ -60,17 +60,14 @@ export class SharedMemoryFactory {
         highestTrackableValue,
       );
 
-      statsCounter[workerId] = new StatsCounterManager(
-        assignedEndpoints,
-        ringBufferSize,
-      );
+      statsCounter[workerId] = new StatsCounterManager(assignedEndpoints, ringBufferSize);
     }
 
     return {
-      hdrHistogram,
-      workerState,
-      statsCounter,
       endpointState,
+      hdrHistogram,
+      statsCounter,
+      workerState,
     };
   }
 
@@ -84,10 +81,7 @@ export class SharedMemoryFactory {
     workersCount: number,
     endpoints: TressiRequestConfig[],
   ): TressiRequestConfig[][] {
-    const distribution: TressiRequestConfig[][] = Array.from(
-      { length: workersCount },
-      () => [],
-    );
+    const distribution: TressiRequestConfig[][] = Array.from({ length: workersCount }, () => []);
 
     endpoints.forEach((endpoint, index) => {
       const workerId = index % workersCount;
@@ -150,28 +144,22 @@ export class SharedMemoryFactory {
     // StatsCounterManager per worker: endpointsPerWorker * countersPerEndpoint * 4 bytes
     const endpointsPerWorker = Math.ceil(endpointsCount / workersCount);
     const countersPerEndpoint = 6 + 600 + 600 + ringBufferSize; // 6 header + 600 status codes + 600 counters + ring buffer
-    totalBytes +=
-      workersCount * (12 + endpointsPerWorker * countersPerEndpoint * 4);
+    totalBytes += workersCount * (12 + endpointsPerWorker * countersPerEndpoint * 4);
 
     // HDR histogram bitmap: 19 Uint32 per endpoint per worker
     totalBytes += workersCount * endpointsPerWorker * 19 * 4;
 
     // HdrHistogramManager per worker: endpointsPerWorker * valuesPerHistogram * 4 bytes
-    const subBucketHalfCountMagnitude = Math.ceil(
-      Math.log2(significantFigures) + 1,
-    );
+    const subBucketHalfCountMagnitude = Math.ceil(Math.log2(significantFigures) + 1);
     const subBucketHalfCount = 1 << subBucketHalfCountMagnitude;
     const largestValueWithSingleUnitResolution = 2 * subBucketHalfCount;
     const bucketsNeeded =
       Math.ceil(
-        Math.log2(
-          highestTrackableValue / largestValueWithSingleUnitResolution,
-        ) / Math.log2(2),
+        Math.log2(highestTrackableValue / largestValueWithSingleUnitResolution) / Math.log2(2),
       ) + 1;
 
     const valuesPerHistogram = bucketsNeeded + 1; // +1 for overflow bucket
-    totalBytes +=
-      workersCount * (20 + endpointsPerWorker * valuesPerHistogram * 4);
+    totalBytes += workersCount * (20 + endpointsPerWorker * valuesPerHistogram * 4);
 
     // BodySampleManager: endpointsCount * fieldsPerEndpoint * 4 bytes
     const fieldsPerEndpoint = 3 + bodySampleBufferSize * 2;
@@ -215,7 +203,7 @@ export class SharedMemoryFactory {
     maxBytes: number;
     error?: string;
   } {
-    const requiredBytes = this.calculateMemoryUsage(
+    const requiredBytes = SharedMemoryFactory.calculateMemoryUsage(
       workersCount,
       endpointsCount,
       options,
@@ -224,17 +212,17 @@ export class SharedMemoryFactory {
 
     if (requiredBytes > maxBytes) {
       return {
-        valid: false,
-        requiredBytes,
-        maxBytes,
         error: `Memory requirement (${requiredBytes} bytes) exceeds maximum allowed (${maxBytes} bytes)`,
+        maxBytes,
+        requiredBytes,
+        valid: false,
       };
     }
 
     return {
-      valid: true,
-      requiredBytes,
       maxBytes,
+      requiredBytes,
+      valid: true,
     };
   }
 
@@ -268,7 +256,7 @@ export class SharedMemoryFactory {
     endpoints: TressiRequestConfig[],
     options?: SharedMemoryOptions,
   ): ReturnType<typeof SharedMemoryFactory.createManagers> | { error: string } {
-    const validation = this.validateMemoryRequirements(
+    const validation = SharedMemoryFactory.validateMemoryRequirements(
       workersCount,
       endpoints.length,
       options,
@@ -279,7 +267,7 @@ export class SharedMemoryFactory {
     }
 
     try {
-      return this.createManagers(workersCount, endpoints, options);
+      return SharedMemoryFactory.createManagers(workersCount, endpoints, options);
     } catch (error) {
       return {
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -344,8 +332,7 @@ export class SharedMemoryFactory {
     let offset = 0;
     for (let i = 0; i < workerId; i++) {
       offset +=
-        Math.floor(endpointsCount / workersCount) +
-        (i < endpointsCount % workersCount ? 1 : 0);
+        Math.floor(endpointsCount / workersCount) + (i < endpointsCount % workersCount ? 1 : 0);
     }
     return offset;
   }

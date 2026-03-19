@@ -1,6 +1,4 @@
-<div
-  class="rounded-box border-base-content/10 bg-base-100 max-h-[69vh] overflow-auto border"
->
+<div class="rounded-box border-base-content/10 bg-base-100 max-h-[69vh] overflow-auto border">
   <table class="table">
     <thead class="bg-base-300 sticky top-0 z-10">
       <tr
@@ -25,7 +23,6 @@
                 <app-icon name="drag_indicator" />
               </div>
             }
-
             <!-- Column Content -->
             @if (column.key === 'select') {
               <input
@@ -144,30 +141,19 @@
             ) {
               <td class="text-base-content text-center">
                 @if (column.field.includes('Latency')) {
-                  <span
-                    [appFormatLatency]="getColumnValue(test, column)"
-                  ></span>
+                  <span [appFormatLatency]="getColumnValue(test, column)"></span>
                 } @else if (column.field.includes('BytesPerSec')) {
-                  <span
-                    [appFormatNetwork]="getColumnValue(test, column)"
-                  ></span>
+                  <span [appFormatNetwork]="getColumnValue(test, column)"></span>
                 } @else if (column.field.includes('Bytes')) {
                   <span [appFormatBytes]="getColumnValue(test, column)"></span>
                 } @else if (column.field.includes('RequestsPerSecond')) {
                   <span [appFormatRps]="getColumnValue(test, column)"></span>
-                } @else if (
-                  column.field.includes('Requests') ||
-                  column.field.includes('threads')
-                ) {
+                } @else if (column.field.includes('Requests') || column.field.includes('threads')) {
                   <span [appFormatNumber]="getColumnValue(test, column)"></span>
                 } @else if (column.field.includes('DurationSec')) {
-                  <span
-                    [appFormatDuration]="getColumnValue(test, column)"
-                  ></span>
+                  <span [appFormatDuration]="getColumnValue(test, column)"></span>
                 } @else if (column.field.includes('errorRate')) {
-                  <span
-                    [appFormatPercentage]="getColumnValue(test, column)"
-                  ></span>
+                  <span [appFormatPercentage]="getColumnValue(test, column)"></span>
                 } @else if (column.field.includes('epoch')) {
                   <span [appFormatDate]="getColumnValue(test, column)"></span>
                 } @else {

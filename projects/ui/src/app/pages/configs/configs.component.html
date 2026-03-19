@@ -29,10 +29,7 @@
     @if (!showForm()) {
       <!-- Search Bar -->
       <div class="mb-6 flex justify-start">
-        <app-search-bar
-          [query]="searchQuery()"
-          (queryChange)="onSearchQueryChange($event)"
-        />
+        <app-search-bar [query]="searchQuery()" (queryChange)="onSearchQueryChange($event)" />
       </div>
 
       <div class="columns-1 gap-4 space-y-4 md:columns-2">
@@ -49,15 +46,10 @@
           </div>
         }
       </div>
-
       @if (hasNoConfigs()) {
-        <div
-          class="border-base-content/10 bg-base-300 mx-auto rounded-xl border-2 p-8"
-        >
+        <div class="border-base-content/10 bg-base-300 mx-auto rounded-xl border-2 p-8">
           <div class="text-center">
-            <p class="text-base-content/70 mb-4 text-lg">
-              No configurations found
-            </p>
+            <p class="text-base-content/70 mb-4 text-lg">No configurations found</p>
             <app-button
               (click)="startCreate()"
               [color]="'primary'"
@@ -69,7 +61,6 @@
         </div>
       }
     }
-
     <!-- Edit/Create Form -->
     @if (showForm()) {
       <div class="mx-auto max-w-5xl">

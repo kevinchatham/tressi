@@ -1,4 +1,4 @@
-import { ErrorApiResponse } from '@tressi/shared/common';
+import type { ErrorApiResponse } from '@tressi/shared/common';
 
 /**
  * Creates a standard API error response
@@ -11,11 +11,11 @@ export function createApiErrorResponse(
 ): ErrorApiResponse {
   return {
     error: {
-      message,
       code,
       details,
-      timestamp: Date.now(),
+      message,
       path,
+      timestamp: Date.now(),
     },
   };
 }

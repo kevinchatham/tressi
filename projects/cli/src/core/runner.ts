@@ -1,11 +1,7 @@
-import { IRunnerEvents } from '@tressi/shared/cli';
-import {
-  ResponseSamples,
-  TestSummary,
-  TressiConfig,
-} from '@tressi/shared/common';
+import { performance } from 'node:perf_hooks';
+import type { IRunnerEvents } from '@tressi/shared/cli';
+import type { ResponseSamples, TestSummary, TressiConfig } from '@tressi/shared/common';
 import EventEmitter from 'eventemitter3';
-import { performance } from 'perf_hooks';
 
 import { WorkerPoolManager } from '../workers/worker-pool-manager';
 

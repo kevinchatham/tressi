@@ -1,27 +1,18 @@
+/** biome-ignore-all lint/nursery/useExplicitType: zod */
 import { z } from 'zod';
 
-import { ConfigDocument } from '../common';
-import { FieldPath, Theme } from './index';
+import type { ConfigDocument } from '../common';
+import type { FieldPath, Theme } from './index';
 
 /**
  * Schema for column configuration in the test list
  */
 export const ColumnConfigSchema = z.object({
-  key: z.string(),
-  label: z.string(),
+  draggable: z.boolean().optional(),
   field: z.custom<FieldPath>(),
   format: z
-    .enum([
-      'number',
-      'percentage',
-      'milliseconds',
-      'datetime',
-      'duration',
-      'bytes',
-      'bytesPerSec',
-    ])
+    .enum(['number', 'percentage', 'milliseconds', 'datetime', 'duration', 'bytes', 'bytesPerSec'])
     .optional(),
-  visible: z.boolean(),
   group: z.enum([
     'basic',
     'latency',
@@ -31,9 +22,11 @@ export const ColumnConfigSchema = z.object({
     'metadata',
     'performance',
   ]),
-  sortable: z.boolean().optional(),
+  key: z.string(),
+  label: z.string(),
   order: z.number(),
-  draggable: z.boolean().optional(),
+  sortable: z.boolean().optional(),
+  visible: z.boolean(),
   width: z.number().optional(),
 });
 
@@ -46,11 +39,11 @@ export type ColumnConfig = z.infer<typeof ColumnConfigSchema>;
  * Schema for user preferences stored in local storage
  */
 export const UserPreferencesSchema = z.object({
-  selectedTheme: z.custom<Theme>(),
-  lastSelectedConfig: z.custom<ConfigDocument | null>(),
   columnPreferences: z.array(ColumnConfigSchema).nullable(),
   lastRoute: z.string().nullable(),
+  lastSelectedConfig: z.custom<ConfigDocument | null>(),
   pwaPromptDismissed: z.boolean().optional(),
+  selectedTheme: z.custom<Theme>(),
 });
 
 /**

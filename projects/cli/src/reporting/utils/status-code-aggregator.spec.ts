@@ -1,4 +1,4 @@
-import { EndpointSummary } from '@tressi/shared/common';
+import type { EndpointSummary } from '@tressi/shared/common';
 import { describe, expect, it } from 'vitest';
 
 import { aggregateStatusCodesFromEndpoints } from './status-code-aggregator';
@@ -20,9 +20,7 @@ describe('aggregateStatusCodesFromEndpoints', () => {
   });
 
   it('should handle endpoints with no status codes', () => {
-    const endpoints = [
-      { statusCodeDistribution: {} },
-    ] as unknown as EndpointSummary[];
+    const endpoints = [{ statusCodeDistribution: {} }] as unknown as EndpointSummary[];
     const result = aggregateStatusCodesFromEndpoints(endpoints);
     expect(result).toEqual({});
   });

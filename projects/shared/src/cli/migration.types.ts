@@ -1,6 +1,6 @@
-import { Kysely } from 'kysely';
+import type { Kysely } from 'kysely';
 
-import { Database } from './database.types';
+import type { Database } from './database.types';
 
 /**
  * Base type for versioned configurations.
