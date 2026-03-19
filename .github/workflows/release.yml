@@ -115,6 +115,7 @@ jobs:
         with:
           node-version: 20
           registry-url: 'https://registry.npmjs.org/'
+          node-auth-token: ${{ secrets.NPM_TOKEN }}
 
       - name: Install dependencies and build
         run: |
@@ -123,8 +124,6 @@ jobs:
 
       - name: Publish to NPM
         run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   publish-docker:
     name: Publish Docker Image
