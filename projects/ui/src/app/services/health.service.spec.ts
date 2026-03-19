@@ -1,14 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { Subject } from 'rxjs';
-import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  type Mock,
-  vi,
-} from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 
 import { EventService } from './event.service';
 import { HealthService } from './health.service';
@@ -42,23 +34,21 @@ describe('HealthService', () => {
 
     mockLog = { error: vi.fn(), info: vi.fn() };
     mockRouter = {
-      toServerUnavailable: vi.fn(),
-      toLastRoute: vi.fn(),
       getCurrentUrl: vi.fn().mockReturnValue('/dashboard'),
+      toLastRoute: vi.fn(),
+      toServerUnavailable: vi.fn(),
     };
     mockEventService = {
-      getConnectedStream: vi
-        .fn()
-        .mockReturnValue(connectedSubject.asObservable()),
-      getErrorStream: vi.fn().mockReturnValue(errorSubject.asObservable()),
       connectToEventStream: vi.fn(),
+      getConnectedStream: vi.fn().mockReturnValue(connectedSubject.asObservable()),
+      getErrorStream: vi.fn().mockReturnValue(errorSubject.asObservable()),
     };
     mockRPC = {
       client: {
         health: {
           $get: vi.fn().mockResolvedValue({
-            ok: true,
             json: async () => ({ timestamp: Date.now() }),
+            ok: true,
           }),
         },
       },
@@ -89,8 +79,8 @@ describe('HealthService', () => {
     it('should update state to healthy when check succeeds', async () => {
       const timestamp = Date.now();
       mockRPC.client.health.$get.mockResolvedValue({
-        ok: true,
         json: async () => ({ timestamp }),
+        ok: true,
       });
 
       const result = await service.check();
@@ -128,9 +118,7 @@ describe('HealthService', () => {
     });
 
     it('should start retry timer when connection is lost', () => {
-      (service as unknown as { _handleConnectionLoss: () => void })[
-        '_handleConnectionLoss'
-      ](); // Trigger manually for test
+      (service as unknown as { _handleConnectionLoss: () => void })['_handleConnectionLoss'](); // Trigger manually for test
 
       vi.advanceTimersByTime(3000); // _retryInterval
       expect(mockEventService.connectToEventStream).toHaveBeenCalled();
@@ -148,9 +136,7 @@ describe('HealthService', () => {
       expect(service.isHealthy()).toBe(false);
 
       // Mock URL to include server-unavailable via the router mock
-      mockRouter.getCurrentUrl.mockReturnValue(
-        'http://localhost/server-unavailable',
-      );
+      mockRouter.getCurrentUrl.mockReturnValue('http://localhost/server-unavailable');
 
       // Use a spy on window.location.href if needed, but here we just need to satisfy the service's check
       // The service uses window.location.href.includes(AppRoutes.SERVER_UNAVAILABLE)

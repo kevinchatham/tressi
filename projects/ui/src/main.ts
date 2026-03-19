@@ -1,15 +1,11 @@
 import { provideHttpClient } from '@angular/common/http';
 import {
-  ApplicationConfig,
+  type ApplicationConfig,
   provideBrowserGlobalErrorListeners,
   provideZonelessChangeDetection,
 } from '@angular/core';
 import { bootstrapApplication } from '@angular/platform-browser';
-import {
-  provideRouter,
-  withComponentInputBinding,
-  withViewTransitions,
-} from '@angular/router';
+import { provideRouter, withComponentInputBinding, withViewTransitions } from '@angular/router';
 import { provideServiceWorker } from '@angular/service-worker';
 
 import { AppComponent } from './app/app.component';
@@ -29,6 +25,6 @@ const appConfig: ApplicationConfig = {
 };
 
 bootstrapApplication(AppComponent, appConfig).catch((err) =>
-  // eslint-disable-next-line no-console
+  // biome-ignore lint/suspicious/noConsole: default
   console.error(err),
 );

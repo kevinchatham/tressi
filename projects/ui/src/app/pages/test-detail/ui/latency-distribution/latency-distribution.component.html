@@ -8,19 +8,16 @@
       @if (histogram() && histogram()!.totalCount > 0) {
         <!-- Proper Histogram Visualization -->
         <div class="p-4">
-          <h4 class="text-base-content/80 mb-4 text-sm font-semibold">
-            Distribution
-          </h4>
+          <h4 class="text-base-content/80 mb-4 text-sm font-semibold">Distribution</h4>
           <!-- Horizontal Bar Chart -->
           <div class="max-h-80 space-y-1 overflow-y-auto pr-2">
             @for (bucket of getHistogramBuckets(); track bucket.lowerBound) {
               @if (bucket.count > 0) {
                 <div class="group flex items-center gap-3">
                   <!-- Latency Range Label -->
-                  <div
-                    class="text-base-content/70 w-28 shrink-0 text-right text-xs font-medium"
-                  >
-                    <span [appFormatLatency]="bucket.lowerBound"></span> -
+                  <div class="text-base-content/70 w-28 shrink-0 text-right text-xs font-medium">
+                    <span [appFormatLatency]="bucket.lowerBound"></span>
+                    -
                     <span [appFormatLatency]="bucket.upperBound"></span>
                   </div>
                   <!-- Bar Container -->
@@ -40,61 +37,41 @@
                     </div>
                   </div>
                   <!-- Percentage -->
-                  <div
-                    class="text-base-content/60 w-14 shrink-0 text-right text-xs"
-                  >
-                    {{
-                      ((bucket.count / histogram()!.totalCount) * 100).toFixed(
-                        2
-                      )
-                    }}%
+                  <div class="text-base-content/60 w-14 shrink-0 text-right text-xs">
+                    {{ ((bucket.count / histogram()!.totalCount) * 100).toFixed(2) }}%
                   </div>
                 </div>
               }
             }
           </div>
           <!-- Min / Total Samples / Max -->
-          <div
-            class="text-base-content/60 mt-3 flex items-center justify-center gap-4 text-xs"
-          >
+          <div class="text-base-content/60 mt-3 flex items-center justify-center gap-4 text-xs">
             <span class="flex items-center gap-1">
               <span class="text-base-content/40">Min:</span>
-              <span
-                class="font-medium"
-                [appFormatLatency]="histogram()!.min"
-              ></span>
+              <span class="font-medium" [appFormatLatency]="histogram()!.min"></span>
             </span>
-            <span class="text-base-content/30"><</span>
+            <span class="text-base-content/30">&lt;</span>
             <span class="flex items-center gap-1">
               <span class="text-base-content/40">Total Samples:</span>
-              <span class="font-medium">{{
-                histogram()!.totalCount.toLocaleString()
-              }}</span>
+              <span class="font-medium">{{ histogram()!.totalCount.toLocaleString() }}</span>
             </span>
             <span class="text-base-content/30">></span>
             <span class="flex items-center gap-1">
               <span class="text-base-content/40">Max:</span>
-              <span
-                class="font-medium"
-                [appFormatLatency]="histogram()!.max"
-              ></span>
+              <span class="font-medium" [appFormatLatency]="histogram()!.max"></span>
             </span>
           </div>
         </div>
 
         <!-- Enhanced Percentile Table -->
         <div class="p-4">
-          <h4 class="text-base-content/80 mb-3 text-sm font-semibold">
-            Percentiles
-          </h4>
+          <h4 class="text-base-content/80 mb-3 text-sm font-semibold">Percentiles</h4>
           <div class="space-y-2">
             @for (item of getPercentileData(); track item.percentile) {
               <div
                 class="group hover:bg-base-300/30 flex items-center gap-3 rounded-xl px-2 py-1 transition-colors"
               >
-                <div
-                  class="text-base-content/70 w-24 text-right text-sm font-medium"
-                >
+                <div class="text-base-content/70 w-24 text-right text-sm font-medium">
                   {{ item.label }}
                 </div>
                 <div class="flex-1">

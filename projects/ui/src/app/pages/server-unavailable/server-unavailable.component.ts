@@ -1,18 +1,13 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  inject,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 
 import { logoSrc } from '../../constants';
 import { HealthService } from '../../services/health.service';
 
 @Component({
-  selector: 'app-server-unavailable',
-  imports: [],
-  templateUrl: './server-unavailable.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [],
+  selector: 'app-server-unavailable',
+  templateUrl: './server-unavailable.component.html',
 })
 export class ServerUnavailableComponent {
   private readonly _health = inject(HealthService);

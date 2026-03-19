@@ -1,22 +1,22 @@
+import { existsSync, mkdirSync } from 'node:fs';
+import { homedir } from 'node:os';
+import { join } from 'node:path';
 import type { Database as DatabaseSchema } from '@tressi/shared/cli';
 import Database from 'better-sqlite3';
-import { existsSync, mkdirSync } from 'fs';
-import { Kysely, sql, SqliteDialect } from 'kysely';
-import { homedir } from 'os';
-import { join } from 'path';
+import { Kysely, SqliteDialect, sql } from 'kysely';
 
 import { DatabaseMigrationManager } from './database-migration-manager';
 
-const rootDir = join(homedir(), '.tressi');
+const rootDir: string = join(homedir(), '.tressi');
 if (!existsSync(rootDir)) mkdirSync(rootDir, { recursive: true });
 
-const dbPath = process.env['TRESSI_DB_PATH'] || join(rootDir, 'tressi.db');
+const dbPath: string = process.env['TRESSI_DB_PATH'] || join(rootDir, 'tressi.db');
 
-const dialect = new SqliteDialect({
+const dialect: SqliteDialect = new SqliteDialect({
   database: new Database(dbPath),
 });
 
-export const db = new Kysely<DatabaseSchema>({
+export const db: Kysely<DatabaseSchema> = new Kysely<DatabaseSchema>({
   dialect,
 });
 
@@ -45,12 +45,8 @@ export async function initializeDatabase(): Promise<void> {
     .addColumn('epoch_created_at', 'integer', (col) => col.notNull())
     .addColumn('error', 'text')
     .addColumn('summary', 'text')
-    .addForeignKeyConstraint(
-      'fk_tests_config',
-      ['config_id'],
-      'configs',
-      ['id'],
-      (cb) => cb.onDelete('cascade'),
+    .addForeignKeyConstraint('fk_tests_config', ['config_id'], 'configs', ['id'], (cb) =>
+      cb.onDelete('cascade'),
     )
     .execute();
 
@@ -62,12 +58,8 @@ export async function initializeDatabase(): Promise<void> {
     .addColumn('test_id', 'text', (col) => col.notNull())
     .addColumn('epoch', 'integer', (col) => col.notNull())
     .addColumn('metric', 'text', (col) => col.notNull())
-    .addForeignKeyConstraint(
-      'fk_metrics_test',
-      ['test_id'],
-      'tests',
-      ['id'],
-      (cb) => cb.onDelete('cascade'),
+    .addForeignKeyConstraint('fk_metrics_test', ['test_id'], 'tests', ['id'], (cb) =>
+      cb.onDelete('cascade'),
     )
     .execute();
 

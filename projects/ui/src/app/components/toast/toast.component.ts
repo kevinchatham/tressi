@@ -1,15 +1,15 @@
 import { Component, computed, inject, output } from '@angular/core';
-import { IconName } from '@tressi/shared/ui';
+import type { IconName } from '@tressi/shared/ui';
 
 import { ToastService } from '../../services/toast.service';
 import { ButtonComponent } from '../button/button.component';
 import { IconComponent } from '../icon/icon.component';
 
 @Component({
-  selector: 'app-toast',
   imports: [IconComponent, ButtonComponent],
-  templateUrl: './toast.component.html',
+  selector: 'app-toast',
   styleUrls: ['./toast.component.css'],
+  templateUrl: './toast.component.html',
 })
 export class ToastComponent {
   readonly toastService = inject(ToastService);
@@ -23,7 +23,6 @@ export class ToastComponent {
         return 'warning';
       case 'success':
         return 'check';
-      case 'info':
       default:
         return 'info';
     }
@@ -37,7 +36,6 @@ export class ToastComponent {
         return 'alert alert-warning';
       case 'success':
         return 'alert alert-success';
-      case 'info':
       default:
         return 'alert alert-info';
     }

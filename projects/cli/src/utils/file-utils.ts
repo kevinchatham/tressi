@@ -1,5 +1,5 @@
-import { existsSync, promises as fs } from 'fs';
-import path from 'path';
+import { existsSync, promises as fs } from 'node:fs';
+import path from 'node:path';
 
 /**
  * File system utility functions.
@@ -92,7 +92,8 @@ export class FileUtils {
     // Additional problematic characters: \0 (null)
     let safeName = input
       // Remove or replace invalid characters
-      .replace(/[<>:"|?*\x00-\x1f]/g, '-') // Windows invalid chars and control chars
+      // biome-ignore lint/suspicious/noControlCharactersInRegex: windows invalid chars and control chars
+      .replace(/[<>:"|?*\x00-\x1f]/g, '-')
       .replace(/:/g, '-') // Colons (mainly for Windows)
 
       // Trim leading/trailing spaces and dots
@@ -106,7 +107,7 @@ export class FileUtils {
       .replace(/_+/g, '_')
 
       // Remove any remaining invalid characters
-      .replace(/[^a-zA-Z0-9._\-\/\\]/g, '_');
+      .replace(/[^a-zA-Z0-9._\-/\\]/g, '_');
 
     // Handle empty result
     if (!safeName) {
@@ -116,7 +117,7 @@ export class FileUtils {
     // Check if it's a Windows reserved name
     const upperName = safeName.toUpperCase();
     if (windowsReserved.includes(upperName)) {
-      safeName = '_' + safeName;
+      safeName = `_${safeName}`;
     }
 
     // Ensure it doesn't end with a dot or space (Windows issue)

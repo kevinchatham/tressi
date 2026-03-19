@@ -1,5 +1,5 @@
-import { ISSEClientManager } from '@tressi/shared/cli';
-import { ServerEventMessage } from '@tressi/shared/common';
+import type { ISSEClientManager } from '@tressi/shared/cli';
+import type { ServerEventMessage } from '@tressi/shared/common';
 
 /**
  * Server-Sent Events client manager

@@ -1,5 +1,5 @@
-import { Component, signal, WritableSignal } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Component, signal, type WritableSignal } from '@angular/core';
+import { type ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -9,12 +9,12 @@ import { TitleService } from '../../services/title.service';
 import { HeaderComponent } from './header.component';
 
 @Component({
+  imports: [HeaderComponent],
   template: `
     <app-header>
       <div id="test-content">Extra Content</div>
     </app-header>
   `,
-  imports: [HeaderComponent],
 })
 class TestHostComponent {}
 
@@ -111,9 +111,7 @@ describe('HeaderComponent', () => {
     const hostFixture = TestBed.createComponent(TestHostComponent);
     hostFixture.detectChanges();
 
-    const projectedContent = hostFixture.debugElement.query(
-      By.css('#test-content'),
-    );
+    const projectedContent = hostFixture.debugElement.query(By.css('#test-content'));
     expect(projectedContent).toBeTruthy();
     expect(projectedContent.nativeElement.textContent).toBe('Extra Content');
   });

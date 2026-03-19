@@ -1,12 +1,12 @@
 import { Component, signal } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { type ComponentFixture, TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { FormatNumberDirective } from './format-number.directive';
 
 @Component({
-  standalone: true,
   imports: [FormatNumberDirective],
+  standalone: true,
   template: `<div [appFormatNumber]="value()"></div>`,
 })
 class TestHostComponent {
@@ -42,11 +42,11 @@ describe('FormatNumberDirective', () => {
 
   it('should format numbers correctly using humanNumber', async () => {
     const testCases = [
-      { input: 0, expected: '0' },
-      { input: 999, expected: '999' },
-      { input: 1000, expected: '1k' },
-      { input: 1500, expected: '1.5k' },
-      { input: 1000000, expected: '1m' },
+      { expected: '0', input: 0 },
+      { expected: '999', input: 999 },
+      { expected: '1k', input: 1000 },
+      { expected: '1.5k', input: 1500 },
+      { expected: '1m', input: 1000000 },
     ];
 
     for (const { input, expected } of testCases) {

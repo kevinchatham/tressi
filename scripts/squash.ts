@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 
-/* eslint-disable no-console */
+/** biome-ignore-all lint/suspicious/noConsole: default */
 
 /**
  * ============================================================
@@ -40,7 +40,7 @@
  *
  */
 
-import { execSync } from 'child_process';
+import { execSync } from 'node:child_process';
 
 process.chdir(__dirname);
 
@@ -52,7 +52,7 @@ function sh(cmd: string): NonSharedBuffer {
 // ---------------------------------------------
 // Parse base branch argument
 // ---------------------------------------------
-const BASE_BRANCH = process.argv[2];
+const BASE_BRANCH: string = process.argv[2];
 
 if (!BASE_BRANCH) {
   console.error('❌ Missing base branch argument.\n');
@@ -73,9 +73,7 @@ try {
 // ---------------------------------------------
 // Determine current branch dynamically
 // ---------------------------------------------
-const FEATURE_BRANCH = execSync('git rev-parse --abbrev-ref HEAD')
-  .toString()
-  .trim();
+const FEATURE_BRANCH: string = execSync('git rev-parse --abbrev-ref HEAD').toString().trim();
 
 console.log(`🔎 Feature branch detected: ${FEATURE_BRANCH}`);
 console.log(`🔎 Base branch: ${BASE_BRANCH}`);

@@ -60,8 +60,6 @@ describe('TestListColumnsService', () => {
     service.toggleColumn(ColumnKey.TOTAL_REQUESTS);
     service.resetColumns();
     const visible = service.visibleColumns();
-    expect(
-      visible.find((c) => c.key === ColumnKey.TOTAL_REQUESTS)?.visible,
-    ).toBe(true);
+    expect(visible.find((c) => c.key === ColumnKey.TOTAL_REQUESTS)?.visible).toBe(true);
   });
 });

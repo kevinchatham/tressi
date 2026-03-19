@@ -1,13 +1,13 @@
 import { Component, input, output } from '@angular/core';
 import { FormField } from '@angular/forms/signals';
-import { TressiEarlyExitConfig } from '@tressi/shared/common';
-import { EarlyExitConfigRequestFormType } from '@tressi/shared/ui';
+import type { TressiEarlyExitConfig } from '@tressi/shared/common';
+import type { EarlyExitConfigRequestFormType } from '@tressi/shared/ui';
 
 import { ButtonComponent } from '../../button/button.component';
 
 @Component({
-  selector: 'app-early-exit-config',
   imports: [ButtonComponent, FormField],
+  selector: 'app-early-exit-config',
   templateUrl: './early-exit-config.component.html',
 })
 export class EarlyExitConfigComponent {

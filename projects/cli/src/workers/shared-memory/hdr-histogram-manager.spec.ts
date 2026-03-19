@@ -26,13 +26,7 @@ describe('HdrHistogramManager', () => {
       const sabSize = manager.getSharedBuffer().byteLength;
       const externalBuffer = new SharedArrayBuffer(sabSize);
 
-      const manager2 = new HdrHistogramManager(
-        endpointsCount,
-        3,
-        1,
-        120_000_000,
-        externalBuffer,
-      );
+      const manager2 = new HdrHistogramManager(endpointsCount, 3, 1, 120_000_000, externalBuffer);
 
       expect(manager2.getSharedBuffer()).toBe(externalBuffer);
     });
@@ -40,9 +34,9 @@ describe('HdrHistogramManager', () => {
     it('should throw error when external buffer is too small', () => {
       const smallBuffer = new SharedArrayBuffer(100);
 
-      expect(
-        () => new HdrHistogramManager(5, 3, 1, 120_000_000, smallBuffer),
-      ).toThrow('Buffer too small');
+      expect(() => new HdrHistogramManager(5, 3, 1, 120_000_000, smallBuffer)).toThrow(
+        'Buffer too small',
+      );
     });
 
     it('should not initialize histogram when using external buffer', () => {
@@ -56,13 +50,7 @@ describe('HdrHistogramManager', () => {
       const view = new Int32Array(externalBuffer);
       view.fill(42);
 
-      const manager2 = new HdrHistogramManager(
-        endpointsCount,
-        3,
-        1,
-        120_000_000,
-        externalBuffer,
-      );
+      const manager2 = new HdrHistogramManager(endpointsCount, 3, 1, 120_000_000, externalBuffer);
 
       const histogram = manager2.getLatencyHistogram(0);
       expect(histogram.totalCount).toBeGreaterThan(0);
@@ -129,12 +117,8 @@ describe('HdrHistogramManager', () => {
     it('should throw error for invalid endpoint index', () => {
       const manager = new HdrHistogramManager(3);
 
-      expect(() => manager.recordLatency(-1, 100)).toThrow(
-        'Invalid endpoint index: -1',
-      );
-      expect(() => manager.recordLatency(3, 100)).toThrow(
-        'Invalid endpoint index: 3',
-      );
+      expect(() => manager.recordLatency(-1, 100)).toThrow('Invalid endpoint index: -1');
+      expect(() => manager.recordLatency(3, 100)).toThrow('Invalid endpoint index: 3');
     });
   });
 
@@ -157,7 +141,7 @@ describe('HdrHistogramManager', () => {
 
       // Record some test latencies
       const latencies = [50, 75, 100, 125, 150, 175, 200, 225, 250, 275];
-      latencies.forEach((latency) => manager.recordLatency(0, latency));
+      latencies.forEach((latency) => void manager.recordLatency(0, latency));
 
       const histogram = manager.getLatencyHistogram(0);
 
@@ -203,12 +187,8 @@ describe('HdrHistogramManager', () => {
     it('should throw error for invalid endpoint index', () => {
       const manager = new HdrHistogramManager(3);
 
-      expect(() => manager.getLatencyHistogram(-1)).toThrow(
-        'Invalid endpoint index: -1',
-      );
-      expect(() => manager.getLatencyHistogram(3)).toThrow(
-        'Invalid endpoint index: 3',
-      );
+      expect(() => manager.getLatencyHistogram(-1)).toThrow('Invalid endpoint index: -1');
+      expect(() => manager.getLatencyHistogram(3)).toThrow('Invalid endpoint index: 3');
     });
   });
 
@@ -316,11 +296,9 @@ describe('HdrHistogramManager', () => {
       const manager = new HdrHistogramManager(1, 3, 1, 120_000_000);
 
       // Access private method for testing
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const getValueFromIndex = (manager as any)._getValueFromIndex.bind(
-        manager,
-      );
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // biome-ignore lint/suspicious/noExplicitAny: private
+      const getValueFromIndex = (manager as any)._getValueFromIndex.bind(manager);
+      // biome-ignore lint/suspicious/noExplicitAny: private
       const subBucketHalfCount = (manager as any)._subBucketHalfCount;
 
       const valAtBoundaryMinus1 = getValueFromIndex(subBucketHalfCount - 1);

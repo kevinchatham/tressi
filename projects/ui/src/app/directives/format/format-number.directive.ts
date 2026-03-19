@@ -1,4 +1,4 @@
-import { Directive, effect, ElementRef, inject, input } from '@angular/core';
+import { Directive, ElementRef, effect, inject, input } from '@angular/core';
 import humanNumber from 'human-number';
 
 @Directive({
@@ -24,8 +24,7 @@ export class FormatNumberDirective {
       }
       const sign = numValue < 0 ? '-' : '';
       const absValue = Math.abs(numValue);
-      this._el.nativeElement.textContent =
-        sign + humanNumber(absValue).toLowerCase();
+      this._el.nativeElement.textContent = sign + humanNumber(absValue).toLowerCase();
     });
   }
 }

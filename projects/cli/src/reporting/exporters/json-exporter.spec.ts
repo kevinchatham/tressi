@@ -1,5 +1,5 @@
-import { TestSummary } from '@tressi/shared/common';
-import { writeFile } from 'fs/promises';
+import { writeFile } from 'node:fs/promises';
+import type { TestSummary } from '@tressi/shared/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { validateJsonPath } from '../utils/validation';
@@ -28,11 +28,7 @@ describe('JsonExporter', () => {
     const path = 'test.json';
     await exporter.export(summary, path);
     expect(validateJsonPath).toHaveBeenCalledWith(path);
-    expect(writeFile).toHaveBeenCalledWith(
-      path,
-      JSON.stringify(summary, null, 2),
-      'utf-8',
-    );
+    expect(writeFile).toHaveBeenCalledWith(path, JSON.stringify(summary, null, 2), 'utf-8');
   });
 
   it('should throw error if writing fails', async () => {

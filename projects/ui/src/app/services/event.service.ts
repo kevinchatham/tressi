@@ -1,11 +1,7 @@
 import { Injectable } from '@angular/core';
-import {
-  ConnectedEventData,
-  ServerEvents,
-  TestEventData,
-} from '@tressi/shared/common';
-import { TestSummaryData } from '@tressi/shared/ui';
-import { Observable, Subject } from 'rxjs';
+import { type ConnectedEventData, ServerEvents, type TestEventData } from '@tressi/shared/common';
+import type { TestSummaryData } from '@tressi/shared/ui';
+import { type Observable, Subject } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
@@ -70,7 +66,7 @@ export class EventService {
 
     this._eventSource = new EventSource(this._url);
 
-    this._eventSource.onmessage = (event): void => {
+    this._eventSource.onmessage = (event: MessageEvent<string>): void => {
       try {
         const message = JSON.parse(event.data);
 
@@ -89,13 +85,13 @@ export class EventService {
             break;
         }
       } catch (error) {
-        // eslint-disable-next-line no-console
+        // biome-ignore lint/suspicious/noConsole: default
         console.error('Failed to parse event message:', error);
       }
     };
 
-    this._eventSource.onerror = (error): void => {
-      // eslint-disable-next-line no-console
+    this._eventSource.onerror = (error: Event): void => {
+      // biome-ignore lint/suspicious/noConsole: default
       console.error('EventSource error:', error);
       this._errorSubject.next(error);
       // Close the failed connection to allow for a clean retry

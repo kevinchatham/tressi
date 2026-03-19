@@ -17,8 +17,8 @@ describe('TitleService', () => {
       events: new Subject<unknown>(),
       routerState: {
         root: {
-          firstChild: null,
           data: of({ title: 'Initial Title' }),
+          firstChild: null,
         },
       },
     };
@@ -41,13 +41,12 @@ describe('TitleService', () => {
   it('should update title when navigation ends', () => {
     // Mock nested route data
     const mockRoute = {
-      firstChild: null,
       data: of({ title: 'Dashboard' }),
+      firstChild: null,
     };
 
-    (
-      mockRouter.routerState as unknown as { root: { firstChild: unknown } }
-    ).root.firstChild = mockRoute;
+    (mockRouter.routerState as unknown as { root: { firstChild: unknown } }).root.firstChild =
+      mockRoute;
 
     // Trigger NavigationEnd
     const navEnd = { url: '/dashboard' };
@@ -60,13 +59,12 @@ describe('TitleService', () => {
 
   it('should use default title if route data has no title', () => {
     const mockRoute = {
-      firstChild: null,
       data: of({}),
+      firstChild: null,
     };
 
-    (
-      mockRouter.routerState as unknown as { root: { firstChild: unknown } }
-    ).root.firstChild = mockRoute;
+    (mockRouter.routerState as unknown as { root: { firstChild: unknown } }).root.firstChild =
+      mockRoute;
 
     const navEnd = { url: '/home' };
     Object.setPrototypeOf(navEnd, NavigationEnd.prototype);

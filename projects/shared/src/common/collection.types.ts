@@ -1,6 +1,6 @@
-import { TressiConfig } from './config.types';
-import { TestSummary } from './reporting.types';
-import { TestStatus } from './test.types';
+import type { TressiConfig } from './config.types';
+import type { TestSummary } from './reporting.types';
+import type { TestStatus } from './test.types';
 
 /**
  * Configuration document stored in the database.

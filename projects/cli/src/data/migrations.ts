@@ -1,12 +1,12 @@
-import {
+import type {
   Database,
+  IDatabaseMigration,
   IJsonMigration,
   JsonMigrations,
   VersionedTressiConfig,
 } from '@tressi/shared/cli';
-import { IDatabaseMigration } from '@tressi/shared/cli';
-import { TressiConfig, TressiRequestConfig } from '@tressi/shared/common';
-import { Kysely, sql } from 'kysely';
+import type { TressiConfig, TressiRequestConfig } from '@tressi/shared/common';
+import { type Kysely, sql } from 'kysely';
 
 export const noopDatabaseMigration: IDatabaseMigration = {
   summary: 'version bump',
@@ -31,8 +31,7 @@ export const JSON_MIGRATIONS: JsonMigrations = {
   '0.0.15': noopJsonMigration('0.0.15'),
   '0.0.16': noopJsonMigration('0.0.16'),
   '0.0.17': {
-    summary:
-      'Bump early exit monitoring window configurations > 0 and < 1000 to 1000.',
+    summary: 'Bump early exit monitoring window configurations > 0 and < 1000 to 1000.',
     up: (config: VersionedTressiConfig): VersionedTressiConfig => {
       const data = config as TressiConfig;
 
@@ -51,9 +50,7 @@ export const JSON_MIGRATIONS: JsonMigrations = {
             workerEarlyExit: data.options.workerEarlyExit
               ? {
                   ...data.options.workerEarlyExit,
-                  monitoringWindowMs: bumpWindow(
-                    data.options.workerEarlyExit.monitoringWindowMs,
-                  ),
+                  monitoringWindowMs: bumpWindow(data.options.workerEarlyExit.monitoringWindowMs),
                 }
               : data.options.workerEarlyExit,
           }
@@ -64,9 +61,7 @@ export const JSON_MIGRATIONS: JsonMigrations = {
         earlyExit: request.earlyExit
           ? {
               ...request.earlyExit,
-              monitoringWindowMs: bumpWindow(
-                request.earlyExit.monitoringWindowMs,
-              ),
+              monitoringWindowMs: bumpWindow(request.earlyExit.monitoringWindowMs),
             }
           : request.earlyExit,
       }));
@@ -79,6 +74,7 @@ export const JSON_MIGRATIONS: JsonMigrations = {
       } as VersionedTressiConfig;
     },
   },
+  '0.0.18': noopJsonMigration('0.0.18'),
 };
 
 /**
@@ -92,11 +88,12 @@ export const DATABASE_MIGRATIONS: Record<string, IDatabaseMigration> = {
   '0.0.17': {
     summary:
       'WARNING: Destructive migration. Chart data will be reset to support a more accurate summary-based storage format. Final test summaries will remain.',
-    up: async (db) => {
+    up: async (db: Kysely<Database>) => {
       await dropColumnIfExists(db, 'metrics', 'url', 'idx_metrics_url');
       await db.deleteFrom('metrics').execute();
     },
   },
+  '0.0.18': noopDatabaseMigration,
 };
 
 async function dropColumnIfExists(

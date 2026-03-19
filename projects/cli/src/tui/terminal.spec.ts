@@ -1,4 +1,4 @@
-/* eslint-disable no-console */
+/** biome-ignore-all lint/suspicious/noConsole: default */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { terminal } from './terminal';

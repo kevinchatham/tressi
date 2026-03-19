@@ -1,12 +1,12 @@
 import { Component, signal } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { type ComponentFixture, TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { FormatMemoryDirective } from './format-memory.directive';
 
 @Component({
-  standalone: true,
   imports: [FormatMemoryDirective],
+  standalone: true,
   template: `<div [appFormatMemory]="mb()"></div>`,
 })
 class TestHostComponent {
@@ -48,11 +48,11 @@ describe('FormatMemoryDirective', () => {
 
   it('should format memory correctly (MB, GB)', async () => {
     const testCases = [
-      { input: 512, expected: '512 MB' },
-      { input: 1023, expected: '1023 MB' },
-      { input: 1024, expected: '1.00 GB' },
-      { input: 1500, expected: '1.46 GB' },
-      { input: 2048, expected: '2.00 GB' },
+      { expected: '512 MB', input: 512 },
+      { expected: '1023 MB', input: 1023 },
+      { expected: '1.00 GB', input: 1024 },
+      { expected: '1.46 GB', input: 1500 },
+      { expected: '2.00 GB', input: 2048 },
     ];
 
     for (const { input, expected } of testCases) {

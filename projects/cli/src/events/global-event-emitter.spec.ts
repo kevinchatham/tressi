@@ -1,4 +1,4 @@
-import { ServerEvents, TestSummary } from '@tressi/shared/common';
+import { ServerEvents, type TestSummary } from '@tressi/shared/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { globalEventEmitter } from './global-event-emitter';
@@ -85,28 +85,28 @@ describe('GlobalEventEmitter', () => {
     it('should emit metrics event and trigger callback', () => {
       const callback = vi.fn();
       const testSummary = {
-        tressiVersion: '1.0.0',
-        configSnapshot: { name: 'test', requests: [], options: {} } as unknown,
+        configSnapshot: { name: 'test', options: {}, requests: [] } as unknown,
+        endpoints: [],
         global: {
-          totalRequests: 100,
-          totalEndpoints: 1,
-          successfulRequests: 95,
-          failedRequests: 5,
           averageLatency: 150,
-          minLatencyMs: 50,
+          bytesReceived: 1000,
+          bytesSent: 500,
+          duration: 2000,
+          errorsByCode: {},
+          errorsByMessage: {},
+          failedRequests: 5,
+          latencyHistogram: null,
           maxLatencyMs: 500,
+          minLatencyMs: 50,
           p50LatencyMs: 100,
           p95LatencyMs: 300,
           p99LatencyMs: 500,
           rps: 50,
-          duration: 2000,
-          errorsByCode: {},
-          errorsByMessage: {},
-          latencyHistogram: null,
-          bytesReceived: 1000,
-          bytesSent: 500,
+          successfulRequests: 95,
+          totalEndpoints: 1,
+          totalRequests: 100,
         },
-        endpoints: [],
+        tressiVersion: '1.0.0',
       } as unknown as TestSummary;
 
       globalEventEmitter.on('metrics', callback);
@@ -128,9 +128,9 @@ describe('GlobalEventEmitter', () => {
     it('should emit test:started event and trigger callback', () => {
       const callback = vi.fn();
       const testEventData = {
+        status: 'running' as const,
         testId: 'test-123',
         timestamp: Date.now(),
-        status: 'running' as const,
       };
 
       globalEventEmitter.on(ServerEvents.TEST.STARTED, callback);
@@ -142,10 +142,10 @@ describe('GlobalEventEmitter', () => {
     it('should emit test:started event with configId', () => {
       const callback = vi.fn();
       const testEventData = {
+        configId: 'config-1',
+        status: 'running' as const,
         testId: 'test-456',
         timestamp: Date.now(),
-        status: 'running' as const,
-        configId: 'config-1',
       };
 
       globalEventEmitter.on(ServerEvents.TEST.STARTED, callback);
@@ -171,9 +171,9 @@ describe('GlobalEventEmitter', () => {
     it('should emit test:completed event and trigger callback', () => {
       const callback = vi.fn();
       const testEventData = {
+        status: 'completed' as const,
         testId: 'test-123',
         timestamp: Date.now(),
-        status: 'completed' as const,
       };
 
       globalEventEmitter.on(ServerEvents.TEST.COMPLETED, callback);
@@ -195,10 +195,10 @@ describe('GlobalEventEmitter', () => {
     it('should emit test:failed event with error data', () => {
       const callback = vi.fn();
       const testEventData = {
+        error: 'Connection timeout',
+        status: 'failed' as const,
         testId: 'test-123',
         timestamp: Date.now(),
-        status: 'failed' as const,
-        error: 'Connection timeout',
       };
 
       globalEventEmitter.on(ServerEvents.TEST.FAILED, callback);
@@ -206,8 +206,8 @@ describe('GlobalEventEmitter', () => {
 
       expect(callback).toHaveBeenCalledWith(
         expect.objectContaining({
-          status: 'failed',
           error: 'Connection timeout',
+          status: 'failed',
         }),
       );
     });
@@ -225,9 +225,9 @@ describe('GlobalEventEmitter', () => {
     it('should emit test:cancelled event and trigger callback', () => {
       const callback = vi.fn();
       const testEventData = {
+        status: 'cancelled' as const,
         testId: 'test-123',
         timestamp: Date.now(),
-        status: 'cancelled' as const,
       };
 
       globalEventEmitter.on(ServerEvents.TEST.CANCELLED, callback);
@@ -270,9 +270,7 @@ describe('GlobalEventEmitter', () => {
     it('should get all listeners for an event', () => {
       const mockListeners = [vi.fn(), vi.fn()];
       spyListeners.mockReturnValue(
-        mockListeners as unknown as ReturnType<
-          typeof globalEventEmitter.listeners
-        >,
+        mockListeners as unknown as ReturnType<typeof globalEventEmitter.listeners>,
       );
 
       const listeners = globalEventEmitter.listeners('metrics');
@@ -285,12 +283,10 @@ describe('GlobalEventEmitter', () => {
   describe('Edge cases', () => {
     it('should handle emitting to no listeners without error', () => {
       expect(() => {
-        (
-          globalEventEmitter.emit as unknown as (
-            event: string,
-            payload: unknown,
-          ) => boolean
-        )('metrics', { testSummary: {} });
+        (globalEventEmitter.emit as unknown as (event: string, payload: unknown) => boolean)(
+          'metrics',
+          { testSummary: {} },
+        );
       }).not.toThrow();
     });
 
@@ -308,12 +304,10 @@ describe('GlobalEventEmitter', () => {
       const callback = vi.fn();
 
       expect(() => {
-        (
-          globalEventEmitter.off as unknown as (
-            event: string,
-            listener: () => void,
-          ) => void
-        )('nonexistent', callback);
+        (globalEventEmitter.off as unknown as (event: string, listener: () => void) => void)(
+          'nonexistent',
+          callback,
+        );
       }).not.toThrow();
     });
 
@@ -323,30 +317,24 @@ describe('GlobalEventEmitter', () => {
       globalEventEmitter.on('metrics', callback);
 
       // Test with null
-      (
-        globalEventEmitter.emit as unknown as (
-          event: string,
-          payload: unknown,
-        ) => boolean
-      )('metrics', null);
+      (globalEventEmitter.emit as unknown as (event: string, payload: unknown) => boolean)(
+        'metrics',
+        null,
+      );
       expect(callback).toHaveBeenCalledWith(null);
 
       // Test with undefined
-      (
-        globalEventEmitter.emit as unknown as (
-          event: string,
-          payload: unknown,
-        ) => boolean
-      )('metrics', undefined);
+      (globalEventEmitter.emit as unknown as (event: string, payload: unknown) => boolean)(
+        'metrics',
+        undefined,
+      );
       expect(callback).toHaveBeenCalledWith(undefined);
 
       // Test with empty object
-      (
-        globalEventEmitter.emit as unknown as (
-          event: string,
-          payload: unknown,
-        ) => boolean
-      )('metrics', {});
+      (globalEventEmitter.emit as unknown as (event: string, payload: unknown) => boolean)(
+        'metrics',
+        {},
+      );
       expect(callback).toHaveBeenCalledWith({});
     });
 
@@ -367,10 +355,7 @@ describe('GlobalEventEmitter', () => {
       spyEmit.mockReturnValue(true);
 
       const result = (
-        globalEventEmitter.emit as unknown as (
-          event: string,
-          payload: unknown,
-        ) => boolean
+        globalEventEmitter.emit as unknown as (event: string, payload: unknown) => boolean
       )('metrics', { testSummary: {} });
 
       expect(typeof result).toBe('boolean');

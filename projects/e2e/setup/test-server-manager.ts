@@ -1,5 +1,5 @@
-import type { ChildProcess } from 'child_process';
-import * as path from 'path';
+import type { ChildProcess } from 'node:child_process';
+import * as path from 'node:path';
 import kill from 'tree-kill';
 
 import { execute, killPort } from '../utils';
@@ -16,14 +16,9 @@ export class TestServerManager {
     killPort(this._port);
 
     this._process = execute('npx', {
-      args: [
-        'tsx',
-        path.join(__dirname, './test-server.ts'),
-        `--port=${this._port}`,
-        '--silent',
-      ],
-      stdio: 'pipe',
+      args: ['tsx', path.join(__dirname, './test-server.ts'), `--port=${this._port}`, '--silent'],
       cwd: process.cwd(),
+      stdio: 'pipe',
     });
 
     await this._waitForReady();
@@ -31,7 +26,7 @@ export class TestServerManager {
   }
 
   async stop(): Promise<void> {
-    if (this._process && this._process.pid) {
+    if (this._process?.pid) {
       const pid = this._process.pid;
       await new Promise<void>((resolve) => {
         kill(pid, 'SIGTERM', () => {

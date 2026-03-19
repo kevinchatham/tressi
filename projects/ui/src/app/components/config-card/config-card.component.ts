@@ -1,12 +1,5 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  inject,
-  input,
-  output,
-  signal,
-} from '@angular/core';
-import { ConfigDocument, TressiRequestConfig } from '@tressi/shared/common';
+import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
+import type { ConfigDocument, TressiRequestConfig } from '@tressi/shared/common';
 
 import { FormatDurationDirective } from '../../directives/format/format-duration.directive';
 import { FormatNumberDirective } from '../../directives/format/format-number.directive';
@@ -17,7 +10,7 @@ import { CollapsibleCardComponent } from '../collapsible-card/collapsible-card.c
 import { ExportConfigButtonComponent } from '../export-config-button/export-config-button.component';
 
 @Component({
-  selector: 'app-config-card',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ExportConfigButtonComponent,
     ButtonComponent,
@@ -26,8 +19,8 @@ import { ExportConfigButtonComponent } from '../export-config-button/export-conf
     FormatDurationDirective,
     CollapsibleCardComponent,
   ],
+  selector: 'app-config-card',
   templateUrl: './config-card.component.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ConfigCardComponent {
   readonly input = input.required<ConfigDocument>();
@@ -85,18 +78,13 @@ export class ConfigCardComponent {
 
   /** Get total RPS across all endpoints */
   getTotalRPS(): number {
-    return this.input().config.requests.reduce(
-      (sum, req) => sum + (req.rps || 0),
-      0,
-    );
+    return this.input().config.requests.reduce((sum, req) => sum + (req.rps || 0), 0);
   }
 
   /** Get effective early exit status (enabled if any endpoint or global has it enabled) */
   getEffectiveEarlyExitStatus(): boolean {
     const globalEarlyExit = this.input().config.options.workerEarlyExit.enabled;
-    const anyEndpointEarlyExit = this.input().config.requests.some(
-      (req) => req.earlyExit.enabled,
-    );
+    const anyEndpointEarlyExit = this.input().config.requests.some((req) => req.earlyExit.enabled);
     return globalEarlyExit || anyEndpointEarlyExit;
   }
 }

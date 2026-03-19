@@ -1,12 +1,12 @@
 import { Component, signal } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { type ComponentFixture, TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { FormatPercentageDirective } from './format-percentage.directive';
 
 @Component({
-  standalone: true,
   imports: [FormatPercentageDirective],
+  standalone: true,
   template: `<div [appFormatPercentage]="value()"></div>`,
 })
 class TestHostComponent {
@@ -48,10 +48,10 @@ describe('FormatPercentageDirective', () => {
 
   it('should format percentages correctly', async () => {
     const testCases = [
-      { input: 0.005, expected: '0.5%' },
-      { input: 0.01, expected: '1.0%' },
-      { input: 0.123, expected: '12.3%' },
-      { input: 1, expected: '100%' },
+      { expected: '0.5%', input: 0.005 },
+      { expected: '1.0%', input: 0.01 },
+      { expected: '12.3%', input: 0.123 },
+      { expected: '100%', input: 1 },
     ];
 
     for (const { input, expected } of testCases) {

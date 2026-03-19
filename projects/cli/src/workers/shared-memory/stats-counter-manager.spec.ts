@@ -25,11 +25,7 @@ describe('StatsCounterManager', () => {
       const sabSize = manager.getSharedBuffer().byteLength;
       const externalBuffer = new SharedArrayBuffer(sabSize);
 
-      const manager2 = new StatsCounterManager(
-        endpointsCount,
-        ringBufferSize,
-        externalBuffer,
-      );
+      const manager2 = new StatsCounterManager(endpointsCount, ringBufferSize, externalBuffer);
 
       expect(manager2.getSharedBuffer()).toBe(externalBuffer);
     });
@@ -37,9 +33,7 @@ describe('StatsCounterManager', () => {
     it('should throw error when external buffer is too small', () => {
       const smallBuffer = new SharedArrayBuffer(100);
 
-      expect(() => new StatsCounterManager(5, 100, smallBuffer)).toThrow(
-        'Buffer too small',
-      );
+      expect(() => new StatsCounterManager(5, 100, smallBuffer)).toThrow('Buffer too small');
     });
 
     it('should initialize counters to zero', () => {
@@ -71,11 +65,7 @@ describe('StatsCounterManager', () => {
       const view = new Int32Array(externalBuffer);
       view.fill(42);
 
-      const manager2 = new StatsCounterManager(
-        endpointsCount,
-        ringBufferSize,
-        externalBuffer,
-      );
+      const manager2 = new StatsCounterManager(endpointsCount, ringBufferSize, externalBuffer);
 
       const counters = manager2.getEndpointCounters(0);
       expect(counters.successCount).toBeGreaterThan(0);
@@ -120,12 +110,8 @@ describe('StatsCounterManager', () => {
     it('should throw error for invalid endpoint index', () => {
       const manager = new StatsCounterManager(3);
 
-      expect(() => manager.recordRequest(-1, true)).toThrow(
-        'Invalid endpoint index: -1',
-      );
-      expect(() => manager.recordRequest(3, true)).toThrow(
-        'Invalid endpoint index: 3',
-      );
+      expect(() => manager.recordRequest(-1, true)).toThrow('Invalid endpoint index: -1');
+      expect(() => manager.recordRequest(3, true)).toThrow('Invalid endpoint index: 3');
     });
   });
 
@@ -162,12 +148,8 @@ describe('StatsCounterManager', () => {
     it('should throw error for invalid endpoint index', () => {
       const manager = new StatsCounterManager(3);
 
-      expect(() => manager.recordBytesSent(-1, 1024)).toThrow(
-        'Invalid endpoint index: -1',
-      );
-      expect(() => manager.recordBytesSent(3, 1024)).toThrow(
-        'Invalid endpoint index: 3',
-      );
+      expect(() => manager.recordBytesSent(-1, 1024)).toThrow('Invalid endpoint index: -1');
+      expect(() => manager.recordBytesSent(3, 1024)).toThrow('Invalid endpoint index: 3');
     });
   });
 
@@ -195,12 +177,8 @@ describe('StatsCounterManager', () => {
     it('should throw error for invalid endpoint index', () => {
       const manager = new StatsCounterManager(3);
 
-      expect(() => manager.recordBytesReceived(-1, 512)).toThrow(
-        'Invalid endpoint index: -1',
-      );
-      expect(() => manager.recordBytesReceived(3, 512)).toThrow(
-        'Invalid endpoint index: 3',
-      );
+      expect(() => manager.recordBytesReceived(-1, 512)).toThrow('Invalid endpoint index: -1');
+      expect(() => manager.recordBytesReceived(3, 512)).toThrow('Invalid endpoint index: 3');
     });
   });
 
@@ -264,12 +242,8 @@ describe('StatsCounterManager', () => {
     it('should throw error for invalid endpoint index', () => {
       const manager = new StatsCounterManager(3);
 
-      expect(() => manager.recordStatusCode(-1, 200)).toThrow(
-        'Invalid endpoint index: -1',
-      );
-      expect(() => manager.recordStatusCode(3, 200)).toThrow(
-        'Invalid endpoint index: 3',
-      );
+      expect(() => manager.recordStatusCode(-1, 200)).toThrow('Invalid endpoint index: -1');
+      expect(() => manager.recordStatusCode(3, 200)).toThrow('Invalid endpoint index: 3');
     });
   });
 
@@ -312,12 +286,8 @@ describe('StatsCounterManager', () => {
     it('should throw error for invalid endpoint index', () => {
       const manager = new StatsCounterManager(3);
 
-      expect(() => manager.getEndpointCounters(-1)).toThrow(
-        'Invalid endpoint index: -1',
-      );
-      expect(() => manager.getEndpointCounters(3)).toThrow(
-        'Invalid endpoint index: 3',
-      );
+      expect(() => manager.getEndpointCounters(-1)).toThrow('Invalid endpoint index: -1');
+      expect(() => manager.getEndpointCounters(3)).toThrow('Invalid endpoint index: 3');
     });
   });
 
@@ -411,9 +381,7 @@ describe('StatsCounterManager', () => {
       const manager = new StatsCounterManager(1);
 
       // Test various status codes
-      const statusCodes = [
-        200, 201, 301, 302, 400, 401, 403, 404, 500, 502, 503,
-      ];
+      const statusCodes = [200, 201, 301, 302, 400, 401, 403, 404, 500, 502, 503];
       statusCodes.forEach((code) => {
         manager.recordStatusCode(0, code);
       });

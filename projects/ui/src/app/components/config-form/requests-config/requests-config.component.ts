@@ -1,17 +1,17 @@
 import {
-  AfterViewInit,
+  type AfterViewInit,
   Component,
-  ElementRef,
+  type ElementRef,
   input,
-  OnChanges,
-  OnInit,
+  type OnChanges,
+  type OnInit,
   output,
   signal,
   viewChildren,
 } from '@angular/core';
 import { FormField } from '@angular/forms/signals';
-import { httpMethodDefaults, SaveConfigRequest } from '@tressi/shared/common';
-import { ModifyConfigRequestFormType } from '@tressi/shared/ui';
+import { httpMethodDefaults, type SaveConfigRequest } from '@tressi/shared/common';
+import type { ModifyConfigRequestFormType } from '@tressi/shared/ui';
 
 import { ButtonComponent } from '../../button/button.component';
 import { CollapsibleCardComponent } from '../../collapsible-card/collapsible-card.component';
@@ -20,7 +20,6 @@ import { JsonTextareaComponent } from '../../json-textarea/json-textarea.compone
 import { EarlyExitConfigComponent } from '../early-exit-config/early-exit-config.component';
 
 @Component({
-  selector: 'app-requests-config',
   imports: [
     IconComponent,
     JsonTextareaComponent,
@@ -29,11 +28,10 @@ import { EarlyExitConfigComponent } from '../early-exit-config/early-exit-config
     CollapsibleCardComponent,
     FormField,
   ],
+  selector: 'app-requests-config',
   templateUrl: './requests-config.component.html',
 })
-export class RequestsConfigComponent
-  implements AfterViewInit, OnInit, OnChanges
-{
+export class RequestsConfigComponent implements AfterViewInit, OnInit, OnChanges {
   /** Form instance from parent */
   readonly form = input.required<ModifyConfigRequestFormType>();
 
@@ -64,8 +62,7 @@ export class RequestsConfigComponent
   private readonly _requestCount = signal(0);
 
   /** Query for URL input elements */
-  private readonly _urlInputs =
-    viewChildren<ElementRef<HTMLInputElement>>('urlInput');
+  private readonly _urlInputs = viewChildren<ElementRef<HTMLInputElement>>('urlInput');
 
   ngAfterViewInit(): void {
     // Focus the first URL input on initialization
@@ -116,10 +113,7 @@ export class RequestsConfigComponent
     const currentRequestCount = this.model().config.requests?.length || 0;
 
     // If this is the newest request, always expand it
-    if (
-      index === currentRequestCount - 1 &&
-      this.expandedRequests.has(index) === false
-    ) {
+    if (index === currentRequestCount - 1 && this.expandedRequests.has(index) === false) {
       return true;
     }
 

@@ -1,8 +1,6 @@
-import { EndpointSummary, TestSummary } from '@tressi/shared/common';
+import type { EndpointSummary, TestSummary } from '@tressi/shared/common';
 
-export function transformAggregatedMetricToTestSummary(
-  snapshots: TestSummary[],
-): TestSummary {
+export function transformAggregatedMetricToTestSummary(snapshots: TestSummary[]): TestSummary {
   if (!snapshots || snapshots.length === 0) {
     throw new Error('Cannot generate test summary without snapshots');
   }
@@ -14,41 +12,30 @@ export function transformAggregatedMetricToTestSummary(
   // while avoiding the overhead of structuredClone on every poll.
   const finalSummary: TestSummary = {
     ...lastSnapshot,
-    global: { ...lastSnapshot.global },
     endpoints: lastSnapshot.endpoints.map((e) => ({ ...e })),
+    global: { ...lastSnapshot.global },
   };
 
   // Calculate final global aggregates
   const totalDurationSec = lastSnapshot.global.finalDurationSec;
 
   finalSummary.global.averageRequestsPerSecond =
-    totalDurationSec > 0
-      ? lastSnapshot.global.totalRequests / totalDurationSec
-      : 0;
+    totalDurationSec > 0 ? lastSnapshot.global.totalRequests / totalDurationSec : 0;
 
   finalSummary.global.peakRequestsPerSecond = Math.max(
     ...snapshots.map((s) => s.global.averageRequestsPerSecond),
   );
 
-  const cpuSum = snapshots.reduce(
-    (sum, s) => sum + s.global.avgSystemCpuUsagePercent,
-    0,
-  );
+  const cpuSum = snapshots.reduce((sum, s) => sum + s.global.avgSystemCpuUsagePercent, 0);
   finalSummary.global.avgSystemCpuUsagePercent =
     snapshots.length > 0 ? cpuSum / snapshots.length : 0;
 
-  const memorySum = snapshots.reduce(
-    (sum, s) => sum + s.global.avgProcessMemoryUsageMB,
-    0,
-  );
+  const memorySum = snapshots.reduce((sum, s) => sum + s.global.avgProcessMemoryUsageMB, 0);
   finalSummary.global.avgProcessMemoryUsageMB =
     snapshots.length > 0 ? memorySum / snapshots.length : 0;
 
   // Calculate global target achieved based on peak RPS
-  if (
-    finalSummary.configSnapshot &&
-    finalSummary.configSnapshot.requests.length > 0
-  ) {
+  if (finalSummary.configSnapshot && finalSummary.configSnapshot.requests.length > 0) {
     const totalTargetRps = finalSummary.configSnapshot.requests.reduce(
       (sum, req) => sum + req.rps,
       0,
@@ -77,8 +64,7 @@ export function transformAggregatedMetricToTestSummary(
         (req) => req.url === endpoint.url,
       );
       if (requestConfig && requestConfig.rps > 0) {
-        endpoint.targetAchieved =
-          endpoint.peakRequestsPerSecond / requestConfig.rps;
+        endpoint.targetAchieved = endpoint.peakRequestsPerSecond / requestConfig.rps;
       }
     }
   });

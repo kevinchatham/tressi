@@ -1,15 +1,8 @@
 import { KeyValuePipe, NgClass } from '@angular/common';
-import {
-  Component,
-  computed,
-  effect,
-  inject,
-  input,
-  signal,
-} from '@angular/core';
+import { Component, computed, effect, inject, input, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterModule } from '@angular/router';
-import { DocSearchResult, MarkdownSlugs } from '@tressi/shared/common';
+import type { DocSearchResult, MarkdownSlugs } from '@tressi/shared/common';
 import { AppRoutes } from '@tressi/shared/ui';
 import { filter } from 'rxjs';
 import { IconComponent } from 'src/app/components/icon/icon.component';
@@ -19,16 +12,10 @@ import { AppRouterService } from '../../../services/router.service';
 import { RPCService } from '../../../services/rpc.service';
 
 @Component({
+  imports: [RouterModule, KeyValuePipe, SearchBarComponent, IconComponent, NgClass],
   selector: 'app-docs-menu',
-  imports: [
-    RouterModule,
-    KeyValuePipe,
-    SearchBarComponent,
-    IconComponent,
-    NgClass,
-  ],
-  templateUrl: './docs-menu.component.html',
   styleUrl: './docs-menu.component.css',
+  templateUrl: './docs-menu.component.html',
 })
 export class DocsMenuComponent {
   availableDocs = input.required<MarkdownSlugs>();
@@ -49,9 +36,7 @@ export class DocsMenuComponent {
     // We still need to listen to router events for URL updates
     this._router.events
       .pipe(
-        filter(
-          (event): event is NavigationEnd => event instanceof NavigationEnd,
-        ),
+        filter((event): event is NavigationEnd => event instanceof NavigationEnd),
         takeUntilDestroyed(),
       )
       .subscribe((event: NavigationEnd) => {
@@ -98,7 +83,7 @@ export class DocsMenuComponent {
           this.searchResults.set(results as DocSearchResult[]);
         }
       } catch (error) {
-        // eslint-disable-next-line no-console
+        // biome-ignore lint/suspicious/noConsole: default
         console.error('Search failed', error);
       } finally {
         this.isSearching.set(false);

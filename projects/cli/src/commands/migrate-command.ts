@@ -12,22 +12,16 @@ export class MigrateCommand {
    * @param configPath Path to the configuration file to migrate.
    * @param force If true, bypass confirmation prompts.
    */
-  async execute(configPath: string, force = false): Promise<void> {
+  async execute(configPath: string, force: boolean = false): Promise<void> {
     try {
       const migrationManager = new JsonMigrationManager();
       await migrationManager.migrateFile(configPath, force);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
-      terminal.error(
-        chalk.red(`\nFailed to execute migrate command: ${message}`),
-      );
+      terminal.error(chalk.red(`\nFailed to execute migrate command: ${message}`));
 
       if (message.includes('ENOENT')) {
-        terminal.print(
-          chalk.yellow(
-            `Hint: Ensure the file path "${configPath}" is correct.`,
-          ),
-        );
+        terminal.print(chalk.yellow(`Hint: Ensure the file path "${configPath}" is correct.`));
       } else if (error instanceof SyntaxError) {
         terminal.print(
           chalk.yellow(
@@ -36,9 +30,7 @@ export class MigrateCommand {
         );
       } else if (message.includes('EACCES') || message.includes('EPERM')) {
         terminal.print(
-          chalk.yellow(
-            'Hint: Permission denied. Check if you have read/write access to the file.',
-          ),
+          chalk.yellow('Hint: Permission denied. Check if you have read/write access to the file.'),
         );
       }
 

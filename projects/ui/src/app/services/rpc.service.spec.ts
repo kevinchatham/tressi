@@ -20,11 +20,10 @@ describe('RPCService', () => {
   describe('getTestStatus', () => {
     it('should return not running status', async () => {
       (
-        (mockClient as { test: { status: { $get: Mock } } }).test.status
-          .$get as Mock
+        (mockClient as { test: { status: { $get: Mock } } }).test.status.$get as Mock
       ).mockResolvedValue({
-        ok: true,
         json: async () => ({ isRunning: false }),
+        ok: true,
       });
 
       const status = await service.getTestStatus();
@@ -34,8 +33,7 @@ describe('RPCService', () => {
 
     it('should return not running status on API error', async () => {
       (
-        (mockClient as { test: { status: { $get: Mock } } }).test.status
-          .$get as Mock
+        (mockClient as { test: { status: { $get: Mock } } }).test.status.$get as Mock
       ).mockResolvedValue({
         ok: false,
         statusText: 'Error',
@@ -48,8 +46,7 @@ describe('RPCService', () => {
 
     it('should return not running status on network error', async () => {
       (
-        (mockClient as { test: { status: { $get: Mock } } }).test.status
-          .$get as Mock
+        (mockClient as { test: { status: { $get: Mock } } }).test.status.$get as Mock
       ).mockRejectedValue(new Error('Network Error'));
 
       const status = await service.getTestStatus();

@@ -3,7 +3,7 @@ import {
   CHART_OPTIONS,
   DEFAULT_CHART_POLLING_INTERVAL,
   POLLING_OPTIONS,
-  TestDetailResolvedData,
+  type TestDetailResolvedData,
 } from '@tressi/shared/ui';
 import { ButtonComponent } from 'src/app/components/button/button.component';
 
@@ -23,7 +23,6 @@ import { PerformanceSummaryComponent } from './ui/performance-summary/performanc
 import { ResponseSamplesComponent } from './ui/response-samples/response-samples.component';
 
 @Component({
-  selector: 'app-test-detail',
   imports: [
     HeaderComponent,
     IconComponent,
@@ -38,6 +37,7 @@ import { ResponseSamplesComponent } from './ui/response-samples/response-samples
     StatusBadgeComponent,
   ],
   providers: [TestDetailService],
+  selector: 'app-test-detail',
   templateUrl: './test-detail.component.html',
 })
 export class TestDetailComponent {
@@ -82,9 +82,7 @@ export class TestDetailComponent {
       }
 
       if (isRunning && interval === 0) {
-        this.service.selectedPollingInterval.set(
-          DEFAULT_CHART_POLLING_INTERVAL,
-        );
+        this.service.selectedPollingInterval.set(DEFAULT_CHART_POLLING_INTERVAL);
         return;
       }
 
@@ -137,25 +135,12 @@ export class TestDetailComponent {
   getYAxisLabel(): string {
     const selected = this.service.selectedChartType();
     if (selected === 'network_throughput') return 'Bytes/sec';
-    if (selected === 'peak_throughput' || selected === 'average_throughput')
-      return 'Req/sec';
-    if (
-      selected === 'latency' ||
-      selected === 'latency_p95' ||
-      selected === 'latency_p99'
-    )
+    if (selected === 'peak_throughput' || selected === 'average_throughput') return 'Req/sec';
+    if (selected === 'latency' || selected === 'latency_p95' || selected === 'latency_p99')
       return 'ms';
-    if (
-      selected === 'error_rate' ||
-      selected === 'success_rate' ||
-      selected === 'target_achieved'
-    )
+    if (selected === 'error_rate' || selected === 'success_rate' || selected === 'target_achieved')
       return '%';
-    if (
-      selected === 'network_bytes_sent' ||
-      selected === 'network_bytes_received'
-    )
-      return 'Bytes';
+    if (selected === 'network_bytes_sent' || selected === 'network_bytes_received') return 'Bytes';
     if (selected === 'failed_requests') return 'requests';
     return 'Value';
   }

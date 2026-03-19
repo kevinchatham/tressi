@@ -22,7 +22,7 @@
  *         └───────────────────────────────────────────────┘
  */
 
-import { EndpointCounters, IStatsCounterManager } from '@tressi/shared/cli';
+import type { EndpointCounters, IStatsCounterManager } from '@tressi/shared/cli';
 
 export class StatsCounterManager implements IStatsCounterManager {
   private readonly _sab: SharedArrayBuffer;
@@ -83,11 +83,7 @@ export class StatsCounterManager implements IStatsCounterManager {
 
     // Uint32Array view for status code bitmap (starts immediately after counters)
     const bitmapStart = headerSize + countersSize;
-    this._statusCodeBitmap = new Uint32Array(
-      this._sab,
-      bitmapStart,
-      bitmapElementCount,
-    );
+    this._statusCodeBitmap = new Uint32Array(this._sab, bitmapStart, bitmapElementCount);
 
     // Verify memory layout integrity
     // countersElementCount + bitmapElementCount should equal totalSize / 4
@@ -134,17 +130,9 @@ export class StatsCounterManager implements IStatsCounterManager {
     const baseOffset = 3 + endpointIndex * this._countersPerEndpoint;
 
     if (success) {
-      Atomics.add(
-        this._counters,
-        baseOffset + StatsCounterManager._successOffset,
-        1,
-      );
+      Atomics.add(this._counters, baseOffset + StatsCounterManager._successOffset, 1);
     } else {
-      Atomics.add(
-        this._counters,
-        baseOffset + StatsCounterManager._failureOffset,
-        1,
-      );
+      Atomics.add(this._counters, baseOffset + StatsCounterManager._failureOffset, 1);
     }
   }
 
@@ -160,11 +148,7 @@ export class StatsCounterManager implements IStatsCounterManager {
     }
 
     const baseOffset = 3 + endpointIndex * this._countersPerEndpoint;
-    Atomics.add(
-      this._counters,
-      baseOffset + StatsCounterManager._bytesSentOffset,
-      bytes,
-    );
+    Atomics.add(this._counters, baseOffset + StatsCounterManager._bytesSentOffset, bytes);
   }
 
   /**
@@ -179,11 +163,7 @@ export class StatsCounterManager implements IStatsCounterManager {
     }
 
     const baseOffset = 3 + endpointIndex * this._countersPerEndpoint;
-    Atomics.add(
-      this._counters,
-      baseOffset + StatsCounterManager._bytesReceivedOffset,
-      bytes,
-    );
+    Atomics.add(this._counters, baseOffset + StatsCounterManager._bytesReceivedOffset, bytes);
   }
 
   /**
@@ -213,28 +193,20 @@ export class StatsCounterManager implements IStatsCounterManager {
       const updated = current | bitMask;
 
       if (
-        Atomics.compareExchange(
-          this._statusCodeBitmap,
-          bitmapOffset,
-          expected,
-          updated,
-        ) === expected
+        Atomics.compareExchange(this._statusCodeBitmap, bitmapOffset, expected, updated) ===
+        expected
       ) {
         // Successfully set the bit - this is the first time we've seen this status code
         // Increment status code counter
         Atomics.add(
           this._counters,
-          baseOffset +
-            StatsCounterManager._statusCodeCountersOffset +
-            statusIndex,
+          baseOffset + StatsCounterManager._statusCodeCountersOffset + statusIndex,
           1,
         );
 
         // Add to sampled status codes ring buffer
-        const headIndex =
-          baseOffset + StatsCounterManager._ringBufferHeadOffset;
-        const sampledCountIndex =
-          baseOffset + StatsCounterManager._sampledStatusCountOffset;
+        const headIndex = baseOffset + StatsCounterManager._ringBufferHeadOffset;
+        const sampledCountIndex = baseOffset + StatsCounterManager._sampledStatusCountOffset;
 
         // Get current head position atomically
         const head = Atomics.load(this._counters, headIndex);
@@ -244,8 +216,7 @@ export class StatsCounterManager implements IStatsCounterManager {
         Atomics.store(this._counters, headIndex, nextHead);
 
         // Store status code in ring buffer
-        const ringBufferOffset =
-          baseOffset + StatsCounterManager._bodySampleIndicesOffset;
+        const ringBufferOffset = baseOffset + StatsCounterManager._bodySampleIndicesOffset;
         this._counters[ringBufferOffset + head] = statusCode;
 
         // Increment sampled count (capped at ring buffer size)
@@ -258,9 +229,7 @@ export class StatsCounterManager implements IStatsCounterManager {
       // Status code already seen, just increment the counter
       Atomics.add(
         this._counters,
-        baseOffset +
-          StatsCounterManager._statusCodeCountersOffset +
-          statusIndex,
+        baseOffset + StatsCounterManager._statusCodeCountersOffset + statusIndex,
         1,
       );
     }
@@ -307,15 +276,11 @@ export class StatsCounterManager implements IStatsCounterManager {
 
     // Read sampled status codes from ring buffer
     const sampledCount = Math.min(
-      Atomics.load(
-        this._counters,
-        baseOffset + StatsCounterManager._sampledStatusCountOffset,
-      ),
+      Atomics.load(this._counters, baseOffset + StatsCounterManager._sampledStatusCountOffset),
       this._ringBufferSize,
     );
 
-    const ringBufferOffset =
-      baseOffset + StatsCounterManager._bodySampleIndicesOffset;
+    const ringBufferOffset = baseOffset + StatsCounterManager._bodySampleIndicesOffset;
     const sampledStatusCodes: number[] = [];
     for (let i = 0; i < sampledCount; i++) {
       sampledStatusCodes.push(this._counters[ringBufferOffset + i]);
@@ -325,13 +290,13 @@ export class StatsCounterManager implements IStatsCounterManager {
     const bodySampleIndices = [...sampledStatusCodes];
 
     return {
-      successCount,
-      failureCount,
-      bytesSent,
-      bytesReceived,
-      statusCodeCounts,
-      sampledStatusCodes,
       bodySampleIndices,
+      bytesReceived,
+      bytesSent,
+      failureCount,
+      sampledStatusCodes,
+      statusCodeCounts,
+      successCount,
     };
   }
 
@@ -367,8 +332,6 @@ export class StatsCounterManager implements IStatsCounterManager {
     // Since statusCodeBitmap is a Uint32Array starting at the bitmap section,
     // we can use direct indexing within the bitmap array
     const bitmapEntriesPerEndpoint = 19; // 600 status codes / 32 bits per Uint32 = 18.75, rounded up to 19
-    return (
-      endpointIndex * bitmapEntriesPerEndpoint + Math.floor(statusIndex / 32)
-    );
+    return endpointIndex * bitmapEntriesPerEndpoint + Math.floor(statusIndex / 32);
   }
 }

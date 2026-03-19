@@ -2,11 +2,8 @@
 // Fully self-contained TypeScript implementation intended to match
 // the canonical Java HdrHistogram math closely (indexing & reconstruction).
 
-import { IHdrHistogramManager } from '@tressi/shared/cli';
-import {
-  LatencyHistogram,
-  LatencyHistogramBucket,
-} from '@tressi/shared/common';
+import type { IHdrHistogramManager } from '@tressi/shared/cli';
+import type { LatencyHistogram, LatencyHistogramBucket } from '@tressi/shared/common';
 
 export class HdrHistogramManager implements IHdrHistogramManager {
   private readonly _sab: SharedArrayBuffer;
@@ -46,7 +43,7 @@ export class HdrHistogramManager implements IHdrHistogramManager {
     // subBucketHalfCountMagnitude: ceil(log2(10^sigfigs))
     // This approximates the Java implementation which computes the size
     // needed to achieve the requested significant figures.
-    const neededDigits = Math.pow(10, this._significantFigures);
+    const neededDigits = 10 ** this._significantFigures;
     this._subBucketHalfCountMagnitude = Math.ceil(Math.log2(neededDigits));
 
     this._subBucketHalfCount = 1 << this._subBucketHalfCountMagnitude;
@@ -58,8 +55,7 @@ export class HdrHistogramManager implements IHdrHistogramManager {
     // (subBucketCount << (bucketCount + unitMagnitude - 1))
     let bucketsNeeded = 1;
     // value that the highest value representable by the current buckets covers
-    let largestValueWithCurrentBuckets =
-      this._subBucketCount << this._unitMagnitude; // bucket 0 max (exclusive)
+    let largestValueWithCurrentBuckets = this._subBucketCount << this._unitMagnitude; // bucket 0 max (exclusive)
 
     // Double until we exceed highestTrackableValue
     while (largestValueWithCurrentBuckets <= this._highestTrackableValue) {
@@ -74,16 +70,13 @@ export class HdrHistogramManager implements IHdrHistogramManager {
     // valuesPerHistogram: (bucketCount + 1) * subBucketHalfCount + 1 for overflow
     // This aligns with the canonical indexing scheme where indices are derived
     // as (bucketIndex + 1) * subBucketHalfCount + (subBucketIndex - subBucketHalfCount)
-    this._valuesPerHistogram =
-      (this._bucketCount + 1) * this._subBucketHalfCount + 1;
+    this._valuesPerHistogram = (this._bucketCount + 1) * this._subBucketHalfCount + 1;
 
     const sabSize = endpointsCount * this._valuesPerHistogram * 4; // Int32
 
     if (externalBuffer) {
       if (externalBuffer.byteLength < sabSize) {
-        throw new Error(
-          `Buffer too small: expected ${sabSize}, got ${externalBuffer.byteLength}`,
-        );
+        throw new Error(`Buffer too small: expected ${sabSize}, got ${externalBuffer.byteLength}`);
       }
       this._sab = externalBuffer;
     } else {
@@ -104,7 +97,7 @@ export class HdrHistogramManager implements IHdrHistogramManager {
     if (endpointIndex < 0 || endpointIndex >= this._endpointsCount) {
       throw new Error(`Invalid endpoint index: ${endpointIndex}`);
     }
-    if (!isFinite(latencyMs) || latencyMs < 0) return;
+    if (!Number.isFinite(latencyMs) || latencyMs < 0) return;
 
     const value = Math.max(0, latencyMs * 1000); // microseconds
 
@@ -119,24 +112,20 @@ export class HdrHistogramManager implements IHdrHistogramManager {
     }
 
     const baseIndex = endpointIndex * this._valuesPerHistogram;
-    const counts = new Int32Array(
-      this._sab,
-      baseIndex * 4,
-      this._valuesPerHistogram,
-    );
+    const counts = new Int32Array(this._sab, baseIndex * 4, this._valuesPerHistogram);
 
     let totalCount = 0;
     for (let i = 0; i < counts.length; i++) totalCount += counts[i];
 
     if (totalCount === 0) {
       return {
-        min: 0,
+        buckets: [],
         max: 0,
         mean: 0,
-        stdDev: 0,
+        min: 0,
         percentiles: {},
+        stdDev: 0,
         totalCount: 0,
-        buckets: [],
       };
     }
 
@@ -147,22 +136,12 @@ export class HdrHistogramManager implements IHdrHistogramManager {
     let running = 0;
     let nextTargetIdx = 0;
     const sortedTargets = targetPercentiles.slice().sort((a, b) => a - b);
-    const targetsCounts = sortedTargets.map((p) =>
-      Math.ceil((p / 100) * totalCount),
-    );
+    const targetsCounts = sortedTargets.map((p) => Math.ceil((p / 100) * totalCount));
 
-    for (
-      let i = 0;
-      i < counts.length && nextTargetIdx < targetsCounts.length;
-      i++
-    ) {
+    for (let i = 0; i < counts.length && nextTargetIdx < targetsCounts.length; i++) {
       running += counts[i];
-      while (
-        nextTargetIdx < targetsCounts.length &&
-        running >= targetsCounts[nextTargetIdx]
-      ) {
-        percentiles[sortedTargets[nextTargetIdx]] =
-          this._getValueFromIndex(i) / 1000; // ms
+      while (nextTargetIdx < targetsCounts.length && running >= targetsCounts[nextTargetIdx]) {
+        percentiles[sortedTargets[nextTargetIdx]] = this._getValueFromIndex(i) / 1000; // ms
         nextTargetIdx++;
       }
     }
@@ -191,13 +170,13 @@ export class HdrHistogramManager implements IHdrHistogramManager {
     const buckets = this._extractBuckets(counts);
 
     return {
-      min: min / 1000,
+      buckets,
       max: max / 1000,
       mean: mean / 1000,
-      stdDev: stdDev / 1000,
+      min: min / 1000,
       percentiles,
+      stdDev: stdDev / 1000,
       totalCount,
-      buckets,
     };
   }
 
@@ -215,7 +194,7 @@ export class HdrHistogramManager implements IHdrHistogramManager {
       if (count > 0) {
         const lowerBound = this._getValueFromIndex(i) / 1000; // Convert to ms
         const upperBound = this._getValueFromIndex(i + 1) / 1000; // Upper bound
-        rawBuckets.push({ lowerBound, upperBound, count });
+        rawBuckets.push({ count, lowerBound, upperBound });
       }
     }
 
@@ -282,9 +261,9 @@ export class HdrHistogramManager implements IHdrHistogramManager {
         const maxUpper = group[group.length - 1].upperBound;
 
         buckets.push({
+          count: groupCount,
           lowerBound: minLower,
           upperBound: maxUpper,
-          count: groupCount,
         });
       }
     } else {
@@ -296,8 +275,7 @@ export class HdrHistogramManager implements IHdrHistogramManager {
 
   getAllEndpointHistograms(): LatencyHistogram[] {
     const out: LatencyHistogram[] = [];
-    for (let i = 0; i < this._endpointsCount; i++)
-      out.push(this.getLatencyHistogram(i));
+    for (let i = 0; i < this._endpointsCount; i++) out.push(this.getLatencyHistogram(i));
     return out;
   }
 
@@ -309,33 +287,26 @@ export class HdrHistogramManager implements IHdrHistogramManager {
    */
   private _countsIndex(value: number): number {
     if (value <= 0) return 0;
-    if (value > this._highestTrackableValue)
-      return this._valuesPerHistogram - 1; // overflow
+    if (value > this._highestTrackableValue) return this._valuesPerHistogram - 1; // overflow
 
     // Convert value down to unit magnitude first for shifting convenience
     // But we'll operate in integer space: use floor
     let bucketIndex = this._getBucketIndex(value);
-    let subBucketIndex = Math.floor(
-      value / (1 << (bucketIndex + this._unitMagnitude)),
-    );
+    let subBucketIndex = Math.floor(value / (1 << (bucketIndex + this._unitMagnitude)));
 
     // Ensure subBucketIndex fits into subBucketCount
     if (subBucketIndex >= this._subBucketCount) {
       // This can happen due to boundary rounding; move to next bucket
       bucketIndex++;
-      subBucketIndex = Math.floor(
-        value / (1 << (bucketIndex + this._unitMagnitude)),
-      );
+      subBucketIndex = Math.floor(value / (1 << (bucketIndex + this._unitMagnitude)));
     }
 
     // canonical index formula
     const index =
-      (bucketIndex + 1) * this._subBucketHalfCount +
-      (subBucketIndex - this._subBucketHalfCount);
+      (bucketIndex + 1) * this._subBucketHalfCount + (subBucketIndex - this._subBucketHalfCount);
     // clamp
     if (index < 0) return 0;
-    if (index >= this._valuesPerHistogram - 1)
-      return this._valuesPerHistogram - 2;
+    if (index >= this._valuesPerHistogram - 1) return this._valuesPerHistogram - 2;
     return index;
   }
 
@@ -345,12 +316,10 @@ export class HdrHistogramManager implements IHdrHistogramManager {
    */
   private _getValueFromIndex(index: number): number {
     if (index <= 0) return 0;
-    if (index >= this._valuesPerHistogram - 1)
-      return this._highestTrackableValue;
+    if (index >= this._valuesPerHistogram - 1) return this._highestTrackableValue;
 
     let bucketIndex = Math.floor(index / this._subBucketHalfCount) - 1;
-    let subBucketIndex =
-      (index % this._subBucketHalfCount) + this._subBucketHalfCount;
+    let subBucketIndex = (index % this._subBucketHalfCount) + this._subBucketHalfCount;
 
     if (bucketIndex < 0) {
       // first bucket (bucketIndex 0)

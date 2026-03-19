@@ -1,10 +1,6 @@
 {
   "exec": "npm run build && cd dist && node cli.js serve",
   "ext": "ts,md",
-  "ignore": [
-    ".git",
-    "node_modules/**/node_modules",
-    "docs/06-community/02-license.md"
-  ],
+  "ignore": [".git", "node_modules/**/node_modules", "docs/06-community/02-license.md"],
   "watch": ["projects/cli/src", "docs"]
 }

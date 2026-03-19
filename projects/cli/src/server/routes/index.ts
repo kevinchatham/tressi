@@ -1,5 +1,7 @@
-import { ISSEClientManager } from '@tressi/shared/cli';
-import { ServerEventMessage, ServerEvents } from '@tressi/shared/common';
+/** biome-ignore-all lint/nursery/useExplicitType: hono */
+
+import type { ISSEClientManager } from '@tressi/shared/cli';
+import { type ServerEventMessage, ServerEvents } from '@tressi/shared/common';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 
@@ -18,17 +20,15 @@ import tests from './test-routes';
  * @param {number} port - The port number for CORS origin configuration
  * @returns {Hono} Configured Hono application instance
  */
-// Return type is explicitly ignored as to not break type inference allowing Hono RPC client to function correctly.
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export function createApp(sseManager: ISSEClientManager, port: number) {
   const app = new Hono()
     .use('*', async (c, next) => {
       const middleware = cors({
-        origin: [`http://localhost:${port}`, 'http://localhost:4200'],
-        credentials: true,
-        allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
         allowHeaders: ['Content-Type', 'Authorization'],
+        allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+        credentials: true,
         maxAge: 600,
+        origin: [`http://localhost:${port}`, 'http://localhost:4200'],
       });
       return middleware(c, next);
     })
@@ -47,40 +47,40 @@ export function createApp(sseManager: ISSEClientManager, port: number) {
 
   globalEventEmitter.on(ServerEvents.METRICS, (testSummary) => {
     const message: ServerEventMessage = {
-      event: ServerEvents.METRICS,
       data: testSummary,
+      event: ServerEvents.METRICS,
     };
     sseManager.broadcast(message);
   });
 
   globalEventEmitter.on(ServerEvents.TEST.STARTED, (data) => {
     const message: ServerEventMessage = {
-      event: ServerEvents.TEST.STARTED,
       data,
+      event: ServerEvents.TEST.STARTED,
     };
     sseManager.broadcast(message);
   });
 
   globalEventEmitter.on(ServerEvents.TEST.COMPLETED, (data) => {
     const message: ServerEventMessage = {
-      event: ServerEvents.TEST.COMPLETED,
       data,
+      event: ServerEvents.TEST.COMPLETED,
     };
     sseManager.broadcast(message);
   });
 
   globalEventEmitter.on(ServerEvents.TEST.FAILED, (data) => {
     const message: ServerEventMessage = {
-      event: ServerEvents.TEST.FAILED,
       data,
+      event: ServerEvents.TEST.FAILED,
     };
     sseManager.broadcast(message);
   });
 
   globalEventEmitter.on(ServerEvents.TEST.CANCELLED, (data) => {
     const message: ServerEventMessage = {
-      event: ServerEvents.TEST.CANCELLED,
       data,
+      event: ServerEvents.TEST.CANCELLED,
     };
     sseManager.broadcast(message);
   });

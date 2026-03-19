@@ -1,5 +1,5 @@
-import { computed, inject, Injectable, signal } from '@angular/core';
-import { UserPreferences, UserPreferencesSchema } from '@tressi/shared/ui';
+import { computed, Injectable, inject, signal } from '@angular/core';
+import { type UserPreferences, UserPreferencesSchema } from '@tressi/shared/ui';
 
 import { DEFAULT_COLUMN_CONFIGS } from '../components/test-list/column-config.constants';
 import { LogService } from './log.service';
@@ -18,21 +18,17 @@ export class LocalStorageService {
   private readonly _storageKey = 'tressi-user-preferences';
 
   private readonly _defaultPreferences = computed<UserPreferences>(() => {
-    const prefersDark = window.matchMedia(
-      '(prefers-color-scheme: dark)',
-    ).matches;
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     return {
-      selectedTheme: prefersDark ? 'storm' : 'shine',
-      lastSelectedConfig: null,
       columnPreferences: DEFAULT_COLUMN_CONFIGS,
       lastRoute: null,
+      lastSelectedConfig: null,
       pwaPromptDismissed: false,
+      selectedTheme: prefersDark ? 'storm' : 'shine',
     };
   });
 
-  private readonly _preferences = signal<UserPreferences>(
-    this._defaultPreferences(),
-  );
+  private readonly _preferences = signal<UserPreferences>(this._defaultPreferences());
 
   constructor() {
     this._loadPreferences();
@@ -89,10 +85,7 @@ export class LocalStorageService {
 
       this._preferences.set(result.data);
     } catch (error) {
-      this._logService.error(
-        'Failed to load user preferences: resetting...',
-        error,
-      );
+      this._logService.error('Failed to load user preferences: resetting...', error);
       this._resetPreferences();
     }
   }

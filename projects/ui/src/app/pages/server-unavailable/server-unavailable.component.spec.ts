@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { type ComponentFixture, TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { logoSrc } from '../../constants';
@@ -41,9 +41,7 @@ describe('ServerUnavailableComponent', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     // The retry message is in the first span with these classes
     const spans = compiled.querySelectorAll('span.text-base-content\\/50');
-    const retryMessageSpan = Array.from(spans).find((s) =>
-      s.classList.contains('text-xs'),
-    );
+    const retryMessageSpan = Array.from(spans).find((s) => s.classList.contains('text-xs'));
     expect(retryMessageSpan?.textContent?.trim()).toBe('Reconnecting...');
     expect(mockHealthService.getRetryMessage).toHaveBeenCalled();
   });
@@ -53,9 +51,7 @@ describe('ServerUnavailableComponent', () => {
     expect(compiled.querySelector('h1')?.textContent?.trim()).toBe(
       'Tressi is offline, please start the server',
     );
-    expect(compiled.querySelector('code')?.textContent?.trim()).toBe(
-      'npx tressi serve',
-    );
+    expect(compiled.querySelector('code')?.textContent?.trim()).toBe('npx tressi serve');
   });
 
   it('should show the loading spinner', () => {

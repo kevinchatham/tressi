@@ -1,11 +1,11 @@
 import { Component, signal } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { type ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { FormatNetworkThroughputDirective } from './format-network.directive';
 
 @Component({
-  standalone: true,
   imports: [FormatNetworkThroughputDirective],
+  standalone: true,
   template: `<div [appFormatNetwork]="bytesPerSec()"></div>`,
 })
 class TestHostComponent {
@@ -47,11 +47,11 @@ describe('FormatNetworkThroughputDirective', () => {
 
   it('should format network throughput correctly (B/s, KB/s, MB/s, GB/s)', async () => {
     const testCases = [
-      { input: 512, expected: '512 B/s' },
-      { input: 1024, expected: '1.0 KB/s' },
-      { input: 1536, expected: '1.5 KB/s' },
-      { input: 1048576, expected: '1.0 MB/s' },
-      { input: 1073741824, expected: '1.00 GB/s' },
+      { expected: '512 B/s', input: 512 },
+      { expected: '1.0 KB/s', input: 1024 },
+      { expected: '1.5 KB/s', input: 1536 },
+      { expected: '1.0 MB/s', input: 1048576 },
+      { expected: '1.00 GB/s', input: 1073741824 },
     ];
 
     for (const { input, expected } of testCases) {

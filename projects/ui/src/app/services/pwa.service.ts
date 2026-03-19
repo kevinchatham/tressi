@@ -1,4 +1,4 @@
-import { computed, inject, Injectable, signal } from '@angular/core';
+import { computed, Injectable, inject, signal } from '@angular/core';
 
 import { LocalStorageService } from './local-storage.service';
 
@@ -7,11 +7,11 @@ import { LocalStorageService } from './local-storage.service';
  */
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[];
+  prompt(): Promise<void>;
   readonly userChoice: Promise<{
     outcome: 'accepted' | 'dismissed';
     platform: string;
   }>;
-  prompt(): Promise<void>;
 }
 
 @Injectable({
@@ -20,16 +20,13 @@ interface BeforeInstallPromptEvent extends Event {
 export class PwaService {
   private readonly _localStorageService = inject(LocalStorageService);
 
-  private readonly _deferredPrompt = signal<BeforeInstallPromptEvent | null>(
-    null,
-  );
+  private readonly _deferredPrompt = signal<BeforeInstallPromptEvent | null>(null);
 
   /**
    * Signal indicating if the PWA can be installed
    */
   canInstall = computed(() => {
-    const promptDismissed =
-      this._localStorageService.preferences().pwaPromptDismissed;
+    const promptDismissed = this._localStorageService.preferences().pwaPromptDismissed;
     return !!this._deferredPrompt() && !promptDismissed;
   });
 

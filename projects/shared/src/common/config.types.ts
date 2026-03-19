@@ -1,6 +1,6 @@
-import type { z, ZodError } from 'zod';
+import type { ZodError, z } from 'zod';
 
-import {
+import type {
   EarlyExitConfigSchema,
   TressiConfigSchema,
   TressiOptionsConfigSchema,

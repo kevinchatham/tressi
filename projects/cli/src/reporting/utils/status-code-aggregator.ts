@@ -1,4 +1,4 @@
-import { EndpointSummary } from '@tressi/shared/common';
+import type { EndpointSummary } from '@tressi/shared/common';
 
 /**
  * Aggregates status codes from all endpoints into a single map.
@@ -20,9 +20,7 @@ export function aggregateStatusCodesFromEndpoints(
   const statusCodeMap: Record<number, number> = {};
 
   for (const endpoint of endpoints) {
-    for (const [code, count] of Object.entries(
-      endpoint.statusCodeDistribution,
-    )) {
+    for (const [code, count] of Object.entries(endpoint.statusCodeDistribution)) {
       const codeNum = parseInt(code, 10);
       statusCodeMap[codeNum] = (statusCodeMap[codeNum] || 0) + count;
     }

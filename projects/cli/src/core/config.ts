@@ -1,6 +1,6 @@
-import { TressiConfig, validateConfig } from '@tressi/shared/common';
-import { promises as fs } from 'fs';
-import * as path from 'path';
+import { promises as fs } from 'node:fs';
+import * as path from 'node:path';
+import { type TressiConfig, validateConfig } from '@tressi/shared/common';
 import { request } from 'undici';
 
 // CLI USE
@@ -12,8 +12,7 @@ class TressiConfigLoader {
   async load(
     potentialConfig?: string | TressiConfig,
   ): Promise<{ config: TressiConfig; path: string }> {
-    if (!potentialConfig)
-      potentialConfig = path.resolve(process.cwd(), 'tressi.config.json');
+    if (!potentialConfig) potentialConfig = path.resolve(process.cwd(), 'tressi.config.json');
 
     // Handle direct object input
     if (typeof potentialConfig === 'object') {
@@ -81,9 +80,7 @@ class TressiConfigLoader {
     try {
       await fs.access(absolutePath, fs.constants.R_OK);
     } catch {
-      throw new Error(
-        `Configuration file not found or not readable: ${absolutePath}`,
-      );
+      throw new Error(`Configuration file not found or not readable: ${absolutePath}`);
     }
 
     const fileContent = await fs.readFile(absolutePath, 'utf-8');
@@ -102,7 +99,7 @@ class TressiConfigLoader {
   }
 }
 
-const loader = new TressiConfigLoader();
+const loader: TressiConfigLoader = new TressiConfigLoader();
 
 export async function loadConfig(
   configInput?: string | TressiConfig,

@@ -1,7 +1,7 @@
-import { computed, inject, Injectable, Signal, signal } from '@angular/core';
+import { computed, Injectable, inject, type Signal, signal } from '@angular/core';
+import type { ConnectedEventData } from '@tressi/shared/common';
 import { AppRoutes } from '@tressi/shared/ui';
-import { Subscription } from 'rxjs';
-
+import type { Subscription } from 'rxjs';
 import { EventService } from './event.service';
 import { LogService } from './log.service';
 import { AppRouterService } from './router.service';
@@ -45,18 +45,16 @@ export class HealthService {
     lastCheck: Date | null;
     error: Error | null;
   }>({
+    error: null,
     isHealthy: true,
     lastCheck: null,
-    error: null,
   });
 
   /** Signal indicating whether the server is currently healthy */
   readonly isHealthy: Signal<boolean> = computed(() => this._state().isHealthy);
 
   /** Signal containing the timestamp of the last health check */
-  readonly lastCheck: Signal<Date | null> = computed(
-    () => this._state().lastCheck,
-  );
+  readonly lastCheck: Signal<Date | null> = computed(() => this._state().lastCheck);
 
   private _heartbeatTimeoutId: ReturnType<typeof setTimeout> | null = null;
   private _retryIntervalId: ReturnType<typeof setInterval> | null = null;
@@ -85,9 +83,9 @@ export class HealthService {
 
       this._state.update((current) => ({
         ...current,
+        error: null,
         isHealthy: true,
         lastCheck: new Date(data.timestamp),
-        error: null,
       }));
 
       // If we were unhealthy and now we're healthy, trigger recovery
@@ -95,9 +93,7 @@ export class HealthService {
 
       return true;
     } catch (error) {
-      this._handleConnectionLoss(
-        error instanceof Error ? error : new Error('Unknown error'),
-      );
+      this._handleConnectionLoss(error instanceof Error ? error : new Error('Unknown error'));
       return false;
     }
   }
@@ -108,20 +104,20 @@ export class HealthService {
    */
   private _subscribeToConnectedEvents(): void {
     this._subscription = this._eventService.getConnectedStream().subscribe({
-      next: (connectedEvent) => {
+      error: (error: unknown) => {
+        this._log.error('Health monitoring subscription error', error);
+        this._handleConnectionLoss();
+      },
+      next: (connectedEvent: ConnectedEventData) => {
         // Update health state
         this._state.update((current) => ({
           ...current,
+          error: null,
           isHealthy: true,
           lastCheck: new Date(connectedEvent.timestamp),
-          error: null,
         }));
 
         this._handleRecovery();
-      },
-      error: (error) => {
-        this._log.error('Health monitoring subscription error', error);
-        this._handleConnectionLoss();
       },
     });
 
@@ -175,14 +171,12 @@ export class HealthService {
     // Update health state
     this._state.update((current) => ({
       ...current,
-      isHealthy: false,
       error: error || new Error('Server connection lost'),
+      isHealthy: false,
     }));
 
     // Navigate to server unavailable page if not already there
-    if (
-      !this._appRouter.getCurrentUrl().includes(AppRoutes.SERVER_UNAVAILABLE)
-    ) {
+    if (!this._appRouter.getCurrentUrl().includes(AppRoutes.SERVER_UNAVAILABLE)) {
       this._log.error('Server unavailable, redirecting to error page');
       this._appRouter.toServerUnavailable();
     }

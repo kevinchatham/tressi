@@ -1,20 +1,19 @@
 import { Injectable, signal } from '@angular/core';
-import { ChartSyncState } from '@tressi/shared/ui';
+import type { ChartSyncState } from '@tressi/shared/ui';
 
 @Injectable({
   providedIn: 'root',
 })
 export class ChartSyncService {
   private readonly _state = signal<ChartSyncState>({
-    xAxisMin: null,
-    xAxisMax: null,
-    selectionStart: null,
-    selectionEnd: null,
     lastInteractedChartId: null,
+    selectionEnd: null,
+    selectionStart: null,
+    xAxisMax: null,
+    xAxisMin: null,
   });
 
-  readonly lastInteractedChartId = (): string | null =>
-    this._state().lastInteractedChartId;
+  readonly lastInteractedChartId = (): string | null => this._state().lastInteractedChartId;
 
   private readonly _registeredCharts = new Set<string>();
 
@@ -24,7 +23,7 @@ export class ChartSyncService {
 
   setAsMaster(chartId: string): void {
     if (!this._registeredCharts.has(chartId)) {
-      // eslint-disable-next-line no-console
+      // biome-ignore lint/suspicious/noConsole: default
       console.warn(`Chart ${chartId} not registered`);
       return;
     }
@@ -38,9 +37,7 @@ export class ChartSyncService {
   private _batchMs = 16; // 60 frames per second
   private _lastUpdate = 0;
 
-  broadcastState(
-    updates: Partial<Omit<ChartSyncState, 'lastInteractedChartId'>>,
-  ): void {
+  broadcastState(updates: Partial<Omit<ChartSyncState, 'lastInteractedChartId'>>): void {
     const now = Date.now();
     const span = now - this._lastUpdate;
     if (span > this._batchMs) {

@@ -1,11 +1,11 @@
 import { Component, input, output } from '@angular/core';
 import {
-  ChartData,
-  ChartOption,
-  ChartType,
+  type ChartData,
+  type ChartOption,
+  type ChartType,
   DEFAULT_CHART_POLLING_INTERVAL,
   DEFAULT_CHART_TYPE,
-  PollingInterval,
+  type PollingInterval,
 } from '@tressi/shared/ui';
 
 import { ButtonComponent } from '../../../../components/button/button.component';
@@ -18,13 +18,8 @@ import { LineChartComponent } from '../../../../components/line-chart/line-chart
  * Extracted from test-detail.component.html lines 302-361
  */
 @Component({
+  imports: [CollapsibleCardComponent, IconComponent, LineChartComponent, ButtonComponent],
   selector: 'app-performance-over-time',
-  imports: [
-    CollapsibleCardComponent,
-    IconComponent,
-    LineChartComponent,
-    ButtonComponent,
-  ],
   templateUrl: './performance-over-time.component.html',
 })
 export class PerformanceOverTimeComponent {
@@ -35,14 +30,10 @@ export class PerformanceOverTimeComponent {
   readonly selectedChartType = input<ChartType>(DEFAULT_CHART_TYPE);
 
   /** Currently selected polling interval */
-  readonly pollingInterval = input<PollingInterval>(
-    DEFAULT_CHART_POLLING_INTERVAL,
-  );
+  readonly pollingInterval = input<PollingInterval>(DEFAULT_CHART_POLLING_INTERVAL);
 
   /** Available polling options */
-  readonly pollingOptions = input<readonly { label: string; value: number }[]>(
-    [],
-  );
+  readonly pollingOptions = input<readonly { label: string; value: number }[]>([]);
 
   /** Currently selected endpoint */
   readonly selectedEndpoint = input<string>('global');

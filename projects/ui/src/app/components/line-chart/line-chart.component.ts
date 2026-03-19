@@ -8,24 +8,27 @@ import {
   output,
   viewChild,
 } from '@angular/core';
-import { ChartEventData, LineChartOptions } from '@tressi/shared/ui';
+import type { ChartEventData, LineChartOptions } from '@tressi/shared/ui';
 import humanNumber from 'human-number';
-import {
-  ApexAxisChartSeries,
-  ChartComponent,
-  NgApexchartsModule,
-} from 'ng-apexcharts';
+import { type ApexAxisChartSeries, type ChartComponent, NgApexchartsModule } from 'ng-apexcharts';
 
 import { ChartSyncService } from '../../services/chart-sync.service';
 import { ThemeService } from '../../services/theme.service';
 import { IconComponent } from '../icon/icon.component';
 
+type XAxis = {
+  xaxis: {
+    min: number;
+    max: number;
+  };
+};
+
 @Component({
-  selector: 'app-line-chart',
-  imports: [NgApexchartsModule],
-  templateUrl: './line-chart.component.html',
-  styleUrls: ['./line-chart.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [NgApexchartsModule],
+  selector: 'app-line-chart',
+  styleUrls: ['./line-chart.component.css'],
+  templateUrl: './line-chart.component.html',
 })
 export class LineChartComponent {
   private readonly _themeService = inject(ThemeService);
@@ -48,9 +51,7 @@ export class LineChartComponent {
   readonly chartMouseMove = output<ChartEventData>();
 
   readonly chartOptions = computed(() => this._createChartOptions());
-  readonly isMaster = computed(
-    () => this.chartId() === this._syncService.lastInteractedChartId(),
-  );
+  readonly isMaster = computed(() => this.chartId() === this._syncService.lastInteractedChartId());
 
   // State tracking for efficient updates
   private _lastDataLength = 0;
@@ -65,8 +66,8 @@ export class LineChartComponent {
     const labels = this.labels();
     if (labels.length > 0) {
       const dataRange = {
-        min: Math.min(...labels),
         max: Math.max(...labels),
+        min: Math.min(...labels),
       };
       return dataRange;
     }
@@ -137,8 +138,8 @@ export class LineChartComponent {
 
       series = [
         {
-          name: seriesName,
           data: seriesData,
+          name: seriesName,
         },
       ];
       dataLength = data.length;
@@ -151,8 +152,8 @@ export class LineChartComponent {
         }));
         dataLength = Math.max(dataLength, values.length);
         return {
-          name,
           data: seriesData,
+          name,
         };
       });
     }
@@ -164,16 +165,54 @@ export class LineChartComponent {
     const selectSvg = IconComponent.asHtml('select');
 
     return {
-      series,
       chart: {
-        offsetX: 4,
+        background: themeColors.background,
+        events: {
+          click: (event: MouseEvent, chartContext: unknown, config: unknown): void => {
+            this._handleChartClick();
+            this.chartClick.emit({ chartContext, config, event });
+          },
+          mouseMove: (event: MouseEvent, chartContext: unknown, config: unknown): void => {
+            this.chartMouseMove.emit({ chartContext, config, event });
+          },
+          scrolled: (_chartContext: unknown, { xaxis }: XAxis): void => {
+            this._handleZoomOrPan(xaxis);
+          },
+          selection: (_chartContext: unknown, { xaxis }: XAxis): void => {
+            this._handleSelection(xaxis);
+          },
+          zoomed: (_chartContext: unknown, { xaxis }: XAxis): void => {
+            this._handleZoomOrPan(xaxis);
+          },
+        },
+        foreColor: themeColors.text,
         height: height,
+        offsetX: 4,
+        toolbar: {
+          autoSelected: 'zoom' as const,
+          export: {
+            csv: { filename: undefined },
+            png: { filename: undefined },
+            svg: { filename: undefined },
+          },
+          show: enableToolbar,
+          tools: {
+            customIcons: [], // Add custom icons
+            download: false,
+            pan: panSvg, // Enable pan
+            reset: resetSvg, // Enable reset
+            selection: selectSvg, // Enable selection tool
+            zoom: selectSvg, // Enable default zoom
+            zoomin: zoomInSvg, // Enable default zoom in
+            zoomout: zoomOutSvg, // Enable default zoom out
+          },
+        },
         type: 'line',
         zoom: {
+          allowMouseWheelZoom: true,
+          autoScaleYaxis: true,
           enabled: enableToolbar,
           type: 'x',
-          autoScaleYaxis: true,
-          allowMouseWheelZoom: true,
           zoomedArea: {
             fill: {
               color: themeColors.primary,
@@ -186,168 +225,122 @@ export class LineChartComponent {
             },
           },
         },
-        toolbar: {
-          show: enableToolbar,
-          tools: {
-            download: false,
-            selection: selectSvg, // Enable selection tool
-            zoom: selectSvg, // Enable default zoom
-            zoomin: zoomInSvg, // Enable default zoom in
-            zoomout: zoomOutSvg, // Enable default zoom out
-            pan: panSvg, // Enable pan
-            reset: resetSvg, // Enable reset
-            customIcons: [], // Add custom icons
-          },
-          export: {
-            csv: { filename: undefined },
-            svg: { filename: undefined },
-            png: { filename: undefined },
-          },
-          autoSelected: 'zoom' as const,
-        },
-        background: themeColors.background,
-        foreColor: themeColors.text,
-        events: {
-          click: (event, chartContext, config): void => {
-            this._handleChartClick();
-            this.chartClick.emit({ event, chartContext, config });
-          },
-          mouseMove: (event, chartContext, config): void => {
-            this.chartMouseMove.emit({ event, chartContext, config });
-          },
-          zoomed: (_chartContext, { xaxis }): void => {
-            this._handleZoomOrPan(xaxis);
-          },
-          selection: (_chartContext, { xaxis }): void => {
-            this._handleSelection(xaxis);
-          },
-          scrolled: (_chartContext, { xaxis }): void => {
-            this._handleZoomOrPan(xaxis);
-          },
-        },
       },
       dataLabels: {
         enabled: false,
       },
-      stroke: {
-        curve: smoothCurve ? 'monotoneCubic' : 'linestep',
-        width: 2,
-        colors: [themeColors.primary],
-      },
-      title: {
-        text: title,
-        align: 'left',
-        style: {
-          color: themeColors.text,
-          fontSize: '16px',
-          fontWeight: 'bold',
-          fontFamily: 'Open Sans, sans-serif',
-        },
-      },
       grid: {
         borderColor: themeColors.border,
-        strokeDashArray: 0,
         row: {
           colors: [themeColors.grid, 'transparent'],
           opacity: 0.5,
         },
+        strokeDashArray: 0,
+      },
+      markers: {
+        colors: [themeColors.primary],
+        discrete: [],
+        fillOpacity: 1,
+        hover: {
+          size: 6,
+          sizeOffset: 3,
+        },
+        offsetX: 0,
+        offsetY: 0,
+        onClick: undefined,
+        onDblClick: undefined,
+        shape: 'circle',
+        showNullDataPoints: true,
+        size: (Array.isArray(data) ? data.length : Object.values(data)[0]?.length || 0) > 1 ? 0 : 4,
+        strokeColors: [themeColors.primary],
+        strokeDashArray: 0,
+        strokeOpacity: 0.9,
+        strokeWidth: 2,
+      },
+      series,
+      stroke: {
+        colors: [themeColors.primary],
+        curve: smoothCurve ? 'monotoneCubic' : 'linestep',
+        width: 2,
+      },
+      title: {
+        align: 'left',
+        style: {
+          color: themeColors.text,
+          fontFamily: 'Open Sans, sans-serif',
+          fontSize: '16px',
+          fontWeight: 'bold',
+        },
+        text: title,
+      },
+      tooltip: {
+        fillSeriesColor: false,
+        style: {
+          fontFamily: 'Roboto Mono, monospace',
+          fontSize: '12px',
+        },
+        theme: 'false',
       },
       xaxis: {
-        type: 'datetime',
-        min: minBoundary, // Prevent zoom before data starts
-        max: maxBoundary, // Prevent zoom after data ends
-        labels: {
-          show:
-            (Array.isArray(data)
-              ? data.length
-              : Object.values(data)[0]?.length || 0) > 1,
-          style: {
-            colors: themeColors.text,
-            fontFamily: 'Roboto Mono, monospace',
-            fontSize: '11px',
-          },
-          datetimeFormatter: {
-            year: 'yyyy',
-            month: 'MMM',
-            day: 'dd',
-            hour: 'h:mm',
-            minute: 'h:mm:ss',
-            second: 'h:mm:ss',
-          },
-          hideOverlappingLabels: true,
-          formatter: (value: string | number): string => {
-            // Convert timestamp to local timezone
-            const date = new Date(value);
-            return date.toLocaleTimeString();
-          },
-        },
         axisBorder: {
           color: themeColors.border,
         },
         axisTicks: {
           color: themeColors.border,
         },
+        labels: {
+          datetimeFormatter: {
+            day: 'dd',
+            hour: 'h:mm',
+            minute: 'h:mm:ss',
+            month: 'MMM',
+            second: 'h:mm:ss',
+            year: 'yyyy',
+          },
+          formatter: (value: string | number): string => {
+            // Convert timestamp to local timezone
+            const date = new Date(value);
+            return date.toLocaleTimeString();
+          },
+          hideOverlappingLabels: true,
+          show: (Array.isArray(data) ? data.length : Object.values(data)[0]?.length || 0) > 1,
+          style: {
+            colors: themeColors.text,
+            fontFamily: 'Roboto Mono, monospace',
+            fontSize: '11px',
+          },
+        },
+        max: maxBoundary, // Prevent zoom after data ends
+        min: minBoundary, // Prevent zoom before data starts
         tooltip: {
           enabled: false,
         },
+        type: 'datetime',
       },
       yaxis: {
-        title: {
-          text: yAxisLabel,
-          style: {
-            color: themeColors.text,
-            fontSize: '12px',
-            fontWeight: 'normal',
-            fontFamily: 'Open Sans, sans-serif',
-          },
+        axisBorder: {
+          color: themeColors.border,
+        },
+        axisTicks: {
+          color: themeColors.border,
         },
         labels: {
+          formatter: this._getYAxisFormatter(),
           offsetX: 8,
           style: {
             colors: themeColors.text,
             fontFamily: 'Roboto Mono, monospace',
             fontSize: '11px',
           },
-          formatter: this._getYAxisFormatter(),
         },
-        axisBorder: {
-          color: themeColors.border,
-        },
-        axisTicks: {
-          color: themeColors.border,
-        },
-      },
-      tooltip: {
-        theme: 'false',
-        style: {
-          fontSize: '12px',
-          fontFamily: 'Roboto Mono, monospace',
-        },
-        fillSeriesColor: false,
-      },
-      markers: {
-        size:
-          (Array.isArray(data)
-            ? data.length
-            : Object.values(data)[0]?.length || 0) > 1
-            ? 0
-            : 4,
-        colors: [themeColors.primary],
-        strokeColors: [themeColors.primary],
-        strokeWidth: 2,
-        strokeOpacity: 0.9,
-        strokeDashArray: 0,
-        fillOpacity: 1,
-        discrete: [],
-        shape: 'circle',
-        offsetX: 0,
-        offsetY: 0,
-        onClick: undefined,
-        onDblClick: undefined,
-        showNullDataPoints: true,
-        hover: {
-          size: 6,
-          sizeOffset: 3,
+        title: {
+          style: {
+            color: themeColors.text,
+            fontFamily: 'Open Sans, sans-serif',
+            fontSize: '12px',
+            fontWeight: 'normal',
+          },
+          text: yAxisLabel,
         },
       },
     };
@@ -365,10 +358,10 @@ export class LineChartComponent {
     if (chartId) {
       this._syncService.setAsMaster(chartId);
       this._syncService.broadcastState({
-        xAxisMin: xaxis.min,
-        xAxisMax: xaxis.max,
-        selectionStart: null,
         selectionEnd: null,
+        selectionStart: null,
+        xAxisMax: xaxis.max,
+        xAxisMin: xaxis.min,
       });
     }
   }
@@ -378,10 +371,10 @@ export class LineChartComponent {
     if (chartId) {
       this._syncService.setAsMaster(chartId);
       this._syncService.broadcastState({
-        selectionStart: xaxis.min,
         selectionEnd: xaxis.max,
-        xAxisMin: null,
+        selectionStart: xaxis.min,
         xAxisMax: null,
+        xAxisMin: null,
       });
     }
   }
@@ -403,8 +396,8 @@ export class LineChartComponent {
           chart.updateOptions(
             {
               xaxis: {
-                min: state.xAxisMin,
                 max: state.xAxisMax,
+                min: state.xAxisMin,
               },
             },
             false,
@@ -419,8 +412,8 @@ export class LineChartComponent {
           chart.updateOptions(
             {
               xaxis: {
-                min: state.selectionStart,
                 max: state.selectionEnd,
+                min: state.selectionStart,
               },
             },
             false,
@@ -463,8 +456,8 @@ export class LineChartComponent {
 
         series = [
           {
-            name: this.seriesName(),
             data: seriesData,
+            name: this.seriesName(),
           },
         ];
       } else if (typeof data === 'object' && data !== null) {
@@ -475,8 +468,8 @@ export class LineChartComponent {
             y: value,
           }));
           return {
-            name: seriesName,
             data: seriesData,
+            name: seriesName,
           };
         });
       }
@@ -503,7 +496,8 @@ export class LineChartComponent {
     chart.resetSeries = (): void => {
       const chartId = this.chartId();
       if (!chartId) {
-        return originalReset();
+        originalReset();
+        return;
       }
 
       const initialState = this._effectiveInitialState();
@@ -511,10 +505,10 @@ export class LineChartComponent {
       if (initialState) {
         // 1. Broadcast to sync service (for other charts)
         this._syncService.broadcastState({
-          xAxisMin: initialState.min,
-          xAxisMax: initialState.max,
-          selectionStart: null,
           selectionEnd: null,
+          selectionStart: null,
+          xAxisMax: initialState.max,
+          xAxisMin: initialState.min,
         });
 
         // 2. Use zoomX method to reset this chart instance
@@ -525,8 +519,8 @@ export class LineChartComponent {
           chart.updateOptions(
             {
               xaxis: {
-                min: initialState.min,
                 max: initialState.max,
+                min: initialState.min,
               },
             },
             true,

@@ -1,4 +1,4 @@
-import { Context, Hono, Next } from 'hono';
+import { type Context, Hono, type Next } from 'hono';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import createBrowserApp from './browser-routes';
@@ -6,7 +6,7 @@ import createBrowserApp from './browser-routes';
 vi.mock('@hono/node-server/serve-static', () => ({
   serveStatic: vi.fn(
     () =>
-      (c: Context, next: Next): Promise<unknown> =>
+      (_c: Context, next: Next): Promise<unknown> =>
         next(),
   ),
 }));

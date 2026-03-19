@@ -1,4 +1,4 @@
-import { Locator, Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 
 export type PageOptions = { timeout?: number };
 
@@ -11,10 +11,7 @@ export abstract class BasePage {
     this._loadingOverlay = page.locator('[data-e2e="loading-overlay"]');
   }
 
-  protected async _waitForLoaded(
-    locator: Locator,
-    options?: PageOptions,
-  ): Promise<void> {
+  protected async _waitForLoaded(locator: Locator, options?: PageOptions): Promise<void> {
     if (await this._loadingOverlay.isVisible()) {
       await this._loadingOverlay.waitFor({ state: 'hidden', ...options });
     }

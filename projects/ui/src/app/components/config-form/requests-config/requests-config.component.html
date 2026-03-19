@@ -15,15 +15,10 @@
           data-e2e="add-endpoint-btn"
         />
       </div>
-
       @for (request of model().config.requests; track $index) {
         <app-collapsible-card
           class="mb-4 block"
-          [title]="
-            request.url !== ''
-              ? `${request.method} ${request.url}`
-              : 'Empty Request'
-          "
+          [title]="request.url !== '' ? `${request.method} ${request.url}` : 'Empty Request'"
           [collapsed]="!isRequestExpanded($index)"
           (collapsedChange)="toggleRequest($index)"
         >
@@ -40,11 +35,7 @@
           <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
             <!-- URL and Method -->
             <fieldset class="fieldset md:col-span-2">
-              <legend
-                class="fieldset-legend text-xs font-bold uppercase opacity-70"
-              >
-                URL
-              </legend>
+              <legend class="fieldset-legend text-xs font-bold uppercase opacity-70">URL</legend>
               <div class="flex gap-2">
                 <input
                   #urlInput
@@ -68,10 +59,7 @@
                 form().config.requests[$index].url().invalid()
               ) {
                 <p class="label text-error ml-2">
-                  @for (
-                    error of form().config.requests[$index].url().errors();
-                    track error
-                  ) {
+                  @for (error of form().config.requests[$index].url().errors(); track error) {
                     {{ error.message }}
                   }
                 </p>
@@ -80,29 +68,20 @@
 
             <!-- RPS -->
             <fieldset class="fieldset">
-              <legend
-                class="fieldset-legend text-xs font-bold uppercase opacity-70"
-              >
-                Target
-              </legend>
+              <legend class="fieldset-legend text-xs font-bold uppercase opacity-70">Target</legend>
               <input
                 type="number"
                 class="input outline-none!"
                 [formField]="form().config.requests[$index].rps"
                 placeholder="Requests per second"
               />
-              <p class="label ml-2 py-0 text-xs opacity-60">
-                Requests per second
-              </p>
+              <p class="label ml-2 py-0 text-xs opacity-60">Requests per second</p>
               @if (
                 form().config.requests[$index].rps().touched() &&
                 form().config.requests[$index].rps().invalid()
               ) {
                 <p class="label text-error ml-2">
-                  @for (
-                    error of form().config.requests[$index].rps().errors();
-                    track error
-                  ) {
+                  @for (error of form().config.requests[$index].rps().errors(); track error) {
                     {{ error.message }}
                   }
                 </p>
@@ -111,9 +90,7 @@
 
             <!-- Ramp Up Duration -->
             <fieldset class="fieldset">
-              <legend
-                class="fieldset-legend text-xs font-bold uppercase opacity-70"
-              >
+              <legend class="fieldset-legend text-xs font-bold uppercase opacity-70">
                 Ramp Up Time
               </legend>
               <input
@@ -129,9 +106,7 @@
               ) {
                 <p class="label text-error ml-2">
                   @for (
-                    error of form()
-                      .config.requests[$index].rampUpDurationSec()
-                      .errors();
+                    error of form().config.requests[$index].rampUpDurationSec().errors();
                     track error
                   ) {
                     {{ error.message }}
@@ -142,9 +117,7 @@
 
             <!-- Headers -->
             <fieldset class="fieldset md:col-span-2">
-              <legend
-                class="fieldset-legend text-xs font-bold uppercase opacity-70"
-              >
+              <legend class="fieldset-legend text-xs font-bold uppercase opacity-70">
                 Headers
               </legend>
               <app-json-textarea
@@ -157,17 +130,10 @@
                 Merged with global headers; request headers take precedence
               </p>
             </fieldset>
-
             <!-- Payload -->
-            @if (
-              supportsRequestBody(
-                model().config.requests[$index].method || 'GET'
-              )
-            ) {
+            @if (supportsRequestBody(model().config.requests[$index].method || 'GET')) {
               <fieldset class="fieldset md:col-span-2">
-                <legend
-                  class="fieldset-legend text-xs font-bold uppercase opacity-70"
-                >
+                <legend class="fieldset-legend text-xs font-bold uppercase opacity-70">
                   Payload (JSON)
                 </legend>
                 <app-json-textarea

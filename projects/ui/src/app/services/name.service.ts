@@ -1,10 +1,5 @@
 import { Injectable } from '@angular/core';
-import {
-  animals,
-  colors,
-  Config,
-  uniqueNamesGenerator,
-} from 'unique-names-generator';
+import { animals, type Config, colors, uniqueNamesGenerator } from 'unique-names-generator';
 
 @Injectable({
   providedIn: 'root',
@@ -12,8 +7,8 @@ import {
 export class NameService {
   private readonly _config: Config = {
     dictionaries: [colors, animals],
-    separator: ' ',
     length: 2,
+    separator: ' ',
     style: 'capital',
   };
 

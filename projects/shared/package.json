@@ -1,15 +1,15 @@
 {
-  "name": "@tressi/shared",
-  "version": "0.0.1",
-  "private": true,
-  "main": "./src/common/index.ts",
-  "types": "./src/common/index.ts",
-  "exports": {
-    "./common": "./src/common/index.ts",
-    "./cli": "./src/cli/index.ts",
-    "./ui": "./src/ui/index.ts"
-  },
   "devDependencies": {
     "kysely": "^0.28.9"
-  }
+  },
+  "exports": {
+    "./cli": "./src/cli/index.ts",
+    "./common": "./src/common/index.ts",
+    "./ui": "./src/ui/index.ts"
+  },
+  "main": "./src/common/index.ts",
+  "name": "@tressi/shared",
+  "private": true,
+  "types": "./src/common/index.ts",
+  "version": "0.0.1"
 }

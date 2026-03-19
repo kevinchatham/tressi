@@ -1,8 +1,8 @@
-import { runInInjectionContext, signal, WritableSignal } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { runInInjectionContext, signal, type WritableSignal } from '@angular/core';
+import { type ComponentFixture, TestBed } from '@angular/core/testing';
 import { form } from '@angular/forms/signals';
-import { defaultTressiConfig, SaveConfigRequest } from '@tressi/shared/common';
-import { ModifyConfigRequestFormType } from '@tressi/shared/ui';
+import { defaultTressiConfig, type SaveConfigRequest } from '@tressi/shared/common';
+import type { ModifyConfigRequestFormType } from '@tressi/shared/ui';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { RequestsConfigComponent } from './requests-config.component';
@@ -14,26 +14,26 @@ describe('RequestsConfigComponent', () => {
   let modelSignal: WritableSignal<SaveConfigRequest>;
 
   const mockModel: SaveConfigRequest = {
-    name: 'Test Config',
     config: {
       ...defaultTressiConfig,
       requests: [
         {
-          url: 'http://example.com',
-          method: 'GET',
-          headers: {},
-          payload: {},
-          rps: 10,
-          rampUpDurationSec: 0,
           earlyExit: {
             enabled: false,
             errorRateThreshold: 0.5,
             exitStatusCodes: [],
             monitoringWindowMs: 1000,
           },
+          headers: {},
+          method: 'GET',
+          payload: {},
+          rampUpDurationSec: 0,
+          rps: 10,
+          url: 'http://example.com',
         },
       ],
     },
+    name: 'Test Config',
   };
 
   beforeEach(async () => {
@@ -77,18 +77,18 @@ describe('RequestsConfigComponent', () => {
         requests: [
           ...mockModel.config.requests!,
           {
-            url: 'http://example2.com',
-            method: 'POST',
-            headers: {},
-            payload: {},
-            rps: 5,
-            rampUpDurationSec: 0,
             earlyExit: {
               enabled: false,
               errorRateThreshold: 0.5,
               exitStatusCodes: [],
               monitoringWindowMs: 1000,
             },
+            headers: {},
+            method: 'POST',
+            payload: {},
+            rampUpDurationSec: 0,
+            rps: 5,
+            url: 'http://example2.com',
           },
         ],
       },
@@ -135,17 +135,14 @@ describe('RequestsConfigComponent', () => {
     component.addRequestExitStatusCode.emit(0);
     expect(addExitSpy).toHaveBeenCalledWith(0);
 
-    const removeExitSpy = vi.spyOn(
-      component.removeRequestExitStatusCode,
-      'emit',
-    );
+    const removeExitSpy = vi.spyOn(component.removeRequestExitStatusCode, 'emit');
     component.removeRequestExitStatusCode.emit({
-      requestIndex: 0,
       codeIndex: 1,
+      requestIndex: 0,
     });
     expect(removeExitSpy).toHaveBeenCalledWith({
-      requestIndex: 0,
       codeIndex: 1,
+      requestIndex: 0,
     });
   });
 });

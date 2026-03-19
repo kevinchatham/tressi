@@ -3,22 +3,22 @@ import {
   computed,
   inject,
   input,
-  OnChanges,
-  OnDestroy,
-  OnInit,
+  type OnChanges,
+  type OnDestroy,
+  type OnInit,
   output,
+  type SimpleChanges,
   signal,
-  SimpleChanges,
 } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import type {
   ConfigDocument,
   TestDocument,
+  TestEventData,
   TestSummary,
 } from '@tressi/shared/common';
-import { TestEventData } from '@tressi/shared/common';
-import { DeleteResult } from '@tressi/shared/ui';
-import { Subscription } from 'rxjs';
+import type { DeleteResult } from '@tressi/shared/ui';
+import type { Subscription } from 'rxjs';
 
 import { EventService } from '../../services/event.service';
 import { LogService } from '../../services/log.service';
@@ -35,7 +35,6 @@ import { TestListSelectionService } from './test-list-selection.service';
 import { TestTableComponent } from './test-table/test-table.component';
 
 @Component({
-  selector: 'app-test-list',
   imports: [
     RouterModule,
     IconComponent,
@@ -45,8 +44,9 @@ import { TestTableComponent } from './test-table/test-table.component';
     StartButtonComponent,
     ButtonComponent,
   ],
-  templateUrl: './test-list.component.html',
+  selector: 'app-test-list',
   styleUrl: './test-list.component.css',
+  templateUrl: './test-list.component.html',
 })
 export class TestListComponent implements OnChanges, OnInit, OnDestroy {
   readonly appRouter = inject(AppRouterService);
@@ -64,9 +64,7 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
   private readonly _tests = signal<TestDocument[]>([]);
   private readonly _error = signal<string | null>(null);
   private readonly _latestMetrics = signal<TestSummary | null>(null);
-  readonly configName = computed(
-    () => this.config()?.name || '[Deleted Configuration]',
-  );
+  readonly configName = computed(() => this.config()?.name || '[Deleted Configuration]');
   readonly showDeleteModal = signal<boolean>(false);
   readonly testToDelete = signal<TestDocument | null>(null);
   readonly showColumnSelector = signal<boolean>(false);
@@ -92,20 +90,14 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
   readonly columnGroups = this._columnsService.columnGroups;
   readonly currentSort = this._columnsService.currentSort;
   readonly selectedTests = this._selectionService.selectedTestsSet;
-  readonly selectedTestsCount = computed(() =>
-    this._selectionService.getSelectedCount(),
-  );
-  readonly isBulkDelete = computed(
-    () => this._selectionService.getSelectedCount() > 1,
-  );
+  readonly selectedTestsCount = computed(() => this._selectionService.getSelectedCount());
+  readonly isBulkDelete = computed(() => this._selectionService.getSelectedCount() > 1);
 
   readonly isAllSelected = computed(() => {
     const allTestIds = this._tests().map((test) => test.id);
     return this._selectionService.isAllSelected(allTestIds);
   });
-  readonly isSomeSelected = computed(() =>
-    this._selectionService.isSomeSelected(),
-  );
+  readonly isSomeSelected = computed(() => this._selectionService.isSomeSelected());
   readonly hasRunningTestsSelected = computed(() =>
     this._selectionService.hasRunningTestsSelected(this._tests()),
   );
@@ -119,7 +111,7 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['config'] && changes['config'].currentValue) {
+    if (changes['config']?.currentValue) {
       this.loadTests();
     }
   }
@@ -129,16 +121,12 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
       this._error.set(null);
 
       // Load tests for this config - use config().id directly
-      const tests = await this._testService.getTestsByConfigId(
-        this.config().id,
-      );
+      const tests = await this._testService.getTestsByConfigId(this.config().id);
       this._tests.set(tests);
       // Emit test history update
       this.testHistoryUpdate.emit(tests.length > 0);
     } catch (err) {
-      this._error.set(
-        err instanceof Error ? err.message : 'Failed to load tests',
-      );
+      this._error.set(err instanceof Error ? err.message : 'Failed to load tests');
       this._tests.set([]);
       // Emit test history update (no tests due to error)
       this.testHistoryUpdate.emit(false);
@@ -230,29 +218,20 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
     const selectedIds = Array.from(this._selectionService.getSelectedIds());
     if (selectedIds.length === 0) return;
 
-    const result =
-      await this._deleteService.deleteTestsWithLoading(selectedIds);
+    const result = await this._deleteService.deleteTestsWithLoading(selectedIds);
     this._handleDeleteResult(result, selectedIds);
   }
 
-  private _handleDeleteResult(
-    result: DeleteResult,
-    deletedIds: string[],
-  ): void {
+  private _handleDeleteResult(result: DeleteResult, deletedIds: string[]): void {
     if (result.deletedCount > 0) {
-      this._tests.update((tests) =>
-        tests.filter((test) => !deletedIds.includes(test.id)),
-      );
+      this._tests.update((tests) => tests.filter((test) => !deletedIds.includes(test.id)));
       // Emit test history update after deletion
       const remainingTests = this._tests();
       this.testHistoryUpdate.emit(remainingTests.length > 0);
     }
 
     if (result.failedCount > 0) {
-      this._error.set(
-        result.errors.join(', ') ||
-          `Failed to delete ${result.failedCount} test(s)`,
-      );
+      this._error.set(result.errors.join(', ') || `Failed to delete ${result.failedCount} test(s)`);
     }
 
     this._selectionService.clearSelection();
@@ -261,40 +240,32 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
 
   // Subscription methods
   private _subscribeToMetrics(): void {
-    this._metricsSubscription = this._eventService
-      .getMetricsStream()
-      .subscribe({
-        next: ({ testSummary }) => {
-          this._latestMetrics.set(testSummary);
-          this._updateRunningTest(testSummary);
-        },
-        error: (error: Error) => {
-          this._logService.error('Metrics stream error:', error);
-        },
-      });
+    this._metricsSubscription = this._eventService.getMetricsStream().subscribe({
+      error: (error: Error) => {
+        this._logService.error('Metrics stream error:', error);
+      },
+      next: ({ testSummary }: { testSummary: TestSummary }) => {
+        this._latestMetrics.set(testSummary);
+        this._updateRunningTest(testSummary);
+      },
+    });
   }
 
   private _subscribeToTestEvents(): void {
-    this._testEventsSubscription = this._eventService
-      .getTestEventsStream()
-      .subscribe({
-        next: (event) => {
-          if (event.configId === this.config().id) {
-            this._handleTestEvent(event);
-          }
-        },
-        error: (error: Error) => {
-          this._logService.error('Test events stream error:', error);
-        },
-      });
+    this._testEventsSubscription = this._eventService.getTestEventsStream().subscribe({
+      error: (error: Error) => {
+        this._logService.error('Test events stream error:', error);
+      },
+      next: (event: TestEventData) => {
+        if (event.configId === this.config().id) {
+          this._handleTestEvent(event);
+        }
+      },
+    });
   }
 
   private async _handleTestEvent(event: TestEventData): Promise<void> {
-    if (
-      event.status === 'completed' ||
-      event.status === 'failed' ||
-      event.status === 'cancelled'
-    ) {
+    if (event.status === 'completed' || event.status === 'failed' || event.status === 'cancelled') {
       await this._refreshTest(event.testId);
     }
   }
@@ -362,16 +333,12 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
           valueA =
             a.summary?.global.finalDurationSec ||
             (a.summary?.global.epochEndedAt && a.summary?.global.epochStartedAt
-              ? (a.summary.global.epochEndedAt -
-                  a.summary.global.epochStartedAt) /
-                1000
+              ? (a.summary.global.epochEndedAt - a.summary.global.epochStartedAt) / 1000
               : 0);
           valueB =
             b.summary?.global.finalDurationSec ||
             (b.summary?.global.epochEndedAt && b.summary?.global.epochStartedAt
-              ? (b.summary.global.epochEndedAt -
-                  b.summary.global.epochStartedAt) /
-                1000
+              ? (b.summary.global.epochEndedAt - b.summary.global.epochStartedAt) / 1000
               : 0);
           break;
         case 'totalRequests':

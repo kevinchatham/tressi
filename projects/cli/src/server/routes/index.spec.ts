@@ -1,9 +1,5 @@
-import { ISSEClientManager } from '@tressi/shared/cli';
-import {
-  ServerEvents,
-  TestEventData,
-  TestSummary,
-} from '@tressi/shared/common';
+import type { ISSEClientManager } from '@tressi/shared/cli';
+import { ServerEvents, type TestEventData, type TestSummary } from '@tressi/shared/common';
 import { Hono } from 'hono';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -35,10 +31,7 @@ describe('createApp', () => {
 
     createApp(mockSseManager, port);
 
-    expect(globalEventEmitter.on).toHaveBeenCalledWith(
-      ServerEvents.METRICS,
-      expect.any(Function),
-    );
+    expect(globalEventEmitter.on).toHaveBeenCalledWith(ServerEvents.METRICS, expect.any(Function));
     expect(globalEventEmitter.on).toHaveBeenCalledWith(
       ServerEvents.TEST.STARTED,
       expect.any(Function),
@@ -76,8 +69,8 @@ describe('createApp', () => {
     metricsHandler(testSummary);
 
     expect(mockSseManager.broadcast).toHaveBeenCalledWith({
-      event: ServerEvents.METRICS,
       data: testSummary,
+      event: ServerEvents.METRICS,
     });
   });
 
@@ -90,23 +83,19 @@ describe('createApp', () => {
     createApp(mockSseManager, port);
 
     const calls = vi.mocked(globalEventEmitter.on).mock.calls;
-    const testStartedCall = calls.find(
-      (call) => call[0] === ServerEvents.TEST.STARTED,
-    );
-    const testStartedHandler = testStartedCall?.[1] as (
-      data: TestEventData,
-    ) => void;
+    const testStartedCall = calls.find((call) => call[0] === ServerEvents.TEST.STARTED);
+    const testStartedHandler = testStartedCall?.[1] as (data: TestEventData) => void;
 
     const testData: TestEventData = {
+      status: 'running',
       testId: '1',
       timestamp: Date.now(),
-      status: 'running',
     };
     testStartedHandler(testData);
 
     expect(mockSseManager.broadcast).toHaveBeenCalledWith({
-      event: ServerEvents.TEST.STARTED,
       data: testData,
+      event: ServerEvents.TEST.STARTED,
     });
   });
 });

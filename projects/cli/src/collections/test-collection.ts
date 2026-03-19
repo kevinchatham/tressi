@@ -1,26 +1,26 @@
-import { TestRow } from '@tressi/shared/cli';
-import { TestCreate, TestDocument, TestEdit } from '@tressi/shared/common';
+import type { TestRow } from '@tressi/shared/cli';
+import type { TestCreate, TestDocument, TestEdit } from '@tressi/shared/common';
 
 import { db } from '../data/database';
 
 function mapTestFromDb(row: TestRow): TestDocument {
   return {
-    id: row.id,
     configId: row.config_id,
-    status: row.status,
     epochCreatedAt: row.epoch_created_at,
     error: row.error,
+    id: row.id,
+    status: row.status,
     summary: row.summary ? JSON.parse(row.summary) : null,
   };
 }
 
 function mapTestToDb(doc: TestDocument): TestRow {
   return {
-    id: doc.id,
     config_id: doc.configId,
-    status: doc.status,
     epoch_created_at: doc.epochCreatedAt,
     error: doc.error,
+    id: doc.id,
+    status: doc.status,
     summary: doc.summary ? JSON.stringify(doc.summary) : null,
   };
 }
@@ -39,11 +39,7 @@ class TestCollection {
 
   async getById(id: string): Promise<TestDocument | undefined> {
     try {
-      const row = await db
-        .selectFrom('tests')
-        .where('id', '=', id)
-        .selectAll()
-        .executeTakeFirst();
+      const row = await db.selectFrom('tests').where('id', '=', id).selectAll().executeTakeFirst();
       return row ? mapTestFromDb(row) : undefined;
     } catch (error) {
       throw new Error(
@@ -56,11 +52,11 @@ class TestCollection {
     try {
       const now = Date.now();
       const testDoc: TestDocument = {
-        id: crypto.randomUUID(),
         configId: input.configId,
-        status: null,
         epochCreatedAt: now,
         error: null,
+        id: crypto.randomUUID(),
+        status: null,
         summary: null,
       };
       await db.insertInto('tests').values(mapTestToDb(testDoc)).execute();
@@ -82,8 +78,8 @@ class TestCollection {
       const updatedDoc: TestDocument = {
         ...existing,
         configId: input.configId ?? existing.configId,
-        status: input.status ?? existing.status,
         error: input.error ?? existing.error,
+        status: input.status ?? existing.status,
         summary: input.summary ?? existing.summary,
       };
 
@@ -108,10 +104,7 @@ class TestCollection {
         return false;
       }
 
-      const result = await db
-        .deleteFrom('tests')
-        .where('id', '=', id)
-        .executeTakeFirst();
+      const result = await db.deleteFrom('tests').where('id', '=', id).executeTakeFirst();
       return result.numDeletedRows > 0;
     } catch (error) {
       throw new Error(
@@ -129,7 +122,7 @@ class TestCollection {
     try {
       const result = await db
         .updateTable('tests')
-        .set({ status: 'failed', error: 'Test stopped due to server restart' })
+        .set({ error: 'Test stopped due to server restart', status: 'failed' })
         .where('status', '=', 'running')
         .executeTakeFirst();
 
@@ -142,4 +135,4 @@ class TestCollection {
   }
 }
 
-export const testStorage = new TestCollection();
+export const testStorage: TestCollection = new TestCollection();

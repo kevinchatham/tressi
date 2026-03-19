@@ -4,21 +4,13 @@
       <span class="material-symbols-outlined text-primary">download</span>
       <div>
         <h3 class="font-bold">Install Tressi</h3>
-        <div class="text-xs">
-          Add Tressi to your desktop for a native experience.
-        </div>
+        <div class="text-xs">Add Tressi to your desktop for a native experience.</div>
       </div>
       <div class="flex gap-2">
-        <button
-          class="btn btn-sm btn-ghost"
-          (click)="pwaService.dismissPrompt()"
-        >
+        <button type="button" class="btn btn-sm btn-ghost" (click)="pwaService.dismissPrompt()">
           Dismiss
         </button>
-        <button
-          class="btn btn-sm btn-primary"
-          (click)="pwaService.installPwa()"
-        >
+        <button type="button" class="btn btn-sm btn-primary" (click)="pwaService.installPwa()">
           Install
         </button>
       </div>

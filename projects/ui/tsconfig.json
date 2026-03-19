@@ -1,32 +1,33 @@
 {
-  "compileOnSave": false,
-  "compilerOptions": {
-    "strict": true,
-    "noImplicitOverride": true,
-    "noPropertyAccessFromIndexSignature": true,
-    "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
-    "skipLibCheck": true,
-    "isolatedModules": true,
-    "experimentalDecorators": true,
-    "importHelpers": true,
-    "target": "ES2022",
-    "module": "preserve",
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "baseUrl": "./",
-    "paths": {
-      "@tressi/shared/common": ["../shared/src/common/index.ts"],
-      "@tressi/shared/ui": ["../shared/src/ui/index.ts"]
-    }
-  },
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,
     "strictInjectionParameters": true,
     "strictInputAccessModifiers": true,
-    "typeCheckHostBindings": true,
-    "strictTemplates": true
+    "strictTemplates": true,
+    "typeCheckHostBindings": true
   },
+  "compileOnSave": false,
+  "compilerOptions": {
+    "baseUrl": "./",
+    "experimentalDecorators": true,
+    "importHelpers": true,
+    "isolatedModules": true,
+    "module": "preserve",
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "paths": {
+      "@tressi/shared/common": ["../shared/src/common/index.ts"],
+      "@tressi/shared/ui": ["../shared/src/ui/index.ts"]
+    },
+    "skipLibCheck": true,
+    "strict": true,
+    "target": "ES2022"
+  },
+  "exclude": ["node_modules", "dist", "coverage"],
   "files": [],
   "references": [
     {
@@ -35,6 +36,5 @@
     {
       "path": "./tsconfig.spec.json"
     }
-  ],
-  "exclude": ["node_modules", "dist", "coverage"]
+  ]
 }

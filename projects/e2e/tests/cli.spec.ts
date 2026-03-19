@@ -1,10 +1,10 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import {
   defaultTressiConfig,
   defaultTressiRequestConfig,
-  EndpointSummary,
+  type EndpointSummary,
 } from '@tressi/shared/common';
-import fs from 'fs';
-import path from 'path';
 
 import { expect, test } from '../setup/fixtures';
 import { execute } from '../utils';
@@ -21,14 +21,14 @@ test.describe('CLI Integration', () => {
       fs.unlinkSync(testConfigPath);
     }
     if (fs.existsSync(reportPath)) {
-      fs.rmSync(reportPath, { recursive: true, force: true });
+      fs.rmSync(reportPath, { force: true, recursive: true });
     }
   });
 
   test.afterAll(() => {
     if (fs.existsSync(testConfigPath)) fs.unlinkSync(testConfigPath);
     if (fs.existsSync(reportPath)) {
-      fs.rmSync(reportPath, { recursive: true, force: true });
+      fs.rmSync(reportPath, { force: true, recursive: true });
     }
   });
 
@@ -84,9 +84,7 @@ test.describe('CLI Integration', () => {
     expect(report).toHaveProperty('endpoints');
   });
 
-  test('should exit early when error rate threshold is exceeded', async ({
-    testServer,
-  }) => {
+  test('should exit early when error rate threshold is exceeded', async ({ testServer }) => {
     const config = { ...defaultTressiConfig };
 
     const healthReq = { ...defaultTressiRequestConfig };
@@ -116,9 +114,7 @@ test.describe('CLI Integration', () => {
     const summaryPath = path.join(reportPath, 'summary.json');
     const report = JSON.parse(fs.readFileSync(summaryPath, 'utf-8'));
 
-    const healthEndpoint = report.endpoints.find((e: EndpointSummary) =>
-      e.url.includes('/health'),
-    );
+    const healthEndpoint = report.endpoints.find((e: EndpointSummary) => e.url.includes('/health'));
     const errorEndpoint = report.endpoints.find((e: EndpointSummary) =>
       e.url.includes('/error-50-percent'),
     );

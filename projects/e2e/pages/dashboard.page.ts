@@ -1,6 +1,6 @@
-import { Locator, Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 
-import { BasePage, PageOptions } from './base.page';
+import { BasePage, type PageOptions } from './base.page';
 
 export class DashboardPage extends BasePage {
   private readonly _startButton: Locator;

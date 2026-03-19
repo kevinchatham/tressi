@@ -1,7 +1,7 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { type ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { MarkdownSlugs } from '@tressi/shared/common';
+import type { MarkdownSlugs } from '@tressi/shared/common';
 import { MarkdownModule, provideMarkdown } from 'ngx-markdown';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -11,8 +11,8 @@ import { DocsComponent } from './docs.component';
 
 @Component({
   selector: 'markdown',
-  template: '',
   standalone: true,
+  template: '',
 })
 class MockMarkdownComponent {
   @Input() src?: string;
@@ -38,33 +38,34 @@ describe('DocsComponent', () => {
     isDark: ReturnType<typeof vi.fn>;
   };
 
+  // biome-ignore assist/source/useSortedKeys: order is important
   const mockAvailableDocs: MarkdownSlugs = {
     'getting-started': {
-      path: 'getting-started',
-      realPath: '01-getting-started',
       docs: [
         {
-          slug: 'index',
           realPath: '01-getting-started/index',
           sectionSlug: 'getting-started',
+          slug: 'index',
         },
         {
-          slug: 'intro',
           realPath: '01-getting-started/01-intro',
           sectionSlug: 'getting-started',
+          slug: 'intro',
         },
       ],
+      path: 'getting-started',
+      realPath: '01-getting-started',
     },
     'core-concepts': {
-      path: 'core-concepts',
-      realPath: '02-core-concepts',
       docs: [
         {
-          slug: 'index',
           realPath: '02-core-concepts/index',
           sectionSlug: 'core-concepts',
+          slug: 'index',
         },
       ],
+      path: 'core-concepts',
+      realPath: '02-core-concepts',
     },
   };
 
@@ -73,12 +74,12 @@ describe('DocsComponent', () => {
 
     mockAppRouter = {
       back: vi.fn(),
-      toHome: vi.fn(),
-      toDocs: vi.fn(),
-      isOnDocs: vi.fn().mockReturnValue(true),
       getCurrentUrl: vi.fn().mockReturnValue('http://localhost/docs'),
+      isOnDocs: vi.fn().mockReturnValue(true),
       isOnDocsSubroute: vi.fn().mockReturnValue(false),
       isOnServerUnavailable: vi.fn().mockReturnValue(false),
+      toDocs: vi.fn(),
+      toHome: vi.fn(),
     };
 
     mockThemeService = {
@@ -98,8 +99,8 @@ describe('DocsComponent', () => {
       ],
     })
       .overrideComponent(DocsComponent, {
-        remove: { imports: [MarkdownModule] },
         add: { imports: [MockMarkdownComponent] },
+        remove: { imports: [MarkdownModule] },
       })
       .compileComponents();
 
@@ -132,9 +133,7 @@ describe('DocsComponent', () => {
       fixture.detectChanges();
       vi.advanceTimersByTime(150);
 
-      expect(component.markdownSrc()).toBe(
-        '/docs/01-getting-started/01-intro.md',
-      );
+      expect(component.markdownSrc()).toBe('/docs/01-getting-started/01-intro.md');
       expect(component.currentSectionFolder()).toBe('01-getting-started');
     });
   });
@@ -148,9 +147,7 @@ describe('DocsComponent', () => {
       expect(component.isTransitioning()).toBe(true);
 
       vi.advanceTimersByTime(150);
-      expect(component.markdownSrc()).toBe(
-        '/docs/01-getting-started/01-intro.md',
-      );
+      expect(component.markdownSrc()).toBe('/docs/01-getting-started/01-intro.md');
 
       component.onLoad();
       vi.advanceTimersByTime(100);
@@ -233,10 +230,7 @@ describe('DocsComponent', () => {
       expect(link.getAttribute('href')).toBe('/docs/getting-started/intro');
 
       link.click();
-      expect(mockAppRouter.toDocs).toHaveBeenCalledWith(
-        'getting-started',
-        'intro',
-      );
+      expect(mockAppRouter.toDocs).toHaveBeenCalledWith('getting-started', 'intro');
     });
 
     it('should handle links to other sections', () => {
@@ -255,10 +249,7 @@ describe('DocsComponent', () => {
       expect(link.getAttribute('href')).toBe('/docs/core-concepts/index');
 
       link.click();
-      expect(mockAppRouter.toDocs).toHaveBeenCalledWith(
-        'core-concepts',
-        'index',
-      );
+      expect(mockAppRouter.toDocs).toHaveBeenCalledWith('core-concepts', 'index');
     });
   });
 });

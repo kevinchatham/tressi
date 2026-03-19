@@ -1,12 +1,12 @@
 import { Component } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { type ComponentFixture, TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { OutsideClickDirective } from './outside-click.directive';
 
 @Component({
-  standalone: true,
   imports: [OutsideClickDirective],
+  standalone: true,
   template: `<div appOutsideClick (outsideClick)="onOutsideClick()"></div>`,
 })
 class TestHostComponent {

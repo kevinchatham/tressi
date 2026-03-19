@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { ConfigDocument, SaveConfigRequest } from '@tressi/shared/common';
+import type { ConfigDocument, SaveConfigRequest } from '@tressi/shared/common';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 
 import { ConfigService } from './config.service';
@@ -22,12 +22,12 @@ describe('ConfigService', () => {
 
   beforeEach(() => {
     const mockConfigClient = {
+      ':id': {
+        $delete: vi.fn(),
+        $get: vi.fn(),
+      },
       $get: vi.fn(),
       $post: vi.fn(),
-      ':id': {
-        $get: vi.fn(),
-        $delete: vi.fn(),
-      },
     };
 
     mockRPC = {
@@ -51,8 +51,8 @@ describe('ConfigService', () => {
       ];
 
       mockRPC.client.config.$get.mockResolvedValue({
-        ok: true,
         json: async () => mockConfigs,
+        ok: true,
       });
 
       const result = await service.getAll();
@@ -70,8 +70,8 @@ describe('ConfigService', () => {
       };
 
       mockRPC.client.config[':id'].$get.mockResolvedValue({
-        ok: true,
         json: async () => mockConfig,
+        ok: true,
       });
 
       const result = await service.getOne('123');
@@ -95,8 +95,8 @@ describe('ConfigService', () => {
       };
 
       mockRPC.client.config.$post.mockResolvedValue({
-        ok: true,
         json: async () => savedDoc,
+        ok: true,
       });
 
       const result = await service.saveConfig(saveRequest);

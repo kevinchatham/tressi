@@ -1,9 +1,5 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import {
-  defaultTressiConfig,
-  GlobalSummary,
-  TestDocument,
-} from '@tressi/shared/common';
+import { type ComponentFixture, TestBed } from '@angular/core/testing';
+import { defaultTressiConfig, type GlobalSummary, type TestDocument } from '@tressi/shared/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { TestService } from '../../../../services/test.service';
@@ -17,49 +13,49 @@ describe('HeroStatsComponent', () => {
   };
 
   const mockSummary: GlobalSummary = {
-    totalEndpoints: 1,
-    totalRequests: 1000,
-    successfulRequests: 950,
+    averageRequestsPerSecond: 100,
+    avgProcessMemoryUsageMB: 100,
+    avgSystemCpuUsagePercent: 50,
+    epochEndedAt: 2000,
+    epochStartedAt: 1000,
+    errorRate: 0.05,
     failedRequests: 50,
-    minLatencyMs: 10,
+    finalDurationSec: 10,
+    histogram: {
+      buckets: [],
+      max: 120,
+      mean: 50,
+      min: 10,
+      percentiles: { 50: 45, 95: 80, 99: 100 },
+      stdDev: 20,
+      totalCount: 1000,
+    },
     maxLatencyMs: 120,
+    minLatencyMs: 10,
+    networkBytesPerSec: 5000,
+    networkBytesReceived: 25000,
+    networkBytesSent: 25000,
     p50LatencyMs: 45,
     p95LatencyMs: 80,
     p99LatencyMs: 100,
-    finalDurationSec: 10,
-    epochStartedAt: 1000,
-    epochEndedAt: 2000,
-    errorRate: 0.05,
-    averageRequestsPerSecond: 100,
     peakRequestsPerSecond: 150,
-    networkBytesSent: 25000,
-    networkBytesReceived: 25000,
-    networkBytesPerSec: 5000,
-    avgSystemCpuUsagePercent: 50,
-    avgProcessMemoryUsageMB: 100,
+    successfulRequests: 950,
     targetAchieved: 0.95,
-    histogram: {
-      totalCount: 1000,
-      min: 10,
-      max: 120,
-      mean: 50,
-      stdDev: 20,
-      percentiles: { 50: 45, 95: 80, 99: 100 },
-      buckets: [],
-    },
+    totalEndpoints: 1,
+    totalRequests: 1000,
   };
 
   const mockTest: TestDocument = {
-    id: 'test-123',
     configId: 'config-1',
-    status: 'completed',
     epochCreatedAt: Date.now(),
     error: null,
+    id: 'test-123',
+    status: 'completed',
     summary: {
-      tressiVersion: '1.0.0',
       configSnapshot: defaultTressiConfig,
-      global: mockSummary,
       endpoints: [],
+      global: mockSummary,
+      tressiVersion: '1.0.0',
     },
   };
 

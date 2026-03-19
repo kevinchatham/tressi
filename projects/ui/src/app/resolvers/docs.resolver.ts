@@ -1,6 +1,6 @@
 import { inject } from '@angular/core';
-import { ResolveFn } from '@angular/router';
-import { MarkdownSlugs } from '@tressi/shared/common';
+import type { ResolveFn } from '@angular/router';
+import type { MarkdownSlugs } from '@tressi/shared/common';
 
 import { RPCService } from '../services/rpc.service';
 

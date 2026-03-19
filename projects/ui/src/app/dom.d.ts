@@ -1,35 +1,29 @@
 // Type declarations for browser APIs not yet in TypeScript DOM definitions
 
-interface ViewTransitionUpdateCallback {
-  (): void | Promise<void>;
-}
+type ViewTransitionUpdateCallback = () => void | Promise<void>;
 
 interface ViewTransitionTypeSet extends Set<string> {
   add: (type: string) => this;
   clear: () => void;
   delete: (type: string) => boolean;
-  has: (type: string) => boolean;
+  entries(): IterableIterator<[string, string]>;
   forEach: (
-    callbackfn: (
-      value: string,
-      value2: string,
-      set: ViewTransitionTypeSet,
-    ) => void,
+    callbackfn: (value: string, value2: string, set: ViewTransitionTypeSet) => void,
     thisArg?: unknown,
   ) => void;
-  readonly size: number;
-  [Symbol.iterator](): IterableIterator<string>;
-  entries(): IterableIterator<[string, string]>;
+  has: (type: string) => boolean;
   keys(): IterableIterator<string>;
+  readonly size: number;
   values(): IterableIterator<string>;
+  [Symbol.iterator](): IterableIterator<string>;
 }
 
 interface ViewTransition {
   finished: Promise<void>;
   ready: Promise<void>;
-  updateCallbackDone: Promise<void>;
-  types: ViewTransitionTypeSet;
   skipTransition: () => void;
+  types: ViewTransitionTypeSet;
+  updateCallbackDone: Promise<void>;
 }
 
 interface Document {

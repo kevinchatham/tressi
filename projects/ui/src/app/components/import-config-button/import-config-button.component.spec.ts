@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { type ComponentFixture, TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { NameService } from '../../services/name.service';
@@ -34,9 +34,7 @@ describe('ImportConfigButtonComponent', () => {
   });
 
   it('should trigger file input when button is clicked', () => {
-    const fileInput = fixture.nativeElement.querySelector(
-      'input[type="file"]',
-    ) as HTMLInputElement;
+    const fileInput = fixture.nativeElement.querySelector('input[type="file"]') as HTMLInputElement;
     const clickSpy = vi.spyOn(fileInput, 'click');
 
     const button = fixture.nativeElement.querySelector('app-button');
@@ -104,39 +102,39 @@ describe('ImportConfigButtonComponent', () => {
     it('should emit configImported if validation succeeds', async () => {
       const mockConfig = {
         $schema: 'http://example.com/schema.json',
-        requests: [
-          {
-            url: 'http://localhost:3000',
-            method: 'GET',
-            rps: 10,
-            payload: {},
-            headers: {},
-            rampUpDurationSec: 0,
-            earlyExit: {
-              enabled: false,
-              errorRateThreshold: 0,
-              exitStatusCodes: [],
-              monitoringWindowMs: 1000,
-            },
-          },
-        ],
         options: {
           durationSec: 10,
+          headers: {},
           rampUpDurationSec: 0,
           threads: 1,
-          workerMemoryLimit: 128,
-          headers: {},
           workerEarlyExit: {
             enabled: false,
             errorRateThreshold: 0,
             exitStatusCodes: [],
             monitoringWindowMs: 1000,
           },
+          workerMemoryLimit: 128,
         },
+        requests: [
+          {
+            earlyExit: {
+              enabled: false,
+              errorRateThreshold: 0,
+              exitStatusCodes: [],
+              monitoringWindowMs: 1000,
+            },
+            headers: {},
+            method: 'GET',
+            payload: {},
+            rampUpDurationSec: 0,
+            rps: 10,
+            url: 'http://localhost:3000',
+          },
+        ],
       };
       const mockFile = {
-        text: vi.fn().mockResolvedValue(JSON.stringify(mockConfig)),
         name: 'tressi-my-config.json',
+        text: vi.fn().mockResolvedValue(JSON.stringify(mockConfig)),
       } as unknown as File;
 
       const mockInput = {
@@ -152,8 +150,8 @@ describe('ImportConfigButtonComponent', () => {
       await component.onFileSelected(event);
 
       expect(importedSpy).toHaveBeenCalledWith({
-        name: 'My Config',
         config: mockConfig,
+        name: 'My Config',
       });
       expect(mockInput.value).toBe('');
     });
@@ -161,39 +159,39 @@ describe('ImportConfigButtonComponent', () => {
     it('should use NameService if cleaned name is empty', async () => {
       const mockConfig = {
         $schema: 'http://example.com/schema.json',
-        requests: [
-          {
-            url: 'http://localhost:3000',
-            method: 'GET',
-            rps: 10,
-            payload: {},
-            headers: {},
-            rampUpDurationSec: 0,
-            earlyExit: {
-              enabled: false,
-              errorRateThreshold: 0,
-              exitStatusCodes: [],
-              monitoringWindowMs: 1000,
-            },
-          },
-        ],
         options: {
           durationSec: 10,
+          headers: {},
           rampUpDurationSec: 0,
           threads: 1,
-          workerMemoryLimit: 128,
-          headers: {},
           workerEarlyExit: {
             enabled: false,
             errorRateThreshold: 0,
             exitStatusCodes: [],
             monitoringWindowMs: 1000,
           },
+          workerMemoryLimit: 128,
         },
+        requests: [
+          {
+            earlyExit: {
+              enabled: false,
+              errorRateThreshold: 0,
+              exitStatusCodes: [],
+              monitoringWindowMs: 1000,
+            },
+            headers: {},
+            method: 'GET',
+            payload: {},
+            rampUpDurationSec: 0,
+            rps: 10,
+            url: 'http://localhost:3000',
+          },
+        ],
       };
       const mockFile = {
-        text: vi.fn().mockResolvedValue(JSON.stringify(mockConfig)),
         name: 'tressi-.json',
+        text: vi.fn().mockResolvedValue(JSON.stringify(mockConfig)),
       } as unknown as File;
 
       const mockInput = {
@@ -209,16 +207,16 @@ describe('ImportConfigButtonComponent', () => {
       await component.onFileSelected(event);
 
       expect(importedSpy).toHaveBeenCalledWith({
-        name: 'Generated Name',
         config: mockConfig,
+        name: 'Generated Name',
       });
       expect(mockInput.value).toBe('');
     });
 
     it('should handle generic read errors', async () => {
       const mockFile = {
-        text: vi.fn().mockRejectedValue(new Error('Read failed')),
         name: 'test.json',
+        text: vi.fn().mockRejectedValue(new Error('Read failed')),
       } as unknown as File;
 
       const mockInput = {
@@ -233,9 +231,7 @@ describe('ImportConfigButtonComponent', () => {
 
       await component.onFileSelected(event);
 
-      expect(errorSpy).toHaveBeenCalledWith(
-        'Failed to read configuration file',
-      );
+      expect(errorSpy).toHaveBeenCalledWith('Failed to read configuration file');
       expect(mockInput.value).toBe('');
     });
   });
@@ -243,14 +239,14 @@ describe('ImportConfigButtonComponent', () => {
   describe('_generateNameFromFile', () => {
     it('should clean up filenames correctly', () => {
       const testCases = [
-        { input: 'my-config.json', expected: 'My Config' },
-        { input: 'tressi-test-123.json', expected: 'Test' },
-        { input: 'config_prod_abc12345.json', expected: 'Prod' },
-        { input: 'simple.json', expected: 'Simple' },
-        { input: 'multiple---dashes.json', expected: 'Multiple Dashes' },
-        { input: 'UPPERCASE.json', expected: 'UPPERCASE' },
-        { input: 'mixed-CASE-name.json', expected: 'Mixed CASE Name' },
-        { input: 'tressi-config-both.json', expected: 'Config Both' },
+        { expected: 'My Config', input: 'my-config.json' },
+        { expected: 'Test', input: 'tressi-test-123.json' },
+        { expected: 'Prod', input: 'config_prod_abc12345.json' },
+        { expected: 'Simple', input: 'simple.json' },
+        { expected: 'Multiple Dashes', input: 'multiple---dashes.json' },
+        { expected: 'UPPERCASE', input: 'UPPERCASE.json' },
+        { expected: 'Mixed CASE Name', input: 'mixed-CASE-name.json' },
+        { expected: 'Config Both', input: 'tressi-config-both.json' },
       ];
 
       testCases.forEach(({ input, expected }) => {

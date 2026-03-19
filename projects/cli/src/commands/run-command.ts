@@ -9,11 +9,7 @@ export class RunCommand {
   /**
    * Executes the run command.
    */
-  async execute(
-    configPath: string,
-    exportPath?: string,
-    silent?: boolean,
-  ): Promise<void> {
+  async execute(configPath: string, exportPath?: string, silent?: boolean): Promise<void> {
     // Validate config version before loading
     const migrationManager = new JsonMigrationManager();
     await migrationManager.validateVersion(configPath);

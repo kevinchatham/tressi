@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { type AppType } from '@tressi/shared/common';
+import type { AppType } from '@tressi/shared/common';
 import { hc } from 'hono/client';
 
 @Injectable({

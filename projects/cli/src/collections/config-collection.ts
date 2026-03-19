@@ -1,29 +1,25 @@
-import { ConfigRow } from '@tressi/shared/cli';
-import {
-  ConfigCreate,
-  ConfigDocument,
-  ConfigEdit,
-} from '@tressi/shared/common';
+import type { ConfigRow } from '@tressi/shared/cli';
+import type { ConfigCreate, ConfigDocument, ConfigEdit } from '@tressi/shared/common';
 
 import { db } from '../data/database';
 
 function mapConfigFromDb(row: ConfigRow): ConfigDocument {
   return {
-    id: row.id,
-    name: row.name,
     config: JSON.parse(row.config),
     epochCreatedAt: row.epoch_created_at,
     epochUpdatedAt: row.epoch_updated_at,
+    id: row.id,
+    name: row.name,
   };
 }
 
 function mapConfigToDb(doc: ConfigDocument): ConfigRow {
   return {
-    id: doc.id,
-    name: doc.name,
     config: JSON.stringify(doc.config),
     epoch_created_at: doc.epochCreatedAt,
     epoch_updated_at: doc.epochUpdatedAt,
+    id: doc.id,
+    name: doc.name,
   };
 }
 
@@ -58,11 +54,11 @@ class ConfigCollection {
     try {
       const now = Date.now();
       const configDoc: ConfigDocument = {
-        id: crypto.randomUUID(),
-        name: input.name,
         config: input.config,
         epochCreatedAt: now,
         epochUpdatedAt: now,
+        id: crypto.randomUUID(),
+        name: input.name,
       };
       await db.insertInto('configs').values(mapConfigToDb(configDoc)).execute();
       return configDoc;
@@ -82,9 +78,9 @@ class ConfigCollection {
 
       const updatedDoc: ConfigDocument = {
         ...existing,
-        name: input.name ?? existing.name,
         config: input.config ?? existing.config,
         epochUpdatedAt: Date.now(),
+        name: input.name ?? existing.name,
       };
 
       await db
@@ -108,10 +104,7 @@ class ConfigCollection {
         return false;
       }
 
-      const result = await db
-        .deleteFrom('configs')
-        .where('id', '=', id)
-        .executeTakeFirst();
+      const result = await db.deleteFrom('configs').where('id', '=', id).executeTakeFirst();
       return result.numDeletedRows > 0;
     } catch (error) {
       throw new Error(
@@ -121,4 +114,4 @@ class ConfigCollection {
   }
 }
 
-export const configStorage = new ConfigCollection();
+export const configStorage: ConfigCollection = new ConfigCollection();

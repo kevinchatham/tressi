@@ -1,11 +1,11 @@
 import {
-  ChildProcess,
+  type ChildProcess,
+  type ExecSyncOptions,
   execSync,
-  ExecSyncOptions,
+  type SpawnOptions,
   spawn,
-  SpawnOptions,
-} from 'child_process';
-import path from 'path';
+} from 'node:child_process';
+import path from 'node:path';
 
 /**
  * Gets a sanitized PATH that ensures Linux/WSL environment tools are prioritized.
@@ -29,13 +29,10 @@ export function getSanitizedPath(): string {
  * Runs a shell command with a sanitized PATH to ensure it uses the Linux/WSL environment.
  * This prevents "leaks" where Windows executables (like npm.cmd) are accidentally called.
  */
-const rootDir = path.resolve(__dirname, '../../../');
-const defaultTestDbPath = path.join(rootDir, 'projects/e2e/tressi.test.db');
+const rootDir: string = path.resolve(__dirname, '../../../');
+const defaultTestDbPath: string = path.join(rootDir, 'projects/e2e/tressi.test.db');
 
-export function run(
-  command: string,
-  options: ExecSyncOptions = {},
-): string | Buffer {
+export function run(command: string, options: ExecSyncOptions = {}): string | Buffer {
   return execSync(command, {
     cwd: rootDir,
     stdio: 'inherit',

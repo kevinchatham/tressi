@@ -5,8 +5,8 @@ import { ButtonComponent } from '../button/button.component';
 import { IconComponent } from '../icon/icon.component';
 
 @Component({
-  selector: 'app-delete-confirmation-modal',
   imports: [IconComponent, ButtonComponent, LowerCasePipe],
+  selector: 'app-delete-confirmation-modal',
   templateUrl: './delete-confirmation-modal.component.html',
 })
 export class DeleteConfirmationModalComponent {

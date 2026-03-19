@@ -1,12 +1,12 @@
 import { Component, signal } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { type ComponentFixture, TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { FormatBytesDirective } from './format-bytes.directive';
 
 @Component({
-  standalone: true,
   imports: [FormatBytesDirective],
+  standalone: true,
   template: `<div [appFormatBytes]="bytes()"></div>`,
 })
 class TestHostComponent {
@@ -48,11 +48,11 @@ describe('FormatBytesDirective', () => {
 
   it('should format bytes correctly (B, KB, MB, GB)', async () => {
     const testCases = [
-      { input: 512, expected: '512 B' },
-      { input: 1024, expected: '1.0 KB' },
-      { input: 1536, expected: '1.5 KB' },
-      { input: 1048576, expected: '1.0 MB' },
-      { input: 1073741824, expected: '1.00 GB' },
+      { expected: '512 B', input: 512 },
+      { expected: '1.0 KB', input: 1024 },
+      { expected: '1.5 KB', input: 1536 },
+      { expected: '1.0 MB', input: 1048576 },
+      { expected: '1.00 GB', input: 1073741824 },
     ];
 
     for (const { input, expected } of testCases) {

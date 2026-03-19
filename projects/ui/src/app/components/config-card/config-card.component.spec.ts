@@ -1,8 +1,8 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { type ComponentFixture, TestBed } from '@angular/core/testing';
 import {
-  ConfigDocument,
+  type ConfigDocument,
   defaultTressiConfig,
-  TressiRequestConfig,
+  type TressiRequestConfig,
 } from '@tressi/shared/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -17,33 +17,13 @@ describe('ConfigCardComponent', () => {
   };
 
   const mockConfig: ConfigDocument = {
-    id: '1',
-    name: 'Test Config',
-    epochCreatedAt: 1000,
-    epochUpdatedAt: 2000,
     config: {
       ...defaultTressiConfig,
-      requests: [
-        {
-          url: 'http://test.com',
-          method: 'GET',
-          rps: 10,
-          rampUpDurationSec: 5,
-          earlyExit: {
-            enabled: false,
-            errorRateThreshold: 0,
-            exitStatusCodes: [],
-            monitoringWindowMs: 1000,
-          },
-          headers: {},
-          payload: {},
-        },
-      ],
       options: {
         ...defaultTressiConfig.options,
         durationSec: 60,
-        threads: 4,
         rampUpDurationSec: 2,
+        threads: 4,
         workerEarlyExit: {
           enabled: false,
           errorRateThreshold: 0,
@@ -51,7 +31,27 @@ describe('ConfigCardComponent', () => {
           monitoringWindowMs: 1000,
         },
       },
+      requests: [
+        {
+          earlyExit: {
+            enabled: false,
+            errorRateThreshold: 0,
+            exitStatusCodes: [],
+            monitoringWindowMs: 1000,
+          },
+          headers: {},
+          method: 'GET',
+          payload: {},
+          rampUpDurationSec: 5,
+          rps: 10,
+          url: 'http://test.com',
+        },
+      ],
     },
+    epochCreatedAt: 1000,
+    epochUpdatedAt: 2000,
+    id: '1',
+    name: 'Test Config',
   };
 
   beforeEach(async () => {
@@ -94,18 +94,16 @@ describe('ConfigCardComponent', () => {
     });
 
     it('should update collapsed signal within startViewTransition when available', () => {
-      const mockStartViewTransition = vi.fn(
-        (cb: () => void | Promise<void>): ViewTransition => {
-          cb();
-          return {
-            finished: Promise.resolve(),
-            ready: Promise.resolve(),
-            updateCallbackDone: Promise.resolve(),
-            types: new Set<string>(),
-            skipTransition: (): void => {},
-          };
-        },
-      );
+      const mockStartViewTransition = vi.fn((cb: () => void | Promise<void>): ViewTransition => {
+        cb();
+        return {
+          finished: Promise.resolve(),
+          ready: Promise.resolve(),
+          skipTransition: (): void => {},
+          types: new Set<string>(),
+          updateCallbackDone: Promise.resolve(),
+        };
+      });
       document.startViewTransition = mockStartViewTransition;
 
       component.toggleCollapsed(false);

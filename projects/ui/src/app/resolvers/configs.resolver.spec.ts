@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
-import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
-import { ConfigDocument } from '@tressi/shared/common';
+import type { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
+import type { ConfigDocument } from '@tressi/shared/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ConfigService } from '../services/config.service';
@@ -26,7 +26,7 @@ describe('configsResolver', () => {
     const mockState = {} as RouterStateSnapshot;
 
     const mockConfigs: ConfigDocument[] = [
-      { id: '1', name: 'Test Config', config: {} } as ConfigDocument,
+      { config: {}, id: '1', name: 'Test Config' } as ConfigDocument,
     ];
 
     configServiceSpy.getAll.mockResolvedValue(mockConfigs);

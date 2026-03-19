@@ -1,11 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, input, output } from '@angular/core';
-import {
-  EndpointSummary,
-  GlobalSummary,
-  TestDocument,
-} from '@tressi/shared/common';
-import { METRIC_TOOLTIPS, MetricState } from '@tressi/shared/ui';
+import type { EndpointSummary, GlobalSummary, TestDocument } from '@tressi/shared/common';
+import { METRIC_TOOLTIPS, type MetricState } from '@tressi/shared/ui';
 
 import { CollapsibleCardComponent } from '../../../../components/collapsible-card/collapsible-card.component';
 import { IconComponent } from '../../../../components/icon/icon.component';
@@ -19,7 +15,6 @@ import { FormatPercentageDirective } from '../../../../directives/format/format-
 import { FormatRpsDirective } from '../../../../directives/format/format-rps.directive';
 
 @Component({
-  selector: 'app-performance-summary',
   imports: [
     CommonModule,
     CollapsibleCardComponent,
@@ -33,13 +28,12 @@ import { FormatRpsDirective } from '../../../../directives/format/format-rps.dir
     FormatMemoryDirective,
     FormatLatencyDirective,
   ],
+  selector: 'app-performance-summary',
   templateUrl: './performance-summary.component.html',
 })
 export class PerformanceSummaryComponent {
   /** Selected summary (global or endpoint) */
-  readonly selectedSummary = input<
-    GlobalSummary | EndpointSummary | null | undefined
-  >(null);
+  readonly selectedSummary = input<GlobalSummary | EndpointSummary | null | undefined>(null);
 
   /** Test data document */
   readonly testData = input<TestDocument | null>(null);
@@ -55,15 +49,13 @@ export class PerformanceSummaryComponent {
 
   endpointSummary = computed<EndpointSummary | null>(() => {
     const s = this.selectedSummary();
-    if (s && 'statusCodeDistribution' in s)
-      return s as unknown as EndpointSummary;
+    if (s && 'statusCodeDistribution' in s) return s as unknown as EndpointSummary;
     else return null;
   });
 
   globalSummary = computed<GlobalSummary | null>(() => {
     const s = this.selectedSummary();
-    if (s && !('statusCodeDistribution' in s))
-      return s as unknown as GlobalSummary;
+    if (s && !('statusCodeDistribution' in s)) return s as unknown as GlobalSummary;
     else return null;
   });
 
@@ -111,7 +103,6 @@ export class PerformanceSummaryComponent {
         return { bg: 'bg-error/20', text: 'text-error' };
       case 'warning':
         return { bg: 'bg-warning/20', text: 'text-warning' };
-      case 'good':
       default:
         return { bg: 'bg-success/20', text: 'text-success' };
     }

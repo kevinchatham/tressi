@@ -4,6 +4,6 @@ export * from './config.types';
 export * from './docs.types';
 export * from './event.types';
 export * from './reporting.types';
+export * from './schema.data';
 export * from './test.types';
 export * from './validation.utils';
-export * from './schema.data';

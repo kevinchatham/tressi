@@ -3,15 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { NavigationEnd, NavigationStart, Router } from '@angular/router';
 import { AppRoutes } from '@tressi/shared/ui';
 import { Subject } from 'rxjs';
-import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  type Mock,
-  vi,
-} from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 
 import { LocalStorageService } from './local-storage.service';
 import { AppRouterService } from './router.service';
@@ -28,8 +20,8 @@ describe('AppRouterService', () => {
 
   beforeEach(() => {
     mockRouter = {
-      navigate: vi.fn(),
       events: new Subject<unknown>(),
+      navigate: vi.fn(),
       routerState: { root: {} },
     };
     mockLocation = {
@@ -60,17 +52,12 @@ describe('AppRouterService', () => {
   describe('Navigation Methods', () => {
     it('should navigate to dashboard', () => {
       service.toDashboard();
-      expect(mockRouter.navigate).toHaveBeenCalledWith([
-        `/${AppRoutes.DASHBOARD}`,
-      ]);
+      expect(mockRouter.navigate).toHaveBeenCalledWith([`/${AppRoutes.DASHBOARD}`]);
     });
 
     it('should navigate to dashboard with configId', () => {
       service.toDashboard('123');
-      expect(mockRouter.navigate).toHaveBeenCalledWith([
-        `/${AppRoutes.DASHBOARD}`,
-        '123',
-      ]);
+      expect(mockRouter.navigate).toHaveBeenCalledWith([`/${AppRoutes.DASHBOARD}`, '123']);
     });
 
     it('should navigate to home', () => {
@@ -80,9 +67,7 @@ describe('AppRouterService', () => {
 
     it('should navigate to configs', () => {
       service.toConfigs();
-      expect(mockRouter.navigate).toHaveBeenCalledWith([
-        `/${AppRoutes.CONFIGS}`,
-      ]);
+      expect(mockRouter.navigate).toHaveBeenCalledWith([`/${AppRoutes.CONFIGS}`]);
     });
 
     it('should navigate to docs', () => {
@@ -108,9 +93,7 @@ describe('AppRouterService', () => {
   describe('URL Updates (Soft Navigation)', () => {
     it('should update dashboard URL without full navigation', () => {
       service.updateDashboardUrl('789');
-      expect(mockLocation.go).toHaveBeenCalledWith(
-        `/${AppRoutes.DASHBOARD}/789`,
-      );
+      expect(mockLocation.go).toHaveBeenCalledWith(`/${AppRoutes.DASHBOARD}/789`);
     });
 
     it('should update generic URL', () => {

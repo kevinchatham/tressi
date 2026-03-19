@@ -1,17 +1,12 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  input,
-  output,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 
 import { IconComponent } from '../icon/icon.component';
 
 @Component({
-  selector: 'app-search-bar',
-  imports: [IconComponent],
-  templateUrl: './search-bar.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [IconComponent],
+  selector: 'app-search-bar',
+  templateUrl: './search-bar.component.html',
 })
 export class SearchBarComponent {
   /** Input for the current search query */

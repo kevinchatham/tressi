@@ -1,6 +1,6 @@
-import { expect, Locator, Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 
-import { BasePage, PageOptions } from './base.page';
+import { BasePage, type PageOptions } from './base.page';
 
 export class TestDetailPage extends BasePage {
   private readonly _statusBadge: Locator;

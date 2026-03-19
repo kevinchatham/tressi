@@ -1,26 +1,22 @@
 {
   "mcpServers": {
     "context7": {
-      "command": "npx",
+      "alwaysAllow": ["resolve-library-id", "get-library-docs", "query-docs"],
       "args": ["-y", "@upstash/context7-mcp"],
-      "env": {
-        "PATH": "/home/kevin/.nvm/versions/node/v24.13.0/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
-        "DEFAULT_MINIMUM_TOKENS": "6000"
-      },
+      "command": "npx",
       "disabled": false,
-      "alwaysAllow": ["resolve-library-id", "get-library-docs", "query-docs"]
+      "env": {
+        "DEFAULT_MINIMUM_TOKENS": "6000",
+        "PATH": "/home/kevin/.nvm/versions/node/v24.13.0/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+      }
     },
     "playwright": {
+      "args": ["-y", "@playwright/mcp@0.0.38", "--config=playwright-mcp-config.json"],
       "command": "npx",
-      "args": [
-        "-y",
-        "@playwright/mcp@0.0.38",
-        "--config=playwright-mcp-config.json"
-      ],
+      "disabled": false,
       "env": {
         "PATH": "/home/kevin/.nvm/versions/node/v24.13.0/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-      },
-      "disabled": false
+      }
     }
   }
 }

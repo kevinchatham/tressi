@@ -1,5 +1,5 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ConfigDocument, defaultTressiConfig } from '@tressi/shared/common';
+import { type ComponentFixture, TestBed } from '@angular/core/testing';
+import { type ConfigDocument, defaultTressiConfig } from '@tressi/shared/common';
 import { Subject } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -38,29 +38,29 @@ describe('DashboardComponent', () => {
 
   const mockConfigs: ConfigDocument[] = [
     {
-      id: 'config-1',
-      name: 'Config 1',
+      config: defaultTressiConfig,
       epochCreatedAt: 123,
       epochUpdatedAt: 123,
-      config: defaultTressiConfig,
+      id: 'config-1',
+      name: 'Config 1',
     },
     {
-      id: 'config-2',
-      name: 'Config 2',
+      config: defaultTressiConfig,
       epochCreatedAt: 456,
       epochUpdatedAt: 456,
-      config: defaultTressiConfig,
+      id: 'config-2',
+      name: 'Config 2',
     },
   ];
 
   beforeEach(async () => {
     mockAppRouter = {
-      toWelcome: vi.fn(),
-      updateDashboardUrl: vi.fn(),
-      toConfigs: vi.fn(),
       isOnDocs: vi.fn().mockReturnValue(false),
       isOnServerUnavailable: vi.fn().mockReturnValue(false),
+      toConfigs: vi.fn(),
       toDocs: vi.fn(),
+      toWelcome: vi.fn(),
+      updateDashboardUrl: vi.fn(),
     };
 
     mockLogService = {
@@ -74,12 +74,10 @@ describe('DashboardComponent', () => {
 
     testEventsSubject = new Subject();
     mockEventService = {
-      getTestEventsStream: vi
-        .fn()
-        .mockReturnValue(testEventsSubject.asObservable()),
-      getMetricsStream: vi.fn().mockReturnValue(new Subject().asObservable()),
       getConnectedStream: vi.fn().mockReturnValue(new Subject().asObservable()),
       getErrorStream: vi.fn().mockReturnValue(new Subject().asObservable()),
+      getMetricsStream: vi.fn().mockReturnValue(new Subject().asObservable()),
+      getTestEventsStream: vi.fn().mockReturnValue(testEventsSubject.asObservable()),
     };
 
     await TestBed.configureTestingModule({
@@ -221,9 +219,7 @@ describe('DashboardComponent', () => {
 
     it('should refresh tests when onTestStarted is called', () => {
       const mockTestList = { refreshTests: vi.fn() };
-      vi.spyOn(component, 'testListComponent').mockReturnValue(
-        mockTestList as never,
-      );
+      vi.spyOn(component, 'testListComponent').mockReturnValue(mockTestList as never);
 
       component.onTestStarted();
       expect(mockTestList.refreshTests).toHaveBeenCalled();
@@ -232,10 +228,7 @@ describe('DashboardComponent', () => {
     it('should log error when onTestStartFailed is called', () => {
       const error = new Error('Start failed');
       component.onTestStartFailed(error);
-      expect(mockLogService.error).toHaveBeenCalledWith(
-        'Failed to start test:',
-        error,
-      );
+      expect(mockLogService.error).toHaveBeenCalledWith('Failed to start test:', error);
     });
 
     it('should update hasTestHistory when onTestHistoryUpdate is called', () => {

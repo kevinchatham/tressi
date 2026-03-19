@@ -5,12 +5,12 @@ import {
   effect,
   inject,
   input,
-  OnInit,
+  type OnInit,
   signal,
   untracked,
 } from '@angular/core';
 import { Router } from '@angular/router';
-import { ConfigDocument, SaveConfigRequest } from '@tressi/shared/common';
+import type { ConfigDocument, SaveConfigRequest } from '@tressi/shared/common';
 import { AppRoutes } from '@tressi/shared/ui';
 import { ButtonComponent } from 'src/app/components/button/button.component';
 import { ThemeSwitcherComponent } from 'src/app/components/theme-switcher/theme-switcher.component';
@@ -27,7 +27,7 @@ import { TimeService } from '../../services/time.service';
 import { ToastService } from '../../services/toast.service';
 
 @Component({
-  selector: 'app-configs',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ThemeSwitcherComponent,
     ConfigFormComponent,
@@ -38,8 +38,8 @@ import { ToastService } from '../../services/toast.service';
     ImportConfigButtonComponent,
     ButtonComponent,
   ],
+  selector: 'app-configs',
   templateUrl: './configs.component.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ConfigsComponent implements OnInit {
   /** Service injection */
@@ -78,9 +78,7 @@ export class ConfigsComponent implements OnInit {
         return true;
       }
 
-      return config.config.requests.some((req) =>
-        req.url.toLowerCase().includes(query),
-      );
+      return config.config.requests.some((req) => req.url.toLowerCase().includes(query));
     });
   });
 
@@ -133,10 +131,10 @@ export class ConfigsComponent implements OnInit {
     // Create duplicate config without ID (so it's treated as new)
     const duplicatedConfig: ConfigDocument = {
       ...config,
-      id: '', // Empty ID that will be generated on save
-      name: newName,
       epochCreatedAt: Date.now(),
       epochUpdatedAt: Date.now(),
+      id: '', // Empty ID that will be generated on save
+      name: newName,
     };
 
     this.currentConfig.set(duplicatedConfig);
@@ -228,11 +226,11 @@ export class ConfigsComponent implements OnInit {
   onConfigImported(importedConfig: SaveConfigRequest): void {
     // Set the imported config to trigger form population
     this.currentConfig.set({
-      id: '',
+      config: importedConfig.config,
       epochCreatedAt: Date.now(),
       epochUpdatedAt: Date.now(),
+      id: '',
       name: importedConfig.name,
-      config: importedConfig.config,
     } as ConfigDocument);
 
     this.showForm.set(true);

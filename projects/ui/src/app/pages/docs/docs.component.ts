@@ -4,19 +4,19 @@ import {
   effect,
   inject,
   input,
-  OnInit,
+  type OnInit,
   SecurityContext,
   signal,
   ViewEncapsulation,
 } from '@angular/core';
 import { RouterModule } from '@angular/router';
-import { MarkdownSlugs } from '@tressi/shared/common';
+import type { MarkdownSlugs } from '@tressi/shared/common';
 import {
   CLIPBOARD_OPTIONS,
-  MarkdownModule,
   MARKED_OPTIONS,
+  MarkdownModule,
   MERMAID_OPTIONS,
-  MermaidAPI,
+  type MermaidAPI,
   provideMarkdown,
   SANITIZE,
 } from 'ngx-markdown';
@@ -30,7 +30,7 @@ import { ThemeService } from '../../services/theme.service';
 import { DocsMenuComponent } from './docs-menu/docs-menu.component';
 
 @Component({
-  selector: 'app-docs',
+  encapsulation: ViewEncapsulation.None,
   imports: [
     RouterModule,
     MarkdownModule,
@@ -42,14 +42,18 @@ import { DocsMenuComponent } from './docs-menu/docs-menu.component';
   ],
   providers: [
     provideMarkdown({
-      sanitize: {
-        provide: SANITIZE,
-        useValue: SecurityContext.NONE,
-      },
       clipboardOptions: {
         provide: CLIPBOARD_OPTIONS,
         useValue: {
           buttonComponent: undefined,
+        },
+      },
+      markedOptions: {
+        provide: MARKED_OPTIONS,
+        useValue: {
+          breaks: false,
+          gfm: true,
+          pedantic: false,
         },
       },
       mermaidOptions: {
@@ -59,19 +63,15 @@ import { DocsMenuComponent } from './docs-menu/docs-menu.component';
           theme: 'dark',
         },
       },
-      markedOptions: {
-        provide: MARKED_OPTIONS,
-        useValue: {
-          gfm: true,
-          breaks: false,
-          pedantic: false,
-        },
+      sanitize: {
+        provide: SANITIZE,
+        useValue: SecurityContext.NONE,
       },
     }),
   ],
-  templateUrl: './docs.component.html',
+  selector: 'app-docs',
   styleUrl: './docs.component.css',
-  encapsulation: ViewEncapsulation.None,
+  templateUrl: './docs.component.html',
 })
 export class DocsComponent implements OnInit {
   private readonly _themeService = inject(ThemeService);
@@ -85,12 +85,10 @@ export class DocsComponent implements OnInit {
   readonly isBaseUrl = computed<boolean>(() => this.appRouter.isOnDocs());
   readonly currentSectionFolder = signal<string | null>(null);
   readonly mermaidOptions = computed<MermaidAPI.MermaidConfig>(() => {
-    const theme = this._themeService.isDark()
-      ? ('dark' as const)
-      : ('default' as const);
+    const theme = this._themeService.isDark() ? ('dark' as const) : ('default' as const);
     return {
-      theme,
       startOnLoad: true,
+      theme,
     };
   });
 
@@ -108,9 +106,7 @@ export class DocsComponent implements OnInit {
         }
       } else {
         const effectiveFilename = filename || 'index';
-        const fullPath = section
-          ? `${section}/${effectiveFilename}`
-          : effectiveFilename;
+        const fullPath = section ? `${section}/${effectiveFilename}` : effectiveFilename;
         this.loadDocs(fullPath);
       }
     });
@@ -142,9 +138,7 @@ export class DocsComponent implements OnInit {
           }
         }
 
-        const docMatch = section.docs.find(
-          (d) => `${d.sectionSlug}/${d.slug}` === slug,
-        );
+        const docMatch = section.docs.find((d) => `${d.sectionSlug}/${d.slug}` === slug);
 
         if (docMatch) {
           realPath = docMatch.realPath;
@@ -153,14 +147,12 @@ export class DocsComponent implements OnInit {
         }
       }
 
-      const safeFilename = realPath.endsWith('.md')
-        ? realPath
-        : `${realPath}.md`;
+      const safeFilename = realPath.endsWith('.md') ? realPath : `${realPath}.md`;
 
       // Use root-relative path to ensure it works regardless of current route depth
       this.markdownSrc.set(`/docs/${safeFilename}`);
 
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ behavior: 'smooth', top: 0 });
     }, 150);
   }
 
@@ -198,7 +190,7 @@ export class DocsComponent implements OnInit {
 
         if (sizeMatch) {
           const parsed = parseInt(sizeMatch[1], 10);
-          if (!isNaN(parsed)) {
+          if (!Number.isNaN(parsed)) {
             size = parsed;
           }
         }
@@ -211,12 +203,7 @@ export class DocsComponent implements OnInit {
     // 2. Fix Links
     container.querySelectorAll('a').forEach((link: HTMLAnchorElement) => {
       const href = link.getAttribute('href');
-      if (
-        href &&
-        !href.startsWith('http') &&
-        !href.startsWith('/') &&
-        !href.startsWith('#')
-      ) {
+      if (href && !href.startsWith('http') && !href.startsWith('/') && !href.startsWith('#')) {
         // Resolve path and remove .md extension
         const resolved = new URL(href, `http://x/docs/${section}/`).pathname;
         const cleanPath = resolved.replace(/\.md$/, '');

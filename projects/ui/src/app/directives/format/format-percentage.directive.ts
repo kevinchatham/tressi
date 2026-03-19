@@ -1,4 +1,4 @@
-import { Directive, effect, ElementRef, inject, input } from '@angular/core';
+import { Directive, ElementRef, effect, inject, input } from '@angular/core';
 
 @Directive({
   selector: '[appFormatPercentage]',
@@ -23,7 +23,7 @@ export class FormatPercentageDirective {
       if (absV >= 10 && formatted.endsWith('.0')) {
         formatted = formatted.slice(0, -2);
       }
-      this._el.nativeElement.textContent = formatted + '%';
+      this._el.nativeElement.textContent = `${formatted}%`;
     });
   }
 }

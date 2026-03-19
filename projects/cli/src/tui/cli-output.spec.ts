@@ -1,8 +1,4 @@
-import {
-  TestSummary,
-  TressiConfig,
-  TressiOptionsConfig,
-} from '@tressi/shared/common';
+import type { TestSummary, TressiConfig, TressiOptionsConfig } from '@tressi/shared/common';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { printSummary } from './cli-output';
@@ -33,30 +29,30 @@ describe('cli-output', () => {
 
   it('should print summary when silent is false', () => {
     const summary = {
-      tressiVersion: '1.0.0',
+      endpoints: [
+        {
+          failedRequests: 0,
+          maxLatencyMs: 10,
+          minLatencyMs: 1,
+          p50LatencyMs: 5,
+          p95LatencyMs: 8,
+          p99LatencyMs: 9,
+          successfulRequests: 50,
+          url: '/test',
+        },
+      ],
       global: {
-        finalDurationSec: 10,
-        totalRequests: 100,
-        successfulRequests: 90,
         failedRequests: 10,
+        finalDurationSec: 10,
+        maxLatencyMs: 50,
         minLatencyMs: 1,
         p50LatencyMs: 5,
         p95LatencyMs: 10,
         p99LatencyMs: 20,
-        maxLatencyMs: 50,
+        successfulRequests: 90,
+        totalRequests: 100,
       },
-      endpoints: [
-        {
-          url: '/test',
-          successfulRequests: 50,
-          failedRequests: 0,
-          p50LatencyMs: 5,
-          minLatencyMs: 1,
-          maxLatencyMs: 10,
-          p95LatencyMs: 8,
-          p99LatencyMs: 9,
-        },
-      ],
+      tressiVersion: '1.0.0',
     } as unknown as TestSummary;
     const options = { durationSec: 10 } as unknown as TressiOptionsConfig;
     const config = { requests: [{ rps: 10 }] } as unknown as TressiConfig;

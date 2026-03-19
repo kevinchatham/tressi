@@ -1,4 +1,4 @@
-import { ConfigDocument } from '@tressi/shared/common';
+import type { ConfigDocument } from '@tressi/shared/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { db } from '../data/database';
@@ -6,10 +6,10 @@ import { configStorage } from './config-collection';
 
 vi.mock('../data/database', () => {
   const mockDb = {
-    selectFrom: vi.fn(),
-    insertInto: vi.fn(),
-    updateTable: vi.fn(),
     deleteFrom: vi.fn(),
+    insertInto: vi.fn(),
+    selectFrom: vi.fn(),
+    updateTable: vi.fn(),
   };
   return { db: mockDb };
 });
@@ -21,8 +21,8 @@ describe('ConfigCollection', () => {
 
   it('should retrieve all configurations', async () => {
     const mockBuilder = {
-      selectAll: vi.fn().mockReturnThis(),
       execute: vi.fn().mockResolvedValue([]),
+      selectAll: vi.fn().mockReturnThis(),
     };
     vi.mocked(db.selectFrom).mockReturnValue(
       mockBuilder as unknown as ReturnType<typeof db.selectFrom>,
@@ -34,71 +34,71 @@ describe('ConfigCollection', () => {
 
   it('should create a configuration', async () => {
     const mockBuilder = {
-      values: vi.fn().mockReturnThis(),
       execute: vi.fn().mockResolvedValue({}),
+      values: vi.fn().mockReturnThis(),
     };
     vi.mocked(db.insertInto).mockReturnValue(
       mockBuilder as unknown as ReturnType<typeof db.insertInto>,
     );
 
     const config = await configStorage.create({
-      name: 'test',
       config: {
         $schema: 'test',
-        requests: [],
         options: {
           durationSec: 10,
-          rampUpDurationSec: 0,
           headers: {},
+          rampUpDurationSec: 0,
           threads: 1,
-          workerMemoryLimit: 1024,
           workerEarlyExit: {
             enabled: false,
             errorRateThreshold: 0,
             exitStatusCodes: [],
             monitoringWindowMs: 0,
           },
+          workerMemoryLimit: 1024,
         },
+        requests: [],
       } as unknown as ConfigDocument['config'],
+      name: 'test',
     });
     expect(config.name).toBe('test');
   });
 
   it('should delete a configuration', async () => {
     const mockBuilder = {
-      where: vi.fn().mockReturnThis(),
-      selectAll: vi.fn().mockReturnThis(),
       executeTakeFirst: vi.fn().mockResolvedValue({
-        id: '1',
-        name: 'test',
         config: JSON.stringify({
           $schema: 'test',
-          requests: [],
           options: {
             durationSec: 10,
-            rampUpDurationSec: 0,
             headers: {},
+            rampUpDurationSec: 0,
             threads: 1,
-            workerMemoryLimit: 1024,
             workerEarlyExit: {
               enabled: false,
               errorRateThreshold: 0,
               exitStatusCodes: [],
               monitoringWindowMs: 0,
             },
+            workerMemoryLimit: 1024,
           },
+          requests: [],
         }),
         epoch_created_at: 123,
         epoch_updated_at: 123,
+        id: '1',
+        name: 'test',
       }),
+      selectAll: vi.fn().mockReturnThis(),
+      where: vi.fn().mockReturnThis(),
     };
     vi.mocked(db.selectFrom).mockReturnValue(
       mockBuilder as unknown as ReturnType<typeof db.selectFrom>,
     );
 
     const deleteBuilder = {
-      where: vi.fn().mockReturnThis(),
       executeTakeFirst: vi.fn().mockResolvedValue({ numDeletedRows: 1n }),
+      where: vi.fn().mockReturnThis(),
     };
     vi.mocked(db.deleteFrom).mockReturnValue(
       deleteBuilder as unknown as ReturnType<typeof db.deleteFrom>,

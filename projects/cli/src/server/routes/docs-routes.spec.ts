@@ -15,13 +15,9 @@ describe('docs-routes', () => {
   });
 
   it('GET /list should return structured docs', async () => {
-    vi.mocked(fs.readdir).mockImplementation((async (
-      path: unknown,
-    ): Promise<unknown[]> => {
+    vi.mocked(fs.readdir).mockImplementation((async (path: unknown): Promise<unknown[]> => {
       if ((path as string).endsWith('browser/docs')) {
-        return [
-          { name: '01-getting-started', isDirectory: () => true },
-        ] as unknown as unknown[];
+        return [{ isDirectory: () => true, name: '01-getting-started' }] as unknown as unknown[];
       }
       return ['01-intro.md'] as unknown as unknown[];
     }) as unknown as typeof fs.readdir);
@@ -33,13 +29,9 @@ describe('docs-routes', () => {
   });
 
   it('GET /search should return search results', async () => {
-    vi.mocked(fs.readdir).mockImplementation((async (
-      path: unknown,
-    ): Promise<unknown[]> => {
+    vi.mocked(fs.readdir).mockImplementation((async (path: unknown): Promise<unknown[]> => {
       if ((path as string).endsWith('browser/docs')) {
-        return [
-          { name: '01-getting-started', isDirectory: () => true },
-        ] as unknown as unknown[];
+        return [{ isDirectory: () => true, name: '01-getting-started' }] as unknown as unknown[];
       }
       return ['01-intro.md'] as unknown as unknown[];
     }) as unknown as typeof fs.readdir);

@@ -1,21 +1,15 @@
 import { NgTemplateOutlet } from '@angular/common';
-import {
-  Component,
-  contentChildren,
-  input,
-  output,
-  TemplateRef,
-} from '@angular/core';
-import { IconName } from '@tressi/shared/ui';
+import { Component, contentChildren, input, output, TemplateRef } from '@angular/core';
+import type { IconName } from '@tressi/shared/ui';
 
 import { ButtonComponent } from '../button/button.component';
 import { IconComponent } from '../icon/icon.component';
 
 @Component({
-  selector: 'app-collapsible-card',
   imports: [ButtonComponent, NgTemplateOutlet, IconComponent],
-  templateUrl: './collapsible-card.component.html',
+  selector: 'app-collapsible-card',
   styleUrl: './collapsible-card.component.css',
+  templateUrl: './collapsible-card.component.html',
 })
 export class CollapsibleCardComponent {
   readonly title = input.required<string>();

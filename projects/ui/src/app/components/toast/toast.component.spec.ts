@@ -14,10 +14,10 @@ describe('ToastComponent', () => {
         {
           provide: ToastService,
           useValue: {
+            dismiss: vi.fn(),
             showToast: vi.fn().mockReturnValue(false),
             toastMessage: vi.fn().mockReturnValue(''),
             toastType: vi.fn().mockReturnValue('info'),
-            dismiss: vi.fn(),
           },
         },
       ],

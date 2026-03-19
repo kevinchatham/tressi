@@ -1,5 +1,5 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { IconName } from '@tressi/shared/ui';
+import { type ComponentFixture, TestBed } from '@angular/core/testing';
+import type { IconName } from '@tressi/shared/ui';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { IconComponent } from './icon.component';
@@ -27,14 +27,11 @@ describe('IconComponent', () => {
     fixture.componentRef.setInput('name', iconName);
     fixture.detectChanges();
 
-    const spanElement: HTMLElement | null =
-      fixture.nativeElement.querySelector('span');
+    const spanElement: HTMLElement | null = fixture.nativeElement.querySelector('span');
     expect(spanElement).toBeTruthy();
     if (spanElement) {
       expect(spanElement.textContent?.trim()).toBe(iconName);
-      expect(spanElement.classList.contains('material-symbols-outlined')).toBe(
-        true,
-      );
+      expect(spanElement.classList.contains('material-symbols-outlined')).toBe(true);
     }
   });
 

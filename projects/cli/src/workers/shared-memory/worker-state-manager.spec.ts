@@ -94,9 +94,7 @@ describe('WorkerStateManager', () => {
       expect(() => manager.setWorkerState(-1, WorkerState.RUNNING)).toThrow(
         'Invalid worker ID: -1',
       );
-      expect(() => manager.setWorkerState(3, WorkerState.RUNNING)).toThrow(
-        'Invalid worker ID: 3',
-      );
+      expect(() => manager.setWorkerState(3, WorkerState.RUNNING)).toThrow('Invalid worker ID: 3');
     });
   });
 
@@ -279,8 +277,7 @@ describe('WorkerStateManager', () => {
 
       // Check alternating pattern
       for (let i = 0; i < workerCount; i++) {
-        const expectedState =
-          i % 2 === 0 ? WorkerState.RUNNING : WorkerState.INITIALIZING;
+        const expectedState = i % 2 === 0 ? WorkerState.RUNNING : WorkerState.INITIALIZING;
         expect(manager.getWorkerState(i)).toBe(expectedState);
       }
     });

@@ -1,13 +1,5 @@
-import {
-  Component,
-  computed,
-  inject,
-  input,
-  OnDestroy,
-  output,
-  signal,
-} from '@angular/core';
-import { ConfigDocument } from '@tressi/shared/common';
+import { Component, computed, inject, input, type OnDestroy, output, signal } from '@angular/core';
+import type { ConfigDocument, TestEventData } from '@tressi/shared/common';
 import { Subject, takeUntil } from 'rxjs';
 
 import { EventService } from '../../services/event.service';
@@ -16,8 +8,8 @@ import { RPCService } from '../../services/rpc.service';
 import { ButtonComponent } from '../button/button.component';
 
 @Component({
-  selector: 'app-start-button',
   imports: [ButtonComponent],
+  selector: 'app-start-button',
   templateUrl: './start-button.component.html',
 })
 export class StartButtonComponent implements OnDestroy {
@@ -98,8 +90,7 @@ export class StartButtonComponent implements OnDestroy {
       }
       this.testStarted.emit();
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error : new Error('Unknown error occurred');
+      const errorMessage = error instanceof Error ? error : new Error('Unknown error occurred');
       this._logService.error('Failed to start load test:', errorMessage);
       this.testStartFailed.emit(errorMessage);
     }
@@ -115,8 +106,7 @@ export class StartButtonComponent implements OnDestroy {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error : new Error('Unknown error occurred');
+      const errorMessage = error instanceof Error ? error : new Error('Unknown error occurred');
       this._logService.error('Failed to stop load test:', errorMessage);
     }
   }
@@ -129,7 +119,10 @@ export class StartButtonComponent implements OnDestroy {
       .getTestEventsStream()
       .pipe(takeUntil(this._destroy$))
       .subscribe({
-        next: (event) => {
+        error: (error: unknown) => {
+          this._logService.error('Failed to handle test event:', error);
+        },
+        next: (event: TestEventData) => {
           if (event.status === 'running') {
             this.isTestRunning.set(true);
           } else if (
@@ -139,9 +132,6 @@ export class StartButtonComponent implements OnDestroy {
           ) {
             this.isTestRunning.set(false);
           }
-        },
-        error: (error) => {
-          this._logService.error('Failed to handle test event:', error);
         },
       });
   }

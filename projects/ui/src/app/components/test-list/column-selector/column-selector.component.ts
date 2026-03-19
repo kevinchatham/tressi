@@ -1,12 +1,12 @@
 import { Component, input, output } from '@angular/core';
-import { ColumnConfig } from '@tressi/shared/ui';
+import type { ColumnConfig } from '@tressi/shared/ui';
 
 import { OutsideClickDirective } from '../../../directives/outside-click.directive';
 import { ButtonComponent } from '../../button/button.component';
 
 @Component({
-  selector: 'app-column-selector',
   imports: [ButtonComponent, OutsideClickDirective],
+  selector: 'app-column-selector',
   templateUrl: './column-selector.component.html',
 })
 export class ColumnSelectorComponent {

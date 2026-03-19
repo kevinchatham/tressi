@@ -1,5 +1,5 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ConfigDocument, defaultTressiConfig } from '@tressi/shared/common';
+import { type ComponentFixture, TestBed } from '@angular/core/testing';
+import { type ConfigDocument, defaultTressiConfig } from '@tressi/shared/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { NameService } from '../../services/name.service';
@@ -13,29 +13,29 @@ describe('ConfigFormComponent', () => {
   };
 
   const mockConfig: ConfigDocument = {
-    id: 'test-id',
-    name: 'Test Config',
-    epochCreatedAt: 123,
-    epochUpdatedAt: 123,
     config: {
       ...defaultTressiConfig,
       requests: [
         {
-          url: 'http://example.com',
-          method: 'GET',
-          headers: {},
-          payload: {},
-          rps: 10,
-          rampUpDurationSec: 0,
           earlyExit: {
             enabled: false,
             errorRateThreshold: 0.5,
             exitStatusCodes: [],
             monitoringWindowMs: 1000,
           },
+          headers: {},
+          method: 'GET',
+          payload: {},
+          rampUpDurationSec: 0,
+          rps: 10,
+          url: 'http://example.com',
         },
       ],
     },
+    epochCreatedAt: 123,
+    epochUpdatedAt: 123,
+    id: 'test-id',
+    name: 'Test Config',
   };
 
   beforeEach(async () => {
@@ -86,16 +86,14 @@ describe('ConfigFormComponent', () => {
 
   it('should add and remove global exit status codes', () => {
     component.addGlobalExitStatusCode();
-    const codes =
-      component.model().config.options?.workerEarlyExit?.exitStatusCodes;
+    const codes = component.model().config.options?.workerEarlyExit?.exitStatusCodes;
     expect(codes).toContain(500);
 
     const initialLength = codes?.length || 0;
     component.removeGlobalExitStatusCode(0);
-    expect(
-      component.model().config.options?.workerEarlyExit?.exitStatusCodes
-        ?.length,
-    ).toBe(initialLength - 1);
+    expect(component.model().config.options?.workerEarlyExit?.exitStatusCodes?.length).toBe(
+      initialLength - 1,
+    );
   });
 
   it('should add and remove request exit status codes', () => {
@@ -103,17 +101,14 @@ describe('ConfigFormComponent', () => {
     component.addRequestEarlyExitConfig(0);
 
     component.addRequestExitStatusCode(0);
-    expect(
-      component.model().config.requests![0].earlyExit?.exitStatusCodes,
-    ).toContain(500);
+    expect(component.model().config.requests![0].earlyExit?.exitStatusCodes).toContain(500);
 
     const initialLength =
-      component.model().config.requests![0].earlyExit?.exitStatusCodes
-        ?.length || 0;
+      component.model().config.requests![0].earlyExit?.exitStatusCodes?.length || 0;
     component.removeRequestExitStatusCode(0, 0);
-    expect(
-      component.model().config.requests![0].earlyExit?.exitStatusCodes?.length,
-    ).toBe(initialLength - 1);
+    expect(component.model().config.requests![0].earlyExit?.exitStatusCodes?.length).toBe(
+      initialLength - 1,
+    );
   });
 
   it('should emit output on submit', () => {

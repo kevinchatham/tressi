@@ -9,15 +9,13 @@ import { ResetCommand } from './reset-command';
 vi.mock('../data/database', () => ({
   db: {
     deleteFrom: vi.fn().mockReturnThis(),
-    selectFrom: vi.fn().mockReturnThis(),
-    select: vi.fn().mockReturnThis(),
     execute: vi.fn(),
     executeTakeFirst: vi.fn(),
     fn: {
-      countAll: vi
-        .fn()
-        .mockReturnValue({ as: vi.fn().mockReturnValue('count') }),
+      countAll: vi.fn().mockReturnValue({ as: vi.fn().mockReturnValue('count') }),
     },
+    select: vi.fn().mockReturnThis(),
+    selectFrom: vi.fn().mockReturnThis(),
   },
 }));
 
@@ -29,8 +27,8 @@ vi.mock('../tui/terminal', () => ({
 
 vi.mock('node:readline/promises', () => ({
   createInterface: vi.fn().mockReturnValue({
-    question: vi.fn(),
     close: vi.fn(),
+    question: vi.fn(),
   }),
 }));
 
@@ -55,8 +53,8 @@ describe('ResetCommand', () => {
 
     const selectFromMock = vi.mocked(db.selectFrom);
     selectFromMock.mockReturnValue({
-      select: vi.fn().mockReturnThis(),
       executeTakeFirst: vi.fn().mockResolvedValue({ count: 0 }),
+      select: vi.fn().mockReturnThis(),
     } as unknown as ReturnType<typeof db.selectFrom>);
 
     await command.execute(true);
@@ -66,16 +64,12 @@ describe('ResetCommand', () => {
     expect(terminal.print).toHaveBeenCalledWith(
       expect.stringContaining('Resetting Tressi database...'),
     );
-    expect(terminal.print).toHaveBeenCalledWith(
-      expect.stringContaining('successfully reset'),
-    );
+    expect(terminal.print).toHaveBeenCalledWith(expect.stringContaining('successfully reset'));
   });
 
   it('should ask for confirmation if force is false', async () => {
     const command = new ResetCommand();
-    const rl = vi.mocked(
-      readline.createInterface({} as unknown as readline.ReadLineOptions),
-    );
+    const rl = vi.mocked(readline.createInterface({} as unknown as readline.ReadLineOptions));
     rl.question.mockResolvedValue('y');
 
     const deleteFromMock = vi.mocked(db.deleteFrom);
@@ -86,8 +80,8 @@ describe('ResetCommand', () => {
 
     const selectFromMock = vi.mocked(db.selectFrom);
     selectFromMock.mockReturnValue({
-      select: vi.fn().mockReturnThis(),
       executeTakeFirst: vi.fn().mockResolvedValue({ count: 0 }),
+      select: vi.fn().mockReturnThis(),
     } as unknown as ReturnType<typeof db.selectFrom>);
 
     await command.execute(false);
@@ -99,17 +93,13 @@ describe('ResetCommand', () => {
 
   it('should cancel reset if user does not confirm', async () => {
     const command = new ResetCommand();
-    const rl = vi.mocked(
-      readline.createInterface({} as unknown as readline.ReadLineOptions),
-    );
+    const rl = vi.mocked(readline.createInterface({} as unknown as readline.ReadLineOptions));
     rl.question.mockResolvedValue('n');
 
     await command.execute(false);
 
     expect(db.deleteFrom).not.toHaveBeenCalled();
-    expect(terminal.print).toHaveBeenCalledWith(
-      expect.stringContaining('Reset cancelled'),
-    );
+    expect(terminal.print).toHaveBeenCalledWith(expect.stringContaining('Reset cancelled'));
     expect(rl.close).toHaveBeenCalled();
   });
 
@@ -123,15 +113,13 @@ describe('ResetCommand', () => {
 
     const selectFromMock = vi.mocked(db.selectFrom);
     selectFromMock.mockReturnValue({
-      select: vi.fn().mockReturnThis(),
       executeTakeFirst: vi.fn().mockResolvedValue({ count: 1 }),
+      select: vi.fn().mockReturnThis(),
     } as unknown as ReturnType<typeof db.selectFrom>);
 
     await command.execute(true);
 
-    expect(terminal.print).toHaveBeenCalledWith(
-      expect.stringContaining('Partial reset'),
-    );
+    expect(terminal.print).toHaveBeenCalledWith(expect.stringContaining('Partial reset'));
   });
 
   it('should throw error if database operation fails', async () => {

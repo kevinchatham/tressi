@@ -1,4 +1,4 @@
-/* eslint-disable no-console */
+/** biome-ignore-all lint/suspicious/noConsole: default */
 /**
  * Scans TypeScript files and adds/fixes JSDoc comments using a locally running
  * llama.cpp server via its OpenAI-compatible HTTP API.
@@ -23,11 +23,11 @@
  * npx tsx scripts/documenter-ts-morph.ts ./src --debug
  */
 
-import { readdir, readFile, stat, writeFile } from 'fs/promises';
-import { join, relative } from 'path';
-import { JSDocableNode, Project, SourceFile } from 'ts-morph';
+import { readdir, readFile, stat, writeFile } from 'node:fs/promises';
+import { join, relative } from 'node:path';
+import { type JSDocableNode, Project, type SourceFile } from 'ts-morph';
 
-const root = process.argv[2] ?? '.';
+const root: string = process.argv[2] ?? '.';
 const llama = 'http://desktop:8080/v1/chat/completions';
 const key = '1234';
 const model = 'Devstral-Small-2-24B-Instruct-2512-UD-Q4_K_XL';
@@ -42,17 +42,17 @@ const model = 'Devstral-Small-2-24B-Instruct-2512-UD-Q4_K_XL';
 const REQUEST_TIMEOUT = 300000;
 
 // Enable verbose logging for debugging
-const DEBUG = process.argv.includes('--debug') || process.argv.includes('-d');
+const DEBUG: boolean = process.argv.includes('--debug') || process.argv.includes('-d');
 
-const ignore = new Set(['node_modules', 'dist', '.git']);
+const ignore: Set<string> = new Set(['node_modules', 'dist', '.git']);
 
 // Statistics tracking
 const stats = {
-  filesProcessed: 0,
-  filesUpdated: 0,
-  filesUnchanged: 0,
-  elementsUpdated: 0,
   elementsSkipped: 0,
+  elementsUpdated: 0,
+  filesProcessed: 0,
+  filesUnchanged: 0,
+  filesUpdated: 0,
 };
 
 function logDebug(...args: unknown[]): void {
@@ -92,11 +92,11 @@ async function findTsFiles(dir: string): Promise<string[]> {
  * Interface representing a documentable element in the AST.
  */
 interface DocumentableElement {
+  code: string;
+  hasJsDoc: boolean;
   kind: string;
   name: string;
   node: JSDocableNode;
-  code: string;
-  hasJsDoc: boolean;
 }
 
 /**
@@ -110,9 +110,7 @@ function isPrivateElement(name: string): boolean {
 /**
  * Finds all documentable elements in a source file that don't have JSDoc.
  */
-function findDocumentableElements(
-  sourceFile: SourceFile,
-): DocumentableElement[] {
+function findDocumentableElements(sourceFile: SourceFile): DocumentableElement[] {
   const elements: DocumentableElement[] = [];
 
   // Helper function to check if a node has JSDoc
@@ -126,11 +124,11 @@ function findDocumentableElements(
     const name = func.getName();
     if (name && !isPrivateElement(name)) {
       elements.push({
+        code: func.getText(),
+        hasJsDoc: hasJsDoc(func),
         kind: 'function',
         name,
         node: func,
-        code: func.getText(),
-        hasJsDoc: hasJsDoc(func),
       });
     }
   }
@@ -141,11 +139,11 @@ function findDocumentableElements(
     const name = cls.getName();
     if (name && !isPrivateElement(name)) {
       elements.push({
+        code: cls.getText(),
+        hasJsDoc: hasJsDoc(cls),
         kind: 'class',
         name,
         node: cls,
-        code: cls.getText(),
-        hasJsDoc: hasJsDoc(cls),
       });
     }
   }
@@ -156,11 +154,11 @@ function findDocumentableElements(
     const name = iface.getName();
     if (name && !isPrivateElement(name)) {
       elements.push({
+        code: iface.getText(),
+        hasJsDoc: hasJsDoc(iface),
         kind: 'interface',
         name,
         node: iface,
-        code: iface.getText(),
-        hasJsDoc: hasJsDoc(iface),
       });
     }
   }
@@ -171,11 +169,11 @@ function findDocumentableElements(
     const name = typeAlias.getName();
     if (name && !isPrivateElement(name)) {
       elements.push({
+        code: typeAlias.getText(),
+        hasJsDoc: hasJsDoc(typeAlias),
         kind: 'type alias',
         name,
         node: typeAlias,
-        code: typeAlias.getText(),
-        hasJsDoc: hasJsDoc(typeAlias),
       });
     }
   }
@@ -190,11 +188,11 @@ function findDocumentableElements(
         continue;
       }
       elements.push({
+        code: method.getText(),
+        hasJsDoc: hasJsDoc(method),
         kind: 'method',
         name,
         node: method,
-        code: method.getText(),
-        hasJsDoc: hasJsDoc(method),
       });
     }
 
@@ -209,11 +207,11 @@ function findDocumentableElements(
       const type = prop.getTypeNode();
       if (type) {
         elements.push({
+          code: prop.getText(),
+          hasJsDoc: hasJsDoc(prop),
           kind: 'property',
           name,
           node: prop,
-          code: prop.getText(),
-          hasJsDoc: hasJsDoc(prop),
         });
       }
     }
@@ -228,11 +226,11 @@ function findDocumentableElements(
         continue;
       }
       elements.push({
+        code: method.getText(),
+        hasJsDoc: hasJsDoc(method),
         kind: 'interface method',
         name,
         node: method,
-        code: method.getText(),
-        hasJsDoc: hasJsDoc(method),
       });
     }
 
@@ -244,11 +242,11 @@ function findDocumentableElements(
         continue;
       }
       elements.push({
+        code: prop.getText(),
+        hasJsDoc: hasJsDoc(prop),
         kind: 'interface property',
         name,
         node: prop,
-        code: prop.getText(),
-        hasJsDoc: hasJsDoc(prop),
       });
     }
   }
@@ -260,26 +258,15 @@ function findDocumentableElements(
 /* llama.cpp call                                      */
 /* -------------------------------------------------- */
 
-async function generateJsDoc(
-  element: DocumentableElement,
-  filePath: string,
-): Promise<string> {
+async function generateJsDoc(element: DocumentableElement, filePath: string): Promise<string> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
 
   try {
     const res = await fetch(llama, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${key}`,
-      },
       body: JSON.stringify({
-        model,
-        temperature: 0.2,
         messages: [
           {
-            role: 'system',
             content: `
 You are a TypeScript documentation assistant. Add or update JSDoc comments for code elements.
 
@@ -313,13 +300,21 @@ Rules:
 - Do NOT include explanations, markdown, or code fences.
 - Do NOT include the element code in your response.
 `,
+            role: 'system',
           },
           {
-            role: 'user',
             content: `Generate JSDoc for this ${element.kind} named "${element.name}":\n\n${element.code}`,
+            role: 'user',
           },
         ],
+        model,
+        temperature: 0.2,
       }),
+      headers: {
+        Authorization: `Bearer ${key}`,
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
       signal: controller.signal,
     });
 
@@ -395,10 +390,7 @@ Rules:
  * This function is permissive about formatting changes (indentation, blank lines, etc.)
  * and only checks that the actual code logic remains unchanged.
  */
-function validateOnlyJsDocChanged(
-  originalContent: string,
-  newContent: string,
-): boolean {
+function validateOnlyJsDocChanged(originalContent: string, newContent: string): boolean {
   // Very permissive validation that only cares about code structure, not formatting
   // Remove all JSDoc comments and normalize the content to just check code logic
   const normalizeContent = (content: string): string => {
@@ -422,11 +414,7 @@ function validateOnlyJsDocChanged(
 /* main logic                                          */
 /* -------------------------------------------------- */
 
-async function processFile(
-  file: string,
-  current: number,
-  total: number,
-): Promise<void> {
+async function processFile(file: string, current: number, total: number): Promise<void> {
   logDebug(`Processing file: ${file}`);
 
   // Read original content
@@ -450,9 +438,7 @@ async function processFile(
     return;
   }
 
-  logDebug(
-    `Found ${elementsNeedingJsDoc.length} elements needing JSDoc in: ${file}`,
-  );
+  logDebug(`Found ${elementsNeedingJsDoc.length} elements needing JSDoc in: ${file}`);
 
   let elementsUpdated = 0;
 
@@ -470,9 +456,7 @@ async function processFile(
 
       // ts-morph's addJsDoc expects just the content, not the full JSDoc comment
       // So we need to strip the /** and */ markers
-      const jsDocContent = jsDocText
-        .replace(/^\/\*\*\s*/, '')
-        .replace(/\s*\*\/$/, '');
+      const jsDocContent = jsDocText.replace(/^\/\*\*\s*/, '').replace(/\s*\*\/$/, '');
       logDebug('Stripped content for ts-morph:', JSON.stringify(jsDocContent));
 
       element.node.addJsDoc(jsDocContent);
@@ -492,9 +476,7 @@ async function processFile(
   } else {
     // Validate that only JSDoc was added
     if (!validateOnlyJsDocChanged(originalContent, newContent)) {
-      console.error(
-        `❌ Validation failed - non-JSDoc code changed, restoring backup: ${file}`,
-      );
+      console.error(`❌ Validation failed - non-JSDoc code changed, restoring backup: ${file}`);
       await writeFile(file, originalContent, 'utf8');
       stats.filesUnchanged++;
     } else {

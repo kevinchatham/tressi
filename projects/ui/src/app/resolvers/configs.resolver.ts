@@ -1,6 +1,6 @@
 import { inject } from '@angular/core';
-import { ResolveFn } from '@angular/router';
-import { ConfigDocument } from '@tressi/shared/common';
+import type { ResolveFn } from '@angular/router';
+import type { ConfigDocument } from '@tressi/shared/common';
 
 import { ConfigService } from '../services/config.service';
 

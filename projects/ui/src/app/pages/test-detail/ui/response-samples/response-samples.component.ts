@@ -1,5 +1,5 @@
 import { Component, input, output, signal } from '@angular/core';
-import { IconName, ResponseSample } from '@tressi/shared/ui';
+import type { IconName, ResponseSample } from '@tressi/shared/ui';
 
 import { CollapsibleCardComponent } from '../../../../components/collapsible-card/collapsible-card.component';
 import { IconComponent } from '../../../../components/icon/icon.component';
@@ -14,7 +14,6 @@ type StatusCategory = 'success' | 'redirect' | 'client-error' | 'server-error';
  * Allows filtering by status code and displays headers and body in a collapsible card
  */
 @Component({
-  selector: 'app-response-samples',
   imports: [
     CollapsibleCardComponent,
     IconComponent,
@@ -22,6 +21,7 @@ type StatusCategory = 'success' | 'redirect' | 'client-error' | 'server-error';
     FormatNumberDirective,
     FormatPercentageDirective,
   ],
+  selector: 'app-response-samples',
   templateUrl: './response-samples.component.html',
 })
 export class ResponseSamplesComponent {
@@ -78,9 +78,7 @@ export class ResponseSamplesComponent {
       return samples;
     }
 
-    return samples.filter(
-      (sample) => sample.statusCode.toString() === this.selectedStatusCode(),
-    );
+    return samples.filter((sample) => sample.statusCode.toString() === this.selectedStatusCode());
   }
 
   /**
@@ -112,11 +110,9 @@ export class ResponseSamplesComponent {
    * Returns CSS classes for status code badges
    */
   getStatusCodeClasses(statusCode: number): string {
-    if (statusCode >= 200 && statusCode < 300)
-      return 'bg-success/20 text-success';
+    if (statusCode >= 200 && statusCode < 300) return 'bg-success/20 text-success';
     if (statusCode >= 300 && statusCode < 400) return 'bg-info/20 text-info';
-    if (statusCode >= 400 && statusCode < 500)
-      return 'bg-warning/20 text-warning';
+    if (statusCode >= 400 && statusCode < 500) return 'bg-warning/20 text-warning';
     return 'bg-error/20 text-error';
   }
 

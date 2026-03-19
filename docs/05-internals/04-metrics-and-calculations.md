@@ -22,15 +22,30 @@ flowchart TD
     end
 
     subgraph MA [Metrics Aggregator]
-        WA[Weighted Aggregation]
-        SW[Sliding Window]
+        direction TB
+        ORC[Orchestrator]
+        CALC[Stats Calculator]
+        STORE[Response Sample Store]
+        HIST[Histogram Utils]
     end
 
     W1 & W2 & Wn -->|Atomics.add| SM
-    MA -->|Atomics.load| SM
-    MA -->|Consolidate| DB[(SQLite)]
-    MA -->|Broadcast| UI[Angular UI]
+    ORC -->|Poll| SM
+    ORC -->|Delegate| CALC
+    ORC -->|Delegate| HIST
+    ORC -->|Store Samples| STORE
+    ORC -->|Consolidate| DB[(SQLite)]
+    ORC -->|Broadcast| UI[Angular UI]
 ```
+
+### Modular Architecture
+
+To maintain maintainability and testability, the metrics aggregation logic is split into several specialized modules:
+
+- **`MetricsAggregator`**: The main orchestrator responsible for the polling lifecycle, worker data retrieval, and event emission.
+- **`StatsCalculator`**: A stateless module containing pure functions for calculating weighted latency averages and percentiles across multiple histograms.
+- **`ResponseSampleStore`**: Manages the collection and deduplication of HTTP response body samples during test execution.
+- **`HistogramUtils`**: Handles the conversion of raw worker histograms into the logarithmic bucket format used for visualization.
 
 ### Calculating Latency
 
@@ -38,8 +53,8 @@ Tressi implements High Dynamic Range (HDR) Histograms to track latency across a 
 
 - **Microsecond precision**: Recording latency in microseconds enables accurate calculation of latency percentiles.
 - **Atomic recording**: Worker threads use `Atomics.add` to increment histogram buckets in `SharedArrayBuffer`, ensuring $O(1)$ recording time.
-- **Weighted aggregation**: Calculating global statistics via weighted averages of histogram means and percentiles preserves accuracy across varying request volumes.
-- **Logarithmic visualization**: Merging histogram data into 10 logarithmic buckets provides resolution for the majority of requests while capturing the long tail.
+- **Weighted aggregation**: Calculating global statistics via weighted averages of histogram means and percentiles preserves accuracy across varying request volumes. This is handled by the `StatsCalculator`.
+- **Logarithmic visualization**: Merging histogram data into 10 logarithmic buckets provides resolution for the majority of requests while capturing the long tail. This is handled by `HistogramUtils`.
 
 ### Calculating Throughput
 

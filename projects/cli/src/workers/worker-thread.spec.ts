@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
+import type { Procedure } from '@vitest/spy';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { WorkerThread } from './worker-thread';
 
 vi.mock('worker_threads', () => ({
@@ -7,44 +7,47 @@ vi.mock('worker_threads', () => ({
     postMessage: vi.fn(),
   },
   workerData: {
-    workerId: 0,
     assignedEndpoints: [
       {
-        url: 'http://example.com/api/1',
         method: 'GET',
         rps: 10,
+        url: 'http://example.com/api/1',
       },
     ],
-    endpointOffset: 0,
-    statsBuffer: new SharedArrayBuffer(1024),
-    histogramBuffer: new SharedArrayBuffer(1024),
-    workerStateBuffer: new SharedArrayBuffer(1024),
-    endpointStateBuffer: new SharedArrayBuffer(1024),
-    memoryLimit: 512,
-    totalWorkers: 1,
     durationSec: 1,
+    endpointOffset: 0,
+    endpointStateBuffer: new SharedArrayBuffer(1024),
+    histogramBuffer: new SharedArrayBuffer(1024),
+    memoryLimit: 512,
     rampUpDurationSec: 0,
+    statsBuffer: new SharedArrayBuffer(1024),
+    totalWorkers: 1,
+    workerId: 0,
+    workerStateBuffer: new SharedArrayBuffer(1024),
   },
 }));
 
 vi.mock('../http/request-executor', () => ({
-  RequestExecutor: vi.fn().mockImplementation(function () {
-    return {
-      executeRequest: vi.fn().mockResolvedValue({
-        success: true,
-        status: 200,
-        bytesSent: 100,
-        bytesReceived: 200,
-        body: '{"message":"success"}',
-        headers: {},
-      }),
-      releaseResultObject: vi.fn(),
-    };
+  RequestExecutor: vi.fn().mockImplementation(function (this: {
+    executeRequest: Mock<Procedure>;
+    releaseResultObject: Mock<Procedure>;
+  }) {
+    this.executeRequest = vi.fn().mockResolvedValue({
+      body: '{"message":"success"}',
+      bytesReceived: 200,
+      bytesSent: 100,
+      headers: {},
+      status: 200,
+      success: true,
+    });
+    this.releaseResultObject = vi.fn();
   }),
 }));
 
 vi.mock('../http/response-sampler', () => ({
-  ResponseSampler: vi.fn().mockImplementation(function () {
+  ResponseSampler: vi.fn().mockImplementation(function (this: {
+    setWorkerState: Mock<Procedure>;
+  }) {
     return {};
   }),
 }));
@@ -56,51 +59,54 @@ vi.mock('../tui/terminal', () => ({
 }));
 
 vi.mock('./shared-memory/stats-counter-manager', () => ({
-  StatsCounterManager: vi.fn().mockImplementation(function () {
-    return {
-      recordRequest: vi.fn(),
-      recordStatusCode: vi.fn(),
-      recordBytesSent: vi.fn(),
-      recordBytesReceived: vi.fn(),
-    };
+  StatsCounterManager: vi.fn().mockImplementation(function (this: {
+    recordRequest: Mock<Procedure>;
+    recordStatusCode: Mock<Procedure>;
+    recordBytesSent: Mock<Procedure>;
+    recordBytesReceived: Mock<Procedure>;
+  }) {
+    this.recordRequest = vi.fn();
+    this.recordStatusCode = vi.fn();
+    this.recordBytesSent = vi.fn();
+    this.recordBytesReceived = vi.fn();
   }),
 }));
 
 vi.mock('./shared-memory/hdr-histogram-manager', () => ({
-  HdrHistogramManager: vi.fn().mockImplementation(function () {
-    return {
-      recordLatency: vi.fn(),
-    };
+  HdrHistogramManager: vi.fn().mockImplementation(function (this: {
+    recordLatency: Mock<Procedure>;
+  }) {
+    this.recordLatency = vi.fn();
   }),
 }));
 
 vi.mock('./shared-memory/worker-state-manager', () => ({
-  WorkerStateManager: vi.fn().mockImplementation(function () {
-    return {
-      setWorkerState: vi.fn(),
-    };
+  WorkerStateManager: vi.fn().mockImplementation(function (this: {
+    setWorkerState: Mock<Procedure>;
+  }) {
+    this.setWorkerState = vi.fn();
   }),
 }));
 
 vi.mock('./shared-memory/endpoint-state-manager', () => ({
-  EndpointStateManager: vi.fn().mockImplementation(function () {
-    return {
-      isEndpointRunning: vi.fn().mockReturnValue(true),
-    };
+  EndpointStateManager: vi.fn().mockImplementation(function (this: {
+    isEndpointRunning: Mock<Procedure>;
+  }) {
+    this.isEndpointRunning = vi.fn().mockReturnValue(true);
   }),
 }));
 
 vi.mock('./worker-rate-limiter', () => ({
-  WorkerRateLimiter: vi.fn().mockImplementation(function () {
-    return {
-      getAvailableRequests: vi.fn().mockReturnValue([
-        {
-          url: 'http://example.com/api/1',
-          method: 'GET',
-          rps: 10,
-        },
-      ]),
-    };
+  WorkerRateLimiter: vi.fn().mockImplementation(function (this: {
+    getAvailableRequests: Mock<Procedure>;
+  }) {
+    this.getAvailableRequests = vi.fn().mockReturnValue([
+      {
+        method: 'GET',
+        rps: 10,
+        url: 'http://example.com/api/1',
+      },
+    ]);
   }),
 }));
 

@@ -1,34 +1,17 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import { expect, test } from '@playwright/test';
+import type { TressiConfig } from '@tressi/cli';
 import { loadConfig } from '@tressi/cli/src/core/config';
-import fs from 'fs';
-import path from 'path';
 import { MockAgent, setGlobalDispatcher } from 'undici';
-
 import { execute } from '../utils';
 
 const minimalConfig = {
   $schema: 'https://example.com/schema.json',
-  requests: [
-    {
-      url: 'http://localhost:8080/test',
-      method: 'GET' as const,
-      rps: 10,
-      rampUpDurationSec: 0,
-      payload: {},
-      headers: {},
-      earlyExit: {
-        enabled: false,
-        errorRateThreshold: 0,
-        exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
-        monitoringWindowMs: 1000,
-      },
-    },
-  ],
   options: {
     durationSec: 10,
-    rampUpDurationSec: 0,
-    workerMemoryLimit: 128,
     headers: {},
+    rampUpDurationSec: 0,
     threads: 4,
     workerEarlyExit: {
       enabled: false,
@@ -36,32 +19,32 @@ const minimalConfig = {
       exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
       monitoringWindowMs: 1000,
     },
+    workerMemoryLimit: 128,
   },
-};
+  requests: [
+    {
+      earlyExit: {
+        enabled: false,
+        errorRateThreshold: 0,
+        exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
+        monitoringWindowMs: 1000,
+      },
+      headers: {},
+      method: 'GET' as const,
+      payload: {},
+      rampUpDurationSec: 0,
+      rps: 10,
+      url: 'http://localhost:8080/test',
+    },
+  ],
+} as unknown as TressiConfig;
 
 const expectedConfig = {
   $schema: 'https://example.com/schema.json',
-  requests: [
-    {
-      url: 'http://localhost:8080/test',
-      method: 'GET',
-      rps: 10,
-      rampUpDurationSec: 0,
-      payload: {},
-      headers: {},
-      earlyExit: {
-        enabled: false,
-        errorRateThreshold: 0,
-        exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
-        monitoringWindowMs: 1000,
-      },
-    },
-  ],
   options: {
     durationSec: 10,
-    rampUpDurationSec: 0,
-    workerMemoryLimit: 128,
     headers: {},
+    rampUpDurationSec: 0,
     threads: 4,
     workerEarlyExit: {
       enabled: false,
@@ -69,8 +52,25 @@ const expectedConfig = {
       exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
       monitoringWindowMs: 1000,
     },
+    workerMemoryLimit: 128,
   },
-};
+  requests: [
+    {
+      earlyExit: {
+        enabled: false,
+        errorRateThreshold: 0,
+        exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
+        monitoringWindowMs: 1000,
+      },
+      headers: {},
+      method: 'GET',
+      payload: {},
+      rampUpDurationSec: 0,
+      rps: 10,
+      url: 'http://localhost:8080/test',
+    },
+  ],
+} as unknown as TressiConfig;
 
 test.describe('Config Loading Integration', () => {
   const rootDir = path.resolve(__dirname, '../../../');
@@ -102,9 +102,7 @@ test.describe('Config Loading Integration', () => {
 
   test('should load config from a remote URL', async () => {
     const mockPool = mockAgent.get('http://localhost:8080');
-    mockPool
-      .intercept({ path: '/remote-config', method: 'GET' })
-      .reply(200, minimalConfig);
+    mockPool.intercept({ method: 'GET', path: '/remote-config' }).reply(200, minimalConfig);
 
     const result = await loadConfig('http://localhost:8080/remote-config');
     expect(result.config).toEqual(expectedConfig);
@@ -112,13 +110,11 @@ test.describe('Config Loading Integration', () => {
 
   test('should throw an error for a failing remote URL', async () => {
     const mockPool = mockAgent.get('http://localhost:8080');
-    mockPool
-      .intercept({ path: '/remote-config-failing', method: 'GET' })
-      .reply(500);
+    mockPool.intercept({ method: 'GET', path: '/remote-config-failing' }).reply(500);
 
-    await expect(
-      loadConfig('http://localhost:8080/remote-config-failing'),
-    ).rejects.toThrow('Remote config fetch failed with status 500');
+    await expect(loadConfig('http://localhost:8080/remote-config-failing')).rejects.toThrow(
+      'Remote config fetch failed with status 500',
+    );
   });
 
   test('should handle invalid configuration gracefully', async () => {

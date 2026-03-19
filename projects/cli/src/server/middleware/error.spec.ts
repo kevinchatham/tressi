@@ -21,8 +21,8 @@ describe('error middleware', () => {
     it('should catch errors and return a 500 response by default', async () => {
       const handler = createErrorHandler();
       const c = {
-        req: { path: '/test' },
         json: vi.fn().mockReturnValue(new Response()),
+        req: { path: '/test' },
       } as unknown as Context;
       const next = vi.fn().mockRejectedValue(new Error('Something went wrong'));
 
@@ -32,8 +32,8 @@ describe('error middleware', () => {
         expect.objectContaining({
           error: {
             message: 'Something went wrong',
-            timestamp: expect.any(Number),
             path: '/test',
+            timestamp: expect.any(Number),
           },
         }),
         500,
@@ -43,8 +43,8 @@ describe('error middleware', () => {
     it('should return 404 if error message contains "not found"', async () => {
       const handler = createErrorHandler();
       const c = {
-        req: { path: '/test' },
         json: vi.fn().mockReturnValue(new Response()),
+        req: { path: '/test' },
       } as unknown as Context;
       const next = vi.fn().mockRejectedValue(new Error('Resource not found'));
 
@@ -56,8 +56,8 @@ describe('error middleware', () => {
     it('should use status from error object if provided', async () => {
       const handler = createErrorHandler();
       const c = {
-        req: { path: '/test' },
         json: vi.fn().mockReturnValue(new Response()),
+        req: { path: '/test' },
       } as unknown as Context;
       const error = new Error('Forbidden');
       (error as unknown as { status: number }).status = 403;
@@ -71,8 +71,8 @@ describe('error middleware', () => {
     it('should handle non-Error objects', async () => {
       const handler = createErrorHandler();
       const c = {
-        req: { path: '/test' },
         json: vi.fn().mockReturnValue(new Response()),
+        req: { path: '/test' },
       } as unknown as Context;
       const next = vi.fn().mockRejectedValue('String error');
 
@@ -82,8 +82,8 @@ describe('error middleware', () => {
         expect.objectContaining({
           error: {
             message: 'Internal server error',
-            timestamp: expect.any(Number),
             path: '/test',
+            timestamp: expect.any(Number),
           },
         }),
         500,

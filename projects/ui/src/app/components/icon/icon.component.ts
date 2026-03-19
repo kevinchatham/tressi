@@ -1,9 +1,9 @@
 import { Component, input } from '@angular/core';
-import { IconName } from '@tressi/shared/ui';
+import type { IconName } from '@tressi/shared/ui';
 
 @Component({
-  selector: 'app-icon',
   imports: [],
+  selector: 'app-icon',
   templateUrl: './icon.component.html',
 })
 export class IconComponent {

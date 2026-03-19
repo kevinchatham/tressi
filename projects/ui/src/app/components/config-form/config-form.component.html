@@ -33,7 +33,7 @@
         [class.border-primary]="activeTab() === 'general'"
         [class.text-primary]="activeTab() === 'general'"
         [class.border-transparent]="activeTab() !== 'general'"
-        [class.text-base-content/60]="activeTab() !== 'general'"
+        [ngClass]="{ 'text-base-content/60': activeTab() !== 'general' }"
         [class.hover:text-base-content]="activeTab() !== 'general'"
         (click)="setActiveTab('general')"
       >
@@ -47,7 +47,7 @@
         [class.border-primary]="activeTab() === 'requests'"
         [class.text-primary]="activeTab() === 'requests'"
         [class.border-transparent]="activeTab() !== 'requests'"
-        [class.text-base-content/60]="activeTab() !== 'requests'"
+        [ngClass]="{ 'text-base-content/60': activeTab() !== 'requests' }"
         [class.hover:text-base-content]="activeTab() !== 'requests'"
         (click)="setActiveTab('requests')"
       >
@@ -69,7 +69,6 @@
         (jsonTextareaChange)="onJsonTextAreaChange()"
       />
     }
-
     <!-- Requests Configuration Tab -->
     @if (activeTab() === 'requests') {
       <app-requests-config
@@ -85,7 +84,6 @@
       />
     }
   </div>
-
   @if (form().touched() && form().invalid() && formErrors().length > 0) {
     <div class="-pt-2">
       <span class="text-error text-sm">Validation Errors</span>

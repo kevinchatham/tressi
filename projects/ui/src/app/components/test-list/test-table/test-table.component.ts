@@ -1,12 +1,12 @@
-import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
+import { type CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
 import { Component, inject, input, output } from '@angular/core';
-import { TestDocument, TestStatus } from '@tressi/shared/common';
+import type { TestDocument, TestStatus } from '@tressi/shared/common';
 import {
-  ColumnConfig,
+  type ColumnConfig,
   ColumnKey,
-  FieldPath,
-  IconName,
-  SortConfig,
+  type FieldPath,
+  type IconName,
+  type SortConfig,
 } from '@tressi/shared/ui';
 
 import { FormatBytesDirective } from '../../../directives/format/format-bytes.directive';
@@ -25,7 +25,6 @@ import { StatusBadgeComponent } from '../../status-badge/status-badge.component'
 type ValueExtractor = (test: TestDocument) => unknown;
 
 @Component({
-  selector: 'app-test-table',
   imports: [
     IconComponent,
     DragDropModule,
@@ -39,6 +38,7 @@ type ValueExtractor = (test: TestDocument) => unknown;
     FormatNetworkThroughputDirective,
     FormatLatencyDirective,
   ],
+  selector: 'app-test-table',
   templateUrl: './test-table.component.html',
 })
 export class TestTableComponent {
@@ -59,57 +59,58 @@ export class TestTableComponent {
 
   // Create complete mapping that TypeScript will type-check
   private readonly _valueExtractors: Record<FieldPath, ValueExtractor> = {
-    select: () => '',
-    'test.status': (test) => test.status || 'unknown',
-    'test.epochStartedAt': (test) =>
-      test.summary?.global.epochStartedAt || test.epochCreatedAt,
-    'test.duration': (test) => this.getTestDurationRaw(test),
-    'summary.global.totalRequests': (test) =>
-      test.summary?.global.totalRequests ?? null,
-    'summary.global.successfulRequests': (test) =>
-      test.summary?.global.successfulRequests ?? null,
-    'summary.global.failedRequests': (test) =>
-      test.summary?.global.failedRequests ?? null,
-    'summary.global.p50LatencyMs': (test) =>
-      test.summary?.global.p50LatencyMs ?? null,
-    'summary.global.p95LatencyMs': (test) =>
-      test.summary?.global.p95LatencyMs ?? null,
-    'summary.global.p99LatencyMs': (test) =>
-      test.summary?.global.p99LatencyMs ?? null,
-    'summary.tressiVersion': (test) => test.summary?.tressiVersion ?? null,
-    'summary.global.minLatencyMs': (test) =>
-      test.summary?.global.minLatencyMs ?? null,
-    'summary.global.maxLatencyMs': (test) =>
-      test.summary?.global.maxLatencyMs ?? null,
-    'summary.global.epochStartedAt': (test) =>
-      test.summary?.global.epochStartedAt ?? null,
-    'summary.global.epochEndedAt': (test) =>
-      test.summary?.global.epochEndedAt ?? null,
-    'summary.global.networkBytesSent': (test) =>
-      test.summary?.global.networkBytesSent ?? null,
-    'summary.global.networkBytesReceived': (test) =>
-      test.summary?.global.networkBytesReceived ?? null,
-    'summary.global.networkBytesPerSec': (test) =>
-      test.summary?.global.networkBytesPerSec ?? null,
-    'summary.global.errorRate': (test) =>
-      test.summary?.global.errorRate ?? null,
-    'summary.global.averageRequestsPerSecond': (test) =>
-      test.summary?.global.averageRequestsPerSecond ?? null,
-    'summary.global.peakRequestsPerSecond': (test) =>
-      test.summary?.global.peakRequestsPerSecond ?? null,
-    'summary.global.finalDurationSec': (test) =>
-      test.summary?.global.finalDurationSec ?? null,
-    'summary.configSnapshot.options.durationSec': (test) =>
+    select: (): string => '',
+    'summary.configSnapshot.options.durationSec': (test: TestDocument): number | null =>
       test.summary?.configSnapshot?.options?.durationSec ?? null,
-    'summary.configSnapshot.options.threads': (test) =>
-      test.summary?.configSnapshot?.options?.threads ?? null,
-    'summary.configSnapshot.options.workerMemoryLimit': (test) =>
-      test.summary?.configSnapshot?.options?.workerMemoryLimit ?? null,
-    'summary.configSnapshot.options.rampUpDurationSec': (test) =>
+    'summary.configSnapshot.options.rampUpDurationSec': (test: TestDocument): number | null =>
       test.summary?.configSnapshot?.options?.rampUpDurationSec ?? null,
+    'summary.configSnapshot.options.threads': (test: TestDocument): number | null =>
+      test.summary?.configSnapshot?.options?.threads ?? null,
+    'summary.configSnapshot.options.workerMemoryLimit': (test: TestDocument): number | null =>
+      test.summary?.configSnapshot?.options?.workerMemoryLimit ?? null,
+    'summary.global.averageRequestsPerSecond': (test: TestDocument): number | null =>
+      test.summary?.global.averageRequestsPerSecond ?? null,
+    'summary.global.epochEndedAt': (test: TestDocument): number | null =>
+      test.summary?.global.epochEndedAt ?? null,
+    'summary.global.epochStartedAt': (test: TestDocument): number | null =>
+      test.summary?.global.epochStartedAt ?? null,
+    'summary.global.errorRate': (test: TestDocument): number | null =>
+      test.summary?.global.errorRate ?? null,
+    'summary.global.failedRequests': (test: TestDocument): number | null =>
+      test.summary?.global.failedRequests ?? null,
+    'summary.global.finalDurationSec': (test: TestDocument): number | null =>
+      test.summary?.global.finalDurationSec ?? null,
+    'summary.global.maxLatencyMs': (test: TestDocument): number | null =>
+      test.summary?.global.maxLatencyMs ?? null,
+    'summary.global.minLatencyMs': (test: TestDocument): number | null =>
+      test.summary?.global.minLatencyMs ?? null,
+    'summary.global.networkBytesPerSec': (test: TestDocument): number | null =>
+      test.summary?.global.networkBytesPerSec ?? null,
+    'summary.global.networkBytesReceived': (test: TestDocument): number | null =>
+      test.summary?.global.networkBytesReceived ?? null,
+    'summary.global.networkBytesSent': (test: TestDocument): number | null =>
+      test.summary?.global.networkBytesSent ?? null,
+    'summary.global.p50LatencyMs': (test: TestDocument): number | null =>
+      test.summary?.global.p50LatencyMs ?? null,
+    'summary.global.p95LatencyMs': (test: TestDocument): number | null =>
+      test.summary?.global.p95LatencyMs ?? null,
+    'summary.global.p99LatencyMs': (test: TestDocument): number | null =>
+      test.summary?.global.p99LatencyMs ?? null,
+    'summary.global.peakRequestsPerSecond': (test: TestDocument): number | null =>
+      test.summary?.global.peakRequestsPerSecond ?? null,
+    'summary.global.successfulRequests': (test: TestDocument): number | null =>
+      test.summary?.global.successfulRequests ?? null,
+    'summary.global.totalRequests': (test: TestDocument): number | null =>
+      test.summary?.global.totalRequests ?? null,
+    'summary.tressiVersion': (test: TestDocument): string | null =>
+      test.summary?.tressiVersion ?? null,
+    'test.duration': (test: TestDocument): number => this.getTestDurationRaw(test),
+    'test.epochStartedAt': (test: TestDocument): number =>
+      test.summary?.global.epochStartedAt || test.epochCreatedAt,
+    'test.status': (test: TestDocument): string => test.status || 'unknown',
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // biome-ignore lint/suspicious/noExplicitAny: columns
   getColumnValue(test: TestDocument, column: ColumnConfig): any {
     // Handle special 'select' column which doesn't extract data
     if (column.field === 'select') {
@@ -135,11 +136,7 @@ export class TestTableComponent {
       test.summary?.global.epochStartedAt &&
       test.summary?.global.epochEndedAt
     ) {
-      return (
-        (test.summary.global.epochEndedAt -
-          test.summary.global.epochStartedAt) /
-        1000
-      );
+      return (test.summary.global.epochEndedAt - test.summary.global.epochStartedAt) / 1000;
     }
 
     return this._testService.getTestDuration(test) / 1000;
@@ -150,7 +147,7 @@ export class TestTableComponent {
   }
 
   onToggleSelection(testId: string, event: Event): void {
-    this.toggleSelection.emit({ testId, event });
+    this.toggleSelection.emit({ event, testId });
   }
 
   onToggleAllSelection(event: Event): void {
@@ -160,7 +157,7 @@ export class TestTableComponent {
   onToggleStatus(status: TestStatus, event: Event): void {
     this.tests()
       .filter((t) => t.status === status)
-      .forEach((t) => this.toggleSelection.emit({ testId: t.id, event }));
+      .forEach((t) => void this.toggleSelection.emit({ event, testId: t.id }));
   }
 
   onHeaderDragDrop(event: CdkDragDrop<ColumnConfig[]>): void {
@@ -190,9 +187,7 @@ export class TestTableComponent {
     if (!sort || sort.columnKey !== columnKey) {
       return null; // No icon for unsorted columns (matches original behavior)
     }
-    return sort.direction === 'asc'
-      ? 'keyboard_arrow_up'
-      : 'keyboard_arrow_down';
+    return sort.direction === 'asc' ? 'keyboard_arrow_up' : 'keyboard_arrow_down';
   }
 
   isColumnSorted(columnKey: string): boolean {

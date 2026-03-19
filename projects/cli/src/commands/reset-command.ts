@@ -33,9 +33,7 @@ export class ResetCommand {
           );
 
           if (answer.toLowerCase() !== 'y') {
-            terminal.print(
-              chalk.blue('\nReset cancelled. No data was deleted.'),
-            );
+            terminal.print(chalk.blue('\nReset cancelled. No data was deleted.'));
             return;
           }
         } finally {
@@ -56,32 +54,22 @@ export class ResetCommand {
             .selectFrom(table)
             .select(db.fn.countAll().as('count'))
             .executeTakeFirst();
-          return { table, count: Number(result?.count ?? 0) };
+          return { count: Number(result?.count ?? 0), table };
         }),
       );
 
       const unclearedTables = verificationResults.filter((r) => r.count > 0);
 
       if (unclearedTables.length === 0) {
-        terminal.print(
-          chalk.green(
-            '✅ Tressi has been successfully reset. All tables are empty.',
-          ),
-        );
+        terminal.print(chalk.green('✅ Tressi has been successfully reset. All tables are empty.'));
       } else {
-        const tableList = unclearedTables
-          .map((t) => `${t.table} (${t.count} rows)`)
-          .join(', ');
+        const tableList = unclearedTables.map((t) => `${t.table} (${t.count} rows)`).join(', ');
         terminal.print(
-          chalk.red(
-            `\n⚠️  Partial reset: Some tables still contain data: ${tableList}`,
-          ),
+          chalk.red(`\n⚠️  Partial reset: Some tables still contain data: ${tableList}`),
         );
       }
     } catch (error) {
-      terminal.print(
-        chalk.red(`\n❌ Error during reset: ${(error as Error).message}`),
-      );
+      terminal.print(chalk.red(`\n❌ Error during reset: ${(error as Error).message}`));
       throw error;
     }
   }

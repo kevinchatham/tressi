@@ -1,9 +1,5 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import {
-  EndpointSummary,
-  GlobalSummary,
-  LatencyHistogram,
-} from '@tressi/shared/common';
+import { type ComponentFixture, TestBed } from '@angular/core/testing';
+import type { EndpointSummary, GlobalSummary, LatencyHistogram } from '@tressi/shared/common';
 import { describe, expect, it, vi } from 'vitest';
 
 import { PerformanceSummaryComponent } from './performance-summary.component';
@@ -13,49 +9,49 @@ describe('PerformanceSummaryComponent', () => {
   let fixture: ComponentFixture<PerformanceSummaryComponent>;
 
   const mockGlobalSummary: GlobalSummary = {
-    totalEndpoints: 1,
-    totalRequests: 1000,
-    successfulRequests: 950,
+    averageRequestsPerSecond: 100,
+    avgProcessMemoryUsageMB: 100,
+    avgSystemCpuUsagePercent: 50,
+    epochEndedAt: 2000,
+    epochStartedAt: 1000,
+    errorRate: 0.05,
     failedRequests: 50,
-    minLatencyMs: 10,
+    finalDurationSec: 10,
+    histogram: {} as LatencyHistogram,
     maxLatencyMs: 120,
+    minLatencyMs: 10,
+    networkBytesPerSec: 5000,
+    networkBytesReceived: 25000,
+    networkBytesSent: 25000,
     p50LatencyMs: 45,
     p95LatencyMs: 80,
     p99LatencyMs: 100,
-    finalDurationSec: 10,
-    epochStartedAt: 1000,
-    epochEndedAt: 2000,
-    errorRate: 0.05,
-    averageRequestsPerSecond: 100,
     peakRequestsPerSecond: 150,
-    networkBytesSent: 25000,
-    networkBytesReceived: 25000,
-    networkBytesPerSec: 5000,
-    avgSystemCpuUsagePercent: 50,
-    avgProcessMemoryUsageMB: 100,
+    successfulRequests: 950,
     targetAchieved: 0.95,
-    histogram: {} as LatencyHistogram,
+    totalEndpoints: 1,
+    totalRequests: 1000,
   };
 
   const mockEndpointSummary: EndpointSummary = {
-    url: 'https://api.example.com',
-    method: 'GET',
-    totalRequests: 500,
-    successfulRequests: 480,
+    averageRequestsPerSecond: 50,
+    errorRate: 0.04,
     failedRequests: 20,
-    minLatencyMs: 5,
+    histogram: {} as LatencyHistogram,
     maxLatencyMs: 100,
+    method: 'GET',
+    minLatencyMs: 5,
     p50LatencyMs: 40,
     p95LatencyMs: 70,
     p99LatencyMs: 90,
-    errorRate: 0.04,
-    averageRequestsPerSecond: 50,
     peakRequestsPerSecond: 75,
+    responseSamples: [],
+    statusCodeDistribution: { '200': 480 },
+    successfulRequests: 480,
     targetAchieved: 0.96,
     theoreticalMaxRps: 100,
-    statusCodeDistribution: { '200': 480 },
-    responseSamples: [],
-    histogram: {} as LatencyHistogram,
+    totalRequests: 500,
+    url: 'https://api.example.com',
   };
 
   beforeEach(async () => {

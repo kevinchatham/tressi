@@ -1,23 +1,16 @@
-/* eslint-disable no-console */
+/** biome-ignore-all lint/suspicious/noConsole: default */
+
+import { spawn } from 'node:child_process';
+import * as readline from 'node:readline';
 import chalk from 'chalk';
-import { spawn } from 'child_process';
 import ora from 'ora';
-import * as readline from 'readline';
 
 console.clear();
 
-const args = process.argv.slice(2);
-let command = args[0];
+const args: string[] = process.argv.slice(2);
+let command: string = args[0];
 
-const commands: Record<
-  string,
-  { cmd: string[]; desc: string; spinner: string }
-> = {
-  up: {
-    cmd: ['compose', 'up', '-d', '--build'],
-    desc: 'Starting Tressi in Docker',
-    spinner: 'Launching containers...',
-  },
+const commands: Record<string, { cmd: string[]; desc: string; spinner: string }> = {
   down: {
     cmd: ['compose', 'down'],
     desc: 'Stopping Tressi',
@@ -33,6 +26,11 @@ const commands: Record<
     desc: 'Restarting Tressi',
     spinner: 'Restarting...',
   },
+  up: {
+    cmd: ['compose', 'up', '-d', '--build'],
+    desc: 'Starting Tressi in Docker',
+    spinner: 'Launching containers...',
+  },
 };
 
 async function askCommand(): Promise<string> {
@@ -44,27 +42,20 @@ async function askCommand(): Promise<string> {
   console.log(chalk.bold('\n⚡ Tressi Docker Manager\n'));
   const options = Object.keys(commands);
   options.forEach((opt, i) => {
-    console.log(
-      `${chalk.cyan(i + 1 + '.')} ${chalk.bold(opt.padEnd(10))} ${commands[opt].desc}`,
-    );
+    console.log(`${chalk.cyan(`${i + 1}.`)} ${chalk.bold(opt.padEnd(10))} ${commands[opt].desc}`);
   });
-  console.log(
-    `${chalk.cyan('q.')} ${chalk.bold('quit'.padEnd(10))} Exit manager`,
-  );
+  console.log(`${chalk.cyan('q.')} ${chalk.bold('quit'.padEnd(10))} Exit manager`);
 
   return new Promise((resolve) => {
     rl.question(chalk.yellow('\nWhat would you like to do? '), (answer) => {
       rl.close();
       console.clear();
-      const index = parseInt(answer) - 1;
+      const index = parseInt(answer, 10) - 1;
       if (options[index]) {
         resolve(options[index]);
       } else if (commands[answer.toLowerCase()]) {
         resolve(answer.toLowerCase());
-      } else if (
-        answer.toLowerCase() === 'q' ||
-        answer.toLowerCase() === 'quit'
-      ) {
+      } else if (answer.toLowerCase() === 'q' || answer.toLowerCase() === 'quit') {
         process.exit(0);
       } else {
         console.log(chalk.red('\nInvalid option. Please try again.'));
@@ -95,9 +86,7 @@ async function executeCommand(cmdKey: string): Promise<void> {
         if (code === 0) {
           spinner.succeed(chalk.green(`${desc} successful!`));
           if (cmdKey === 'up') {
-            console.log(
-              `\n🌍 Dashboard: ${chalk.underline.blue('http://localhost:3108')}\n`,
-            );
+            console.log(`\n🌍 Dashboard: ${chalk.underline.blue('http://localhost:3108')}\n`);
           }
         } else {
           spinner.fail(chalk.red(`${desc} failed with code ${code}`));

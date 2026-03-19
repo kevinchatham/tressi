@@ -1,11 +1,11 @@
 import { Component, input } from '@angular/core';
-import { ConfigDocument } from '@tressi/shared/common';
+import type { ConfigDocument } from '@tressi/shared/common';
 
 import { ButtonComponent } from '../button/button.component';
 
 @Component({
-  selector: 'app-export-config-button',
   imports: [ButtonComponent],
+  selector: 'app-export-config-button',
   templateUrl: './export-config-button.component.html',
 })
 export class ExportConfigButtonComponent {

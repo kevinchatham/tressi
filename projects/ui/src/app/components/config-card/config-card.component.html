@@ -1,9 +1,7 @@
 <app-collapsible-card
   data-e2e="config-card"
   [title]="input().name"
-  [subtitle]="
-    'Updated: ' + timeService.getRelativeTimeString(input().epochUpdatedAt ?? 0)
-  "
+  [subtitle]="'Updated: ' + timeService.getRelativeTimeString(input().epochUpdatedAt ?? 0)"
   [collapsed]="collapsed()"
   (collapsedChange)="toggleCollapsed($event)"
 >
@@ -13,13 +11,8 @@
     <div>
       <h4 class="text-base-content/70 mb-2 text-sm font-semibold">Requests</h4>
       <div class="space-y-2">
-        @for (
-          request of input().config.requests.slice(0, 3);
-          track request.url
-        ) {
-          <div
-            class="bg-base-300/50 flex items-center justify-between rounded-xl p-2"
-          >
+        @for (request of input().config.requests.slice(0, 3); track request.url) {
+          <div class="bg-base-300/50 flex items-center justify-between rounded-xl p-2">
             <div class="flex min-w-0 items-center gap-2">
               <span
                 class="font-mono text-xs font-semibold uppercase"
@@ -38,18 +31,13 @@
               </span>
             </div>
             <div class="flex items-center gap-1">
-              <span
-                class="text-base-content/60 text-xs"
-                [appFormatRps]="request.rps"
-              ></span>
+              <span class="text-base-content/60 text-xs" [appFormatRps]="request.rps"></span>
             </div>
           </div>
         }
         @if (input().config.requests.length > 3) {
           <div class="text-base-content/60 text-center text-sm">
-            +<span
-              [appFormatNumber]="input().config.requests.length - 3"
-            ></span>
+            +<span [appFormatNumber]="input().config.requests.length - 3"></span>
             more
           </div>
         }
@@ -59,13 +47,8 @@
     <!-- Configuration Options -->
     <div class="grid grid-cols-3 place-items-center gap-4">
       <div>
-        <h4 class="text-base-content/70 mb-1 text-sm font-semibold">
-          Duration
-        </h4>
-        <p
-          class="text-sm"
-          [appFormatDuration]="input().config.options.durationSec"
-        ></p>
+        <h4 class="text-base-content/70 mb-1 text-sm font-semibold">Duration</h4>
+        <p class="text-sm" [appFormatDuration]="input().config.options.durationSec"></p>
       </div>
       <div>
         <h4 class="text-base-content/70 mb-1 text-sm font-semibold">Threads</h4>
@@ -76,29 +59,20 @@
       </div>
       <div>
         <h4 class="text-base-content/70 mb-1 text-sm font-semibold">Ramp Up</h4>
-        <p
-          class="text-sm"
-          [appFormatDuration]="getEffectiveRampUpDuration()"
-        ></p>
+        <p class="text-sm" [appFormatDuration]="getEffectiveRampUpDuration()"></p>
       </div>
       <div>
-        <h4 class="text-base-content/70 mb-1 text-sm font-semibold">
-          Early Exit
-        </h4>
+        <h4 class="text-base-content/70 mb-1 text-sm font-semibold">Early Exit</h4>
         <p class="text-sm">
           {{ getEffectiveEarlyExitStatus() ? 'Enabled' : 'Disabled' }}
         </p>
       </div>
       <div>
-        <h4 class="text-base-content/70 mb-1 text-sm font-semibold">
-          Endpoints
-        </h4>
+        <h4 class="text-base-content/70 mb-1 text-sm font-semibold">Endpoints</h4>
         <p class="text-sm" [appFormatNumber]="getTotalEndpoints()"></p>
       </div>
       <div>
-        <h4 class="text-base-content/70 mb-1 text-sm font-semibold">
-          Total RPS
-        </h4>
+        <h4 class="text-base-content/70 mb-1 text-sm font-semibold">Total RPS</h4>
         <p class="text-sm" [appFormatRps]="getTotalRPS()"></p>
       </div>
     </div>

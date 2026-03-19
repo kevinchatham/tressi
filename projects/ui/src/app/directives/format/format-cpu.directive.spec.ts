@@ -1,12 +1,12 @@
 import { Component, signal } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { type ComponentFixture, TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { FormatCpuUsageDirective } from './format-cpu.directive';
 
 @Component({
-  standalone: true,
   imports: [FormatCpuUsageDirective],
+  standalone: true,
   template: `<div [appFormatCpu]="cpu()"></div>`,
 })
 class TestHostComponent {

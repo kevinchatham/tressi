@@ -17,10 +17,7 @@ vi.mock('./database-migrations', () => ({
 }));
 
 vi.mock('node:fs/promises', async () => {
-  const actual =
-    await vi.importActual<typeof import('node:fs/promises')>(
-      'node:fs/promises',
-    );
+  const actual = await vi.importActual<typeof import('node:fs/promises')>('node:fs/promises');
   return {
     ...actual,
     copyFile: vi.fn(),
@@ -45,8 +42,8 @@ describe('DatabaseMigrationManager', () => {
     // Mock readline to automatically confirm
     vi.mock('node:readline/promises', () => ({
       createInterface: vi.fn().mockReturnValue({
-        question: vi.fn().mockResolvedValue('y'),
         close: vi.fn(),
+        question: vi.fn().mockResolvedValue('y'),
       }),
     }));
 
@@ -74,10 +71,7 @@ describe('DatabaseMigrationManager', () => {
   it('should stamp current version on fresh install', async () => {
     await manager.run();
 
-    const result = await db
-      .selectFrom('migrations')
-      .select('version')
-      .execute();
+    const result = await db.selectFrom('migrations').select('version').execute();
 
     expect(result).toHaveLength(1);
     expect(result[0].version).toBe('0.0.15');
@@ -94,7 +88,7 @@ describe('DatabaseMigrationManager', () => {
 
     await db
       .insertInto('migrations')
-      .values({ version: '0.0.13', applied_at: Date.now() })
+      .values({ applied_at: Date.now(), version: '0.0.13' })
       .execute();
 
     DATABASE_MIGRATIONS['0.0.14'] = {
@@ -121,13 +115,13 @@ describe('DatabaseMigrationManager', () => {
 
     await db
       .insertInto('migrations')
-      .values({ version: '0.0.13', applied_at: Date.now() })
+      .values({ applied_at: Date.now(), version: '0.0.13' })
       .execute();
 
     // Mock migrations
     DATABASE_MIGRATIONS['0.0.14'] = {
       summary: 'Create test_table',
-      up: async (db): Promise<void> => {
+      up: async (db: Kysely<DatabaseSchema>): Promise<void> => {
         await db.schema
           .createTable('test_table')
           .addColumn('id', 'integer', (col) => col.primaryKey())
@@ -137,11 +131,8 @@ describe('DatabaseMigrationManager', () => {
 
     DATABASE_MIGRATIONS['0.0.15'] = {
       summary: 'Add column to test_table',
-      up: async (db): Promise<void> => {
-        await db.schema
-          .alterTable('test_table')
-          .addColumn('name', 'text')
-          .execute();
+      up: async (db: Kysely<DatabaseSchema>): Promise<void> => {
+        await db.schema.alterTable('test_table').addColumn('name', 'text').execute();
       },
     };
 
@@ -179,7 +170,7 @@ describe('DatabaseMigrationManager', () => {
 
     await db
       .insertInto('migrations')
-      .values({ version: '0.0.13', applied_at: Date.now() })
+      .values({ applied_at: Date.now(), version: '0.0.13' })
       .execute();
 
     DATABASE_MIGRATIONS['0.0.14'] = {
@@ -194,10 +185,7 @@ describe('DatabaseMigrationManager', () => {
 
     await manager.run();
 
-    const versions = await db
-      .selectFrom('migrations')
-      .select('version')
-      .execute();
+    const versions = await db.selectFrom('migrations').select('version').execute();
 
     expect(versions).toHaveLength(2);
     expect(versions[0].version).toBe('0.0.13');
@@ -215,16 +203,13 @@ describe('DatabaseMigrationManager', () => {
 
     await db
       .insertInto('migrations')
-      .values({ version: '0.0.13', applied_at: Date.now() })
+      .values({ applied_at: Date.now(), version: '0.0.13' })
       .execute();
 
     DATABASE_MIGRATIONS['0.0.14'] = {
       summary: 'Successful migration',
-      up: async (db): Promise<void> => {
-        await db.schema
-          .createTable('success_table')
-          .addColumn('id', 'integer')
-          .execute();
+      up: async (db: Kysely<DatabaseSchema>): Promise<void> => {
+        await db.schema.createTable('success_table').addColumn('id', 'integer').execute();
       },
     };
 
@@ -246,10 +231,7 @@ describe('DatabaseMigrationManager', () => {
       .then((tables) => tables.some((t) => t.name === 'success_table'));
     expect(successTableExists).toBe(true);
 
-    const versions = await db
-      .selectFrom('migrations')
-      .select('version')
-      .execute();
+    const versions = await db.selectFrom('migrations').select('version').execute();
     expect(versions).toHaveLength(2);
     expect(versions[0].version).toBe('0.0.13');
     expect(versions[1].version).toBe('0.0.14');

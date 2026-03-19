@@ -1,9 +1,5 @@
 import { Component, computed, inject, input } from '@angular/core';
-import {
-  EndpointSummary,
-  GlobalSummary,
-  TestDocument,
-} from '@tressi/shared/common';
+import type { EndpointSummary, GlobalSummary, TestDocument } from '@tressi/shared/common';
 
 import { FormatDurationDirective } from '../../../../directives/format/format-duration.directive';
 import { FormatLatencyDirective } from '../../../../directives/format/format-latency.directive';
@@ -12,13 +8,13 @@ import { FormatRpsDirective } from '../../../../directives/format/format-rps.dir
 import { TestService } from '../../../../services/test.service';
 
 @Component({
-  selector: 'app-hero-stats',
   imports: [
     FormatDurationDirective,
     FormatPercentageDirective,
     FormatRpsDirective,
     FormatLatencyDirective,
   ],
+  selector: 'app-hero-stats',
   templateUrl: './hero-stats.component.html',
 })
 export class HeroStatsComponent {
@@ -28,9 +24,7 @@ export class HeroStatsComponent {
   readonly testData = input<TestDocument | null>(null);
 
   /** Selected summary (global or endpoint) */
-  readonly selectedSummary = input<GlobalSummary | EndpointSummary | null>(
-    null,
-  );
+  readonly selectedSummary = input<GlobalSummary | EndpointSummary | null>(null);
 
   /** Whether the test is running in realtime */
   readonly isRealTime = input<boolean>(false);

@@ -1,9 +1,9 @@
+import { homedir } from 'node:os';
+import { join } from 'node:path';
 import { serve } from '@hono/node-server';
 import { ServerEvents } from '@tressi/shared/common';
 import chalk from 'chalk';
-import { Hono } from 'hono';
-import { homedir } from 'os';
-import { join } from 'path';
+import type { Hono } from 'hono';
 
 import pkg from '../../../../package.json';
 import { testStorage } from '../collections/test-collection';
@@ -29,9 +29,7 @@ export class TressiServer {
     try {
       const stoppedCount = await testStorage.stopAllRunningTests();
       if (stoppedCount > 0) {
-        terminal.print(
-          `🧹 Cleaned up ${stoppedCount} test(s) that were left running.`,
-        );
+        terminal.print(`🧹 Cleaned up ${stoppedCount} test(s) that were left running.`);
       }
     } catch (error) {
       terminal.print(
@@ -47,14 +45,10 @@ export class TressiServer {
         });
         this._server.on('listening', () => {
           const url = `http://localhost:${this._port}`;
-          const dbPath =
-            process.env['TRESSI_DB_PATH'] ||
-            join(homedir(), '.tressi', 'tressi.db');
+          const dbPath = process.env['TRESSI_DB_PATH'] || join(homedir(), '.tressi', 'tressi.db');
 
           terminal.print('');
-          terminal.print(
-            `  ${chalk.yellow.bold('⚡')} ${chalk.bold(`Tressi v${pkg.version}`)}`,
-          );
+          terminal.print(`  ${chalk.yellow.bold('⚡')} ${chalk.bold(`Tressi v${pkg.version}`)}`);
           terminal.print('');
           terminal.print(`  ${chalk.bold('Local:')} ${chalk.cyan(url)}`);
           terminal.print(`  ${chalk.bold('Store:')} ${chalk.magenta(dbPath)}`);
@@ -110,10 +104,10 @@ export class TressiServer {
   private _startHeartbeat(): void {
     this._heartbeatInterval = setInterval(() => {
       const message = {
-        event: ServerEvents.CONNECTED,
         data: {
           timestamp: Date.now(),
         },
+        event: ServerEvents.CONNECTED,
       };
       this._sseManager.broadcast(message);
     }, 1000); // Send heartbeat every 1 second

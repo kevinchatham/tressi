@@ -1,5 +1,5 @@
 @reference "tailwindcss";
-@plugin 'daisyui';
+@plugin "daisyui";
 
 :host ::ng-deep {
   .cdk-drag-preview {

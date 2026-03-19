@@ -1,7 +1,7 @@
 import { Component, input } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ChartSyncState } from '@tressi/shared/ui';
-import { ChartComponent, NgApexchartsModule } from 'ng-apexcharts';
+import { type ComponentFixture, TestBed } from '@angular/core/testing';
+import type { ChartSyncState } from '@tressi/shared/ui';
+import { type ChartComponent, NgApexchartsModule } from 'ng-apexcharts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ChartSyncService } from '../../services/chart-sync.service';
@@ -36,27 +36,27 @@ describe('LineChartComponent', () => {
 
   const themeServiceMock = {
     getChartColors: vi.fn().mockReturnValue({
+      background: '#222',
+      border: '#555',
+      grid: '#333',
       primary: '#000',
       secondary: '#111',
-      background: '#222',
-      grid: '#333',
       text: '#444',
-      border: '#555',
     }),
   };
 
   const syncServiceMock = {
+    broadcastState: vi.fn(),
+    getState: vi.fn().mockReturnValue({
+      lastInteractedChartId: null,
+      selectionEnd: null,
+      selectionStart: null,
+      xAxisMax: null,
+      xAxisMin: null,
+    } as ChartSyncState),
     lastInteractedChartId: vi.fn().mockReturnValue(null),
     registerChart: vi.fn(),
     setAsMaster: vi.fn(),
-    broadcastState: vi.fn(),
-    getState: vi.fn().mockReturnValue({
-      xAxisMin: null,
-      xAxisMax: null,
-      selectionStart: null,
-      selectionEnd: null,
-      lastInteractedChartId: null,
-    } as ChartSyncState),
   };
 
   beforeEach(async () => {
@@ -70,8 +70,8 @@ describe('LineChartComponent', () => {
       ],
     })
       .overrideComponent(LineChartComponent, {
-        remove: { imports: [NgApexchartsModule] },
         add: { imports: [MockChartComponent] },
+        remove: { imports: [NgApexchartsModule] },
       })
       .compileComponents();
 
@@ -154,15 +154,15 @@ describe('LineChartComponent', () => {
 
     const options = component.chartOptions();
     options.chart?.events?.zoomed?.({} as ChartComponent, {
-      xaxis: { min: 100, max: 200 },
+      xaxis: { max: 200, min: 100 },
     });
 
     expect(syncServiceMock.setAsMaster).toHaveBeenCalledWith('test-chart');
     expect(syncServiceMock.broadcastState).toHaveBeenCalledWith({
-      xAxisMin: 100,
-      xAxisMax: 200,
-      selectionStart: null,
       selectionEnd: null,
+      selectionStart: null,
+      xAxisMax: 200,
+      xAxisMin: 100,
     });
   });
 
@@ -172,15 +172,15 @@ describe('LineChartComponent', () => {
 
     const options = component.chartOptions();
     options.chart?.events?.selection?.({} as ChartComponent, {
-      xaxis: { min: 150, max: 250 },
+      xaxis: { max: 250, min: 150 },
     });
 
     expect(syncServiceMock.setAsMaster).toHaveBeenCalledWith('test-chart');
     expect(syncServiceMock.broadcastState).toHaveBeenCalledWith({
-      selectionStart: 150,
       selectionEnd: 250,
-      xAxisMin: null,
+      selectionStart: 150,
       xAxisMax: null,
+      xAxisMin: null,
     });
   });
 
@@ -189,11 +189,11 @@ describe('LineChartComponent', () => {
     fixture.componentRef.setInput('chartId', 'slave-chart');
     syncServiceMock.lastInteractedChartId.mockReturnValue('master-chart');
     syncServiceMock.getState.mockReturnValue({
-      xAxisMin: 500,
-      xAxisMax: 600,
-      selectionStart: null,
-      selectionEnd: null,
       lastInteractedChartId: 'master-chart',
+      selectionEnd: null,
+      selectionStart: null,
+      xAxisMax: 600,
+      xAxisMin: 500,
     });
 
     fixture.detectChanges();
@@ -229,10 +229,10 @@ describe('LineChartComponent', () => {
 
     mockChart.resetSeries();
     expect(syncServiceMock.broadcastState).toHaveBeenCalledWith({
-      xAxisMin: 100,
-      xAxisMax: 300,
-      selectionStart: null,
       selectionEnd: null,
+      selectionStart: null,
+      xAxisMax: 300,
+      xAxisMin: 100,
     });
     expect(mockChart.zoomX).toHaveBeenCalledWith(100, 300);
   });

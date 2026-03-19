@@ -2,18 +2,18 @@
  * Application route constants and types
  */
 export const AppRoutes = {
-  HOME: '',
-  WELCOME: 'welcome',
   CONFIGS: 'configs',
   CONFIGS_CREATE: 'configs/create',
   DASHBOARD: 'dashboard',
   DASHBOARD_WITH_ID: 'dashboard/:configId',
-  TESTS_WITH_ID: 'tests/:testId',
   DOCS: 'docs',
   DOCS_WITH_FILENAME: 'docs/:filename',
   DOCS_WITH_SECTION: 'docs/:section/:filename',
+  HOME: '',
   SERVER_UNAVAILABLE: 'server-unavailable',
   SHOWCASE: 'showcase',
+  TESTS_WITH_ID: 'tests/:testId',
+  WELCOME: 'welcome',
 } as const;
 
 /**

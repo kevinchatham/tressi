@@ -1,12 +1,12 @@
 import { Component } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { type ComponentFixture, TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { FormatDurationDirective } from './format-duration.directive';
 
 @Component({
-  standalone: true,
   imports: [FormatDurationDirective],
+  standalone: true,
   template: `<div [appFormatDuration]="value"></div>`,
 })
 class TestHostComponent {

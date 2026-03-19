@@ -6,8 +6,8 @@ describe('test-detail-shared.utils', () => {
   describe('isEndpointSummary', () => {
     it('should return true for a valid EndpointSummary object', () => {
       const validSummary = {
-        statusCodeDistribution: { '200': 100 },
         responseSamples: [],
+        statusCodeDistribution: { '200': 100 },
         url: 'https://api.example.com',
       };
 
@@ -16,8 +16,8 @@ describe('test-detail-shared.utils', () => {
 
     it('should return false for a GlobalSummary (missing statusCodeDistribution)', () => {
       const globalSummary = {
-        url: 'global',
         totalRequests: 1000,
+        url: 'global',
         // Missing statusCodeDistribution
       };
 

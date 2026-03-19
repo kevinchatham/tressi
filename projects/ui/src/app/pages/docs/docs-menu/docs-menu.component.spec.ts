@@ -1,6 +1,6 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { type ComponentFixture, TestBed } from '@angular/core/testing';
 import { NavigationEnd, provideRouter, Router } from '@angular/router';
-import { DocSearchResult, MarkdownSlugs } from '@tressi/shared/common';
+import type { DocSearchResult, MarkdownSlugs } from '@tressi/shared/common';
 import { AppRoutes } from '@tressi/shared/ui';
 import { Subject } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -33,54 +33,54 @@ describe('DocsMenuComponent', () => {
     };
   };
 
+  // b
+  // biome-ignore assist/source/useSortedKeys: order is important
   const mockAvailableDocs: MarkdownSlugs = {
     'Getting Started': {
+      docs: [
+        {
+          realPath: 'docs/01-getting-started/index.md',
+          sectionSlug: 'getting-started',
+          slug: 'index',
+        },
+        {
+          realPath: 'docs/01-getting-started/02-quickstart.md',
+          sectionSlug: 'getting-started',
+          slug: 'quickstart',
+        },
+      ],
       path: 'getting-started',
       realPath: 'docs/01-getting-started',
-      docs: [
-        {
-          slug: 'index',
-          sectionSlug: 'getting-started',
-          realPath: 'docs/01-getting-started/index.md',
-        },
-        {
-          slug: 'quickstart',
-          sectionSlug: 'getting-started',
-          realPath: 'docs/01-getting-started/02-quickstart.md',
-        },
-      ],
     },
     'Core Concepts': {
-      path: 'core-concepts',
-      realPath: 'docs/02-core-concepts',
       docs: [
         {
-          slug: 'index',
-          sectionSlug: 'core-concepts',
           realPath: 'docs/02-core-concepts/index.md',
+          sectionSlug: 'core-concepts',
+          slug: 'index',
         },
         {
-          slug: 'methodology',
-          sectionSlug: 'core-concepts',
           realPath: 'docs/02-core-concepts/01-methodology.md',
+          sectionSlug: 'core-concepts',
+          slug: 'methodology',
         },
       ],
+      path: 'core-concepts',
+      realPath: 'docs/02-core-concepts',
     },
   };
 
   beforeEach(async () => {
     mockRouterEvents = new Subject();
     mockRouter = {
+      createUrlTree: vi.fn().mockReturnValue({}),
       events: mockRouterEvents.asObservable(),
       routerState: { root: {} },
-      createUrlTree: vi.fn().mockReturnValue({}),
       serializeUrl: vi.fn().mockReturnValue(''),
     };
 
     mockAppRouter = {
-      getCurrentUrl: vi
-        .fn()
-        .mockReturnValue(`/${AppRoutes.DOCS}/getting-started/quickstart`),
+      getCurrentUrl: vi.fn().mockReturnValue(`/${AppRoutes.DOCS}/getting-started/quickstart`),
       toDocs: vi.fn(),
     };
 
@@ -188,11 +188,7 @@ describe('DocsMenuComponent', () => {
 
   it('should default to first section if URL does not match any section', () => {
     mockRouterEvents.next(
-      new NavigationEnd(
-        1,
-        `/${AppRoutes.DOCS}/unknown`,
-        `/${AppRoutes.DOCS}/unknown`,
-      ),
+      new NavigationEnd(1, `/${AppRoutes.DOCS}/unknown`, `/${AppRoutes.DOCS}/unknown`),
     );
     fixture.detectChanges();
     expect(component.expandedSection()).toBe('Getting Started');
@@ -201,16 +197,16 @@ describe('DocsMenuComponent', () => {
   it('should perform search when query is at least 2 characters', async () => {
     const mockResults: DocSearchResult[] = [
       {
-        title: 'Test Doc',
+        content: 'content',
         path: 'test-doc',
         section: 'Test',
-        content: 'content',
         slug: 'test-doc',
+        title: 'Test Doc',
       },
     ];
     mockRPC.client.docs.search.$get.mockResolvedValue({
-      ok: true,
       json: () => Promise.resolve(mockResults),
+      ok: true,
     });
 
     component.onSearch('te');
@@ -229,11 +225,11 @@ describe('DocsMenuComponent', () => {
   it('should clear search results when query is less than 2 characters', async () => {
     component.searchResults.set([
       {
-        title: 'Test',
+        content: 'content',
         path: 'test',
         section: 'Test',
-        content: 'content',
         slug: 'test',
+        title: 'Test',
       },
     ]);
     component.onSearch('t');

@@ -1,10 +1,10 @@
-import {
+import { writeFile } from 'node:fs/promises';
+import type {
   EndpointSummary,
   LatencyHistogramBucket,
   TestSummary,
   TressiConfig,
 } from '@tressi/shared/common';
-import { writeFile } from 'fs/promises';
 
 import { ReportingUtils } from '../../utils/reporting-utils';
 import { aggregateStatusCodesFromEndpoints } from '../utils/status-code-aggregator';
@@ -24,7 +24,7 @@ export class MarkdownExporter {
    * @param metadata - Optional metadata about the test run
    * @returns A formatted Markdown string representing the test report (or void if path provided)
    */
-  async export(summary: TestSummary, path?: string): Promise<void | string> {
+  async export(summary: TestSummary, path?: string): Promise<undefined | string> {
     try {
       const { global: g, endpoints: e } = summary;
       const config = summary.configSnapshot;
@@ -79,18 +79,14 @@ export class MarkdownExporter {
         return md;
       }
     } catch (error) {
-      throw new Error(
-        `Failed to export test summary to Markdown: ${(error as Error).message}`,
-      );
+      throw new Error(`Failed to export test summary to Markdown: ${(error as Error).message}`);
     }
   }
 
   /**
    * Aggregates status codes from all endpoints into a single map.
    */
-  private _aggregateStatusCodesFromEndpoints(
-    endpoints: EndpointSummary[],
-  ): Record<number, number> {
+  private _aggregateStatusCodesFromEndpoints(endpoints: EndpointSummary[]): Record<number, number> {
     return aggregateStatusCodesFromEndpoints(endpoints);
   }
 
@@ -159,9 +155,7 @@ export class MarkdownExporter {
   /**
    * Generate ASCII histogram for markdown output
    */
-  private _generateAsciiHistogram(
-    buckets: Array<LatencyHistogramBucket>,
-  ): string {
+  private _generateAsciiHistogram(buckets: Array<LatencyHistogramBucket>): string {
     if (buckets.length === 0) {
       return 'No histogram data available\n';
     }
@@ -246,15 +240,14 @@ export class MarkdownExporter {
 
   private _formatGlobalSummary(global: TestSummary['global']): string {
     let md = '## Global Summary\n\n';
-    md +=
-      '> *A high-level overview of the entire test performance across all endpoints.*\n\n';
+    md += '> *A high-level overview of the entire test performance across all endpoints.*\n\n';
 
     const formatBytes = (bytes: number): string => {
       if (bytes === 0) return '0 B';
       const k = 1024;
       const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
       const i = Math.floor(Math.log(bytes) / Math.log(k));
-      return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
+      return `${parseFloat((bytes / k ** i).toFixed(2))} ${sizes[i]}`;
     };
 
     md += '| Stat | Value |\n| --- | --- |\n';
@@ -296,15 +289,12 @@ export class MarkdownExporter {
     return md;
   }
 
-  private _formatStatusCodeSummary(
-    statusCodeMap: Record<number, number>,
-  ): string {
+  private _formatStatusCodeSummary(statusCodeMap: Record<number, number>): string {
     const statusCodeDistribution =
       ReportingUtils.getStatusCodeDistributionByCategory(statusCodeMap);
 
     let md = '## Responses by Status Code\n\n';
-    md +=
-      '> *A breakdown of all responses by their HTTP status code categories.*\n\n';
+    md += '> *A breakdown of all responses by their HTTP status code categories.*\n\n';
 
     // Category breakdown
     md += '| Status Code Category | Count |\n';
@@ -316,9 +306,8 @@ export class MarkdownExporter {
 
     // Individual status codes if there are any
     const individualCodes = Object.entries(statusCodeMap)
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       .filter(([_code, count]) => count > 0)
-      .sort(([a], [b]) => parseInt(a) - parseInt(b));
+      .sort(([a], [b]) => parseInt(a, 10) - parseInt(b, 10));
 
     if (individualCodes.length > 0) {
       md += '### Individual Status Codes\n\n';
@@ -352,8 +341,7 @@ export class MarkdownExporter {
 
     // Second table - Enhanced latency details with histogram data
     md += '### Endpoint Latency Details\n\n';
-    md +=
-      '| Endpoint | Min | P1 | P5 | P10 | P25 | P50 | P75 | P90 | P95 | P99 | Max |\n';
+    md += '| Endpoint | Min | P1 | P5 | P10 | P25 | P50 | P75 | P90 | P95 | P99 | Max |\n';
     md += '|---|---|---|---|---|---|---|---|---|---|---|---|\n';
     for (const endpoint of endpoints) {
       if (endpoint.histogram && endpoint.histogram.totalCount > 0) {
@@ -375,7 +363,7 @@ export class MarkdownExporter {
       md += '| Status Code | Count | Percentage |\n';
       md += '|---|---|---|\n';
       const codes = Object.entries(endpoint.statusCodeDistribution).sort(
-        ([a], [b]) => parseInt(a) - parseInt(b),
+        ([a], [b]) => parseInt(a, 10) - parseInt(b, 10),
       );
       for (const [code, count] of codes) {
         const percentage = ((count / endpoint.totalRequests) * 100).toFixed(1);
@@ -399,10 +387,7 @@ export class MarkdownExporter {
         md += '<summary>View Response Samples</summary>\n\n';
 
         // Group samples by status code
-        const uniqueSamples = new Map<
-          number,
-          (typeof endpoint.responseSamples)[0]
-        >();
+        const uniqueSamples = new Map<number, (typeof endpoint.responseSamples)[0]>();
         for (const sample of endpoint.responseSamples) {
           if (!uniqueSamples.has(sample.statusCode)) {
             uniqueSamples.set(sample.statusCode, sample);

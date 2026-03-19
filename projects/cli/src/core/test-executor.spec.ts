@@ -1,4 +1,4 @@
-import { TestSummary, TressiConfig } from '@tressi/shared/common';
+import type { TestSummary, TressiConfig } from '@tressi/shared/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Runner } from './runner';

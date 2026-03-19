@@ -1,7 +1,9 @@
+/** biome-ignore-all lint/nursery/useExplicitType: hono */
+
 import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { DocSearchResult, MarkdownSlugs } from '@tressi/shared/common';
+import type { DocSearchResult, MarkdownSlugs } from '@tressi/shared/common';
 import Fuse from 'fuse.js';
 import { Hono } from 'hono';
 
@@ -39,18 +41,18 @@ async function scanDocs(dir: string): Promise<MarkdownSlugs> {
         .map((file) => {
           const name = file.replace('.md', '');
           return {
-            slug: getNiceName(name),
-            sectionSlug: getNiceName(entry.name),
             realPath: join(entry.name, name),
+            sectionSlug: getNiceName(entry.name),
+            slug: getNiceName(name),
           };
         });
 
       if (docs.length > 0) {
         if (!results[sectionName]) {
           results[sectionName] = {
+            docs: [],
             path: getNiceName(entry.name),
             realPath: entry.name,
-            docs: [],
           };
         }
         results[sectionName].docs.push(...docs);
@@ -64,8 +66,6 @@ async function scanDocs(dir: string): Promise<MarkdownSlugs> {
 /**
  * Creates a Hono application for documentation-related routes.
  * Provides an endpoint to list available documentation files.
- *
- * @returns {Hono} Hono app configured for documentation routes
  */
 const docs = new Hono()
   .get('/list', async (c) => {
@@ -105,23 +105,20 @@ const docs = new Hono()
           const filePath = join(docsPath, `${doc.realPath}.md`);
           const content = await readFile(filePath, 'utf-8');
           allDocs.push({
-            title: doc.slug,
             content,
-            slug: doc.slug,
-            section: sectionName,
             // If it's an index file, the path is just the section path
             // Otherwise, append the slug to the section path
-            path:
-              doc.slug === 'index'
-                ? section.path
-                : `${section.path}/${doc.slug}`,
+            path: doc.slug === 'index' ? section.path : `${section.path}/${doc.slug}`,
+            section: sectionName,
+            slug: doc.slug,
+            title: doc.slug,
           });
         }
       }
 
       const fuse = new Fuse(allDocs, {
-        keys: ['title', 'content'],
         includeScore: true,
+        keys: ['title', 'content'],
         threshold: 0.4,
       });
 

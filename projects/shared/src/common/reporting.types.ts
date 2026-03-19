@@ -167,7 +167,7 @@ export type GlobalSummary = {
 /**
  * Complete test summary containing both global and per-endpoint statistics.
  */
-import { TressiConfig } from './config.types';
+import type { TressiConfig } from './config.types';
 
 /**
  * Complete test summary containing both global and per-endpoint statistics.

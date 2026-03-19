@@ -1,19 +1,13 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  effect,
-  input,
-  signal,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, input, signal } from '@angular/core';
 
 import { logoSrc } from '../../constants';
 
 @Component({
-  selector: 'app-loading',
-  imports: [],
-  templateUrl: './loading.component.html',
-  styleUrl: './loading.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [],
+  selector: 'app-loading',
+  styleUrl: './loading.component.css',
+  templateUrl: './loading.component.html',
 })
 export class LoadingComponent {
   readonly navigating = input<boolean>(false);

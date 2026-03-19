@@ -28,9 +28,7 @@
         </h4>
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div class="bg-base-100 rounded-xl p-4">
-            <div class="text-base-content/70 mb-1 text-xs uppercase">
-              Started
-            </div>
+            <div class="text-base-content/70 mb-1 text-xs uppercase">Started</div>
             <div
               class="text-sm font-medium"
               [appFormatDate]="testData()?.summary?.global?.epochStartedAt"
@@ -54,12 +52,7 @@
           <app-icon name="tune" class="text-base" />
           Configuration Snapshot
         </h4>
-        <app-json-textarea
-          [value]="configSnapshot()"
-          [rows]="10"
-          [disabled]="true"
-          class="mt-2"
-        />
+        <app-json-textarea [value]="configSnapshot()" [rows]="10" [disabled]="true" class="mt-2" />
       </div>
     </div>
   </app-collapsible-card>

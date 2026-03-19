@@ -6,60 +6,60 @@ import { SharedMemoryFactory } from './shared-memory-factory';
 describe('SharedMemoryFactory', () => {
   const mockEndpoints: TressiRequestConfig[] = [
     {
-      url: 'http://example.com/api/1',
+      earlyExit: {
+        enabled: false,
+        errorRateThreshold: 0,
+        exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
+        monitoringWindowMs: 1000,
+      },
+      headers: {},
       method: 'GET',
       payload: {},
-      headers: {},
-      rps: 10,
       rampUpDurationSec: 0,
+      rps: 10,
+      url: 'http://example.com/api/1',
+    },
+    {
       earlyExit: {
         enabled: false,
         errorRateThreshold: 0,
         exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
         monitoringWindowMs: 1000,
       },
-    },
-    {
-      url: 'http://example.com/api/2',
+      headers: {},
       method: 'POST',
       payload: {},
-      headers: {},
-      rps: 5,
       rampUpDurationSec: 0,
+      rps: 5,
+      url: 'http://example.com/api/2',
+    },
+    {
       earlyExit: {
         enabled: false,
         errorRateThreshold: 0,
         exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
         monitoringWindowMs: 1000,
       },
-    },
-    {
-      url: 'http://example.com/api/3',
+      headers: {},
       method: 'PUT',
       payload: {},
-      headers: {},
-      rps: 8,
       rampUpDurationSec: 0,
-      earlyExit: {
-        enabled: false,
-        errorRateThreshold: 0,
-        exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
-        monitoringWindowMs: 1000,
-      },
+      rps: 8,
+      url: 'http://example.com/api/3',
     },
     {
-      url: 'http://example.com/api/4',
-      method: 'DELETE',
-      payload: {},
-      headers: {},
-      rps: 12,
-      rampUpDurationSec: 0,
       earlyExit: {
         enabled: false,
         errorRateThreshold: 0,
         exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
         monitoringWindowMs: 1000,
       },
+      headers: {},
+      method: 'DELETE',
+      payload: {},
+      rampUpDurationSec: 0,
+      rps: 12,
+      url: 'http://example.com/api/4',
     },
   ];
 
@@ -78,11 +78,11 @@ describe('SharedMemoryFactory', () => {
 
     it('should create managers with custom options', () => {
       const result = SharedMemoryFactory.createManagers(2, mockEndpoints, {
-        significantFigures: 2,
-        lowestTrackableValue: 10,
-        highestTrackableValue: 1_000_000,
-        ringBufferSize: 50,
         bodySampleBufferSize: 500,
+        highestTrackableValue: 1_000_000,
+        lowestTrackableValue: 10,
+        ringBufferSize: 50,
+        significantFigures: 2,
       });
 
       // Verify managers are created successfully
@@ -92,10 +92,7 @@ describe('SharedMemoryFactory', () => {
 
     it('should distribute endpoints correctly with round-robin', () => {
       // Check endpoint distribution
-      const mapping = SharedMemoryFactory.getEndpointWorkerMapping(
-        3,
-        mockEndpoints,
-      );
+      const mapping = SharedMemoryFactory.getEndpointWorkerMapping(3, mockEndpoints);
       expect(mapping).toEqual([0, 1, 2, 0]);
     });
 
@@ -131,11 +128,11 @@ describe('SharedMemoryFactory', () => {
 
     it('should calculate memory usage for custom configuration', () => {
       const memoryUsage = SharedMemoryFactory.calculateMemoryUsage(2, 4, {
-        significantFigures: 2,
-        lowestTrackableValue: 10,
-        highestTrackableValue: 1_000_000,
-        ringBufferSize: 50,
         bodySampleBufferSize: 500,
+        highestTrackableValue: 1_000_000,
+        lowestTrackableValue: 10,
+        ringBufferSize: 50,
+        significantFigures: 2,
       });
 
       expect(memoryUsage).toBeGreaterThan(0);
@@ -143,13 +140,13 @@ describe('SharedMemoryFactory', () => {
 
     it('should scale memory usage with configuration', () => {
       const smallConfig = SharedMemoryFactory.calculateMemoryUsage(1, 1, {
-        ringBufferSize: 10,
         bodySampleBufferSize: 10,
+        ringBufferSize: 10,
       });
 
       const largeConfig = SharedMemoryFactory.calculateMemoryUsage(4, 100, {
-        ringBufferSize: 1000,
         bodySampleBufferSize: 10000,
+        ringBufferSize: 1000,
       });
 
       expect(largeConfig).toBeGreaterThan(smallConfig);
@@ -166,14 +163,10 @@ describe('SharedMemoryFactory', () => {
     });
 
     it('should handle memory validation appropriately', () => {
-      const validation = SharedMemoryFactory.validateMemoryRequirements(
-        100,
-        1000,
-        {
-          ringBufferSize: 1000,
-          bodySampleBufferSize: 5000,
-        },
-      );
+      const validation = SharedMemoryFactory.validateMemoryRequirements(100, 1000, {
+        bodySampleBufferSize: 5000,
+        ringBufferSize: 1000,
+      });
 
       // Just check that validation runs without error
       expect(typeof validation.valid).toBe('boolean');
@@ -201,14 +194,10 @@ describe('SharedMemoryFactory', () => {
     });
 
     it('should handle memory validation appropriately', () => {
-      const result = SharedMemoryFactory.createManagersSafe(
-        50,
-        Array(500).fill(mockEndpoints[0]),
-        {
-          ringBufferSize: 1000,
-          bodySampleBufferSize: 5000,
-        },
-      );
+      const result = SharedMemoryFactory.createManagersSafe(50, Array(500).fill(mockEndpoints[0]), {
+        bodySampleBufferSize: 5000,
+        ringBufferSize: 1000,
+      });
 
       // Check that the function runs without throwing
       expect(result).toBeDefined();
@@ -226,28 +215,19 @@ describe('SharedMemoryFactory', () => {
 
   describe('getEndpointWorkerMapping', () => {
     it('should return correct mapping for even distribution', () => {
-      const mapping = SharedMemoryFactory.getEndpointWorkerMapping(
-        3,
-        mockEndpoints,
-      );
+      const mapping = SharedMemoryFactory.getEndpointWorkerMapping(3, mockEndpoints);
 
       expect(mapping).toEqual([0, 1, 2, 0]);
     });
 
     it('should return correct mapping for single worker', () => {
-      const mapping = SharedMemoryFactory.getEndpointWorkerMapping(
-        1,
-        mockEndpoints,
-      );
+      const mapping = SharedMemoryFactory.getEndpointWorkerMapping(1, mockEndpoints);
 
       expect(mapping).toEqual([0, 0, 0, 0]);
     });
 
     it('should return correct mapping for more workers than endpoints', () => {
-      const mapping = SharedMemoryFactory.getEndpointWorkerMapping(
-        6,
-        mockEndpoints,
-      );
+      const mapping = SharedMemoryFactory.getEndpointWorkerMapping(6, mockEndpoints);
 
       expect(mapping).toEqual([0, 1, 2, 3]);
     });
@@ -302,17 +282,13 @@ describe('SharedMemoryFactory', () => {
       const workersCount = 3;
       const endpoints = mockEndpoints;
 
-      const result = SharedMemoryFactory.createManagers(
-        workersCount,
-        endpoints,
-        {
-          significantFigures: 3,
-          lowestTrackableValue: 1,
-          highestTrackableValue: 60_000_000,
-          ringBufferSize: 100,
-          bodySampleBufferSize: 1000,
-        },
-      );
+      const result = SharedMemoryFactory.createManagers(workersCount, endpoints, {
+        bodySampleBufferSize: 1000,
+        highestTrackableValue: 60_000_000,
+        lowestTrackableValue: 1,
+        ringBufferSize: 100,
+        significantFigures: 3,
+      });
 
       // Verify all managers are created successfully
       expect(result.hdrHistogram).toHaveLength(workersCount);
@@ -329,43 +305,35 @@ describe('SharedMemoryFactory', () => {
       const endpoints = Array(50)
         .fill(null)
         .map((_, i) => ({
-          url: `http://api.example.com/endpoint/${i}`,
-          method: 'GET' as const,
-          payload: {},
-          headers: {},
-          rps: 10,
-          rampUpDurationSec: 0,
           earlyExit: {
             enabled: false,
             errorRateThreshold: 0,
             exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
             monitoringWindowMs: 1000,
           },
+          headers: {},
+          method: 'GET' as const,
+          payload: {},
+          rampUpDurationSec: 0,
+          rps: 10,
+          url: `http://api.example.com/endpoint/${i}`,
         }));
 
-      const result = SharedMemoryFactory.createManagers(
-        workersCount,
-        endpoints,
-        {
-          significantFigures: 3,
-          ringBufferSize: 200,
-          bodySampleBufferSize: 2000,
-        },
-      );
+      const result = SharedMemoryFactory.createManagers(workersCount, endpoints, {
+        bodySampleBufferSize: 2000,
+        ringBufferSize: 200,
+        significantFigures: 3,
+      });
 
       expect(result.hdrHistogram).toHaveLength(workersCount);
       expect(result.statsCounter).toHaveLength(workersCount);
 
       // Verify memory usage is reasonable
-      const memoryUsage = SharedMemoryFactory.calculateMemoryUsage(
-        workersCount,
-        endpoints.length,
-        {
-          significantFigures: 3,
-          ringBufferSize: 200,
-          bodySampleBufferSize: 2000,
-        },
-      );
+      const memoryUsage = SharedMemoryFactory.calculateMemoryUsage(workersCount, endpoints.length, {
+        bodySampleBufferSize: 2000,
+        ringBufferSize: 200,
+        significantFigures: 3,
+      });
 
       expect(memoryUsage).toBeLessThan(2 * 1024 * 1024 * 1024); // Less than 2GB
     });

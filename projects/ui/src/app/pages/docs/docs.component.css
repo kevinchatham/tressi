@@ -1,9 +1,9 @@
 @reference "tailwindcss";
-@plugin 'daisyui';
+@plugin "daisyui";
 
 .markdown-body {
+  font-family: "Roboto Mono", monospace;
   @apply text-base-content/70 leading-relaxed;
-  font-family: 'Roboto Mono', monospace;
 }
 
 .markdown-body h1 {
@@ -48,8 +48,8 @@
 }
 
 .markdown-body code {
+  font-family: "Roboto Mono", monospace;
   @apply bg-base-100 rounded px-1 py-0.5 align-middle;
-  font-family: 'Roboto Mono', monospace;
 }
 
 .markdown-body pre {
@@ -100,23 +100,23 @@
 }
 
 /* Custom Prism Theme Overrides */
-.markdown-body pre[class*='language-'] {
-  @apply bg-base-200 border-base-content/10 border;
+.markdown-body pre[class*="language-"] {
   text-shadow: none;
+  @apply bg-base-200 border-base-content/10 border;
 }
 
-.markdown-body code[class*='language-'],
-.markdown-body pre[class*='language-'] {
-  @apply text-base-content;
-  font-family: 'Roboto Mono', monospace;
-  direction: ltr;
-  text-align: left;
-  white-space: pre-wrap;
-  word-spacing: normal;
-  word-break: break-all;
+.markdown-body code[class*="language-"],
+.markdown-body pre[class*="language-"] {
+  font-family: "Roboto Mono", monospace;
   line-height: 1.5;
-  tab-size: 4;
+  text-align: left;
+  word-spacing: normal;
   hyphens: none;
+  word-break: break-all;
+  tab-size: 4;
+  white-space: pre-wrap;
+  direction: ltr;
+  @apply text-base-content;
 }
 
 .markdown-body .mermaid {

@@ -1,14 +1,6 @@
 import { TestBed } from '@angular/core/testing';
-import { UserPreferences } from '@tressi/shared/ui';
-import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  type Mock,
-  vi,
-} from 'vitest';
+import type { UserPreferences } from '@tressi/shared/ui';
+import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 
 import { LocalStorageService } from './local-storage.service';
 import { LogService } from './log.service';
@@ -23,9 +15,7 @@ describe('LocalStorageService', () => {
     mockLog = { error: vi.fn() };
 
     // Mock localStorage methods instead of stubbing the whole global
-    vi.spyOn(Storage.prototype, 'getItem').mockImplementation(
-      (key) => mockStorage[key] || null,
-    );
+    vi.spyOn(Storage.prototype, 'getItem').mockImplementation((key) => mockStorage[key] || null);
     vi.spyOn(Storage.prototype, 'setItem').mockImplementation((key, value) => {
       mockStorage[key] = value;
     });
@@ -33,7 +23,7 @@ describe('LocalStorageService', () => {
       delete mockStorage[key];
     });
     vi.spyOn(Storage.prototype, 'clear').mockImplementation(() => {
-      Object.keys(mockStorage).forEach((k) => delete mockStorage[k]);
+      Object.keys(mockStorage).forEach((k) => void delete mockStorage[k]);
     });
 
     // Mock matchMedia for default preferences
@@ -45,10 +35,7 @@ describe('LocalStorageService', () => {
     );
 
     TestBed.configureTestingModule({
-      providers: [
-        LocalStorageService,
-        { provide: LogService, useValue: mockLog },
-      ],
+      providers: [LocalStorageService, { provide: LogService, useValue: mockLog }],
     });
 
     service = TestBed.inject(LocalStorageService);
@@ -57,7 +44,7 @@ describe('LocalStorageService', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
-    Object.keys(mockStorage).forEach((k) => delete mockStorage[k]);
+    Object.keys(mockStorage).forEach((k) => void delete mockStorage[k]);
   });
 
   it('should initialize with default preferences if storage is empty', () => {
@@ -68,18 +55,16 @@ describe('LocalStorageService', () => {
 
   it('should load preferences from localStorage', () => {
     const savedPrefs: UserPreferences = {
-      selectedTheme: 'storm',
-      pwaPromptDismissed: true,
-      lastSelectedConfig: null,
       columnPreferences: [],
       lastRoute: null,
+      lastSelectedConfig: null,
+      pwaPromptDismissed: true,
+      selectedTheme: 'storm',
     } as unknown as UserPreferences;
 
     localStorage.setItem('tressi-user-preferences', JSON.stringify(savedPrefs));
 
-    const newService = TestBed.runInInjectionContext(
-      () => new LocalStorageService(),
-    );
+    const newService = TestBed.runInInjectionContext(() => new LocalStorageService());
 
     expect(newService.preferences().selectedTheme).toBe('storm');
     expect(newService.preferences().pwaPromptDismissed).toBe(true);
@@ -88,9 +73,7 @@ describe('LocalStorageService', () => {
   it('should reset preferences if localStorage contains invalid data', () => {
     localStorage.setItem('tressi-user-preferences', 'invalid-json');
 
-    const newService = TestBed.runInInjectionContext(
-      () => new LocalStorageService(),
-    );
+    const newService = TestBed.runInInjectionContext(() => new LocalStorageService());
 
     expect(mockLog.error).toHaveBeenCalled();
     expect(newService.preferences().selectedTheme).toBe('shine');

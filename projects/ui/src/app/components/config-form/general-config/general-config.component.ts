@@ -1,7 +1,7 @@
 import { Component, input, output, signal } from '@angular/core';
 import { FormField } from '@angular/forms/signals';
-import { SaveConfigRequest } from '@tressi/shared/common';
-import { ModifyConfigRequestFormType } from '@tressi/shared/ui';
+import type { SaveConfigRequest } from '@tressi/shared/common';
+import type { ModifyConfigRequestFormType } from '@tressi/shared/ui';
 
 import { CollapsibleCardComponent } from '../../collapsible-card/collapsible-card.component';
 import { IconComponent } from '../../icon/icon.component';
@@ -9,7 +9,6 @@ import { JsonTextareaComponent } from '../../json-textarea/json-textarea.compone
 import { EarlyExitConfigComponent } from '../early-exit-config/early-exit-config.component';
 
 @Component({
-  selector: 'app-general-config',
   imports: [
     IconComponent,
     EarlyExitConfigComponent,
@@ -17,6 +16,7 @@ import { EarlyExitConfigComponent } from '../early-exit-config/early-exit-config
     CollapsibleCardComponent,
     FormField,
   ],
+  selector: 'app-general-config',
   templateUrl: './general-config.component.html',
 })
 export class GeneralConfigComponent {

@@ -1,15 +1,14 @@
 import { Component, input, output } from '@angular/core';
-import { LatencyHistogramBucket } from '@tressi/shared/common';
-import { LatencyHistogram } from '@tressi/shared/common';
+import type { LatencyHistogram, LatencyHistogramBucket } from '@tressi/shared/common';
 
 import { CollapsibleCardComponent } from '../../../../components/collapsible-card/collapsible-card.component';
 import { IconComponent } from '../../../../components/icon/icon.component';
 import { FormatLatencyDirective } from '../../../../directives/format/format-latency.directive';
 
 interface HistogramPercentile {
+  label: string;
   percentile: number;
   value: number;
-  label: string;
 }
 
 /**
@@ -17,8 +16,8 @@ interface HistogramPercentile {
  * Shows percentile distribution and summary statistics in a collapsible card
  */
 @Component({
-  selector: 'app-latency-distribution',
   imports: [CollapsibleCardComponent, IconComponent, FormatLatencyDirective],
+  selector: 'app-latency-distribution',
   templateUrl: './latency-distribution.component.html',
 })
 export class LatencyDistributionComponent {
@@ -112,9 +111,9 @@ export class LatencyDistributionComponent {
     ];
 
     return percentiles.map(({ key, label }) => ({
+      label,
       percentile: key,
       value: (histogram.percentiles[key] || 0) as number,
-      label,
     }));
   }
 
@@ -125,8 +124,8 @@ export class LatencyDistributionComponent {
     const histogram = this.histogram();
     if (!histogram) return null;
     return {
-      min: histogram.min,
       max: histogram.max,
+      min: histogram.min,
     };
   }
 

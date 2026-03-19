@@ -1,5 +1,5 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ResponseSample } from '@tressi/shared/ui';
+import { type ComponentFixture, TestBed } from '@angular/core/testing';
+import type { ResponseSample } from '@tressi/shared/ui';
 import { describe, expect, it, vi } from 'vitest';
 
 import { ResponseSamplesComponent } from './response-samples.component';
@@ -10,19 +10,19 @@ describe('ResponseSamplesComponent', () => {
 
   const mockSamples: ResponseSample[] = [
     {
-      statusCode: 200,
-      headers: { 'content-type': 'application/json' },
       body: '{"status":"ok"}',
-    },
-    {
-      statusCode: 404,
-      headers: { 'content-type': 'text/plain' },
-      body: 'Not Found',
-    },
-    {
-      statusCode: 500,
       headers: { 'content-type': 'application/json' },
+      statusCode: 200,
+    },
+    {
+      body: 'Not Found',
+      headers: { 'content-type': 'text/plain' },
+      statusCode: 404,
+    },
+    {
       body: '{"error":"internal"}',
+      headers: { 'content-type': 'application/json' },
+      statusCode: 500,
     },
   ];
 
@@ -54,12 +54,7 @@ describe('ResponseSamplesComponent', () => {
 
   it('should return available status codes', () => {
     fixture.componentRef.setInput('statusCodeDistribution', mockDistribution);
-    expect(component.getAvailableStatusCodes()).toEqual([
-      'all',
-      '200',
-      '404',
-      '500',
-    ]);
+    expect(component.getAvailableStatusCodes()).toEqual(['all', '200', '404', '500']);
   });
 
   it('should return filtered samples', () => {

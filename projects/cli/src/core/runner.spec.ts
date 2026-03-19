@@ -1,4 +1,4 @@
-import { TressiConfig } from '@tressi/shared/common';
+import type { TressiConfig } from '@tressi/shared/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { WorkerPoolManager } from '../workers/worker-pool-manager';

@@ -41,10 +41,7 @@ class TressiCLI {
       .argument('<config>', 'Path or URL to JSON configuration file')
       .summary('Execute a load test')
       .description(RunCommand.getDescription())
-      .option(
-        '-e, --export <path>',
-        'Export test results to the specified directory',
-      )
+      .option('-e, --export <path>', 'Export test results to the specified directory')
       .option('-s, --silent', 'Disable TUI and progress output', false)
       .action(async (config, options) => {
         const command = new RunCommand();

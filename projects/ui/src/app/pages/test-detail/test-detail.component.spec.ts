@@ -1,5 +1,5 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ChartType } from '@tressi/shared/ui';
+import { type ComponentFixture, TestBed } from '@angular/core/testing';
+import type { ChartType } from '@tressi/shared/ui';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { LogService } from '../../services/log.service';
@@ -28,8 +28,8 @@ describe('TestDetailComponent', () => {
         {
           provide: AppRouterService,
           useValue: {
-            toHome: toHomeSpy,
             isOnDocs: vi.fn(() => false),
+            toHome: toHomeSpy,
           },
         },
         {
@@ -42,8 +42,8 @@ describe('TestDetailComponent', () => {
         {
           provide: LogService,
           useValue: {
-            info: logServiceSpy,
             error: logServiceSpy,
+            info: logServiceSpy,
           },
         },
       ],
@@ -51,15 +51,15 @@ describe('TestDetailComponent', () => {
 
     fixture = TestBed.createComponent(TestDetailComponent);
     fixture.componentRef.setInput('data', {
+      metrics: null,
       test: {
-        id: 'test-123',
         configId: 'config-1',
-        status: 'completed',
         epochCreatedAt: Date.now(),
         error: null,
+        id: 'test-123',
+        status: 'completed',
         summary: null,
       },
-      metrics: null,
     });
     component = fixture.componentInstance;
     service = fixture.debugElement.injector.get(TestDetailService);
@@ -174,9 +174,7 @@ describe('TestDetailComponent', () => {
     });
 
     it('should handle special characters', () => {
-      expect(component.sanitizeForChartId('api/v1/users?id=123')).toBe(
-        'api_v1_users_id_123',
-      );
+      expect(component.sanitizeForChartId('api/v1/users?id=123')).toBe('api_v1_users_id_123');
     });
   });
 

@@ -1,9 +1,5 @@
 import { inject } from '@angular/core';
-import {
-  ActivatedRouteSnapshot,
-  RouterStateSnapshot,
-  Routes,
-} from '@angular/router';
+import type { ActivatedRouteSnapshot, RouterStateSnapshot, Routes } from '@angular/router';
 import { AppRoutes } from '@tressi/shared/ui';
 
 import { configsResolver } from './resolvers/configs.resolver';
@@ -85,103 +81,86 @@ const configGuard = async (
 
 export const routes: Routes = [
   {
-    path: AppRoutes.SERVER_UNAVAILABLE,
+    data: { title: 'Server Unavailable' },
     loadComponent: () =>
       import('./pages/server-unavailable/server-unavailable.component').then(
         (m) => m.ServerUnavailableComponent,
       ),
-    data: { title: 'Server Unavailable' },
+    path: AppRoutes.SERVER_UNAVAILABLE,
   },
   {
-    path: AppRoutes.WELCOME,
-    loadComponent: () =>
-      import('./pages/welcome/welcome.component').then(
-        (m) => m.WelcomeComponent,
-      ),
     canActivate: [healthCheckGuard, configGuard],
     data: { title: 'Welcome' },
+    loadComponent: () =>
+      import('./pages/welcome/welcome.component').then((m) => m.WelcomeComponent),
+    path: AppRoutes.WELCOME,
   },
   {
+    canActivate: [healthCheckGuard],
+    data: { title: 'Configs' },
+    loadComponent: () =>
+      import('./pages/configs/configs.component').then((m) => m.ConfigsComponent),
     path: AppRoutes.CONFIGS,
-    loadComponent: () =>
-      import('./pages/configs/configs.component').then(
-        (m) => m.ConfigsComponent,
-      ),
-    canActivate: [healthCheckGuard],
     resolve: { configs: configsResolver },
-    data: { title: 'Configs' },
   },
   {
+    canActivate: [healthCheckGuard],
+    data: { title: 'Configs' },
+    loadComponent: () =>
+      import('./pages/configs/configs.component').then((m) => m.ConfigsComponent),
     path: AppRoutes.CONFIGS_CREATE,
-    loadComponent: () =>
-      import('./pages/configs/configs.component').then(
-        (m) => m.ConfigsComponent,
-      ),
-    canActivate: [healthCheckGuard],
     resolve: { configs: configsResolver },
-    data: { title: 'Configs' },
   },
   {
+    canActivate: [healthCheckGuard, configGuard],
+    data: { title: 'Dashboard' },
+    loadComponent: () =>
+      import('./pages/dashboard/dashboard.component').then((m) => m.DashboardComponent),
     path: AppRoutes.DASHBOARD,
-    loadComponent: () =>
-      import('./pages/dashboard/dashboard.component').then(
-        (m) => m.DashboardComponent,
-      ),
-    canActivate: [healthCheckGuard, configGuard],
     resolve: { configs: configsResolver },
-    data: { title: 'Dashboard' },
   },
   {
+    canActivate: [healthCheckGuard, configGuard],
+    data: { title: 'Dashboard' },
+    loadComponent: () =>
+      import('./pages/dashboard/dashboard.component').then((m) => m.DashboardComponent),
     path: AppRoutes.DASHBOARD_WITH_ID,
-    loadComponent: () =>
-      import('./pages/dashboard/dashboard.component').then(
-        (m) => m.DashboardComponent,
-      ),
-    canActivate: [healthCheckGuard, configGuard],
     resolve: { configs: configsResolver },
-    data: { title: 'Dashboard' },
   },
   {
-    path: AppRoutes.SHOWCASE,
-    loadComponent: () =>
-      import('./pages/showcase/showcase.component').then(
-        (m) => m.ShowcaseComponent,
-      ),
     data: { title: 'Showcase' },
+    loadComponent: () =>
+      import('./pages/showcase/showcase.component').then((m) => m.ShowcaseComponent),
+    path: AppRoutes.SHOWCASE,
   },
   {
-    path: AppRoutes.TESTS_WITH_ID,
-    loadComponent: () =>
-      import('./pages/test-detail/test-detail.component').then(
-        (m) => m.TestDetailComponent,
-      ),
     canActivate: [healthCheckGuard],
-    resolve: { data: testDetailResolver },
     data: { title: 'Test Details' },
+    loadComponent: () =>
+      import('./pages/test-detail/test-detail.component').then((m) => m.TestDetailComponent),
+    path: AppRoutes.TESTS_WITH_ID,
+    resolve: { data: testDetailResolver },
   },
   {
+    canActivate: [healthCheckGuard],
+    data: { title: 'Documentation' },
+    loadComponent: () => import('./pages/docs/docs.component').then((m) => m.DocsComponent),
     path: AppRoutes.DOCS,
-    loadComponent: () =>
-      import('./pages/docs/docs.component').then((m) => m.DocsComponent),
-    canActivate: [healthCheckGuard],
     resolve: { availableDocs: docsResolver },
-    data: { title: 'Documentation' },
   },
   {
+    canActivate: [healthCheckGuard],
+    data: { title: 'Documentation' },
+    loadComponent: () => import('./pages/docs/docs.component').then((m) => m.DocsComponent),
     path: AppRoutes.DOCS_WITH_FILENAME,
-    loadComponent: () =>
-      import('./pages/docs/docs.component').then((m) => m.DocsComponent),
-    canActivate: [healthCheckGuard],
     resolve: { availableDocs: docsResolver },
-    data: { title: 'Documentation' },
   },
   {
-    path: AppRoutes.DOCS_WITH_SECTION,
-    loadComponent: () =>
-      import('./pages/docs/docs.component').then((m) => m.DocsComponent),
     canActivate: [healthCheckGuard],
-    resolve: { availableDocs: docsResolver },
     data: { title: 'Documentation' },
+    loadComponent: () => import('./pages/docs/docs.component').then((m) => m.DocsComponent),
+    path: AppRoutes.DOCS_WITH_SECTION,
+    resolve: { availableDocs: docsResolver },
   },
   {
     path: AppRoutes.HOME,
