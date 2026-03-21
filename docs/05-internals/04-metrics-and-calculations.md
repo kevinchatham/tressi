@@ -62,6 +62,7 @@ Tressi implements High Dynamic Range (HDR) Histograms to track latency across a 
 
 Tressi calculates Peak Requests Per Second (RPS) using a sliding window to filter transient fluctuations and identify sustained performance limits.
 
+- **Steady-State Snapshots**: Peak RPS is calculated using only "steady-state" snapshots (snapshots taken after the ramp-up period has concluded). If no steady-state data exists (e.g., early exit during ramp-up), it falls back to all snapshots.
 - **Sliding window**: A sliding window tracks RPS samples collected at 1 second intervals.
 - **Median calculation**: The peak RPS value is derived from the 50th percentile (median) of samples within the window, providing a stable representation of throughput.
 - **Instantaneous delta**: Each sample is calculated by measuring the delta in total requests between polling intervals.
@@ -70,7 +71,8 @@ Tressi calculates Peak Requests Per Second (RPS) using a sliding window to filte
 
 The **Target Achieved** metric quantifies the ratio of delivered throughput to requested load.
 
-- **Endpoint calculation**: Calculated as `Peak RPS / Configured RPS` for each endpoint.
+- **Steady-State Average**: Target Achieved is calculated using the **steady-state average RPS** instead of Peak RPS. This ensures the metric reflects sustained performance rather than momentary peaks.
+- **Endpoint calculation**: Calculated as `Steady-State Average RPS / Configured RPS` for each endpoint.
 - **Global aggregation**: The global target achievement is the arithmetic mean of all endpoint achievement percentages.
 - **Saturation & Failure Analysis**: Values below 100% indicate that the test has reached a performance ceiling, typically pointing to target system saturation, network bandwidth limits, or runner resource exhaustion (CPU/Memory).
 
@@ -85,7 +87,11 @@ Tressi estimates maximum throughput based on observed latency.
 Tressi monitors network utilization by intercepting request and response streams.
 
 - **Payload tracking**: Aggregates the size of all outgoing request payloads and incoming response bodies.
-- **Throughput rate**: Calculated as `(Total Bytes Sent + Total Bytes Received) / Test Duration`, expressed in bytes per second.
+- **Throughput rate**:
+  - **Global Average RPS**: Calculated as `Total Requests / Total Test Duration`. This represents overall throughput across the entire test run.
+  - **Endpoint Average RPS**: Calculated using a "steady-state window" denominator (`Total Duration - Effective Ramp-Up`) to represent sustained throughput.
+- **Resource Metrics (CPU/Memory)**: Averages for `avgSystemCpuUsagePercent` and `avgProcessMemoryUsageMB` are derived from steady-state snapshots to avoid dilution by the ramp-up phase.
+- **Network Throughput Rate**: Calculated as `(Total Bytes Sent + Total Bytes Received) / Test Duration`, expressed in bytes per second.
 
 ### Aggregating Status Codes
 

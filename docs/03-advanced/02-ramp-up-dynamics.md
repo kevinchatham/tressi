@@ -12,7 +12,7 @@ This document covers:
 
 To maintain statistical integrity, Tressi enforces specific constraints on ramp up:
 
-- **The 25% Rule**: Ramp up duration cannot exceed 25% of the total test duration. This ensures at least 75% of the test runs at the target intensity (the "Constant Load" window).
+- **The 50% Rule**: Ramp up duration cannot exceed 50% of the total test duration. This ensures at least 50% of the test runs at the target intensity (the "Constant Load" window).
 - **Minimum RPS Requirement**: When global ramp up is enabled, all endpoints must have a target RPS of at least 5 to ensure linear interpolation.
 - **Statistical Significance**: By ensuring a majority of the test runs at peak load, Tressi provides metrics that aren't heavily skewed by the initialization phase.
 

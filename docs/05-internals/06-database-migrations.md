@@ -57,7 +57,7 @@ Database migrations are triggered automatically during the CLI initialization pr
 Tressi prioritizes database integrity through several safety mechanisms:
 
 - **Automatic Detection**: Migrations are detected automatically during startup, ensuring the environment is always ready for execution.
-- **Automatic Backups**: Before applying any schema changes, Tressi creates a backup of the database file (e.g., `tressi-v0.0.17-1710636892.db.bak`) in the same directory.
+- **Automatic Backups**: Before applying any schema changes, Tressi creates a backup of the database file (e.g., `tressi-v0.0.19-1710636892.db.bak`) in the same directory.
 - **User Control**: Users are prompted before schema changes are applied, allowing for manual backups or inspection if desired.
 - **Atomic Updates**: The use of transactions ensures that the database never remains in a partially migrated state.
 - **Detailed Logging**: The system logs the summary of each migration as it is applied, providing visibility into schema changes.

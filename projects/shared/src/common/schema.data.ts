@@ -34,7 +34,7 @@ export const optionsDefaults = {
   durationSec: 10,
   headers: headerDefaults,
   rampUpDurationSec: 0,
-  threads: 4,
+  threads: 2,
   workerEarlyExit: earlyExitDefaults,
   workerMemoryLimit: 128,
 };
@@ -47,7 +47,7 @@ export const EarlyExitConfigSchema = z
     enabled: z.boolean().describe('Enable early exit for this endpoint'),
     errorRateThreshold: z.number().min(0).max(1).describe('Error rate threshold (0.0-1.0)'),
     exitStatusCodes: z
-      .array(z.number().int().positive())
+      .array(z.number().int().positive().min(100).max(599))
       .describe('HTTP status codes that trigger immediate endpoint stop'),
     monitoringWindowMs: z
       .number()
@@ -86,7 +86,22 @@ export const TressiRequestConfigSchema = z
     rps: z.number().int().min(1).describe('Per-endpoint requests per second limit. Defaults to 1.'),
     url: z.url().describe('The URL to send the request to.'),
   })
-  .default(requestDefaults);
+  .default(requestDefaults)
+  .check((ctx) => {
+    const data = ctx.value;
+    if (data.earlyExit.enabled) {
+      const hasThreshold =
+        data.earlyExit.errorRateThreshold > 0 && data.earlyExit.exitStatusCodes.length > 0;
+      if (!hasThreshold) {
+        ctx.issues.push({
+          code: 'custom',
+          input: ctx.value,
+          message: `Early Exit for ${ctx.value.url}: An error rate threshold and at least one exit status code must be provided when enabled`,
+          path: ['earlyExit'],
+        });
+      }
+    }
+  });
 
 /**
  * Zod schema for Tressi options configuration.
@@ -118,22 +133,23 @@ export const TressiOptionsConfigSchema = z
     ),
     workerMemoryLimit: z.number().int().min(16).max(512).describe('Memory limit per worker in MB'),
   })
-  .refine(
-    (data) => {
-      // Validate worker early exit configuration
-      if (data.workerEarlyExit.enabled) {
-        const hasThreshold = !!(
-          data.workerEarlyExit.errorRateThreshold || data.workerEarlyExit.exitStatusCodes.length > 0
-        );
-        return hasThreshold;
+  .check((ctx) => {
+    // Validate worker early exit configuration
+    if (ctx.value.workerEarlyExit.enabled) {
+      const hasThreshold =
+        ctx.value.workerEarlyExit.errorRateThreshold > 0 &&
+        ctx.value.workerEarlyExit.exitStatusCodes.length > 0;
+      if (!hasThreshold) {
+        ctx.issues.push({
+          code: 'custom',
+          input: ctx.value,
+          message:
+            'Global Early Exit: An error rate threshold and at least one exit status code must be provided when enabled',
+          path: ['workerEarlyExit'],
+        });
       }
-      return true;
-    },
-    {
-      message: 'At least one exit code must be provided when Early Exit is enabled',
-      path: ['workerEarlyExit'],
-    },
-  )
+    }
+  })
   .default(optionsDefaults);
 
 /**
@@ -148,51 +164,57 @@ export const TressiConfigSchema = z
       .min(1, 'At least one valid request is required')
       .describe('An array of request configurations.'),
   })
-  .refine(
-    (data) => {
-      // Validate that global rampUpDurationSec is not more than a quarter of durationSec
-      if (data.options.rampUpDurationSec > data.options.durationSec / 4) {
-        return false;
-      }
+  .check((ctx) => {
+    if (ctx.value.options.rampUpDurationSec > ctx.value.options.durationSec / 2) {
+      ctx.issues.push({
+        code: 'custom',
+        input: ctx.value,
+        message: 'Ramp Up: Duration cannot exceed half of the test duration',
+        path: ['options', 'rampUpDurationSec'],
+      });
+    }
 
-      // Validate that each endpoint's rampUpDurationSec is not more than a quarter of durationSec
-      return data.requests.every(
-        (request) => request.rampUpDurationSec <= data.options.durationSec / 4,
-      );
-    },
-    {
-      message: 'Ramp Up Duration cannot exceed a quarter of the total test duration',
-      path: ['rampUpDurationSec'],
-    },
-  )
-  .refine(
-    (data) => {
-      // If global rampUpDurationSec is greater than zero, all endpoints must have rps > 5
-      if (data.options.rampUpDurationSec > 0) {
-        return data.requests.every((request) => request.rps >= 5);
+    ctx.value.requests.forEach((request, index) => {
+      if (request.rampUpDurationSec > ctx.value.options.durationSec / 2) {
+        ctx.issues.push({
+          code: 'custom',
+          input: ctx.value,
+          message: 'Ramp Up: Duration cannot exceed half of the test duration',
+          path: ['requests', index, 'rampUpDurationSec'],
+        });
       }
-      return true;
-    },
-    {
-      message:
-        'All requests must have a target greater than or equal to 5 when Global Ramp Up Duration is greater than 0',
-      path: ['options', 'rampUpDurationSec'],
-    },
-  )
-  .refine(
-    (data) => {
-      if (data.requests.length > 1) {
-        const urls = data.requests.map((req) => req.url);
-        const uniqueUrls = new Set(urls);
-        return uniqueUrls.size === urls.length;
+    });
+
+    // If global or any per-request ramp up is enabled, all requests must have RPS >= 5
+    const hasAnyRampUp =
+      ctx.value.options.rampUpDurationSec > 0 ||
+      ctx.value.requests.some((r) => r.rampUpDurationSec > 0);
+    if (hasAnyRampUp) {
+      const allRpsValid = ctx.value.requests.every((request) => request.rps >= 5);
+      if (!allRpsValid) {
+        ctx.issues.push({
+          code: 'custom',
+          input: ctx.value,
+          message:
+            'Ramp Up: All requests must have a target greater than or equal to 5 when Ramp Up Duration is greater than 0',
+          path: ['options', 'rampUpDurationSec'],
+        });
       }
-      return true;
-    },
-    {
-      message: 'Duplicate endpoint URLs are not allowed',
-      path: ['requests'],
-    },
-  )
+    }
+
+    if (ctx.value.requests.length > 1) {
+      const urls = ctx.value.requests.map((req) => req.url);
+      const uniqueUrls = new Set(urls);
+      if (uniqueUrls.size !== urls.length) {
+        ctx.issues.push({
+          code: 'custom',
+          input: ctx.value,
+          message: 'Requests: Duplicate URLs are not allowed',
+          path: ['requests'],
+        });
+      }
+    }
+  })
   .default({
     $schema: schemaDefault,
     options: optionsDefaults,

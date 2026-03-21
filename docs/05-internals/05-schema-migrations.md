@@ -66,7 +66,7 @@ Tressi maintains data integrity and provides visibility during the migration pro
 
 ### Detecting Configuration Versions
 
-Version detection relies on the `$schema` URL in the configuration JSON. The `JsonMigrationManager` utilizes a regular expression to extract the version string (e.g., `0.0.17`) from the URL.
+Version detection relies on the `$schema` URL in the configuration JSON. The `JsonMigrationManager` utilizes a regular expression to extract the version string (e.g., `0.0.19`) from the URL.
 
 A valid Tressi configuration **must** include the `$schema` property. If the property is missing or does not contain a valid Tressi schema URL, the system will report a validation error and halt the migration process for that configuration.
 
@@ -91,16 +91,16 @@ When implementing a migration, use a type guard to narrow the `unknown` fields t
 
 ```typescript
 // Example: Renaming a field
-'0.0.17': {
+'0.0.19': {
   summary: "Rename 'oldField' to 'newField' for better clarity.",
   up: (config) => {
     if (!('oldField' in config) || typeof config.oldField !== 'string') {
-      throw new Error('Migration 0.0.17 failed: "oldField" is missing or not a string');
+      throw new Error('Migration 0.0.19 failed: "oldField" is missing or not a string');
     }
     const { oldField, ...rest } = config;
     return {
       ...rest,
-      $schema: config.$schema.replace('0.0.17', '0.0.18'),
+      $schema: config.$schema.replace('0.0.19', '0.0.19'),
       newField: oldField,
     };
   }
@@ -120,7 +120,7 @@ flowchart LR
     V5 -->|Zod Parse| Final[Current Version]
 ```
 
-If a configuration is at version `0.0.13` and the current version is `0.0.17`, the system applies the `0.0.14`, `0.0.15`, `0.0.16`, and `0.0.17` transformations in order. Each migration key represents the **target version** of that step.
+If a configuration is at version `0.0.13` and the current version is `0.0.15`, the system applies the `0.0.14` and `0.0.15` transformations in order. Each migration key represents the **target version** of that step.
 
 ### Injecting Configuration Defaults
 

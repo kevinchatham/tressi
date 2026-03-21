@@ -14,7 +14,7 @@ The `$schema` property enables type safety for IDE edits and UI exports. This pr
 
 ```json
 {
-  "$schema": "https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json"
+  "$schema": "https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.19.json"
 }
 ```
 
@@ -118,7 +118,7 @@ Endpoint specific configurations take precedence over global `options` for granu
 
 ```json
 {
-  "$schema": "https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json",
+  "$schema": "https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.19.json",
   "requests": [
     {
       "url": "http://localhost:5000/health",
@@ -161,7 +161,7 @@ Endpoint specific configurations take precedence over global `options` for granu
     "headers": {
       "User-Agent": "Tressi"
     },
-    "threads": 4,
+    "threads": 2,
     "workerMemoryLimit": 128,
     "workerEarlyExit": {
       "enabled": false,
