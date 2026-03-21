@@ -101,4 +101,39 @@ describe('TressiConfigLoader', () => {
 
     await expect(loadConfig('nonexistent.json')).rejects.toThrow('Configuration file not found');
   });
+
+  it('should throw error if file is empty', async () => {
+    const mockConfig = {
+      name: 'test',
+    } as unknown as import('@tressi/shared/common').TressiConfig;
+    vi.mocked(fs.access).mockResolvedValue(undefined as never);
+    vi.mocked(fs.readFile).mockResolvedValue('' as never);
+    vi.mocked(validateConfig).mockReturnValue({
+      data: mockConfig,
+      success: true,
+    } as unknown as ReturnType<typeof validateConfig>);
+
+    await expect(loadConfig('empty.json')).rejects.toThrow('Configuration file is empty');
+  });
+
+  it('should throw error if file contains only whitespace', async () => {
+    const mockConfig = {
+      name: 'test',
+    } as unknown as import('@tressi/shared/common').TressiConfig;
+    vi.mocked(fs.access).mockResolvedValue(undefined as never);
+    vi.mocked(fs.readFile).mockResolvedValue('   \n\t  ' as never);
+    vi.mocked(validateConfig).mockReturnValue({
+      data: mockConfig,
+      success: true,
+    } as unknown as ReturnType<typeof validateConfig>);
+
+    await expect(loadConfig('whitespace.json')).rejects.toThrow('Configuration file is empty');
+  });
+
+  it('should throw error if file contains invalid JSON', async () => {
+    vi.mocked(fs.access).mockResolvedValue(undefined as never);
+    vi.mocked(fs.readFile).mockResolvedValue('{ invalid json }' as never);
+
+    await expect(loadConfig('invalid.json')).rejects.toThrow('Invalid JSON in configuration file');
+  });
 });

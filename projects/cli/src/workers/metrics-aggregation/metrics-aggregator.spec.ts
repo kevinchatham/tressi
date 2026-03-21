@@ -1,6 +1,6 @@
 import type { IHdrHistogramManager, IStatsCounterManager } from '@tressi/shared/cli';
+import type { TressiConfig } from '@tressi/shared/common';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 import { MetricsAggregator } from './metrics-aggregator';
 
 describe('MetricsAggregator', () => {
@@ -509,7 +509,7 @@ describe('MetricsAggregator', () => {
       aggregator.setConfig({
         options: { rampUpDurationSec: 1 },
         requests: [{ rps: 10, url: 'url1' }],
-      } as any);
+      } as unknown as TressiConfig);
       aggregator.setEndpoints(['url1']);
 
       const baseCounters = {

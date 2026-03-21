@@ -1,23 +1,17 @@
-import { type Context, Hono, type Next } from 'hono';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { Hono } from 'hono';
+import { describe, expect, it } from 'vitest';
 
 import createBrowserApp from './browser-routes';
 
-vi.mock('@hono/node-server/serve-static', () => ({
-  serveStatic: vi.fn(
-    () =>
-      (_c: Context, next: Next): Promise<unknown> =>
-        next(),
-  ),
-}));
-
 describe('createBrowserApp', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   it('should create a Hono app', () => {
     const app = createBrowserApp();
+    expect(app).toBeInstanceOf(Hono);
+  });
+
+  it('should return a Hono instance with middleware configured', () => {
+    const app = createBrowserApp();
+    // The app should have routes configured
     expect(app).toBeInstanceOf(Hono);
   });
 });

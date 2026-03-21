@@ -70,4 +70,23 @@ describe('MinimalTUI', () => {
     const spinnerInstance = mockOra.mock.results[0].value;
     expect(spinnerInstance.text).toContain('50 rps');
   });
+
+  it('should not start spinner when silent is true', () => {
+    const tui = new MinimalTUI(config, true);
+    tui.start(runner);
+    // When silent, ora should still be called (constructor always calls it)
+    // but start() should not be called
+    const mockOra = vi.mocked(ora);
+    const spinnerInstance = mockOra.mock.results[0].value;
+    expect(spinnerInstance.start).not.toHaveBeenCalled();
+  });
+
+  it('should not stop spinner when silent is true', () => {
+    const tui = new MinimalTUI(config, true);
+    tui.start(runner);
+    tui.stop();
+    const mockOra = vi.mocked(ora);
+    const spinnerInstance = mockOra.mock.results[0].value;
+    expect(spinnerInstance.succeed).not.toHaveBeenCalled();
+  });
 });

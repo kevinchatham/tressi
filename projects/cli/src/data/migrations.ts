@@ -98,7 +98,7 @@ export const DATABASE_MIGRATIONS: Record<string, IDatabaseMigration> = {
   '0.0.19': noopDatabaseMigration,
 };
 
-async function dropColumnIfExists(
+export async function dropColumnIfExists(
   db: Kysely<Database>,
   table: string,
   column: string,

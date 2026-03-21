@@ -42,4 +42,17 @@ describe('metrics-routes', () => {
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual(mockMetrics);
   });
+
+  it('GET /:testId should return error response when storage throws', async () => {
+    vi.mocked(metricStorage.getByTestId).mockRejectedValue(new Error('Database connection failed'));
+
+    const app = createMetricsApp(mockSseManager);
+    const res = await app.request('/test-1');
+    expect(res.status).toBe(500);
+    const data = await res.json();
+    expect(data.error).toBeDefined();
+    expect(data.error.message).toBe('Failed to load metrics');
+    expect(data.error.code).toBe('INTERNAL_ERROR');
+    expect(data.error.details).toContain('Database connection failed');
+  });
 });
