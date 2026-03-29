@@ -1,6 +1,6 @@
 import type { IHdrHistogramManager, IStatsCounterManager } from '@tressi/shared/cli';
+import type { TressiConfig } from '@tressi/shared/common';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 import { MetricsAggregator } from './metrics-aggregator';
 
 describe('MetricsAggregator', () => {
@@ -449,8 +449,122 @@ describe('MetricsAggregator', () => {
 
       const results = aggregator.getResults(2, ['url1', 'url2', 'url3']);
 
+      // Since we haven't reached steady state (rampUpDurationSec defaults to 0, but we haven't pushed any snapshots yet)
+      // averageRequestsPerSecond should be the current interval RPS (20)
       expect(results.global.averageRequestsPerSecond).toBe(20);
       expect(results.global.peakRequestsPerSecond).toBe(20);
+
+      // Second poll with lower RPS
+      vi.setSystemTime(3000);
+      vi.mocked(mockStatsCounterManagers[0].getAllEndpointCounters).mockReturnValue([
+        {
+          bodySampleIndices: [],
+          bytesReceived: 0,
+          bytesSent: 0,
+          failureCount: 0,
+          sampledStatusCodes: [],
+          statusCodeCounts: {},
+          successCount: 7, // +2
+        },
+        {
+          bodySampleIndices: [],
+          bytesReceived: 0,
+          bytesSent: 0,
+          failureCount: 0,
+          sampledStatusCodes: [],
+          statusCodeCounts: {},
+          successCount: 8, // +3
+        },
+      ]);
+      vi.mocked(mockStatsCounterManagers[1].getAllEndpointCounters).mockReturnValue([
+        {
+          bodySampleIndices: [],
+          bytesReceived: 0,
+          bytesSent: 0,
+          failureCount: 0,
+          sampledStatusCodes: [],
+          statusCodeCounts: {},
+          successCount: 15, // +5
+        },
+      ]);
+      // Total requests = 7 + 8 + 15 = 30
+      // Request diff = 30 - 20 = 10
+      // Time diff = 1s
+      // Interval RPS = 10 / 1 = 10
+      // Peak RPS should remain 20 (high-water mark)
+
+      const results2 = aggregator.getResults(2, ['url1', 'url2', 'url3']);
+      expect(results2.global.peakRequestsPerSecond).toBe(20);
+      expect(results2.global.averageRequestsPerSecond).toBe(10); // Still not in steady state because we haven't pushed snapshots to _snapshots yet in this test
+
+      vi.useRealTimers();
+    });
+
+    it('should calculate cumulative average RPS from steady state', () => {
+      const startTime = 1000;
+      vi.useFakeTimers();
+      vi.setSystemTime(startTime);
+
+      aggregator.setStartTime(startTime);
+      aggregator.setConfig({
+        options: { rampUpDurationSec: 1 },
+        requests: [{ rps: 10, url: 'url1' }],
+      } as unknown as TressiConfig);
+      aggregator.setEndpoints(['url1']);
+
+      const baseCounters = {
+        bodySampleIndices: [],
+        bytesReceived: 0,
+        bytesSent: 0,
+        failureCount: 0,
+        sampledStatusCodes: [],
+        statusCodeCounts: {},
+        successCount: 0,
+      };
+
+      // 1. Initial poll at T=1000 (Start)
+      vi.mocked(mockStatsCounterManagers[0].getAllEndpointCounters).mockReturnValue([
+        { ...baseCounters },
+      ]);
+      vi.mocked(mockStatsCounterManagers[1].getAllEndpointCounters).mockReturnValue([]);
+      aggregator.getResults(1, ['url1']); // This updates _previousGlobalCounts
+
+      // 2. Poll at T=2000 (End of ramp-up)
+      vi.setSystemTime(2000);
+      vi.mocked(mockStatsCounterManagers[0].getAllEndpointCounters).mockReturnValue([
+        { ...baseCounters, successCount: 10 },
+      ]);
+      const resRampEnd = aggregator.getResults(1, ['url1']);
+      // @ts-expect-error - accessing private for test verification
+      aggregator._snapshots.push(resRampEnd);
+
+      // 3. Poll at T=3000 (Steady state 1s)
+      vi.setSystemTime(3000);
+      vi.mocked(mockStatsCounterManagers[0].getAllEndpointCounters).mockReturnValue([
+        { ...baseCounters, successCount: 30 },
+      ]);
+      // Interval RPS = (30-10)/1 = 20
+      // Steady state started at T=2000.
+      // Steady requests = 30 - 10 = 20.
+      // Steady duration = 3000 - 2000 = 1s.
+      // Average RPS = 20 / 1 = 20.
+      const resSteady1 = aggregator.getResults(1, ['url1']);
+      expect(resSteady1.global.averageRequestsPerSecond).toBe(20);
+      // @ts-expect-error
+      aggregator._snapshots.push(resSteady1);
+
+      // 4. Poll at T=4000 (Steady state 2s)
+      vi.setSystemTime(4000);
+      vi.mocked(mockStatsCounterManagers[0].getAllEndpointCounters).mockReturnValue([
+        { ...baseCounters, successCount: 40 },
+      ]);
+      // Interval RPS = (40-30)/1 = 10
+      // Steady requests = 40 - 10 = 30.
+      // Steady duration = 4000 - 2000 = 2s.
+      // Average RPS = 30 / 2 = 15.
+      const resSteady2 = aggregator.getResults(1, ['url1']);
+      expect(resSteady2.global.averageRequestsPerSecond).toBe(15);
+      expect(resSteady2.global.peakRequestsPerSecond).toBe(20); // Peak was 20 at T=3000
 
       vi.useRealTimers();
     });

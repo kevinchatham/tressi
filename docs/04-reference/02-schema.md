@@ -16,7 +16,7 @@ To enable validation and IntelliSense in VS Code or other supported editors, ens
 
 ```json
 {
-  "$schema": "https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.17.json",
+  "$schema": "https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.19.json",
   "requests": [],
   "options": {}
 }
@@ -39,34 +39,36 @@ Configure overall test runner behavior using the `options` object.
 | `durationSec`       | integer | Total test duration in seconds. Min: `10`. Default: `10`.                    |
 | `rampUpDurationSec` | integer | Global ramp up time in seconds for all endpoints. Default: `0`.              |
 | `headers`           | object  | Global headers sent with every request. Default: `{"User-Agent": "Tressi"}`. |
-| `threads`           | integer | Number of worker threads. Default: CPU count.                                |
+| `threads`           | integer | Number of worker threads. Default: `2`.                                      |
 | `workerMemoryLimit` | integer | Memory allocation per worker in MB. Min: `16`, Max: `512`. Default: `128`.   |
-| `workerEarlyExit`   | object  | Default [Early Exit Configuration](#automated-test-termination) for workers. |
+| `workerEarlyExit`   | object  | Default [Early Exit Configuration](#early-exit) for workers.                 |
 
 ### Request Endpoints
 
-Define specific endpoints to target within the `requests` array.
+Define specific endpoints to target within the `requests` array. Duplicate endpoint URLs are forbidden.
 
-| Property            | Type    | Description                                                        |
-| ------------------- | ------- | ------------------------------------------------------------------ |
-| `url`               | string  | Target URI for the request.                                        |
-| `method`            | string  | HTTP method (GET, POST, PUT, PATCH, DELETE). Default: `GET`.       |
-| `payload`           | object  | Request body for POST/PUT/PATCH methods.                           |
-| `headers`           | object  | Endpoint specific headers. Merged with global headers.             |
-| `rps`               | integer | Target requests per second for this endpoint. Default: `1`.        |
-| `rampUpDurationSec` | integer | Seconds to reach target RPS. Overrides global ramp up if non-zero. |
-| `earlyExit`         | object  | [Early Exit Configuration](#early-exit) for this endpoint.         |
+| Property            | Type    | Description                                                                                         |
+| ------------------- | ------- | --------------------------------------------------------------------------------------------------- |
+| `url`               | string  | Target URI for the request. Must be unique within the `requests` array.                             |
+| `method`            | string  | HTTP method (GET, POST, PUT, PATCH, DELETE). Default: `GET`.                                        |
+| `payload`           | object  | Request body for POST/PUT/PATCH methods.                                                            |
+| `headers`           | object  | Endpoint specific headers. Merged with global headers.                                              |
+| `rps`               | integer | Target requests per second for this endpoint. Default: `1`. Min: `5` if any ramp-up is enabled.     |
+| `rampUpDurationSec` | integer | Seconds to reach target RPS. Overrides global ramp up if non-zero. Max: 50% of total test duration. |
+| `earlyExit`         | object  | [Early Exit Configuration](#early-exit) for this endpoint.                                          |
 
 ### Early Exit
 
 Set thresholds to stop tests automatically when performance or stability degrades. Review [Automated Test Termination](../03-advanced/01-early-exit.md) for implementation details and best practices.
 
-| Property             | Type    | Description                                                         |
-| -------------------- | ------- | ------------------------------------------------------------------- |
-| `enabled`            | boolean | Enables or disables early exit monitoring.                          |
-| `errorRateThreshold` | number  | Error rate (0.0 to 1.0) that triggers a test stop.                  |
-| `exitStatusCodes`    | array   | List of HTTP status codes that trigger an immediate stop.           |
-| `monitoringWindowMs` | integer | Rolling time window in milliseconds for calculating the error rate. |
+When `enabled` is `true`, both `errorRateThreshold` (must be > 0) AND at least one `exitStatusCodes` must be provided.
+
+| Property             | Type    | Description                                                                |
+| -------------------- | ------- | -------------------------------------------------------------------------- |
+| `enabled`            | boolean | Enables or disables early exit monitoring.                                 |
+| `errorRateThreshold` | number  | Error rate (0.0 to 1.0) that triggers a test stop. Must be > 0 if enabled. |
+| `exitStatusCodes`    | array   | List of HTTP status codes (100-599) that trigger an immediate stop.        |
+| `monitoringWindowMs` | integer | Rolling time window in milliseconds for calculating the error rate.        |
 
 ### Next Steps
 

@@ -19,7 +19,8 @@
     }
   },
   "files": {
-    "ignoreUnknown": false
+    "ignoreUnknown": false,
+    "includes": ["**/*.{ts,js,css,json}"]
   },
   "formatter": {
     "enabled": true,

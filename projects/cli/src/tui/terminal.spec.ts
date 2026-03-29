@@ -34,4 +34,16 @@ describe('terminal', () => {
     expect(console.clear).toHaveBeenCalled();
     expect(console.log).toHaveBeenCalledWith('hello');
   });
+
+  it('should clear and print a message with optional params', () => {
+    terminal.clearAndPrint('hello', 'world', 'extra');
+    expect(console.clear).toHaveBeenCalled();
+    expect(console.log).toHaveBeenCalledWith('hello', ['world', 'extra']);
+  });
+
+  it('should clear and print undefined message', () => {
+    terminal.clearAndPrint();
+    expect(console.clear).toHaveBeenCalled();
+    expect(console.log).toHaveBeenCalledWith(undefined);
+  });
 });

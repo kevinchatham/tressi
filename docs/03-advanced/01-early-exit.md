@@ -14,12 +14,15 @@ This document covers:
 
 The `errorRateThreshold` (0.0 to 1.0) defines the percentage of failed requests allowed before an endpoint is stopped.
 
+- **Validation**: When `enabled` is `true`, `errorRateThreshold` must be greater than `0`.
 - **Critical APIs**: Set a low threshold (e.g., `0.01` for 1%) for sensitive endpoints where any failure indicates a major issue.
 - **Resilient APIs**: Use a higher threshold (e.g., `0.10` for 10%) for services that typically experience transient errors under load.
 
 ### Defining Exit Status Codes
 
 Immediate termination triggers when specific HTTP status codes are encountered. This is used for catching "circuit breaker" responses or rate limiting.
+
+- **Validation**: When `enabled` is `true`, at least one `exitStatusCodes` must be provided. Status codes must be between `100` and `599`.
 
 Commonly used codes:
 

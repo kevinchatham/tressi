@@ -28,9 +28,12 @@ vi.mock('@tressi/shared/common', async () => {
   };
 });
 
-vi.mock('./json-migrations', () => ({
-  JSON_MIGRATIONS: {},
-}));
+vi.mock('./json-migrations', async () => {
+  const actual = await vi.importActual<typeof import('./migrations')>('./migrations');
+  return {
+    JSON_MIGRATIONS: { ...actual.JSON_MIGRATIONS },
+  };
+});
 
 vi.mock('../../../../package.json', () => ({
   default: { version: '0.0.14' },

@@ -12,9 +12,12 @@ vi.mock('../../../../package.json', () => ({
   default: { version: '0.0.15' },
 }));
 
-vi.mock('./database-migrations', () => ({
-  DATABASE_MIGRATIONS: {},
-}));
+vi.mock('./database-migrations', async () => {
+  const actual = await vi.importActual<typeof import('./migrations')>('./migrations');
+  return {
+    DATABASE_MIGRATIONS: { ...actual.DATABASE_MIGRATIONS },
+  };
+});
 
 vi.mock('node:fs/promises', async () => {
   const actual = await vi.importActual<typeof import('node:fs/promises')>('node:fs/promises');

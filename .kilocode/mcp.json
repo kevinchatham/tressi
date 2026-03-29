@@ -11,9 +11,10 @@
       }
     },
     "playwright": {
+      "alwaysAllow": [],
       "args": ["-y", "@playwright/mcp@0.0.38", "--config=playwright-mcp-config.json"],
       "command": "npx",
-      "disabled": false,
+      "disabled": true,
       "env": {
         "PATH": "/home/kevin/.nvm/versions/node/v24.13.0/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
       }
