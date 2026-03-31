@@ -120,7 +120,7 @@
     "ui:serve": "npm run serve -w projects/ui"
   },
   "type": "commonjs",
-  "version": "0.0.19",
+  "version": "0.0.20",
   "workspaces": [
     "projects/cli",
     "projects/ui",
