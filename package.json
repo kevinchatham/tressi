@@ -100,7 +100,7 @@
   },
   "scripts": {
     "build": "npx rimraf dist && npx rimraf server/dist && npm run cli:build && npm run ui:build && cp -r projects/cli/dist dist",
-    "check": "biome check --write . && prettier --write . --config .prettierrc --ignore-path .prettierignore",
+    "check": "biome check --config-path biome.standalone.json --write . && prettier --write . --config .prettierrc --ignore-path .prettierignore",
     "check:watch": "chokidar \"**/*.{ts,html,css,yml,yaml,json,md}\" -c \"npm run check\" --ignore \"**/{node_modules,dist}/**\"",
     "clean": "npx rimraf --glob \"**/package-lock.json\" \"**/dist\" \"**/node_modules\" \"**/.angular\"",
     "cli:build": "npm run build -w projects/cli",

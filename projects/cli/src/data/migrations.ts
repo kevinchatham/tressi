@@ -76,6 +76,7 @@ export const JSON_MIGRATIONS: JsonMigrations = {
   },
   '0.0.18': noopJsonMigration('0.0.18'),
   '0.0.19': noopJsonMigration('0.0.19'),
+  '0.0.20': noopJsonMigration('0.0.20'),
 };
 
 /**
@@ -96,6 +97,7 @@ export const DATABASE_MIGRATIONS: Record<string, IDatabaseMigration> = {
   },
   '0.0.18': noopDatabaseMigration,
   '0.0.19': noopDatabaseMigration,
+  '0.0.20': noopDatabaseMigration,
 };
 
 export async function dropColumnIfExists(
