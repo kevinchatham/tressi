@@ -5,7 +5,11 @@ import type {
   JsonMigrations,
   VersionedTressiConfig,
 } from '@tressi/shared/cli';
-import type { TressiConfig, TressiRequestConfig } from '@tressi/shared/common';
+import {
+  type TressiConfig,
+  TressiConfigSchema,
+  type TressiRequestConfig,
+} from '@tressi/shared/common';
 import { type Kysely, sql } from 'kysely';
 
 export const noopDatabaseMigration: IDatabaseMigration = {
@@ -76,7 +80,85 @@ export const JSON_MIGRATIONS: JsonMigrations = {
   },
   '0.0.18': noopJsonMigration('0.0.18'),
   '0.0.19': noopJsonMigration('0.0.19'),
-  '0.0.20': noopJsonMigration('0.0.20'),
+  '0.0.20': {
+    summary: 'Disable early exit if unsafe. Convert errorRateThreshold from 0.0-1.0 to 1-100.',
+    up: (config: VersionedTressiConfig): VersionedTressiConfig => {
+      const data = config as TressiConfig;
+
+      const { $schema } = noopJsonMigration('0.0.20').up(config);
+
+      const convertThreshold = (threshold: number | undefined): number | undefined => {
+        if (threshold !== undefined && threshold > 0 && threshold <= 1) {
+          return Math.round(threshold * 100);
+        } else if (threshold === 0) return 1;
+        else return threshold;
+      };
+
+      const options = data.options
+        ? {
+            ...data.options,
+            workerEarlyExit: data.options.workerEarlyExit
+              ? {
+                  ...data.options.workerEarlyExit,
+                  errorRateThreshold: convertThreshold(
+                    data.options.workerEarlyExit.errorRateThreshold,
+                  ),
+                }
+              : data.options.workerEarlyExit,
+          }
+        : data.options;
+
+      const requests = data.requests?.map((request: TressiRequestConfig) => ({
+        ...request,
+        earlyExit: request.earlyExit
+          ? {
+              ...request.earlyExit,
+              errorRateThreshold: convertThreshold(request.earlyExit.errorRateThreshold),
+            }
+          : request.earlyExit,
+      }));
+
+      const convertedConfig = {
+        ...data,
+        $schema,
+        options,
+        requests,
+      } as VersionedTressiConfig;
+
+      const result = TressiConfigSchema.safeParse(convertedConfig);
+
+      if (result.success) return convertedConfig;
+
+      const disableOptions = data.options
+        ? {
+            ...data.options,
+            workerEarlyExit: data.options.workerEarlyExit
+              ? {
+                  ...data.options.workerEarlyExit,
+                  enabled: false,
+                }
+              : data.options.workerEarlyExit,
+          }
+        : data.options;
+
+      const disableRequests = data.requests?.map((request: TressiRequestConfig) => ({
+        ...request,
+        earlyExit: request.earlyExit
+          ? {
+              ...request.earlyExit,
+              enabled: false,
+            }
+          : request.earlyExit,
+      }));
+
+      return {
+        ...data,
+        $schema,
+        options: disableOptions,
+        requests: disableRequests,
+      } as VersionedTressiConfig;
+    },
+  },
 };
 
 /**

@@ -51,7 +51,7 @@ export class DatabaseMigrationManager {
     }
 
     terminal.print(`\n${chalk.bold.blue('📦 Tressi Database Migration Required')}`);
-    terminal.print(`${chalk.dim('Current Version:')} ${chalk.yellow(currentVersion)}`);
+    terminal.print(`${chalk.dim('\nCurrent Version:')} ${chalk.yellow(currentVersion)}`);
     terminal.print(`${chalk.dim('Target Version: ')} ${chalk.green(targetVersion)}\n`);
 
     const table = new Table({
@@ -164,7 +164,7 @@ export class DatabaseMigrationManager {
   private async _promptUser(message: string): Promise<boolean> {
     if (!process.stdin.isTTY) {
       terminal.error(
-        'Non-interactive environment detected. Skipping database migration. The application may not function correctly.',
+        chalk.yellow('\nNon-interactive environment detected. Declining migration and exiting.'),
       );
       return false;
     }

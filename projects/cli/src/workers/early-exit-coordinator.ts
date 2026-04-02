@@ -188,7 +188,7 @@ export class EarlyExitCoordinator implements IEarlyExitCoordinator {
       const errorRate = endpointTotalErrors / endpointTotalRequests;
 
       // Check error rate threshold
-      if (threshold.errorRate && errorRate >= threshold.errorRate) {
+      if (threshold.errorRate && errorRate >= threshold.errorRate / 100) {
         endpoints.push(request.url);
         return;
       }

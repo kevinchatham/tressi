@@ -15,6 +15,25 @@ import { terminal } from '../tui/terminal';
 import { JSON_MIGRATIONS } from './migrations';
 
 /**
+ * Represents a single change at a specific JSON path.
+ */
+interface ChangeRecord {
+  newValue: unknown;
+  oldValue: unknown;
+  path: string;
+}
+
+/**
+ * Groups changes by their parent path for Before/After display.
+ */
+interface ChangesByParent {
+  [parentPath: string]: {
+    oldValues: Record<string, unknown>;
+    newValues: Record<string, unknown>;
+  };
+}
+
+/**
  * Manages the detection and execution of schema migrations for stored configurations and files.
  */
 export class JsonMigrationManager {
@@ -68,37 +87,60 @@ export class JsonMigrationManager {
       return;
     }
 
-    if (!force) {
-      terminal.print(`\n${chalk.bold.blue('📄 Tressi Configuration Migration Required')}`);
-      terminal.print(`${chalk.dim('Target Version: ')} ${chalk.green(currentVersion)}\n`);
+    const previews: {
+      doc: ConfigDocument;
+      configVersion: string;
+      migratedData: TressiConfig;
+      summaries: { version: string; summary: string }[];
+    }[] = [];
 
-      // Show summaries for all outdated configs
+    if (!force) {
       for (const doc of outdated) {
         try {
           const configVersion = JsonMigrationManager.getVersion(doc.config.$schema);
-          const { summaries, migratedData } = await this._migrateConfig(doc.config);
-          terminal.print(
-            `${chalk.bold(`Changes for "${doc.name}"`)} ${chalk.dim(`(v${configVersion} → v${currentVersion})`)}:`,
-          );
-
-          const table = new Table({
-            colWidths: [75],
-            head: [chalk.cyan('Migration Summary')],
-            wordWrap: true,
-          });
-
-          summaries.forEach((s) => void table.push([s]));
-          terminal.print(table.toString());
-
-          this._displayDiff(doc.config, migratedData);
+          const { migratedData, summaries } = await this._migrateConfig(doc.config);
+          previews.push({ configVersion, doc, migratedData, summaries });
         } catch (error) {
           const message = error instanceof Error ? error.message : 'Unknown error';
           terminal.error(`Could not calculate migration changes for "${doc.name}": ${message}`);
+          failures.push(`${doc.name}: ${message}`);
         }
       }
 
+      if (previews.length === 0) {
+        terminal.error(`No configurations could be migrated.`);
+        return;
+      }
+
+      terminal.print(`\n${chalk.bold.blue('📄 Tressi Configuration Migration Required')}`);
+      terminal.print(
+        `${chalk.dim('\nCurrent Version:')} ${chalk.yellow(previews[0].configVersion)}`,
+      );
+      terminal.print(`${chalk.dim('Target Version: ')} ${chalk.green(currentVersion)}\n`);
+
+      const table = new Table({
+        colWidths: [15, 60],
+        head: [chalk.cyan('Version'), chalk.cyan('Summary')],
+        wordWrap: true,
+      });
+
+      for (const { version, summary } of previews[0].summaries) {
+        table.push([version, summary]);
+      }
+      terminal.print(chalk.bold('Pending configuration migrations:'));
+      terminal.print(table.toString());
+
+      for (const preview of previews) {
+        terminal.print('');
+        terminal.print(
+          `${chalk.bold.yellow(`Changes for "${preview.doc.name}"`)} ${chalk.dim(`(v${preview.configVersion} → v${currentVersion})`)}:`,
+        );
+
+        this._displayDiff(preview.doc.config, preview.migratedData);
+      }
+
       const confirmed = await this._promptUser(
-        `\nWould you like to migrate ${outdated.length} database configuration(s) to version ${currentVersion}? (y/N): `,
+        `\nWould you like to migrate ${previews.length} database configuration(s) to version ${currentVersion}? (y/N): `,
       );
       if (!confirmed) {
         terminal.print(
@@ -112,23 +154,23 @@ export class JsonMigrationManager {
 
     const spinner = ora('Starting Configuration migration...').start();
 
-    for (const doc of outdated) {
-      spinner.text = `Migrating configuration "${chalk.cyan(doc.name)}"...`;
+    for (const preview of previews) {
+      spinner.text = `Migrating configuration "${chalk.cyan(preview.doc.name)}"...`;
       try {
-        const { migratedData } = await this._migrateConfig(doc.config);
-
         await configStorage.edit({
-          config: migratedData,
-          id: doc.id,
-          name: doc.name,
+          config: preview.migratedData,
+          id: preview.doc.id,
+          name: preview.doc.name,
         });
 
-        spinner.succeed(`Successfully migrated: ${chalk.cyan(doc.name)}`);
+        spinner.succeed(`Successfully migrated: ${chalk.cyan(preview.doc.name)}`);
         spinner.start();
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Unknown error';
-        spinner.fail(chalk.red(`Failed to migrate configuration "${doc.name}": ${message}`));
-        failures.push(`${doc.name}: ${message}`);
+        spinner.fail(
+          chalk.red(`Failed to migrate configuration "${preview.doc.name}": ${message}`),
+        );
+        failures.push(`${preview.doc.name}: ${message}`);
         spinner.start();
       }
     }
@@ -248,12 +290,15 @@ export class JsonMigrationManager {
       terminal.print(`${chalk.dim('Target Version: ')} ${chalk.green(currentVersion)}\n`);
 
       const table = new Table({
-        colWidths: [75],
-        head: [chalk.cyan('Migration Summary')],
+        colWidths: [15, 60],
+        head: [chalk.cyan('Version'), chalk.cyan('Summary')],
         wordWrap: true,
       });
 
-      summaries.forEach((s) => void table.push([s]));
+      for (const { version, summary } of summaries) {
+        table.push([version, summary]);
+      }
+      terminal.print(chalk.bold('Pending configuration migrations:'));
       terminal.print(table.toString());
 
       this._displayDiff(config, migratedData);
@@ -297,11 +342,11 @@ export class JsonMigrationManager {
    */
   private async _migrateConfig(
     config: VersionedTressiConfig,
-  ): Promise<{ migratedData: TressiConfig; summaries: string[] }> {
+  ): Promise<{ migratedData: TressiConfig; summaries: { version: string; summary: string }[] }> {
     const currentVersion = pkg.version;
     let data: VersionedTressiConfig = { ...config };
     let v = JsonMigrationManager.getVersion(data.$schema);
-    const summaries: string[] = [];
+    const summaries: { version: string; summary: string }[] = [];
 
     // 1. Sequential Manual Migrations
     // The key in JSON_MIGRATIONS is the TARGET version.
@@ -312,7 +357,7 @@ export class JsonMigrationManager {
       if (semver.gt(targetV, v) && semver.lte(targetV, currentVersion)) {
         const migration = JSON_MIGRATIONS[targetV];
 
-        summaries.push(migration.summary);
+        summaries.push({ summary: migration.summary, version: targetV });
 
         const nextData = migration.up(data);
         const migratedV = JsonMigrationManager.getVersion(nextData.$schema);
@@ -336,43 +381,176 @@ export class JsonMigrationManager {
     // Check if Zod added any defaults that weren't in the manual migrations
     const zodAddedFields = Object.keys(migratedData).filter((key) => !(key in data));
     if (zodAddedFields.length > 0) {
-      summaries.push(`Injected default values for new fields: ${zodAddedFields.join(', ')}`);
+      summaries.push({
+        summary: `Injected default values for new fields: ${zodAddedFields.join(', ')}`,
+        version: currentVersion,
+      });
     }
 
     return { migratedData, summaries };
   }
 
   /**
-   * Displays a simple line-by-line diff between two objects.
+   * Computes the semantic diff between two objects, returning changes grouped by parent path.
+   */
+  private _computeSemanticDiff(oldObj: unknown, newObj: unknown): ChangesByParent {
+    const changes: ChangeRecord[] = [];
+
+    const traverse = (oldVal: unknown, newVal: unknown, currentPath: string): void => {
+      // Both are null/undefined or same primitive
+      if (oldVal === newVal) return;
+
+      // One is null/undefined or one is primitive
+      if (oldVal === null || oldVal === undefined || newVal === null || newVal === undefined) {
+        if (oldVal !== newVal) {
+          changes.push({ newValue: newVal, oldValue: oldVal, path: currentPath });
+        }
+        return;
+      }
+
+      // Both are objects but different types
+      const oldType = typeof oldVal;
+      const newType = typeof newVal;
+      if (oldType !== 'object' || newType !== 'object') {
+        changes.push({ newValue: newVal, oldValue: oldVal, path: currentPath });
+        return;
+      }
+
+      // Both are arrays
+      if (Array.isArray(oldVal) && Array.isArray(newVal)) {
+        const maxLen = Math.max(oldVal.length, newVal.length);
+        for (let i = 0; i < maxLen; i++) {
+          const elementPath = currentPath ? `${currentPath}[${i}]` : `[${i}]`;
+          traverse(oldVal[i], newVal[i], elementPath);
+        }
+        return;
+      }
+
+      // Both are objects
+      const oldObj = oldVal as Record<string, unknown>;
+      const newObjVal = newVal as Record<string, unknown>;
+      const allKeys = new Set([...Object.keys(oldObj), ...Object.keys(newObjVal)]);
+
+      for (const key of allKeys) {
+        const propPath = currentPath ? `${currentPath}.${key}` : key;
+        traverse(oldObj[key], newObjVal[key], propPath);
+      }
+    };
+
+    traverse(oldObj, newObj, '');
+
+    // Group changes by parent path
+    const grouped: ChangesByParent = {};
+    for (const change of changes) {
+      // Parse path to get parent path and leaf key
+      // Path can be: $schema, options.foo, requests[0].bar, requests[0].earlyExit.enabled
+      const path = change.path;
+
+      // Find the last dot that's NOT inside brackets
+      let lastDotOutsideBracket = -1;
+      let bracketDepth = 0;
+      for (let i = 0; i < path.length; i++) {
+        if (path[i] === '[') bracketDepth++;
+        else if (path[i] === ']') bracketDepth--;
+        else if (path[i] === '.' && bracketDepth === 0) {
+          lastDotOutsideBracket = i;
+        }
+      }
+
+      let parentPath: string;
+      let leafKey: string;
+
+      if (lastDotOutsideBracket === -1) {
+        // No dot outside brackets - this is a root-level property
+        parentPath = '';
+        leafKey = path;
+      } else {
+        parentPath = path.substring(0, lastDotOutsideBracket);
+        leafKey = path.substring(lastDotOutsideBracket + 1);
+      }
+
+      if (!grouped[parentPath]) {
+        grouped[parentPath] = { newValues: {}, oldValues: {} };
+      }
+
+      grouped[parentPath].oldValues[leafKey] = change.oldValue;
+      grouped[parentPath].newValues[leafKey] = change.newValue;
+    }
+
+    return grouped;
+  }
+
+  /**
+   * Formats a value for display, handling special types.
+   */
+  private _formatValue(val: unknown): string {
+    if (val === undefined) return 'undefined';
+    if (val === null) return 'null';
+    if (typeof val === 'string') return `"${val}"`;
+    if (typeof val === 'object') return JSON.stringify(val);
+    return String(val);
+  }
+
+  /**
+   * Displays a semantic diff with Before/After snippets grouped by parent object.
    */
   private _displayDiff(oldObj: unknown, newObj: unknown): void {
-    const oldLines = JSON.stringify(oldObj, null, 2).split('\n');
-    const newLines = JSON.stringify(newObj, null, 2).split('\n');
+    const grouped = this._computeSemanticDiff(oldObj, newObj);
+    const paths = Object.keys(grouped).filter((p) => p !== '');
 
-    terminal.print(`\n${chalk.bgRed.white(' OLD ')} ${chalk.bgGreen.white(' NEW ')}`);
+    if (paths.length === 0) {
+      terminal.print(chalk.dim('  No changes detected.'));
+      return;
+    }
 
-    // Simple diffing logic (line by line)
-    // Note: This is a basic implementation for visualization purposes.
-    let i = 0;
-    let j = 0;
-    while (i < oldLines.length || j < newLines.length) {
-      if (i < oldLines.length && j < newLines.length) {
-        if (oldLines[i] === newLines[j]) {
-          // Lines are the same, skip or show context if needed
-          // For brevity, we only show changes
+    // Sort paths for consistent output
+    paths.sort((a, b) => a.localeCompare(b));
+
+    for (const parentPath of paths) {
+      const { oldValues, newValues } = grouped[parentPath];
+      const allKeys = new Set([...Object.keys(oldValues), ...Object.keys(newValues)]);
+
+      const header = parentPath.startsWith('[') ? parentPath : chalk.bold.cyan(parentPath);
+
+      terminal.print(`  ${header}:`);
+
+      for (const key of allKeys) {
+        const oldVal = oldValues[key];
+        const newVal = newValues[key];
+
+        if (oldVal !== undefined && newVal !== undefined) {
+          terminal.print(
+            `    ${chalk.red('-')} ${key}: ${chalk.red(this._formatValue(oldVal))} → ${chalk.green(this._formatValue(newVal))}`,
+          );
+        } else if (oldVal !== undefined) {
+          terminal.print(`    ${chalk.red('-')} ${key}: ${chalk.red(this._formatValue(oldVal))}`);
         } else {
-          // Lines are different
-          terminal.print(chalk.red(`- ${oldLines[i]}`));
-          terminal.print(chalk.green(`+ ${newLines[j]}`));
+          terminal.print(
+            `    ${chalk.green('+')} ${key}: ${chalk.green(this._formatValue(newVal))}`,
+          );
         }
-        i++;
-        j++;
-      } else if (i < oldLines.length) {
-        terminal.print(chalk.red(`- ${oldLines[i]}`));
-        i++;
-      } else if (j < newLines.length) {
-        terminal.print(chalk.green(`+ ${newLines[j]}`));
-        j++;
+      }
+    }
+
+    if (grouped['']) {
+      terminal.print(`  ${chalk.bold.cyan('root:')}`);
+
+      const rootChanges = grouped[''];
+      for (const key of Object.keys(rootChanges.newValues)) {
+        const oldVal = rootChanges.oldValues[key];
+        const newVal = rootChanges.newValues[key];
+
+        if (oldVal !== undefined && newVal !== undefined) {
+          terminal.print(
+            `    ${chalk.red('-')} ${key}: ${chalk.red(this._formatValue(oldVal))} → ${chalk.green(this._formatValue(newVal))}`,
+          );
+        } else if (oldVal !== undefined) {
+          terminal.print(`    ${chalk.red('-')} ${key}: ${chalk.red(this._formatValue(oldVal))}`);
+        } else {
+          terminal.print(
+            `    ${chalk.green('+')} ${key}: ${chalk.green(this._formatValue(newVal))}`,
+          );
+        }
       }
     }
   }
@@ -385,7 +563,7 @@ export class JsonMigrationManager {
   private async _promptUser(message: string): Promise<boolean> {
     if (!process.stdin.isTTY) {
       terminal.error(
-        'Non-interactive environment detected. Skipping migration. Outdated configurations may not function correctly.',
+        `\n${chalk.yellow('Non-interactive environment detected. Declining migration and exiting.')}`,
       );
       return false;
     }

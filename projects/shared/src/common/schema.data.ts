@@ -15,8 +15,8 @@ export const httpMethodDefaults = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'] as c
 
 export const earlyExitDefaults = {
   enabled: false,
-  errorRateThreshold: 0,
-  exitStatusCodes: [],
+  errorRateThreshold: 1,
+  exitStatusCodes: [500],
   monitoringWindowMs: 1000,
 };
 
@@ -45,7 +45,7 @@ export const optionsDefaults = {
 export const EarlyExitConfigSchema = z
   .object({
     enabled: z.boolean().describe('Enable early exit for this endpoint'),
-    errorRateThreshold: z.number().min(0).max(1).describe('Error rate threshold (0.0-1.0)'),
+    errorRateThreshold: z.number().min(1).max(100).describe('Error rate threshold (1-100)'),
     exitStatusCodes: z
       .array(z.number().int().positive().min(100).max(599))
       .describe('HTTP status codes that trigger immediate endpoint stop'),

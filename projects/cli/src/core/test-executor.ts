@@ -107,7 +107,10 @@ function checkThresholds(summary: TestSummary): boolean {
 
     if (earlyExit?.enabled) {
       // Check error rate threshold
-      if (earlyExit.errorRateThreshold > 0 && endpoint.errorRate >= earlyExit.errorRateThreshold) {
+      if (
+        earlyExit.errorRateThreshold > 0 &&
+        endpoint.errorRate >= earlyExit.errorRateThreshold / 100
+      ) {
         return true;
       }
 

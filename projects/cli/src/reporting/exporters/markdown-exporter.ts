@@ -215,7 +215,7 @@ export class MarkdownExporter {
     md += `| Ramp Up Duration | ${config.options?.rampUpDurationSec ?? 0}s |\n`;
 
     if (config.options?.workerEarlyExit?.enabled) {
-      md += `| Early Exit | Enabled (Threshold: ${config.options.workerEarlyExit.errorRateThreshold * 100}%) |\n`;
+      md += `| Early Exit | Enabled (Threshold: ${config.options.workerEarlyExit.errorRateThreshold}%) |\n`;
     } else {
       md += '| Early Exit | Disabled |\n';
     }

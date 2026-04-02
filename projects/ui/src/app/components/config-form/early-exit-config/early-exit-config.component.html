@@ -25,7 +25,7 @@
             placeholder="0.0 - 1.0"
             step="0.01"
           />
-          <p class="label ml-2 py-0 text-xs opacity-60">Range: 0.0 - 1.0</p>
+          <p class="label ml-2 py-0 text-xs opacity-60">Range: 1 - 100</p>
           @if (form().errorRateThreshold().touched() && form().errorRateThreshold().invalid()) {
             <p class="label text-error ml-2">
               @for (error of form().errorRateThreshold().errors(); track error) {

@@ -12,8 +12,8 @@
       "threads": 2,
       "workerEarlyExit": {
         "enabled": false,
-        "errorRateThreshold": 0,
-        "exitStatusCodes": [],
+        "errorRateThreshold": 1,
+        "exitStatusCodes": [500],
         "monitoringWindowMs": 1000
       },
       "workerMemoryLimit": 128
@@ -36,8 +36,8 @@
         "threads": 2,
         "workerEarlyExit": {
           "enabled": false,
-          "errorRateThreshold": 0,
-          "exitStatusCodes": [],
+          "errorRateThreshold": 1,
+          "exitStatusCodes": [500],
           "monitoringWindowMs": 1000
         },
         "workerMemoryLimit": 128
@@ -77,8 +77,8 @@
           "additionalProperties": false,
           "default": {
             "enabled": false,
-            "errorRateThreshold": 0,
-            "exitStatusCodes": [],
+            "errorRateThreshold": 1,
+            "exitStatusCodes": [500],
             "monitoringWindowMs": 1000
           },
           "description": "Global early exit configuration (acts as default for endpoints without specific config)",
@@ -88,9 +88,9 @@
               "type": "boolean"
             },
             "errorRateThreshold": {
-              "description": "Error rate threshold (0.0-1.0)",
-              "maximum": 1,
-              "minimum": 0,
+              "description": "Error rate threshold (1-100)",
+              "maximum": 100,
+              "minimum": 1,
               "type": "number"
             },
             "exitStatusCodes": {
@@ -136,8 +136,8 @@
         "default": {
           "earlyExit": {
             "enabled": false,
-            "errorRateThreshold": 0,
-            "exitStatusCodes": [],
+            "errorRateThreshold": 1,
+            "exitStatusCodes": [500],
             "monitoringWindowMs": 1000
           },
           "headers": {
@@ -154,8 +154,8 @@
             "additionalProperties": false,
             "default": {
               "enabled": false,
-              "errorRateThreshold": 0,
-              "exitStatusCodes": [],
+              "errorRateThreshold": 1,
+              "exitStatusCodes": [500],
               "monitoringWindowMs": 1000
             },
             "description": "Optional early exit configuration for this specific endpoint",
@@ -165,9 +165,9 @@
                 "type": "boolean"
               },
               "errorRateThreshold": {
-                "description": "Error rate threshold (0.0-1.0)",
-                "maximum": 1,
-                "minimum": 0,
+                "description": "Error rate threshold (1-100)",
+                "maximum": 100,
+                "minimum": 1,
                 "type": "number"
               },
               "exitStatusCodes": {
