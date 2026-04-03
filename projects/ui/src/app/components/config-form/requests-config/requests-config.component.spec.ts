@@ -30,7 +30,7 @@ describe('RequestsConfigComponent', () => {
             enabled: false,
             errorRateThreshold: 0.5,
             exitStatusCodes: [],
-            monitoringWindowMs: 1000,
+            monitoringWindowSeconds: 1,
           },
           headers: {},
           method: 'GET',

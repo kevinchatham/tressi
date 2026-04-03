@@ -94,24 +94,30 @@ export class JsonMigrationManager {
       summaries: { version: string; summary: string }[];
     }[] = [];
 
-    if (!force) {
-      for (const doc of outdated) {
-        try {
-          const configVersion = JsonMigrationManager.getVersion(doc.config.$schema);
-          const { migratedData, summaries } = await this._migrateConfig(doc.config);
-          previews.push({ configVersion, doc, migratedData, summaries });
-        } catch (error) {
-          const message = error instanceof Error ? error.message : 'Unknown error';
-          terminal.error(`Could not calculate migration changes for "${doc.name}": ${message}`);
-          failures.push(`${doc.name}: ${message}`);
-        }
+    for (const doc of outdated) {
+      try {
+        const configVersion = JsonMigrationManager.getVersion(doc.config.$schema);
+        const { migratedData, summaries } = await this._migrateConfig(doc.config);
+        previews.push({ configVersion, doc, migratedData, summaries });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        terminal.error(`Could not calculate migration changes for "${doc.name}": ${message}`);
+        failures.push(`${doc.name}: ${message}`);
       }
+    }
 
-      if (previews.length === 0) {
+    if (previews.length === 0) {
+      if (failures.length > 0) {
+        terminal.error(
+          `Configuration migration complete with ${failures.length} failure(s):\n${failures.map((f) => `- ${f}`).join('\n')}`,
+        );
+      } else {
         terminal.error(`No configurations could be migrated.`);
-        return;
       }
+      return;
+    }
 
+    if (!force) {
       terminal.print(`\n${chalk.bold.blue('📄 Tressi Configuration Migration Required')}`);
       terminal.print(
         `${chalk.dim('\nCurrent Version:')} ${chalk.yellow(previews[0].configVersion)}`,

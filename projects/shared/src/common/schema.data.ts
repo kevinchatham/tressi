@@ -17,7 +17,7 @@ export const earlyExitDefaults = {
   enabled: false,
   errorRateThreshold: 1,
   exitStatusCodes: [500],
-  monitoringWindowMs: 1000,
+  monitoringWindowSeconds: 1,
 };
 
 export const requestDefaults = {
@@ -49,12 +49,12 @@ export const EarlyExitConfigSchema = z
     exitStatusCodes: z
       .array(z.number().int().min(100).max(599))
       .describe('HTTP status codes that trigger immediate endpoint stop'),
-    monitoringWindowMs: z
+    monitoringWindowSeconds: z
       .number()
       .int()
       .positive()
-      .min(1000)
-      .describe('Time window in milliseconds for threshold calculation'),
+      .min(1)
+      .describe('Time window in seconds for threshold calculation'),
   })
   .default(earlyExitDefaults);
 

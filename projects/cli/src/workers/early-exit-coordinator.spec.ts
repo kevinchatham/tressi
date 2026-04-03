@@ -21,9 +21,9 @@ describe('EarlyExitCoordinator', () => {
         threads: 1,
         workerEarlyExit: {
           enabled: true,
-          errorRateThreshold: 0.1,
+          errorRateThreshold: 10,
           exitStatusCodes: [500, 502, 503],
-          monitoringWindowMs: 1000,
+          monitoringWindowSeconds: 1,
         },
         workerMemoryLimit: 512,
       },
@@ -33,7 +33,7 @@ describe('EarlyExitCoordinator', () => {
             enabled: false,
             errorRateThreshold: 0,
             exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
-            monitoringWindowMs: 1000,
+            monitoringWindowSeconds: 1,
           },
           headers: {},
           method: 'GET',
@@ -47,7 +47,7 @@ describe('EarlyExitCoordinator', () => {
             enabled: false,
             errorRateThreshold: 0,
             exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
-            monitoringWindowMs: 1000,
+            monitoringWindowSeconds: 1,
           },
           headers: {},
           method: 'POST',
@@ -61,7 +61,7 @@ describe('EarlyExitCoordinator', () => {
             enabled: false,
             errorRateThreshold: 0,
             exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
-            monitoringWindowMs: 1000,
+            monitoringWindowSeconds: 1,
           },
           headers: {},
           method: 'PUT',
@@ -144,9 +144,9 @@ describe('EarlyExitCoordinator', () => {
           threads: 1,
           workerEarlyExit: {
             enabled: false,
-            errorRateThreshold: 0.5,
+            errorRateThreshold: 50,
             exitStatusCodes: [],
-            monitoringWindowMs: 1000,
+            monitoringWindowSeconds: 1,
           },
           workerMemoryLimit: 512,
         },
@@ -184,9 +184,9 @@ describe('EarlyExitCoordinator', () => {
           threads: 1,
           workerEarlyExit: {
             enabled: false,
-            errorRateThreshold: 0.5,
+            errorRateThreshold: 50,
             exitStatusCodes: [],
-            monitoringWindowMs: 1000,
+            monitoringWindowSeconds: 1,
           },
           workerMemoryLimit: 512,
         },
@@ -230,7 +230,7 @@ describe('EarlyExitCoordinator', () => {
             enabled: false,
             errorRateThreshold: 0,
             exitStatusCodes: [],
-            monitoringWindowMs: 50,
+            monitoringWindowSeconds: 1,
           },
           workerMemoryLimit: 512,
         },
@@ -238,9 +238,9 @@ describe('EarlyExitCoordinator', () => {
           {
             earlyExit: {
               enabled: true,
-              errorRateThreshold: 0.1,
+              errorRateThreshold: 10,
               exitStatusCodes: [500],
-              monitoringWindowMs: 50,
+              monitoringWindowSeconds: 1,
             },
             headers: {},
             method: 'GET',
@@ -268,12 +268,14 @@ describe('EarlyExitCoordinator', () => {
         mockEndpointStateManager,
       );
 
+      vi.useFakeTimers();
       perRequestCoordinator.startMonitoring();
 
-      // Wait for at least one monitoring cycle
-      await new Promise((resolve) => setTimeout(resolve, 150));
+      // Advance time to trigger at least one monitoring cycle
+      vi.advanceTimersByTime(1500);
 
       perRequestCoordinator.stopMonitoring();
+      vi.useRealTimers();
 
       // Endpoint should have been stopped despite global flag being false
       expect(mockEndpointStateManager.stopEndpoint).toHaveBeenCalled();
@@ -292,9 +294,9 @@ describe('EarlyExitCoordinator', () => {
           threads: 1,
           workerEarlyExit: {
             enabled: true,
-            errorRateThreshold: 0.1,
+            errorRateThreshold: 10,
             exitStatusCodes: [500, 502, 503],
-            monitoringWindowMs: 50,
+            monitoringWindowSeconds: 1,
           },
           workerMemoryLimit: 512,
         },
@@ -302,9 +304,9 @@ describe('EarlyExitCoordinator', () => {
           {
             earlyExit: {
               enabled: true,
-              errorRateThreshold: 0.5,
+              errorRateThreshold: 50,
               exitStatusCodes: [500, 502, 503],
-              monitoringWindowMs: 50,
+              monitoringWindowSeconds: 1,
             },
             headers: {},
             method: 'GET',
@@ -316,9 +318,9 @@ describe('EarlyExitCoordinator', () => {
           {
             earlyExit: {
               enabled: true,
-              errorRateThreshold: 0.1,
+              errorRateThreshold: 10,
               exitStatusCodes: [500, 502, 503],
-              monitoringWindowMs: 50,
+              monitoringWindowSeconds: 1,
             },
             headers: {},
             method: 'POST',
@@ -348,12 +350,14 @@ describe('EarlyExitCoordinator', () => {
         successCount: 5,
       });
 
+      vi.useFakeTimers();
       coordinator.startMonitoring();
 
-      // Wait for monitoring cycle to potentially trigger
-      await new Promise((resolve) => setTimeout(resolve, 150));
+      // Advance time to trigger monitoring cycle
+      vi.advanceTimersByTime(1500);
 
       coordinator.stopMonitoring();
+      vi.useRealTimers();
 
       // Verify that monitoring behavior occurred - should trigger based on 50% error rate
       expect(mockEndpointStateManager.stopEndpoint).toHaveBeenCalled();
@@ -370,12 +374,14 @@ describe('EarlyExitCoordinator', () => {
         successCount: 1,
       });
 
+      vi.useFakeTimers();
       coordinator.startMonitoring();
 
-      // Wait for monitoring to potentially trigger
-      await new Promise((resolve) => setTimeout(resolve, 150));
+      // Advance time to trigger monitoring cycle
+      vi.advanceTimersByTime(1500);
 
       coordinator.stopMonitoring();
+      vi.useRealTimers();
 
       // With high error rate (90%), expect endpoints to be stopped
       expect(mockEndpointStateManager.stopEndpoint).toHaveBeenCalled();
@@ -402,9 +408,9 @@ describe('EarlyExitCoordinator', () => {
           threads: 1,
           workerEarlyExit: {
             enabled: true,
-            errorRateThreshold: 0.1,
+            errorRateThreshold: 10,
             exitStatusCodes: [500, 502, 503],
-            monitoringWindowMs: 1000,
+            monitoringWindowSeconds: 1,
           },
           workerMemoryLimit: 512,
         },
@@ -412,9 +418,9 @@ describe('EarlyExitCoordinator', () => {
           {
             earlyExit: {
               enabled: true,
-              errorRateThreshold: 0.1,
+              errorRateThreshold: 10,
               exitStatusCodes: [500, 502, 503],
-              monitoringWindowMs: 1000,
+              monitoringWindowSeconds: 1,
             },
             headers: {},
             method: 'GET',
@@ -461,9 +467,9 @@ describe('EarlyExitCoordinator', () => {
           threads: 1,
           workerEarlyExit: {
             enabled: true,
-            errorRateThreshold: 0.5,
+            errorRateThreshold: 50,
             exitStatusCodes: [500, 502],
-            monitoringWindowMs: 1000,
+            monitoringWindowSeconds: 1,
           },
           workerMemoryLimit: 512,
         },
@@ -471,9 +477,9 @@ describe('EarlyExitCoordinator', () => {
           {
             earlyExit: {
               enabled: true,
-              errorRateThreshold: 0.2,
+              errorRateThreshold: 20,
               exitStatusCodes: [500],
-              monitoringWindowMs: 1000,
+              monitoringWindowSeconds: 1,
             },
             headers: {},
             method: 'GET',
@@ -487,7 +493,7 @@ describe('EarlyExitCoordinator', () => {
               enabled: false,
               errorRateThreshold: 0,
               exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
-              monitoringWindowMs: 1000,
+              monitoringWindowSeconds: 1,
             },
             headers: {},
             method: 'POST',
@@ -519,9 +525,9 @@ describe('EarlyExitCoordinator', () => {
           threads: 1,
           workerEarlyExit: {
             enabled: true,
-            errorRateThreshold: 0.3,
+            errorRateThreshold: 30,
             exitStatusCodes: [500],
-            monitoringWindowMs: 1000,
+            monitoringWindowSeconds: 1,
           },
           workerMemoryLimit: 512,
         },
@@ -531,7 +537,7 @@ describe('EarlyExitCoordinator', () => {
               enabled: false,
               errorRateThreshold: 0,
               exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
-              monitoringWindowMs: 1000,
+              monitoringWindowSeconds: 1,
             },
             headers: {},
             method: 'GET',
@@ -545,7 +551,7 @@ describe('EarlyExitCoordinator', () => {
               enabled: false,
               errorRateThreshold: 0,
               exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
-              monitoringWindowMs: 1000,
+              monitoringWindowSeconds: 1,
             },
             headers: {},
             method: 'POST',
@@ -576,9 +582,9 @@ describe('EarlyExitCoordinator', () => {
           threads: 1,
           workerEarlyExit: {
             enabled: true,
-            errorRateThreshold: 0.3,
+            errorRateThreshold: 30,
             exitStatusCodes: [500],
-            monitoringWindowMs: 1000,
+            monitoringWindowSeconds: 1,
           },
           workerMemoryLimit: 512,
         },
@@ -586,9 +592,9 @@ describe('EarlyExitCoordinator', () => {
           {
             earlyExit: {
               enabled: false,
-              errorRateThreshold: 0.1,
+              errorRateThreshold: 10,
               exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
-              monitoringWindowMs: 1000,
+              monitoringWindowSeconds: 1,
             },
             headers: {},
             method: 'GET',
@@ -623,9 +629,9 @@ describe('EarlyExitCoordinator', () => {
             enabled: false,
             errorRateThreshold: 0,
             exitStatusCodes: [],
-            // monitoringWindowMs here drives the setInterval period even when global is
+            // monitoringWindowSeconds here drives the setInterval period even when global is
             // disabled, so it must be low enough that the interval fires within the test wait.
-            monitoringWindowMs: 50,
+            monitoringWindowSeconds: 1,
           },
           workerMemoryLimit: 512,
         },
@@ -635,7 +641,7 @@ describe('EarlyExitCoordinator', () => {
               enabled: false,
               errorRateThreshold: 0,
               exitStatusCodes: [],
-              monitoringWindowMs: 1000,
+              monitoringWindowSeconds: 1,
             },
             headers: {},
             method: 'GET',
@@ -647,9 +653,9 @@ describe('EarlyExitCoordinator', () => {
           {
             earlyExit: {
               enabled: true,
-              errorRateThreshold: 0.1,
+              errorRateThreshold: 10,
               exitStatusCodes: [500],
-              monitoringWindowMs: 1000,
+              monitoringWindowSeconds: 1,
             },
             headers: {},
             method: 'GET',
@@ -703,11 +709,14 @@ describe('EarlyExitCoordinator', () => {
         mockEndpointStateManager,
       );
 
+      vi.useFakeTimers();
       testCoordinator.startMonitoring();
 
-      await new Promise((resolve) => setTimeout(resolve, 150));
+      // Advance time to trigger monitoring cycle
+      vi.advanceTimersByTime(1500);
 
       testCoordinator.stopMonitoring();
+      vi.useRealTimers();
 
       // Only the error-prone endpoint (global index 1) should be stopped
       expect(mockEndpointStateManager.stopEndpoint).toHaveBeenCalledWith(1);
@@ -729,7 +738,7 @@ describe('EarlyExitCoordinator', () => {
             enabled: true,
             errorRateThreshold: 0,
             exitStatusCodes: [503],
-            monitoringWindowMs: 1000,
+            monitoringWindowSeconds: 1,
           },
           workerMemoryLimit: 512,
         },
@@ -739,7 +748,7 @@ describe('EarlyExitCoordinator', () => {
               enabled: true,
               errorRateThreshold: 0,
               exitStatusCodes: [500, 502],
-              monitoringWindowMs: 1000,
+              monitoringWindowSeconds: 1,
             },
             headers: {},
             method: 'GET',

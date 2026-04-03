@@ -33,12 +33,12 @@ Commonly used codes:
 
 ### Adjusting Evaluation Intervals
 
-The `monitoringWindowMs` determines how often thresholds are evaluated.
+The `monitoringWindowSeconds` determines how often thresholds are evaluated.
 
-- **Short Windows (e.g., 1000ms)**: Provide rapid response to failures but may be susceptible to transient network errors.
-- **Long Windows (e.g., 10000ms)**: Offer greater stability and prevent premature termination from temporary spikes.
+- **Short Windows (e.g., 1s)**: Provide rapid response to failures but may be susceptible to transient network errors.
+- **Long Windows (e.g., 10s)**: Offer greater stability and prevent premature termination from temporary spikes.
 
-> The default value is `1000ms`
+> The default value is `1s`
 
 ### Configuration Precedence
 

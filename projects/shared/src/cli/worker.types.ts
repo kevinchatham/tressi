@@ -59,10 +59,10 @@ export type EarlyExitThresholds = {
       errorRate?: number;
       errorCount?: number;
       exitStatusCodes: Set<number>;
-      monitoringWindowMs: number;
+      monitoringWindowSeconds: number;
     }
   >;
-  monitoringWindowMs: number;
+  monitoringWindowSeconds: number;
 };
 
 /**

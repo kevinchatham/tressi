@@ -44,17 +44,17 @@
           <input
             type="number"
             class="input outline-none!"
-            [formField]="form().monitoringWindowMs"
-            placeholder="Monitoring duration in milliseconds"
-            step="500"
+            [formField]="form().monitoringWindowSeconds"
+            placeholder="Monitoring duration in seconds"
+            step="1"
             appPreventNumberScroll
           />
-          <p class="label ml-2 py-0 text-xs opacity-60">
-            Duration to monitor for errors (milliseconds)
-          </p>
-          @if (form().monitoringWindowMs().touched() && form().monitoringWindowMs().invalid()) {
+          <p class="label ml-2 py-0 text-xs opacity-60">Duration to monitor for errors (seconds)</p>
+          @if (
+            form().monitoringWindowSeconds().touched() && form().monitoringWindowSeconds().invalid()
+          ) {
             <p class="label text-error ml-2">
-              @for (error of form().monitoringWindowMs().errors(); track error) {
+              @for (error of form().monitoringWindowSeconds().errors(); track error) {
                 {{ error.message }}
               }
             </p>

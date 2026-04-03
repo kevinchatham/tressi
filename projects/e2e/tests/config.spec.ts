@@ -15,9 +15,9 @@ const minimalConfig = {
     threads: 4,
     workerEarlyExit: {
       enabled: false,
-      errorRateThreshold: 0,
+      errorRateThreshold: 1,
       exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
-      monitoringWindowMs: 1000,
+      monitoringWindowSeconds: 1,
     },
     workerMemoryLimit: 128,
   },
@@ -25,9 +25,9 @@ const minimalConfig = {
     {
       earlyExit: {
         enabled: false,
-        errorRateThreshold: 0,
+        errorRateThreshold: 1,
         exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
-        monitoringWindowMs: 1000,
+        monitoringWindowSeconds: 1,
       },
       headers: {},
       method: 'GET' as const,
@@ -48,9 +48,9 @@ const expectedConfig = {
     threads: 4,
     workerEarlyExit: {
       enabled: false,
-      errorRateThreshold: 0,
+      errorRateThreshold: 1,
       exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
-      monitoringWindowMs: 1000,
+      monitoringWindowSeconds: 1,
     },
     workerMemoryLimit: 128,
   },
@@ -58,9 +58,9 @@ const expectedConfig = {
     {
       earlyExit: {
         enabled: false,
-        errorRateThreshold: 0,
+        errorRateThreshold: 1,
         exitStatusCodes: [400, 401, 403, 500, 502, 503, 504],
-        monitoringWindowMs: 1000,
+        monitoringWindowSeconds: 1,
       },
       headers: {},
       method: 'GET',

@@ -87,9 +87,9 @@ describe('MarkdownExporter', () => {
           threads: 4,
           workerEarlyExit: {
             enabled: false,
-            errorRateThreshold: 0.05,
+            errorRateThreshold: 5,
             exitStatusCodes: [],
-            monitoringWindowMs: 5000,
+            monitoringWindowSeconds: 5,
           },
           workerMemoryLimit: 512,
         },
@@ -204,9 +204,9 @@ describe('MarkdownExporter', () => {
           threads: 4,
           workerEarlyExit: {
             enabled: false,
-            errorRateThreshold: 0.05,
+            errorRateThreshold: 5,
             exitStatusCodes: [],
-            monitoringWindowMs: 5000,
+            monitoringWindowSeconds: 5,
           },
           workerMemoryLimit: 512,
         },
@@ -214,9 +214,9 @@ describe('MarkdownExporter', () => {
           {
             earlyExit: {
               enabled: false,
-              errorRateThreshold: 0.05,
+              errorRateThreshold: 5,
               exitStatusCodes: [],
-              monitoringWindowMs: 5000,
+              monitoringWindowSeconds: 5,
             },
             headers: {},
             method: 'GET',
@@ -228,9 +228,9 @@ describe('MarkdownExporter', () => {
           {
             earlyExit: {
               enabled: false,
-              errorRateThreshold: 0.05,
+              errorRateThreshold: 5,
               exitStatusCodes: [],
-              monitoringWindowMs: 5000,
+              monitoringWindowSeconds: 5,
             },
             headers: {},
             method: 'POST',
@@ -265,9 +265,9 @@ describe('MarkdownExporter', () => {
           threads: 4,
           workerEarlyExit: {
             enabled: true,
-            errorRateThreshold: 0.05,
+            errorRateThreshold: 5,
             exitStatusCodes: [500, 502, 503],
-            monitoringWindowMs: 5000,
+            monitoringWindowSeconds: 5,
           },
           workerMemoryLimit: 512,
         },
@@ -275,9 +275,9 @@ describe('MarkdownExporter', () => {
           {
             earlyExit: {
               enabled: false,
-              errorRateThreshold: 0.05,
+              errorRateThreshold: 5,
               exitStatusCodes: [],
-              monitoringWindowMs: 5000,
+              monitoringWindowSeconds: 5,
             },
             headers: {},
             method: 'GET',
@@ -307,9 +307,9 @@ describe('MarkdownExporter', () => {
           threads: 4,
           workerEarlyExit: {
             enabled: false,
-            errorRateThreshold: 0.05,
+            errorRateThreshold: 5,
             exitStatusCodes: [500, 502, 503],
-            monitoringWindowMs: 5000,
+            monitoringWindowSeconds: 5,
           },
           workerMemoryLimit: 512,
         },
@@ -317,9 +317,9 @@ describe('MarkdownExporter', () => {
           {
             earlyExit: {
               enabled: false,
-              errorRateThreshold: 0.05,
+              errorRateThreshold: 5,
               exitStatusCodes: [],
-              monitoringWindowMs: 5000,
+              monitoringWindowSeconds: 5,
             },
             headers: {},
             method: 'GET',
@@ -848,9 +848,9 @@ describe('MarkdownExporter', () => {
           threads: 4,
           workerEarlyExit: {
             enabled: false,
-            errorRateThreshold: 0.05,
+            errorRateThreshold: 5,
             exitStatusCodes: [],
-            monitoringWindowMs: 5000,
+            monitoringWindowSeconds: 5,
           },
           workerMemoryLimit: 512,
         },

@@ -63,12 +63,12 @@ Set thresholds to stop tests automatically when performance or stability degrade
 
 When `enabled` is `true`, both `errorRateThreshold` (must be > 0) AND at least one `exitStatusCodes` must be provided.
 
-| Property             | Type    | Description                                                                |
-| -------------------- | ------- | -------------------------------------------------------------------------- |
-| `enabled`            | boolean | Enables or disables early exit monitoring.                                 |
-| `errorRateThreshold` | number  | Error rate (0.0 to 1.0) that triggers a test stop. Must be > 0 if enabled. |
-| `exitStatusCodes`    | array   | List of HTTP status codes (100-599) that trigger an immediate stop.        |
-| `monitoringWindowMs` | integer | Rolling time window in milliseconds for calculating the error rate.        |
+| Property                  | Type    | Description                                                                     |
+| ------------------------- | ------- | ------------------------------------------------------------------------------- |
+| `enabled`                 | boolean | Enables or disables early exit monitoring.                                      |
+| `errorRateThreshold`      | number  | Error rate threshold (1-100) that triggers a test stop. Must be > 0 if enabled. |
+| `exitStatusCodes`         | array   | List of HTTP status codes (100-599) that trigger an immediate stop.             |
+| `monitoringWindowSeconds` | integer | Rolling time window in seconds for calculating the error rate.                  |
 
 ### Next Steps
 

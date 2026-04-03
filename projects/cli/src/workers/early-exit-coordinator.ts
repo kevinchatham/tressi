@@ -51,7 +51,7 @@ export class EarlyExitCoordinator implements IEarlyExitCoordinator {
    */
   private _parseThresholds(): EarlyExitThresholds {
     const globalExitConfig = this._config.options.workerEarlyExit;
-    const globalMonitoringWindow = globalExitConfig?.monitoringWindowMs || 1000;
+    const globalMonitoringWindow = globalExitConfig?.monitoringWindowSeconds || 1;
 
     const perEndpointMap = new Map();
     let minMonitoringWindow = globalMonitoringWindow;
@@ -65,13 +65,13 @@ export class EarlyExitCoordinator implements IEarlyExitCoordinator {
 
       if (requestConfig?.enabled) {
         // Use request-level configuration (takes precedence regardless of global flag)
-        const window = Math.max(1000, requestConfig.monitoringWindowMs || globalMonitoringWindow);
+        const window = Math.max(1, requestConfig.monitoringWindowSeconds || globalMonitoringWindow);
         minMonitoringWindow = Math.min(minMonitoringWindow, window);
 
         perEndpointMap.set(request.url, {
           errorRate: requestConfig.errorRateThreshold,
           exitStatusCodes: new Set(requestConfig.exitStatusCodes),
-          monitoringWindowMs: window,
+          monitoringWindowSeconds: window,
         });
       } else if (globalExitConfig?.enabled && requestConfig === undefined) {
         // Use global configuration as fallback only when:
@@ -80,14 +80,14 @@ export class EarlyExitCoordinator implements IEarlyExitCoordinator {
         perEndpointMap.set(request.url, {
           errorRate: globalExitConfig.errorRateThreshold,
           exitStatusCodes: new Set(globalExitConfig.exitStatusCodes),
-          monitoringWindowMs: globalMonitoringWindow,
+          monitoringWindowSeconds: globalMonitoringWindow,
         });
         // If requestConfig.enabled is false, don't add to map (endpoint won't have early exit)
       }
     });
 
     return {
-      monitoringWindowMs: minMonitoringWindow,
+      monitoringWindowSeconds: minMonitoringWindow,
       perEndpoint: perEndpointMap,
     };
   }
@@ -98,7 +98,7 @@ export class EarlyExitCoordinator implements IEarlyExitCoordinator {
    * @remarks
    * Begins periodic evaluation of early exit conditions based on the configured monitoring window.
    * If early exit is disabled in configuration, this method returns immediately without starting monitoring.
-   * The monitoring interval is determined by the monitoringWindowMs configuration parameter.
+   * The monitoring interval is determined by the monitoringWindowSeconds configuration parameter.
    */
   startMonitoring(): void {
     // Start monitoring whenever there is at least one endpoint configured for early exit,
@@ -107,7 +107,7 @@ export class EarlyExitCoordinator implements IEarlyExitCoordinator {
 
     this._monitoringInterval = setInterval(() => {
       this._checkEarlyExitConditions();
-    }, this._thresholds.monitoringWindowMs);
+    }, this._thresholds.monitoringWindowSeconds * 1000);
   }
 
   /**

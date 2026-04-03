@@ -109,9 +109,9 @@ describe('ImportConfigButtonComponent', () => {
           threads: 1,
           workerEarlyExit: {
             enabled: false,
-            errorRateThreshold: 0,
+            errorRateThreshold: 1,
             exitStatusCodes: [],
-            monitoringWindowMs: 1000,
+            monitoringWindowSeconds: 1,
           },
           workerMemoryLimit: 128,
         },
@@ -119,9 +119,9 @@ describe('ImportConfigButtonComponent', () => {
           {
             earlyExit: {
               enabled: false,
-              errorRateThreshold: 0,
+              errorRateThreshold: 1,
               exitStatusCodes: [],
-              monitoringWindowMs: 1000,
+              monitoringWindowSeconds: 1,
             },
             headers: {},
             method: 'GET',
@@ -166,9 +166,9 @@ describe('ImportConfigButtonComponent', () => {
           threads: 1,
           workerEarlyExit: {
             enabled: false,
-            errorRateThreshold: 0,
+            errorRateThreshold: 1,
             exitStatusCodes: [],
-            monitoringWindowMs: 1000,
+            monitoringWindowSeconds: 1,
           },
           workerMemoryLimit: 128,
         },
@@ -176,9 +176,9 @@ describe('ImportConfigButtonComponent', () => {
           {
             earlyExit: {
               enabled: false,
-              errorRateThreshold: 0,
+              errorRateThreshold: 1,
               exitStatusCodes: [],
-              monitoringWindowMs: 1000,
+              monitoringWindowSeconds: 1,
             },
             headers: {},
             method: 'GET',

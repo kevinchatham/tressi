@@ -41,34 +41,54 @@ export const JSON_MIGRATIONS: JsonMigrations = {
 
       const { $schema } = noopJsonMigration('0.0.17').up(config);
 
-      const bumpWindow = (window: number | undefined): number | undefined => {
-        if (window && window > 0 && window < 1000) {
+      const bumpWindow = (window: unknown): number | undefined => {
+        if (typeof window !== 'number') return undefined;
+        if (window > 0 && window < 1000) {
           return 1000;
         }
         return window;
       };
 
+      const getWorkerEarlyExit = data.options?.workerEarlyExit as
+        | {
+            enabled?: boolean;
+            errorRateThreshold?: number;
+            exitStatusCodes?: number[];
+            monitoringWindowMs?: number;
+          }
+        | undefined;
+
       const options = data.options
         ? {
             ...data.options,
-            workerEarlyExit: data.options.workerEarlyExit
+            workerEarlyExit: getWorkerEarlyExit
               ? {
-                  ...data.options.workerEarlyExit,
-                  monitoringWindowMs: bumpWindow(data.options.workerEarlyExit.monitoringWindowMs),
+                  ...getWorkerEarlyExit,
+                  monitoringWindowMs: bumpWindow(getWorkerEarlyExit.monitoringWindowMs),
                 }
-              : data.options.workerEarlyExit,
+              : getWorkerEarlyExit,
           }
         : data.options;
 
-      const requests = data.requests?.map((request: TressiRequestConfig) => ({
-        ...request,
-        earlyExit: request.earlyExit
-          ? {
-              ...request.earlyExit,
-              monitoringWindowMs: bumpWindow(request.earlyExit.monitoringWindowMs),
+      const requests = data.requests?.map((request: TressiRequestConfig) => {
+        const requestEarlyExit = request.earlyExit as
+          | {
+              enabled?: boolean;
+              errorRateThreshold?: number;
+              exitStatusCodes?: number[];
+              monitoringWindowMs?: number;
             }
-          : request.earlyExit,
-      }));
+          | undefined;
+        return {
+          ...request,
+          earlyExit: requestEarlyExit
+            ? {
+                ...requestEarlyExit,
+                monitoringWindowMs: bumpWindow(requestEarlyExit.monitoringWindowMs),
+              }
+            : requestEarlyExit,
+        };
+      });
 
       return {
         ...data,
@@ -81,7 +101,8 @@ export const JSON_MIGRATIONS: JsonMigrations = {
   '0.0.18': noopJsonMigration('0.0.18'),
   '0.0.19': noopJsonMigration('0.0.19'),
   '0.0.20': {
-    summary: 'Disable early exit if unsafe. Convert errorRateThreshold from 0.0-1.0 to 1-100.',
+    summary:
+      'Disable early exit if unsafe. Convert errorRateThreshold from 0.0-1.0 to 1-100. Convert monitoringWindowMs to monitoringWindowSeconds.',
     up: (config: VersionedTressiConfig): VersionedTressiConfig => {
       const data = config as TressiConfig;
 
@@ -94,29 +115,58 @@ export const JSON_MIGRATIONS: JsonMigrations = {
         else return threshold;
       };
 
+      const convertMonitoringWindow = (windowMs: unknown): number | undefined => {
+        if (typeof windowMs !== 'number') return undefined;
+        const converted = Math.round(windowMs / 1000);
+        return converted < 1 ? 1 : converted;
+      };
+
+      const getWorkerEarlyExit = data.options?.workerEarlyExit as
+        | {
+            enabled?: boolean;
+            errorRateThreshold?: number;
+            exitStatusCodes?: number[];
+            monitoringWindowMs?: number;
+          }
+        | undefined;
+
       const options = data.options
         ? {
             ...data.options,
-            workerEarlyExit: data.options.workerEarlyExit
+            workerEarlyExit: getWorkerEarlyExit
               ? {
-                  ...data.options.workerEarlyExit,
-                  errorRateThreshold: convertThreshold(
-                    data.options.workerEarlyExit.errorRateThreshold,
+                  ...getWorkerEarlyExit,
+                  errorRateThreshold: convertThreshold(getWorkerEarlyExit.errorRateThreshold),
+                  monitoringWindowSeconds: convertMonitoringWindow(
+                    getWorkerEarlyExit.monitoringWindowMs,
                   ),
                 }
-              : data.options.workerEarlyExit,
+              : getWorkerEarlyExit,
           }
         : data.options;
 
-      const requests = data.requests?.map((request: TressiRequestConfig) => ({
-        ...request,
-        earlyExit: request.earlyExit
-          ? {
-              ...request.earlyExit,
-              errorRateThreshold: convertThreshold(request.earlyExit.errorRateThreshold),
+      const requests = data.requests?.map((request: TressiRequestConfig) => {
+        const requestEarlyExit = request.earlyExit as
+          | {
+              enabled?: boolean;
+              errorRateThreshold?: number;
+              exitStatusCodes?: number[];
+              monitoringWindowMs?: number;
             }
-          : request.earlyExit,
-      }));
+          | undefined;
+        return {
+          ...request,
+          earlyExit: requestEarlyExit
+            ? {
+                ...requestEarlyExit,
+                errorRateThreshold: convertThreshold(requestEarlyExit.errorRateThreshold),
+                monitoringWindowSeconds: convertMonitoringWindow(
+                  requestEarlyExit.monitoringWindowMs,
+                ),
+              }
+            : requestEarlyExit,
+        };
+      });
 
       const convertedConfig = {
         ...data,
@@ -132,24 +182,34 @@ export const JSON_MIGRATIONS: JsonMigrations = {
       const disableOptions = data.options
         ? {
             ...data.options,
-            workerEarlyExit: data.options.workerEarlyExit
+            workerEarlyExit: getWorkerEarlyExit
               ? {
-                  ...data.options.workerEarlyExit,
+                  ...getWorkerEarlyExit,
                   enabled: false,
                 }
-              : data.options.workerEarlyExit,
+              : getWorkerEarlyExit,
           }
         : data.options;
 
-      const disableRequests = data.requests?.map((request: TressiRequestConfig) => ({
-        ...request,
-        earlyExit: request.earlyExit
-          ? {
-              ...request.earlyExit,
-              enabled: false,
+      const disableRequests = data.requests?.map((request: TressiRequestConfig) => {
+        const requestEarlyExit = request.earlyExit as
+          | {
+              enabled?: boolean;
+              errorRateThreshold?: number;
+              exitStatusCodes?: number[];
+              monitoringWindowMs?: number;
             }
-          : request.earlyExit,
-      }));
+          | undefined;
+        return {
+          ...request,
+          earlyExit: requestEarlyExit
+            ? {
+                ...requestEarlyExit,
+                enabled: false,
+              }
+            : requestEarlyExit,
+        };
+      });
 
       return {
         ...data,

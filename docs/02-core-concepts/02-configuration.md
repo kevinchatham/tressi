@@ -42,7 +42,7 @@ Define specific target behavior within the `requests` array. This provides indep
         "enabled": false,
         "errorRateThreshold": 0,
         "exitStatusCodes": [],
-        "monitoringWindowMs": 1000
+        "monitoringWindowSeconds": 1
       }
     }
   ]
@@ -133,7 +133,7 @@ Endpoint specific configurations take precedence over global `options` for granu
         "enabled": false,
         "errorRateThreshold": 0,
         "exitStatusCodes": [],
-        "monitoringWindowMs": 1000
+        "monitoringWindowSeconds": 1
       }
     },
     {
@@ -151,7 +151,7 @@ Endpoint specific configurations take precedence over global `options` for granu
         "enabled": false,
         "errorRateThreshold": 0,
         "exitStatusCodes": [],
-        "monitoringWindowMs": 1000
+        "monitoringWindowSeconds": 1
       }
     }
   ],
@@ -167,7 +167,7 @@ Endpoint specific configurations take precedence over global `options` for granu
       "enabled": false,
       "errorRateThreshold": 0,
       "exitStatusCodes": [],
-      "monitoringWindowMs": 1000
+      "monitoringWindowSeconds": 1
     }
   }
 }
