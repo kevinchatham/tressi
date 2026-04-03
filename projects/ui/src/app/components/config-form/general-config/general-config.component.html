@@ -32,6 +32,7 @@
           [formField]="form().config.options.durationSec"
           placeholder="Total test duration"
           data-e2e="config-duration-input"
+          appPreventNumberScroll
         />
         <p class="label ml-2 py-0 text-xs opacity-60">In seconds</p>
         @if (
@@ -66,6 +67,7 @@
             class="input outline-none!"
             [formField]="form().config.options.rampUpDurationSec"
             placeholder="Time to reach target RPS"
+            appPreventNumberScroll
           />
           <p class="label ml-2 py-0 text-xs opacity-60">
             In seconds; used if request level ramp up is not set
@@ -74,7 +76,7 @@
             form().config.options.rampUpDurationSec().touched() &&
             form().config.options.rampUpDurationSec().invalid()
           ) {
-            <p class="label text-error ml-2 py-0 text-xs">
+            <p class="label text-error ml-2 py-0 text-xs text-wrap">
               @for (error of form().config.options.rampUpDurationSec().errors(); track error) {
                 {{ error.message }}
               }
@@ -114,8 +116,6 @@
           <app-early-exit-config
             [form]="form().config.options.workerEarlyExit"
             [model]="model().config.options.workerEarlyExit"
-            (addExitStatusCode)="addExitStatusCode.emit()"
-            (removeExitStatusCode)="removeExitStatusCode.emit($event)"
           />
           <p class="label ml-2 py-0 text-xs text-wrap opacity-60">Applies to all requests</p>
         </div>
@@ -141,10 +141,9 @@
             class="input outline-none!"
             [formField]="form().config.options.threads"
             placeholder="Auto-detect"
+            appPreventNumberScroll
           />
-          <p class="label ml-2 py-0 text-xs opacity-60">
-            Defaults to 4; limited by available system cores
-          </p>
+          <p class="label ml-2 py-0 text-xs opacity-60">Limited by available system cores</p>
           @if (
             form().config.options.threads().touched() && form().config.options.threads().invalid()
           ) {
@@ -166,6 +165,7 @@
             class="input outline-none!"
             [formField]="form().config.options.workerMemoryLimit"
             placeholder="Memory per worker thread"
+            appPreventNumberScroll
           />
           <p class="label ml-2 py-0 text-xs opacity-60">In MB; memory per worker thread</p>
           @if (

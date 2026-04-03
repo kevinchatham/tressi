@@ -2,21 +2,22 @@ import {
   type AfterViewInit,
   Component,
   type ElementRef,
+  inject,
   input,
   type OnChanges,
-  type OnInit,
-  output,
+  type SimpleChanges,
   signal,
   viewChildren,
 } from '@angular/core';
 import { FormField } from '@angular/forms/signals';
 import { httpMethodDefaults, type SaveConfigRequest } from '@tressi/shared/common';
 import type { ModifyConfigRequestFormType } from '@tressi/shared/ui';
-
+import { PreventNumberScrollDirective } from '../../../directives/prevent-number-scroll.directive';
 import { ButtonComponent } from '../../button/button.component';
 import { CollapsibleCardComponent } from '../../collapsible-card/collapsible-card.component';
 import { IconComponent } from '../../icon/icon.component';
 import { JsonTextareaComponent } from '../../json-textarea/json-textarea.component';
+import { ConfigFormService } from '../config-form.service';
 import { EarlyExitConfigComponent } from '../early-exit-config/early-exit-config.component';
 
 @Component({
@@ -27,79 +28,51 @@ import { EarlyExitConfigComponent } from '../early-exit-config/early-exit-config
     ButtonComponent,
     CollapsibleCardComponent,
     FormField,
+    PreventNumberScrollDirective,
   ],
   selector: 'app-requests-config',
   templateUrl: './requests-config.component.html',
 })
-export class RequestsConfigComponent implements AfterViewInit, OnInit, OnChanges {
-  /** Form instance from parent */
+export class RequestsConfigComponent implements AfterViewInit, OnChanges {
+  private readonly _service = inject(ConfigFormService);
+
   readonly form = input.required<ModifyConfigRequestFormType>();
 
-  /** Config model from parent */
   readonly model = input.required<SaveConfigRequest>();
 
-  /** Event to add a new request */
-  readonly addRequest = output<void>();
-
-  /** Event to remove a request */
-  readonly removeRequest = output<number>();
-
-  readonly jsonTextareaChange = output<void>();
-
-  /** Event to add an exit status code to a specific request */
-  readonly addRequestExitStatusCode = output<number>();
-
-  /** Event to remove an exit status code from a specific request */
-  readonly removeRequestExitStatusCode = output<{
-    requestIndex: number;
-    codeIndex: number;
-  }>();
-
-  /** Track expanded/collapsed state for each request */
   expandedRequests = new Set<number>();
 
-  /** Signal to track the current request count */
   private readonly _requestCount = signal(0);
 
-  /** Query for URL input elements */
   private readonly _urlInputs = viewChildren<ElementRef<HTMLInputElement>>('urlInput');
 
   ngAfterViewInit(): void {
-    // Focus the first URL input on initialization
     this._focusLastUrlInput();
   }
 
-  ngOnInit(): void {
-    // Initialize request count
-    this._requestCount.set(this.model().config.requests?.length || 0);
-  }
-
-  ngOnChanges(): void {
+  ngOnChanges(_changes: SimpleChanges): void {
     const currentCount = this.model().config.requests?.length || 0;
     const previousCount = this._requestCount();
 
-    // If a new request was added, handle expansion logic
     if (currentCount > previousCount) {
-      // Collapse all existing requests
       for (let i = 0; i < currentCount - 1; i++) {
         this.expandedRequests.add(i);
       }
 
-      // Ensure the new request is expanded
       this.expandedRequests.delete(currentCount - 1);
 
-      // Update the count
       this._requestCount.set(currentCount);
 
-      // Focus the new URL input after the view updates
       setTimeout(() => this._focusLastUrlInput(), 0);
     } else if (currentCount < previousCount) {
-      // Handle request removal
       this._requestCount.set(currentCount);
     }
   }
 
-  /** Toggle request section expansion */
+  onUrlInputChange(): void {
+    this._requestCount.set(this.model().config.requests?.length || 0);
+  }
+
   toggleRequest(index: number): void {
     if (this.expandedRequests.has(index)) {
       this.expandedRequests.delete(index);
@@ -108,33 +81,43 @@ export class RequestsConfigComponent implements AfterViewInit, OnInit, OnChanges
     }
   }
 
-  /** Check if request is expanded */
   isRequestExpanded(index: number): boolean {
     const currentRequestCount = this.model().config.requests?.length || 0;
 
-    // If this is the newest request, always expand it
     if (index === currentRequestCount - 1 && this.expandedRequests.has(index) === false) {
       return true;
     }
 
-    // Default behavior: expanded unless explicitly collapsed
     return !this.expandedRequests.has(index);
   }
 
   onJsonTextareaValueChange(): void {
-    this.jsonTextareaChange.emit();
+    this._service.onJsonTextAreaChange();
   }
 
-  /** Available HTTP methods from schema */
+  addRequest(): void {
+    this._service.addRequest();
+  }
+
+  removeRequest(index: number): void {
+    this._service.removeRequest(index);
+  }
+
+  addRequestExitStatusCode(requestIndex: number): void {
+    this._service.addRequestExitStatusCode(requestIndex);
+  }
+
+  removeRequestExitStatusCode(requestIndex: number, codeIndex: number): void {
+    this._service.removeRequestExitStatusCode(requestIndex, codeIndex);
+  }
+
   readonly httpMethods = httpMethodDefaults;
 
-  /** Check if the HTTP method supports a request body */
   supportsRequestBody(method: string): boolean {
     const bodyMethods = ['POST', 'PUT', 'PATCH'];
     return bodyMethods.includes(method.toUpperCase());
   }
 
-  /** Focus the last URL input element */
   private _focusLastUrlInput(): void {
     const inputs = this._urlInputs();
     if (inputs && inputs.length > 0) {

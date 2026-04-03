@@ -8,7 +8,7 @@
           All Requests
         </h3>
         <app-button
-          (click)="addRequest.emit()"
+          (click)="addRequest()"
           [color]="'primary'"
           [icon]="'add'"
           [title]="'Add Request'"
@@ -24,7 +24,7 @@
         >
           <ng-template>
             <app-button
-              (click)="removeRequest.emit($index)"
+              (click)="removeRequest($index)"
               [color]="'error'"
               [disabled]="model().config.requests.length === 1"
               [icon]="'delete'"
@@ -74,6 +74,7 @@
                 class="input outline-none!"
                 [formField]="form().config.requests[$index].rps"
                 placeholder="Requests per second"
+                appPreventNumberScroll
               />
               <p class="label ml-2 py-0 text-xs opacity-60">Requests per second</p>
               @if (
@@ -98,6 +99,7 @@
                 class="input outline-none!"
                 [formField]="form().config.requests[$index].rampUpDurationSec"
                 placeholder="Time to reach target RPS"
+                appPreventNumberScroll
               />
               <p class="label ml-2 py-0 text-xs opacity-60">In seconds</p>
               @if (
@@ -154,13 +156,7 @@
               <app-early-exit-config
                 [form]="form().config.requests[$index].earlyExit"
                 [model]="model().config.requests[$index].earlyExit"
-                (addExitStatusCode)="addRequestExitStatusCode.emit($index)"
-                (removeExitStatusCode)="
-                  removeRequestExitStatusCode.emit({
-                    requestIndex: $index,
-                    codeIndex: $event,
-                  })
-                "
+                [requestIndex]="$index"
               />
               <p class="label ml-2 py-0 text-xs text-wrap opacity-60">
                 Overrides global configuration

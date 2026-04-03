@@ -61,37 +61,11 @@
   <div class="space-y-6">
     <!-- General Configuration Tab -->
     @if (activeTab() === 'general') {
-      <app-general-config
-        [form]="form"
-        [model]="model()"
-        (addExitStatusCode)="addGlobalExitStatusCode()"
-        (removeExitStatusCode)="removeGlobalExitStatusCode($event)"
-        (jsonTextareaChange)="onJsonTextAreaChange()"
-      />
+      <app-general-config [form]="form" [model]="model()" />
     }
     <!-- Requests Configuration Tab -->
     @if (activeTab() === 'requests') {
-      <app-requests-config
-        [form]="form"
-        [model]="model()"
-        (addRequest)="addRequest()"
-        (removeRequest)="removeRequest($event)"
-        (jsonTextareaChange)="onJsonTextAreaChange()"
-        (addRequestExitStatusCode)="addRequestExitStatusCode($event)"
-        (removeRequestExitStatusCode)="
-          removeRequestExitStatusCode($event.requestIndex, $event.codeIndex)
-        "
-      />
+      <app-requests-config [form]="form" [model]="model()" />
     }
   </div>
-  @if (form().touched() && form().invalid() && formErrors().length > 0) {
-    <div class="-pt-2">
-      <span class="text-error text-sm">Validation Errors</span>
-      <ul>
-        @for (error of formErrors(); track error) {
-          <li class="text-error ml-4 text-sm">- {{ error }}.</li>
-        }
-      </ul>
-    </div>
-  }
 </form>

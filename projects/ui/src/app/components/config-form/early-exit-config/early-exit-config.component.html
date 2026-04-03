@@ -22,8 +22,9 @@
             type="number"
             class="input outline-none!"
             [formField]="form().errorRateThreshold"
-            placeholder="0.0 - 1.0"
-            step="0.01"
+            placeholder="1 - 100"
+            step="1"
+            appPreventNumberScroll
           />
           <p class="label ml-2 py-0 text-xs opacity-60">Range: 1 - 100</p>
           @if (form().errorRateThreshold().touched() && form().errorRateThreshold().invalid()) {
@@ -45,6 +46,8 @@
             class="input outline-none!"
             [formField]="form().monitoringWindowMs"
             placeholder="Monitoring duration in milliseconds"
+            step="500"
+            appPreventNumberScroll
           />
           <p class="label ml-2 py-0 text-xs opacity-60">
             Duration to monitor for errors (milliseconds)
@@ -64,7 +67,7 @@
         <div class="mb-2 flex items-center justify-between">
           <label class="label-text font-medium">Exit Status Codes</label>
           <app-button
-            (click)="addExitStatusCode.emit()"
+            (click)="addExitStatusCode()"
             [color]="'primary'"
             [icon]="'add'"
             [title]="'Add Code'"
@@ -79,9 +82,10 @@
                   class="input outline-none!"
                   [formField]="form().exitStatusCodes[$index]"
                   placeholder="HTTP status code"
+                  appPreventNumberScroll
                 />
                 <app-button
-                  (click)="removeExitStatusCode.emit($index)"
+                  (click)="removeExitStatusCode($index)"
                   [color]="'error'"
                   [icon]="'delete'"
                   [title]="'Remove Code'"
