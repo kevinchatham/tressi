@@ -1,5 +1,5 @@
 import chalk from 'chalk';
-import { Command } from 'commander';
+import { type Argument, Command, type Option } from 'commander';
 
 import pkg from '../../../package.json';
 import { MigrateCommand } from './commands/migrate-command';
@@ -28,7 +28,7 @@ class TressiCLI {
     this._program
       .name('tressi')
       .description('Deterministic load testing for API performance validation.')
-      .version(pkg.version);
+      .version(pkg.version, '-v, --version');
   }
 
   /**
@@ -79,10 +79,9 @@ class TressiCLI {
       .argument('<config>', 'Path to JSON configuration file')
       .summary('Migrate a configuration file')
       .description(MigrateCommand.getDescription())
-      .option('-f, --force', 'Bypass confirmation prompts.', false)
-      .action(async (config, options) => {
+      .action(async (config) => {
         const command = new MigrateCommand();
-        await command.execute(config, options.force);
+        await command.execute(config);
       });
   }
 
@@ -90,42 +89,45 @@ class TressiCLI {
    * Sets up help text and examples.
    */
   private _setupHelp(): void {
+    this._program.configureHelp({
+      argumentTerm: (arg: Argument) => chalk.white(`<${arg.name()}>`),
+      commandDescription: () => chalk.gray(''),
+      helpWidth: 80,
+      optionDescription: (opt: Option) => `  ${opt.description}`,
+      optionTerm: (opt: Option) => {
+        const short = opt.short ? `${opt.short}, ` : '    ';
+        return `${chalk.yellow(short)}${opt.long}`;
+      },
+      sortOptions: true,
+      sortSubcommands: true,
+      subcommandTerm: (cmd: Command) => {
+        const args = cmd.registeredArguments.map((a) => `<${a.name()}>`).join(' ');
+        const options = cmd.options.length ? ` [options]` : '';
+        return `${chalk.green(cmd.name())} ${chalk.white(args)}${chalk.dim(options)}`;
+      },
+    });
+
+    this._program.addHelpText(
+      'beforeAll',
+      `${chalk.yellow.bold('⚡')} ${chalk.bold(`Tressi v${pkg.version}`)}\n`,
+    );
+
     this._program.addHelpText(
       'after',
-      `
-Commands:
-  run <config>  Execute a load test using the specified configuration file
-  serve         Start the management server
-  reset         Reset the database
-  migrate <config> Migrate a configuration file to the current version
+      '\n' +
+        chalk.cyan('Examples:') +
+        `
+  ${chalk.gray('# Run a load test')}
+  ${chalk.white('$')} ${chalk.green('tressi run')} ./config.json
 
-Examples:
-  # Run a load test with a specific local configuration file
-  $ tressi run ./my-config.json
+  ${chalk.gray('# Start the Tressi server (3108 <-> c≈3×10⁸ m/s)')}
+  ${chalk.white('$')} ${chalk.green('tressi serve')}
 
-  # Run a load test with a remote configuration file
-  $ tressi run "https://example.com/tressi.config.json"
+  ${chalk.gray('# Reset the database')}
+  ${chalk.white('$')} ${chalk.green('tressi reset')}
 
-  # Run a load test and export results
-  $ tressi run ./my-config.json --export ./results
-
-  # Start the Tressi server on default port (3108 <-> c≈3x10^8 m/s)
-  $ tressi serve
-
-  # Start the Tressi server on a custom port
-  $ tressi serve --port 8080
-
-  # Reset the Tressi database
-  $ tressi reset
-
-  # Reset the Tressi database without confirmation
-  $ tressi reset --force
-
-  # Migrate a configuration file
-  $ tressi migrate ./my-config.json
-
-  # Migrate a configuration file without confirmation
-  $ tressi migrate ./my-config.json --force
+  ${chalk.gray('# Migrate a configuration file')}
+  ${chalk.white('$')} ${chalk.green('tressi migrate')} ./config.json
 `,
     );
   }

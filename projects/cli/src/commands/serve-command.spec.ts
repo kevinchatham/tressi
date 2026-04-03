@@ -45,9 +45,9 @@ describe('ServeCommand', () => {
     mockMigrationManager.run.mockResolvedValue({});
     mockServer.start.mockResolvedValue({});
 
-    await command.execute({ migrate: true, port: 3000 });
+    await command.execute({ port: 3000 });
 
-    expect(mockMigrationManager.run).toHaveBeenCalledWith(true);
+    expect(mockMigrationManager.run).toHaveBeenCalled();
     expect(mockServer.start).toHaveBeenCalled();
   });
 

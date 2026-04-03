@@ -58,9 +58,8 @@ export class JsonMigrationManager {
 
   /**
    * Checks for outdated configurations in the database and prompts the user to migrate them.
-   * @param force If true, skip the confirmation prompt and migrate automatically.
    */
-  async run(force: boolean = false): Promise<void> {
+  async run(): Promise<void> {
     const configs = await configStorage.getAll();
     const currentVersion = pkg.version;
     const failures: string[] = [];
@@ -117,45 +116,41 @@ export class JsonMigrationManager {
       return;
     }
 
-    if (!force) {
-      terminal.print(`\n${chalk.bold.blue('📄 Tressi Configuration Migration Required')}`);
+    terminal.print(`\n${chalk.bold.blue('📄 Tressi Configuration Migration Required')}`);
+    terminal.print(`${chalk.dim('\nCurrent Version:')} ${chalk.yellow(previews[0].configVersion)}`);
+    terminal.print(`${chalk.dim('Target Version: ')} ${chalk.green(currentVersion)}\n`);
+
+    const table = new Table({
+      colWidths: [15, 60],
+      head: [chalk.cyan('Version'), chalk.cyan('Summary')],
+      wordWrap: true,
+    });
+
+    for (const { version, summary } of previews[0].summaries) {
+      table.push([version, summary]);
+    }
+    terminal.print(chalk.bold('Pending configuration migrations:'));
+    terminal.print(table.toString());
+
+    for (const preview of previews) {
+      terminal.print('');
       terminal.print(
-        `${chalk.dim('\nCurrent Version:')} ${chalk.yellow(previews[0].configVersion)}`,
+        `${chalk.bold.yellow(`Changes for "${preview.doc.name}"`)} ${chalk.dim(`(v${preview.configVersion} → v${currentVersion})`)}:`,
       );
-      terminal.print(`${chalk.dim('Target Version: ')} ${chalk.green(currentVersion)}\n`);
 
-      const table = new Table({
-        colWidths: [15, 60],
-        head: [chalk.cyan('Version'), chalk.cyan('Summary')],
-        wordWrap: true,
-      });
+      this._displayDiff(preview.doc.config, preview.migratedData);
+    }
 
-      for (const { version, summary } of previews[0].summaries) {
-        table.push([version, summary]);
-      }
-      terminal.print(chalk.bold('Pending configuration migrations:'));
-      terminal.print(table.toString());
-
-      for (const preview of previews) {
-        terminal.print('');
-        terminal.print(
-          `${chalk.bold.yellow(`Changes for "${preview.doc.name}"`)} ${chalk.dim(`(v${preview.configVersion} → v${currentVersion})`)}:`,
-        );
-
-        this._displayDiff(preview.doc.config, preview.migratedData);
-      }
-
-      const confirmed = await this._promptUser(
-        `\nWould you like to migrate ${previews.length} database configuration(s) to version ${currentVersion}? (y/N): `,
+    const confirmed = await this._promptUser(
+      `\nWould you like to migrate ${previews.length} database configuration(s) to version ${currentVersion}? (y/N): `,
+    );
+    if (!confirmed) {
+      terminal.print(
+        chalk.red(
+          '\nConfiguration migration declined. The application cannot continue with outdated configurations.',
+        ),
       );
-      if (!confirmed) {
-        terminal.print(
-          chalk.red(
-            '\nConfiguration migration declined. The application cannot continue with outdated configurations.',
-          ),
-        );
-        process.exit(1);
-      }
+      process.exit(1);
     }
 
     const spinner = ora('Starting Configuration migration...').start();
@@ -246,9 +241,8 @@ export class JsonMigrationManager {
   /**
    * Checks if a configuration file is outdated and prompts the user to migrate it.
    * @param filePath Path to the configuration file.
-   * @param force If true, skip the confirmation prompt and migrate automatically.
    */
-  async migrateFile(filePath: string, force: boolean = false): Promise<void> {
+  async migrateFile(filePath: string): Promise<void> {
     const absolutePath = path.resolve(filePath);
     const currentVersion = pkg.version;
 
@@ -289,37 +283,35 @@ export class JsonMigrationManager {
 
     const { summaries, migratedData } = await this._migrateConfig(config);
 
-    if (!force) {
-      terminal.print(`\n${chalk.bold.blue('📄 File Migration Required')}`);
-      terminal.print(`${chalk.dim('File:           ')} ${chalk.white(filePath)}`);
-      terminal.print(`${chalk.dim('Current Version:')} ${chalk.yellow(configVersion)}`);
-      terminal.print(`${chalk.dim('Target Version: ')} ${chalk.green(currentVersion)}\n`);
+    terminal.print(`\n${chalk.bold.blue('📄 File Migration Required')}`);
+    terminal.print(`${chalk.dim('File:           ')} ${chalk.white(filePath)}`);
+    terminal.print(`${chalk.dim('Current Version:')} ${chalk.yellow(configVersion)}`);
+    terminal.print(`${chalk.dim('Target Version: ')} ${chalk.green(currentVersion)}\n`);
 
-      const table = new Table({
-        colWidths: [15, 60],
-        head: [chalk.cyan('Version'), chalk.cyan('Summary')],
-        wordWrap: true,
-      });
+    const table = new Table({
+      colWidths: [15, 60],
+      head: [chalk.cyan('Version'), chalk.cyan('Summary')],
+      wordWrap: true,
+    });
 
-      for (const { version, summary } of summaries) {
-        table.push([version, summary]);
-      }
-      terminal.print(chalk.bold('Pending configuration migrations:'));
-      terminal.print(table.toString());
+    for (const { version, summary } of summaries) {
+      table.push([version, summary]);
+    }
+    terminal.print(chalk.bold('Pending configuration migrations:'));
+    terminal.print(table.toString());
 
-      this._displayDiff(config, migratedData);
+    this._displayDiff(config, migratedData);
 
-      const confirmed = await this._promptUser(
-        `\nWould you like to migrate "${filePath}" to version ${currentVersion}? (y/N): `,
+    const confirmed = await this._promptUser(
+      `\nWould you like to migrate "${filePath}" to version ${currentVersion}? (y/N): `,
+    );
+    if (!confirmed) {
+      terminal.print(
+        chalk.red(
+          '\nFile migration declined. The application cannot continue with an outdated configuration file.',
+        ),
       );
-      if (!confirmed) {
-        terminal.print(
-          chalk.red(
-            '\nFile migration declined. The application cannot continue with an outdated configuration file.',
-          ),
-        );
-        process.exit(1);
-      }
+      process.exit(1);
     }
 
     const spinner = ora(`Migrating "${filePath}"...`).start();

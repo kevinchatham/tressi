@@ -238,39 +238,6 @@ describe('JsonMigrationManager', () => {
 
       expect(configStorage.edit).not.toHaveBeenCalled();
     });
-
-    it('should migrate automatically if force is true', async () => {
-      const outdatedConfig = {
-        config: {
-          $schema:
-            'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json',
-        },
-        id: '1',
-        name: 'Outdated',
-      } as unknown as ConfigDocument;
-
-      vi.mocked(configStorage.getAll).mockResolvedValue([outdatedConfig]);
-
-      JSON_MIGRATIONS['0.0.14'] = {
-        summary: 'Test migration',
-        up: vi.fn((config) => ({
-          ...config,
-          $schema: config.$schema.replace('0.0.13', '0.0.14'),
-        })),
-      };
-
-      const { createInterface } = await import('node:readline/promises');
-      const questionSpy = vi.fn().mockResolvedValue('y');
-      vi.mocked(createInterface).mockReturnValue({
-        close: vi.fn(),
-        question: questionSpy,
-      } as unknown as ReturnType<typeof createInterface>);
-
-      await manager.run(true);
-
-      expect(questionSpy).not.toHaveBeenCalled();
-      expect(configStorage.edit).toHaveBeenCalled();
-    });
   });
 
   describe('migrateFile', () => {
@@ -421,36 +388,6 @@ describe('JsonMigrationManager', () => {
       expect(fs.writeFile).not.toHaveBeenCalled();
     });
 
-    it('should migrate file automatically if force is true', async () => {
-      vi.mocked(fs.access).mockResolvedValue(undefined);
-      vi.mocked(fs.readFile).mockResolvedValue(
-        JSON.stringify({
-          $schema:
-            'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.13.json',
-        }),
-      );
-
-      JSON_MIGRATIONS['0.0.14'] = {
-        summary: 'Test migration',
-        up: vi.fn((config) => ({
-          ...config,
-          $schema: config.$schema.replace('0.0.13', '0.0.14'),
-        })),
-      };
-
-      const { createInterface } = await import('node:readline/promises');
-      const questionSpy = vi.fn().mockResolvedValue('y');
-      vi.mocked(createInterface).mockReturnValue({
-        close: vi.fn(),
-        question: questionSpy,
-      } as unknown as ReturnType<typeof createInterface>);
-
-      await manager.migrateFile(filePath, true);
-
-      expect(questionSpy).not.toHaveBeenCalled();
-      expect(fs.writeFile).toHaveBeenCalled();
-    });
-
     it('should handle non-patch version jumps', async () => {
       vi.mocked(fs.access).mockResolvedValue(undefined);
       vi.mocked(fs.readFile).mockResolvedValue(
@@ -459,6 +396,12 @@ describe('JsonMigrationManager', () => {
             'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.10.json',
         }),
       );
+
+      const { createInterface } = await import('node:readline/promises');
+      vi.mocked(createInterface).mockReturnValue({
+        close: vi.fn(),
+        question: vi.fn().mockResolvedValue('y'),
+      } as unknown as ReturnType<typeof createInterface>);
 
       // Define migrations for 0.0.12 and 0.0.14 (skipping 0.0.11 and 0.0.13)
       JSON_MIGRATIONS['0.0.12'] = {
@@ -478,7 +421,7 @@ describe('JsonMigrationManager', () => {
         })),
       };
 
-      await manager.migrateFile(filePath, true);
+      await manager.migrateFile(filePath);
 
       expect(JSON_MIGRATIONS['0.0.12'].up).toHaveBeenCalled();
       expect(JSON_MIGRATIONS['0.0.14'].up).toHaveBeenCalled();

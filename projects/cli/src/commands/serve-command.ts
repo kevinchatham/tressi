@@ -21,7 +21,7 @@ export class ServeCommand {
 
       // Run migrations before server starts
       const migrationManager = new JsonMigrationManager();
-      await migrationManager.run(options.migrate);
+      await migrationManager.run();
 
       this._server = new TressiServer(options.port);
 

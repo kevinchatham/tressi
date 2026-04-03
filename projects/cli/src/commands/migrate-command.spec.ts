@@ -30,19 +30,7 @@ describe('MigrateCommand', () => {
     );
   });
 
-  it('should call migrateFile with the correct arguments', async () => {
-    const command = new MigrateCommand();
-    const configPath = './test-config.json';
-    const force = true;
-
-    await command.execute(configPath, force);
-
-    const migrationManagerInstance = vi.mocked(JsonMigrationManager).mock
-      .instances[0] as unknown as { migrateFile: ReturnType<typeof vi.fn> };
-    expect(migrationManagerInstance.migrateFile).toHaveBeenCalledWith(configPath, force);
-  });
-
-  it('should call migrateFile with default force value (false)', async () => {
+  it('should call migrateFile with the config path', async () => {
     const command = new MigrateCommand();
     const configPath = './test-config.json';
 
@@ -50,7 +38,7 @@ describe('MigrateCommand', () => {
 
     const migrationManagerInstance = vi.mocked(JsonMigrationManager).mock
       .instances[0] as unknown as { migrateFile: ReturnType<typeof vi.fn> };
-    expect(migrationManagerInstance.migrateFile).toHaveBeenCalledWith(configPath, false);
+    expect(migrationManagerInstance.migrateFile).toHaveBeenCalledWith(configPath);
   });
 
   it('should handle generic errors and exit with code 1', async () => {
