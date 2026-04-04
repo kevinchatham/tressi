@@ -42,6 +42,7 @@ export class WorkerThread {
   private _workerId: number;
   private _assignedEndpoints: TressiRequestConfig[];
   private _endpointOffset: number;
+  private _globalHeaders?: Record<string, string>;
   private _startTime: number;
   private _durationMs: number;
   private _totalWorkers: number;
@@ -51,6 +52,7 @@ export class WorkerThread {
     this._workerId = data.workerId;
     this._assignedEndpoints = data.assignedEndpoints;
     this._endpointOffset = data.endpointOffset;
+    this._globalHeaders = data.globalHeaders;
     this._totalWorkers = data.totalWorkers;
 
     // Create managers with provided buffers
@@ -196,7 +198,7 @@ export class WorkerThread {
   ): Promise<void> {
     try {
       const startTime = performance.now();
-      const result = await this._requestExecutor.executeRequest(request);
+      const result = await this._requestExecutor.executeRequest(request, this._globalHeaders);
       const latency = performance.now() - startTime;
 
       // Record success/failure

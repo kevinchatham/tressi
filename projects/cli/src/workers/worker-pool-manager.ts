@@ -122,6 +122,7 @@ export class WorkerPoolManager {
           durationSec: this._config.options.durationSec || 10,
           endpointOffset,
           endpointStateBuffer: this._endpointStateManager.getSharedBuffer(),
+          globalHeaders: this._config.options.headers,
           histogramBuffer: this._hdrHistogramManagers[i].getSharedBuffer(),
           memoryLimit: this._config.options.workerMemoryLimit,
           rampUpDurationSec: this._config.options.rampUpDurationSec || 0,

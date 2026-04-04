@@ -41,6 +41,7 @@ export type WorkerData = {
   durationSec: number;
   rampUpDurationSec: number;
   assignedEndpoints: TressiRequestConfig[];
+  globalHeaders?: Record<string, string>;
   endpointOffset: number;
   statsBuffer: SharedArrayBuffer;
   histogramBuffer: SharedArrayBuffer;

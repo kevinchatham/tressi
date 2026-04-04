@@ -86,6 +86,7 @@ app.use('*', async (_c, next) => {
 // Health check endpoint
 app.get('/health', (c) => {
   return c.json({
+    headers: Object.fromEntries(c.req.raw.headers),
     requests: requestCount,
     status: 'healthy',
     timestamp: new Date().toISOString(),
