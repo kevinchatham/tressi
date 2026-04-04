@@ -91,7 +91,7 @@ export type EndpointSummary = {
   p99LatencyMs: number;
   /** Average requests per second achieved for this endpoint. */
   averageRequestsPerSecond: number;
-  /** Last one sec requests per second achieved for this endpoint. */
+  /** Instantaneous requests per second during this measurement interval. */
   peakRequestsPerSecond: number;
   /** Percentage of configured RPS achieved, derived from actualRps */
   targetAchieved: number;
@@ -146,7 +146,7 @@ export type GlobalSummary = {
   errorRate: number;
   /** Average requests per second achieved for this endpoint. */
   averageRequestsPerSecond: number;
-  /** Last one sec requests per second achieved for this endpoint. */
+  /** Instantaneous requests per second during this measurement interval. */
   peakRequestsPerSecond: number;
   /** Total number of bytes sent across all requests. */
   networkBytesSent: number;

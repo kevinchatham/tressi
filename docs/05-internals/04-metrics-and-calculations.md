@@ -60,12 +60,12 @@ Tressi implements High Dynamic Range (HDR) Histograms to track latency across a 
 
 #### Calculating Peak RPS
 
-Tressi calculates Peak Requests Per Second (RPS) using a sliding window to filter transient fluctuations and identify sustained performance limits.
+Tressi calculates Peak Requests Per Second (RPS) as the highest instantaneous RPS observed during steady-state operation.
 
-- **Steady-State Snapshots**: Peak RPS is calculated using only "steady-state" snapshots (snapshots taken after the ramp-up period has concluded). If no steady-state data exists (e.g., early exit during ramp-up), it falls back to all snapshots.
-- **Sliding window**: A sliding window tracks RPS samples collected at 1 second intervals.
-- **Median calculation**: The peak RPS value is derived from the 50th percentile (median) of samples within the window, providing a stable representation of throughput.
-- **Instantaneous delta**: Each sample is calculated by measuring the delta in total requests between polling intervals.
+- **Instantaneous RPS**: Each measurement captures the delta in total requests between polling intervals, divided by the time elapsed.
+- **Per-snapshot peak**: Each snapshot's `peakRequestsPerSecond` reflects the instantaneous RPS for that measurement interval only (no accumulation over time).
+- **Final peak**: The `transformAggregatedMetricsToTestSummary` function derives the final peak by taking the maximum instantaneous RPS across all steady-state snapshots, representing the highest throughput achieved at any point during steady-state.
+- **Steady-State Snapshots**: Peak RPS is determined using only "steady-state" snapshots (snapshots taken after the ramp-up period has concluded). If no steady-state data exists (e.g., early exit during ramp-up), it falls back to all snapshots.
 
 #### Measuring Target Achievement
 

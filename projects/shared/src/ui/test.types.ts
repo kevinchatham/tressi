@@ -42,7 +42,7 @@ export const METRIC_TOOLTIPS: Record<string, string> = {
   p50Latency: 'Median response time - 50% of requests were faster than this',
   p95Latency: '95th percentile - 95% of requests were faster than this (slow)',
   p99Latency: '99th percentile - 99% of requests were faster than this (slower)',
-  peakRps: 'Highest requests per second achieved in any 1-second window',
+  peakRps: 'Highest instantaneous requests per second achieved during steady-state',
   targetAchieved: 'Percentage of target RPS that was actually achieved',
   totalRequests: 'Total number of requests made during the test',
 };

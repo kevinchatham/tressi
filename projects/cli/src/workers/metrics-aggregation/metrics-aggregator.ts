@@ -46,8 +46,6 @@ export class MetricsAggregator implements IMetricsAggregator {
   };
   private _snapshots: TestSummary[] = [];
   private _responseSampleStore = new ResponseSampleStore();
-  private _globalPeakRps = 0;
-  private _endpointPeakRps: Record<string, number> = {};
 
   public get endTime(): number {
     return this._endTime;
@@ -71,8 +69,6 @@ export class MetricsAggregator implements IMetricsAggregator {
       success: 0,
       timestamp: startTime,
     };
-    this._globalPeakRps = 0;
-    this._endpointPeakRps = {};
   }
 
   public setEndTime(endTime: number): void {
@@ -189,9 +185,6 @@ export class MetricsAggregator implements IMetricsAggregator {
       currentGlobalRps = timeDiffSec > 0 ? requestDiff / timeDiffSec : 0;
     }
 
-    // Update high-water mark for peak RPS
-    this._globalPeakRps = Math.max(this._globalPeakRps, currentGlobalRps);
-
     // Calculate cumulative average RPS from the start of steady state
     const globalRampUpSec = this._config?.options?.rampUpDurationSec ?? 0;
     const maxEndpointRampUpSec =
@@ -265,7 +258,7 @@ export class MetricsAggregator implements IMetricsAggregator {
       p50LatencyMs: globalStats.p50Latency,
       p95LatencyMs: globalStats.p95Latency,
       p99LatencyMs: globalStats.p99Latency,
-      peakRequestsPerSecond: this._globalPeakRps,
+      peakRequestsPerSecond: currentGlobalRps,
       successfulRequests: aggregatedData.totalSuccess,
       targetAchieved: globalTargetAchieved,
       totalEndpoints: endpoints.length,
@@ -301,12 +294,6 @@ export class MetricsAggregator implements IMetricsAggregator {
         (previousCounts.success + previousCounts.failure);
       currentRequestsPerSecond = timeDiffSec > 0 ? requestDiff / timeDiffSec : 0;
     }
-
-    // Update high-water mark for peak RPS
-    this._endpointPeakRps[url] = Math.max(
-      this._endpointPeakRps[url] || 0,
-      currentRequestsPerSecond,
-    );
 
     // Calculate cumulative average RPS from the start of steady state
     const globalRampUpSec = this._config?.options?.rampUpDurationSec ?? 0;
@@ -353,7 +340,7 @@ export class MetricsAggregator implements IMetricsAggregator {
       p50LatencyMs: endpointStats.p50Latency,
       p95LatencyMs: endpointStats.p95Latency,
       p99LatencyMs: endpointStats.p99Latency,
-      peakRequestsPerSecond: this._endpointPeakRps[url],
+      peakRequestsPerSecond: currentRequestsPerSecond,
       responseSamples:
         this._responseSampleStore.getCollectedResponseSamples(this._runId).get(url) || [],
       statusCodeDistribution: statusCounts,

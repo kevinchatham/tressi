@@ -39,7 +39,7 @@ Use charts to identify patterns, degradation, and outliers that aggregate metric
 Throughput measures request volume processed by the target system.
 
 - **Target Achieved**: The percentage of the configured target that was successfully executed. Values below 100% indicate the runner or target system could not maintain the requested load.
-- **Peak RPS**: The highest throughput achieved within a measurement window.
+- **Peak RPS**: The highest instantaneous RPS observed during steady-state operation.
 - **Average RPS**: The mean number of requests per second completed throughout the test duration.
 - **Max Throughput**: The theoretical upper limit of the target system based on median latency. Use this to evaluate scaling efficiency under concurrent load.
 - **Total Requests**: The absolute count of completed requests.
