@@ -16,7 +16,7 @@
       "@tressi/shared/ui": ["../shared/src/ui/index.ts"]
     },
     "resolveJsonModule": true,
-    "rootDir": ".",
+    "rootDir": "../..",
     "skipLibCheck": true,
     "sourceMap": true,
     "strict": true,
