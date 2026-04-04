@@ -11,7 +11,7 @@ import {
 } from '@angular/core';
 import type { ConfigDocument, TestEventData } from '@tressi/shared/common';
 import { Subject, takeUntil } from 'rxjs';
-import { ButtonComponent } from 'src/app/components/button/button.component';
+import { ButtonComponent } from '../../components/button/button.component';
 
 import { HeaderComponent } from '../../components/header/header.component';
 import { StartButtonComponent } from '../../components/start-button/start-button.component';

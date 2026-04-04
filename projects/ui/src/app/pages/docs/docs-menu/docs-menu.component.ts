@@ -5,7 +5,7 @@ import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import type { DocSearchResult, MarkdownSlugs } from '@tressi/shared/common';
 import { AppRoutes } from '@tressi/shared/ui';
 import { filter } from 'rxjs';
-import { IconComponent } from 'src/app/components/icon/icon.component';
+import { IconComponent } from '../../../components/icon/icon.component';
 
 import { SearchBarComponent } from '../../../components/search-bar/search-bar.component';
 import { AppRouterService } from '../../../services/router.service';

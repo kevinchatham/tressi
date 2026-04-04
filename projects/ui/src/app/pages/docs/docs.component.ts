@@ -20,11 +20,10 @@ import {
   provideMarkdown,
   SANITIZE,
 } from 'ngx-markdown';
-import { ThemeSwitcherComponent } from 'src/app/components/theme-switcher/theme-switcher.component';
-
 import { ButtonComponent } from '../../components/button/button.component';
 import { HeaderComponent } from '../../components/header/header.component';
 import { IconComponent } from '../../components/icon/icon.component';
+import { ThemeSwitcherComponent } from '../../components/theme-switcher/theme-switcher.component';
 import { AppRouterService } from '../../services/router.service';
 import { ThemeService } from '../../services/theme.service';
 import { DocsMenuComponent } from './docs-menu/docs-menu.component';

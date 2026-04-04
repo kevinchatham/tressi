@@ -5,7 +5,7 @@ import {
   POLLING_OPTIONS,
   type TestDetailResolvedData,
 } from '@tressi/shared/ui';
-import { ButtonComponent } from 'src/app/components/button/button.component';
+import { ButtonComponent } from '../../components/button/button.component';
 
 import { DeleteConfirmationModalComponent } from '../../components/delete-confirmation-modal/delete-confirmation-modal.component';
 import { HeaderComponent } from '../../components/header/header.component';

@@ -12,15 +12,14 @@ import {
 import { Router } from '@angular/router';
 import type { ConfigDocument, SaveConfigRequest } from '@tressi/shared/common';
 import { AppRoutes } from '@tressi/shared/ui';
-import { ButtonComponent } from 'src/app/components/button/button.component';
-import { ThemeSwitcherComponent } from 'src/app/components/theme-switcher/theme-switcher.component';
-
+import { ButtonComponent } from '../../components/button/button.component';
 import { ConfigCardComponent } from '../../components/config-card/config-card.component';
 import { ConfigFormComponent } from '../../components/config-form/config-form.component';
 import { DeleteConfirmationModalComponent } from '../../components/delete-confirmation-modal/delete-confirmation-modal.component';
 import { HeaderComponent } from '../../components/header/header.component';
 import { ImportConfigButtonComponent } from '../../components/import-config-button/import-config-button.component';
 import { SearchBarComponent } from '../../components/search-bar/search-bar.component';
+import { ThemeSwitcherComponent } from '../../components/theme-switcher/theme-switcher.component';
 import { ConfigService } from '../../services/config.service';
 import { AppRouterService } from '../../services/router.service';
 import { TimeService } from '../../services/time.service';
