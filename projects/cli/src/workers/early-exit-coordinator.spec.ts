@@ -769,4 +769,136 @@ describe('EarlyExitCoordinator', () => {
       expect(testCoordinator).toBeInstanceOf(EarlyExitCoordinator);
     });
   });
+
+  describe('getEarlyExitTriggered', () => {
+    it('should return false initially', () => {
+      coordinator = new EarlyExitCoordinator(
+        mockConfig,
+        mockStatsCounterManagers,
+        mockEndpointStateManager,
+      );
+
+      expect(coordinator.getEarlyExitTriggered()).toBe(false);
+    });
+
+    it('should return true after early exit is triggered', async () => {
+      const enabledConfig: TressiConfig = {
+        $schema: 'http://example.com/schema.json',
+        options: {
+          durationSec: 60,
+          headers: {},
+          rampUpDurationSec: 0,
+          threads: 1,
+          workerEarlyExit: {
+            enabled: true,
+            errorRateThreshold: 10,
+            exitStatusCodes: [500, 502, 503],
+            monitoringWindowSeconds: 1,
+          },
+          workerMemoryLimit: 512,
+        },
+        requests: [
+          {
+            earlyExit: {
+              enabled: true,
+              errorRateThreshold: 50,
+              exitStatusCodes: [500, 502, 503],
+              monitoringWindowSeconds: 1,
+            },
+            headers: {},
+            method: 'GET',
+            payload: {},
+            rampUpDurationSec: 0,
+            rps: 10,
+            url: 'http://example.com/api/1',
+          },
+        ],
+      } as TressiConfig;
+
+      vi.mocked(mockStatsCounterManagers[0].getEndpointCounters).mockReturnValue({
+        bodySampleIndices: [],
+        bytesReceived: 1000,
+        bytesSent: 500,
+        failureCount: 10,
+        sampledStatusCodes: [],
+        statusCodeCounts: {},
+        successCount: 1,
+      });
+
+      coordinator = new EarlyExitCoordinator(
+        enabledConfig,
+        mockStatsCounterManagers,
+        mockEndpointStateManager,
+      );
+
+      expect(coordinator.getEarlyExitTriggered()).toBe(false);
+
+      vi.useFakeTimers();
+      coordinator.startMonitoring();
+      vi.advanceTimersByTime(1500);
+      coordinator.stopMonitoring();
+      vi.useRealTimers();
+
+      expect(coordinator.getEarlyExitTriggered()).toBe(true);
+    });
+
+    it('should remain true once early exit is triggered', async () => {
+      const enabledConfig: TressiConfig = {
+        $schema: 'http://example.com/schema.json',
+        options: {
+          durationSec: 60,
+          headers: {},
+          rampUpDurationSec: 0,
+          threads: 1,
+          workerEarlyExit: {
+            enabled: true,
+            errorRateThreshold: 10,
+            exitStatusCodes: [500, 502, 503],
+            monitoringWindowSeconds: 1,
+          },
+          workerMemoryLimit: 512,
+        },
+        requests: [
+          {
+            earlyExit: {
+              enabled: true,
+              errorRateThreshold: 50,
+              exitStatusCodes: [500, 502, 503],
+              monitoringWindowSeconds: 1,
+            },
+            headers: {},
+            method: 'GET',
+            payload: {},
+            rampUpDurationSec: 0,
+            rps: 10,
+            url: 'http://example.com/api/1',
+          },
+        ],
+      } as TressiConfig;
+
+      vi.mocked(mockStatsCounterManagers[0].getEndpointCounters).mockReturnValue({
+        bodySampleIndices: [],
+        bytesReceived: 1000,
+        bytesSent: 500,
+        failureCount: 10,
+        sampledStatusCodes: [],
+        statusCodeCounts: {},
+        successCount: 1,
+      });
+
+      coordinator = new EarlyExitCoordinator(
+        enabledConfig,
+        mockStatsCounterManagers,
+        mockEndpointStateManager,
+      );
+
+      vi.useFakeTimers();
+      coordinator.startMonitoring();
+      vi.advanceTimersByTime(1500);
+      coordinator.stopMonitoring();
+      vi.useRealTimers();
+
+      expect(coordinator.getEarlyExitTriggered()).toBe(true);
+    });
+  });
 });

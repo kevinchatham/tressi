@@ -77,6 +77,14 @@ export class Runner extends EventEmitter<IRunnerEvents> {
   }
 
   /**
+   * Checks if early exit was triggered during the test.
+   * @returns True if early exit occurred, false otherwise
+   */
+  public getEarlyExitTriggered(): boolean {
+    return this._workerPool.getEarlyExitTriggered();
+  }
+
+  /**
    * Gets the start time of the test.
    * @returns The start time as a Unix timestamp
    */

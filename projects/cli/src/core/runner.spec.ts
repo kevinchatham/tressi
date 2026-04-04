@@ -125,4 +125,11 @@ describe('Runner', () => {
     runner.setTestId(testId);
     expect(workerPoolMock.setTestId).toHaveBeenCalledWith(testId);
   });
+
+  it('should get early exit triggered', () => {
+    const workerPoolMock = vi.mocked(WorkerPoolManager.prototype);
+    workerPoolMock.getEarlyExitTriggered.mockReturnValue(true);
+    expect(runner.getEarlyExitTriggered()).toBe(true);
+    expect(workerPoolMock.getEarlyExitTriggered).toHaveBeenCalled();
+  });
 });

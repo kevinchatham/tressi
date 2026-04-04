@@ -111,6 +111,7 @@ export interface IWorkerStateManager {
 }
 
 export interface IEarlyExitCoordinator {
+  getEarlyExitTriggered(): boolean;
   startMonitoring(): void;
   stopMonitoring(): void;
 }

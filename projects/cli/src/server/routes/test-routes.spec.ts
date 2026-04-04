@@ -1,10 +1,11 @@
-import type { TestDocument } from '@tressi/shared/common';
+import { ServerEvents, type TestDocument } from '@tressi/shared/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { configStorage } from '../../collections/config-collection';
 import { metricStorage } from '../../collections/metrics-collection';
 import { testStorage } from '../../collections/test-collection';
 import { runLoadTestForServer, stopLoadTest } from '../../core/test-executor';
+import { globalEventEmitter } from '../../events/global-event-emitter';
 import app from './test-routes';
 
 vi.mock('../../collections/test-collection', () => ({
@@ -195,6 +196,35 @@ describe('test-routes', () => {
       expect(res.status).toBe(202);
       const json = await res.json();
       expect(json.testId).toBe('test-1');
+    });
+
+    it('should set status to failed when early exit is triggered', async () => {
+      vi.mocked(testStorage.getAll).mockResolvedValue([] as unknown as TestDocument[]);
+      vi.mocked(configStorage.getById).mockResolvedValue({ id: 'config-1' } as unknown as never);
+      vi.mocked(testStorage.create).mockResolvedValue({ id: 'test-1' } as unknown as never);
+      vi.mocked(testStorage.edit).mockResolvedValue(undefined as never);
+      vi.mocked(runLoadTestForServer).mockResolvedValue({
+        earlyExitTriggered: true,
+        isCanceled: false,
+        summary: {},
+      } as unknown as never);
+
+      const res = await app.request('/', {
+        body: JSON.stringify({ configId: 'config-1' }),
+        headers: { 'Content-Type': 'application/json' },
+        method: 'POST',
+      });
+      expect(res.status).toBe(202);
+
+      await vi.waitFor(() => {
+        expect(testStorage.edit).toHaveBeenCalledWith(
+          expect.objectContaining({ status: 'failed' }),
+        );
+        expect(globalEventEmitter.emit).toHaveBeenCalledWith(
+          ServerEvents.TEST.FAILED,
+          expect.any(Object),
+        );
+      });
     });
   });
 });

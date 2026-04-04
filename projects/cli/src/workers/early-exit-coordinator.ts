@@ -29,6 +29,7 @@ import type { TressiConfig } from '@tressi/shared/common';
 export class EarlyExitCoordinator implements IEarlyExitCoordinator {
   private _thresholds: EarlyExitThresholds;
   private _monitoringInterval?: NodeJS.Timeout;
+  private _earlyExitTriggered: boolean = false;
   constructor(
     private _config: TressiConfig,
     private _statsCounterManagers: IStatsCounterManager[],
@@ -225,6 +226,7 @@ export class EarlyExitCoordinator implements IEarlyExitCoordinator {
    * which workers check before executing requests.
    */
   private _triggerEndpointEarlyExit(endpoints: string[]): void {
+    this._earlyExitTriggered = true;
     process.stdout.write(`🚨 Endpoint early exit triggered for: ${endpoints.join(', ')}\n`);
 
     // Stop individual endpoints instead of global stop
@@ -244,6 +246,10 @@ export class EarlyExitCoordinator implements IEarlyExitCoordinator {
    * threshold evaluation. This should be called during graceful shutdown
    * to prevent continued monitoring after test completion.
    */
+  getEarlyExitTriggered(): boolean {
+    return this._earlyExitTriggered;
+  }
+
   stopMonitoring(): void {
     if (this._monitoringInterval) {
       clearInterval(this._monitoringInterval);

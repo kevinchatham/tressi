@@ -70,6 +70,7 @@ async function executeLoadTest(
   // Generate summary
   const summary = runner.getTestSummary();
   const isCanceled = runner.isCanceled();
+  const earlyExitTriggered = runner.getEarlyExitTriggered();
 
   // Handle export and printing only for CLI
   if (options.exportPath) {
@@ -87,7 +88,7 @@ async function executeLoadTest(
     throw new Error('Test failed: One or more error thresholds were exceeded.');
   }
 
-  return { isCanceled, summary };
+  return { earlyExitTriggered, isCanceled, summary };
 }
 
 /**

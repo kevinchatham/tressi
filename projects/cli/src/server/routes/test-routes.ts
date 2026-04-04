@@ -84,9 +84,9 @@ const app = new Hono()
         (async (): Promise<void> => {
           try {
             // runLoadTestForServer now returns the summary (looks up config from testId)
-            const { summary, isCanceled } = await runLoadTestForServer(id);
+            const { summary, isCanceled, earlyExitTriggered } = await runLoadTestForServer(id);
 
-            const status = isCanceled ? 'cancelled' : 'completed';
+            const status = isCanceled ? 'cancelled' : earlyExitTriggered ? 'failed' : 'completed';
 
             // Update test to completed status WITH embedded summary
             // The summary now contains epochStartedAt and epochEndedAt
@@ -105,7 +105,11 @@ const app = new Hono()
               timestamp: Date.now(),
             };
             globalEventEmitter.emit(
-              isCanceled ? ServerEvents.TEST.CANCELLED : ServerEvents.TEST.COMPLETED,
+              isCanceled
+                ? ServerEvents.TEST.CANCELLED
+                : earlyExitTriggered
+                  ? ServerEvents.TEST.FAILED
+                  : ServerEvents.TEST.COMPLETED,
               completedEvent,
             );
           } catch (error) {

@@ -44,6 +44,7 @@ export type LoadTestResult = {
   summary: TestSummary;
   outputPath?: string;
   isCanceled: boolean;
+  earlyExitTriggered?: boolean;
 };
 
 /**

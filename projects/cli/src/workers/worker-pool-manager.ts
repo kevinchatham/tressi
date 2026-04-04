@@ -332,6 +332,14 @@ export class WorkerPoolManager {
   }
 
   /**
+   * Gets whether early exit was triggered during the test.
+   * @returns True if early exit occurred, false otherwise
+   */
+  public getEarlyExitTriggered(): boolean {
+    return this._earlyExitCoordinator.getEarlyExitTriggered();
+  }
+
+  /**
    * Waits for test completion by monitoring worker states and endpoint status.
    *
    * @returns Promise that resolves when test is complete

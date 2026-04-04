@@ -62,7 +62,7 @@ describe('FormatRpsDirective', () => {
     }
   });
 
-  it('should display decimal values with 2 decimal places when less than 1', async () => {
+  it('should display decimal values with 1 decimal places when less than 1', async () => {
     const testCases = [
       { expected: '0.1/s', input: 0.1 },
       { expected: '0.2/s', input: 0.25 },
