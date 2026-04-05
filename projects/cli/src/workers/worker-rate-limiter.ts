@@ -23,10 +23,10 @@ import type { TressiRequestConfig } from '@tressi/shared/common';
 export class WorkerRateLimiter {
   private _tokens: number[];
   private _lastRefill: number[];
-  private _rampUpDurationsSec: number[];
+  private readonly _rampUpDurationsSec: number[];
 
   constructor(
-    private _endpoints: TressiRequestConfig[],
+    private readonly _endpoints: TressiRequestConfig[],
     globalRampUpDurationSec: number = 0,
   ) {
     this._tokens = new Array(_endpoints.length).fill(0);

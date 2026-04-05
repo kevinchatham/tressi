@@ -251,7 +251,7 @@ export class LineChartComponent {
         onDblClick: undefined,
         shape: 'circle',
         showNullDataPoints: true,
-        size: (Array.isArray(data) ? data.length : Object.values(data)[0]?.length || 0) > 1 ? 0 : 4,
+        size: this._getDataLength(data) > 1 ? 0 : 4,
         strokeColors: [themeColors.primary],
         strokeDashArray: 0,
         strokeOpacity: 0.9,
@@ -303,7 +303,7 @@ export class LineChartComponent {
             return date.toLocaleTimeString();
           },
           hideOverlappingLabels: true,
-          show: (Array.isArray(data) ? data.length : Object.values(data)[0]?.length || 0) > 1,
+          show: this._getDataLength(data) > 1,
           style: {
             colors: themeColors.text,
             fontFamily: 'Roboto Mono, monospace',
@@ -531,5 +531,12 @@ export class LineChartComponent {
 
       // Skip originalReset - we've handled it manually
     };
+  }
+
+  private _getDataLength(data: number[] | { [seriesName: string]: number[] }): number {
+    if (Array.isArray(data)) {
+      return data.length;
+    }
+    return Object.values(data)[0]?.length || 0;
   }
 }

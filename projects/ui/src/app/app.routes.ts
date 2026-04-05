@@ -55,7 +55,7 @@ const configGuard = async (
     if (hasConfigs) {
       // When configs exist, redirect away from welcome to dashboard
       if (pathToCheck === AppRoutes.WELCOME || pathToCheck === AppRoutes.HOME) {
-        await appRouter.toDashboard();
+        appRouter.toDashboard();
         return false;
       } else {
         return true;
@@ -69,7 +69,7 @@ const configGuard = async (
       ) {
         return true;
       } else {
-        await appRouter.toWelcome();
+        appRouter.toWelcome();
         return false;
       }
     }

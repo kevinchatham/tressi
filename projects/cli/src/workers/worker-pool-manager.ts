@@ -43,18 +43,18 @@ import type { WorkerStateManager } from './shared-memory/worker-state-manager';
  * Each worker is assigned a subset of endpoints using round-robin distribution.
  */
 export class WorkerPoolManager {
-  private _workers: Worker[] = [];
-  private _metricsAggregator: MetricsAggregator;
-  private _earlyExitCoordinator: EarlyExitCoordinator;
-  private _maxWorkers: number;
-  private _workerStateManager: WorkerStateManager;
-  private _endpointStateManager: EndpointStateManager;
-  private _endpoints: TressiRequestConfig[];
+  private readonly _workers: Worker[] = [];
+  private readonly _metricsAggregator: MetricsAggregator;
+  private readonly _earlyExitCoordinator: EarlyExitCoordinator;
+  private readonly _maxWorkers: number;
+  private readonly _workerStateManager: WorkerStateManager;
+  private readonly _endpointStateManager: EndpointStateManager;
+  private readonly _endpoints: TressiRequestConfig[];
   private _workerAssignments: TressiRequestConfig[][] = [];
-  private _hdrHistogramManagers: HdrHistogramManager[] = [];
-  private _statsCounterManagers: StatsCounterManager[] = [];
+  private readonly _hdrHistogramManagers: HdrHistogramManager[] = [];
+  private readonly _statsCounterManagers: StatsCounterManager[] = [];
   private readonly _runId = `ephemeral-${randomUUID()}`;
-  constructor(private _config: TressiConfig) {
+  constructor(private readonly _config: TressiConfig) {
     const cpuCount = os.cpus().length;
     const requestedThreads = _config.options.threads ?? cpuCount;
     const maxWorkers = requestedThreads > cpuCount ? cpuCount : requestedThreads;

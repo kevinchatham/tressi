@@ -157,7 +157,9 @@ export class TestTableComponent {
   onToggleStatus(status: TestStatus, event: Event): void {
     this.tests()
       .filter((t) => t.status === status)
-      .forEach((t) => void this.toggleSelection.emit({ event, testId: t.id }));
+      .forEach((t) => {
+        this.toggleSelection.emit({ event, testId: t.id });
+      });
   }
 
   onHeaderDragDrop(event: CdkDragDrop<ColumnConfig[]>): void {

@@ -145,13 +145,12 @@ export class FileUtils {
 
     // Find the project root (projects/cli) by looking for src or dist in the path
     // This handles cases where this file is in a subdirectory like src/utils
-    let projectRoot = currentDir;
+    let projectRoot: string;
     if (currentDir.includes('/src')) {
       projectRoot = currentDir.split('/src')[0];
     } else if (currentDir.includes('/dist')) {
       projectRoot = currentDir.split('/dist')[0];
     } else {
-      // Fallback to one level up if we can't find src or dist
       projectRoot = path.resolve(currentDir, '..');
     }
 

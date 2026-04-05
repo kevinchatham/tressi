@@ -27,13 +27,13 @@ import type { TressiConfig } from '@tressi/shared/common';
  * Supports both per-endpoint and global (all endpoints combined) threshold configurations.
  */
 export class EarlyExitCoordinator implements IEarlyExitCoordinator {
-  private _thresholds: EarlyExitThresholds;
+  private readonly _thresholds: EarlyExitThresholds;
   private _monitoringInterval?: NodeJS.Timeout;
   private _earlyExitTriggered: boolean = false;
   constructor(
-    private _config: TressiConfig,
-    private _statsCounterManagers: IStatsCounterManager[],
-    private _endpointStateManager: IEndpointStateManager,
+    private readonly _config: TressiConfig,
+    private readonly _statsCounterManagers: IStatsCounterManager[],
+    private readonly _endpointStateManager: IEndpointStateManager,
   ) {
     this._thresholds = this._parseThresholds();
   }

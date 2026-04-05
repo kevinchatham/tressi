@@ -32,20 +32,20 @@ import { WorkerRateLimiter } from './worker-rate-limiter';
  * token bucket algorithm that allows burst traffic while maintaining target RPS.
  */
 export class WorkerThread {
-  private _rateLimiter: WorkerRateLimiter;
-  private _statsCounterManager: StatsCounterManager;
-  private _hdrHistogramManager: HdrHistogramManager;
-  private _workerStateManager: WorkerStateManager;
-  private _endpointStateManager: EndpointStateManager;
-  private _requestExecutor: RequestExecutor;
+  private readonly _rateLimiter: WorkerRateLimiter;
+  private readonly _statsCounterManager: StatsCounterManager;
+  private readonly _hdrHistogramManager: HdrHistogramManager;
+  private readonly _workerStateManager: WorkerStateManager;
+  private readonly _endpointStateManager: EndpointStateManager;
+  private readonly _requestExecutor: RequestExecutor;
   private _isRunning = false;
-  private _workerId: number;
-  private _assignedEndpoints: TressiRequestConfig[];
-  private _endpointOffset: number;
-  private _globalHeaders?: Record<string, string>;
-  private _startTime: number;
-  private _durationMs: number;
-  private _totalWorkers: number;
+  private readonly _workerId: number;
+  private readonly _assignedEndpoints: TressiRequestConfig[];
+  private readonly _endpointOffset: number;
+  private readonly _globalHeaders?: Record<string, string>;
+  private readonly _startTime: number;
+  private readonly _durationMs: number;
+  private readonly _totalWorkers: number;
 
   constructor() {
     const data = workerData as WorkerData;
