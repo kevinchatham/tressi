@@ -115,7 +115,7 @@ export class HdrHistogramManager implements IHdrHistogramManager {
     const counts = new Int32Array(this._sab, baseIndex * 4, this._valuesPerHistogram);
 
     let totalCount = 0;
-    for (let i = 0; i < counts.length; i++) totalCount += counts[i];
+    for (const count of counts) totalCount += count;
 
     if (totalCount === 0) {
       return {

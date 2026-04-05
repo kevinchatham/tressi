@@ -111,8 +111,7 @@ function checkThresholds(summary: TestSummary): boolean {
     const requestConfig = configSnapshot.requests.find((r) => r.url === endpoint.url);
     if (!requestConfig) continue;
 
-    const earlyExit =
-      requestConfig.earlyExit !== undefined ? requestConfig.earlyExit : globalExitConfig;
+    const earlyExit = requestConfig.earlyExit ?? globalExitConfig;
 
     if (!earlyExit?.enabled) continue;
 

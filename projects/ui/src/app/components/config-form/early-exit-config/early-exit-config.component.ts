@@ -32,17 +32,17 @@ export class EarlyExitConfigComponent {
     const idx = this.requestIndex();
     if (idx !== undefined) {
       this._service.addRequestExitStatusCode(idx);
-    } else {
-      this._service.addGlobalExitStatusCode();
+      return;
     }
+    this._service.addGlobalExitStatusCode();
   }
 
   removeExitStatusCode(codeIndex: number): void {
     const idx = this.requestIndex();
-    if (idx !== undefined) {
-      this._service.removeRequestExitStatusCode(idx, codeIndex);
-    } else {
+    if (idx === undefined) {
       this._service.removeGlobalExitStatusCode(codeIndex);
+      return;
     }
+    this._service.removeRequestExitStatusCode(idx, codeIndex);
   }
 }

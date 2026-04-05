@@ -113,7 +113,7 @@ export class LatencyDistributionComponent {
     return percentiles.map(({ key, label }) => ({
       label,
       percentile: key,
-      value: (histogram.percentiles[key] || 0) as number,
+      value: histogram.percentiles[key] || 0,
     }));
   }
 

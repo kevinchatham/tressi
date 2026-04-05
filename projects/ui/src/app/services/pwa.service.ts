@@ -31,14 +31,14 @@ export class PwaService {
   });
 
   constructor() {
-    window.addEventListener('beforeinstallprompt', (e) => {
+    globalThis.addEventListener('beforeinstallprompt', (e) => {
       // Prevent the mini info bar from appearing on mobile
       e.preventDefault();
       // Stash the event so it can be triggered later.
       this._deferredPrompt.set(e as BeforeInstallPromptEvent);
     });
 
-    window.addEventListener('appinstalled', () => {
+    globalThis.addEventListener('appinstalled', () => {
       // Clear the deferredPrompt so it can be garbage collected
       this._deferredPrompt.set(null);
     });

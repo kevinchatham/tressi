@@ -182,7 +182,7 @@ export class DocsComponent {
 
         // Default size to 350, override if pattern like "-512.png" is found
         let size = 350;
-        const sizeMatch = src.match(/-(\d+)\.[^.]+$/);
+        const sizeMatch = /-(\d+)\.[^.]+$/.exec(src);
 
         if (sizeMatch) {
           const parsed = Number.parseInt(sizeMatch[1], 10);

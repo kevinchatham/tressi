@@ -12,8 +12,8 @@ import { fromEvent } from 'rxjs';
 export class OutsideClickDirective {
   readonly outsideClick = output<void>();
 
-  private _elementRef = inject(ElementRef);
-  private _destroyRef = inject(DestroyRef);
+  private readonly _elementRef = inject(ElementRef);
+  private readonly _destroyRef = inject(DestroyRef);
 
   constructor() {
     fromEvent(document, 'click')

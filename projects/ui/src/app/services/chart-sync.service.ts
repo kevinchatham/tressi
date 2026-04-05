@@ -34,7 +34,7 @@ export class ChartSyncService {
     }));
   }
 
-  private _batchMs = 16; // 60 frames per second
+  private readonly _batchMs = 16; // 60 frames per second
   private _lastUpdate = 0;
 
   broadcastState(updates: Partial<Omit<ChartSyncState, 'lastInteractedChartId'>>): void {

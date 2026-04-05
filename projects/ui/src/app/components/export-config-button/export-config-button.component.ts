@@ -33,7 +33,7 @@ export class ExportConfigButtonComponent {
       // Trigger the download
       document.body.appendChild(link);
       link.click();
-      document.body.removeChild(link);
+      link.remove();
 
       // Clean up the URL
       URL.revokeObjectURL(url);

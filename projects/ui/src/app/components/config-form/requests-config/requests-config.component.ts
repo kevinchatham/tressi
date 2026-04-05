@@ -120,8 +120,8 @@ export class RequestsConfigComponent implements AfterViewInit, OnChanges {
 
   private _focusLastUrlInput(): void {
     const inputs = this._urlInputs();
-    if (inputs && inputs.length > 0) {
-      const lastInput = inputs[inputs.length - 1];
+    const lastInput = inputs?.at(-1);
+    if (lastInput) {
       lastInput.nativeElement.focus();
     }
   }

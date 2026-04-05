@@ -149,7 +149,7 @@ export class HealthService implements OnDestroy {
     this._resetHeartbeatTimeout();
 
     // Only redirect if we are currently on the server unavailable page
-    if (window.location.href.includes(AppRoutes.SERVER_UNAVAILABLE)) {
+    if (globalThis.location.href.includes(AppRoutes.SERVER_UNAVAILABLE)) {
       this._log.info('Server recovered, resuming last session');
       this._appRouter.toLastRoute();
     }

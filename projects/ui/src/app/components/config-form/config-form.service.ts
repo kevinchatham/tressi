@@ -135,7 +135,7 @@ export class ConfigFormService {
         updatedRequests[requestIndex] = {
           ...updatedRequests[requestIndex],
           earlyExit: {
-            ...updatedRequests[requestIndex].earlyExit!,
+            ...updatedRequests[requestIndex].earlyExit,
             exitStatusCodes: [...currentCodes, 500],
           },
         };
@@ -154,11 +154,11 @@ export class ConfigFormService {
     this.model.update((model) => {
       const updatedRequests = [...(model.config.requests ?? [])];
       if (updatedRequests[requestIndex]?.earlyExit?.exitStatusCodes) {
-        const currentCodes = updatedRequests[requestIndex].earlyExit!.exitStatusCodes!;
+        const currentCodes = updatedRequests[requestIndex].earlyExit.exitStatusCodes;
         updatedRequests[requestIndex] = {
           ...updatedRequests[requestIndex],
           earlyExit: {
-            ...updatedRequests[requestIndex].earlyExit!,
+            ...updatedRequests[requestIndex].earlyExit,
             exitStatusCodes: currentCodes.filter((_, i) => i !== codeIndex),
           },
         };

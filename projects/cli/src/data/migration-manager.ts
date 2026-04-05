@@ -39,7 +39,8 @@ export class MigrationManager {
     if (!schemaUrl) {
       throw new Error('Missing required property: "$schema"');
     }
-    const match = schemaUrl.match(/v?(\d+\.\d+\.\d+)(?:\.json)?$/);
+    const regex = /v?(\d+\.\d+\.\d+)(?:\.json)?$/;
+    const match = regex.exec(schemaUrl);
     if (!match) {
       throw new Error(
         'Invalid "$schema" format. Expected a Tressi schema URL containing a version (e.g., "...v0.0.13.json")',

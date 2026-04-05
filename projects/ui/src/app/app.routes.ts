@@ -47,7 +47,7 @@ const configGuard = async (
     // Get the target path from the route or state
     const targetPath = route?.routeConfig?.path || '';
     const fullUrl = state?.url || '';
-    const urlPath = fullUrl.replace(/^(\/+|\/+)$/g, '');
+    const urlPath = fullUrl.replaceAll(/(^\/+)|(\/+$)/g, '');
 
     // Determine which path to use for logic
     const pathToCheck = targetPath || urlPath;
@@ -61,17 +61,15 @@ const configGuard = async (
         return true;
       }
     } else {
-      // No configs exist, only allow welcome or settings
       if (
         pathToCheck === AppRoutes.WELCOME ||
         pathToCheck === 'settings' ||
         pathToCheck === AppRoutes.HOME
       ) {
         return true;
-      } else {
-        appRouter.toWelcome();
-        return false;
       }
+      appRouter.toWelcome();
+      return false;
     }
   } catch {
     // On error, allow navigation to handle the issue

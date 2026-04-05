@@ -432,11 +432,14 @@ export class LineChartComponent {
     if (!chart) return;
 
     // Get data length for change detection
-    const dataLength = Array.isArray(data)
-      ? data.length
-      : typeof data === 'object' && data !== null
-        ? Math.max(...Object.values(data).map((arr) => arr?.length || 0))
-        : 0;
+    let dataLength: number;
+    if (Array.isArray(data)) {
+      dataLength = data.length;
+    } else if (typeof data === 'object' && data !== null) {
+      dataLength = Math.max(...Object.values(data).map((arr) => arr?.length || 0));
+    } else {
+      dataLength = 0;
+    }
 
     // Early exit if data hasn't changed
     if (dataLength === this._lastDataLength && dataLength > 0) {

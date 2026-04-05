@@ -35,12 +35,7 @@ export class ConfigFormComponent {
 
   constructor() {
     effect(() => {
-      const input = this.input();
-      if (input !== null) {
-        this._service.loadConfig(input);
-      } else {
-        this._service.loadConfig(null);
-      }
+      this._service.loadConfig(this.input());
     });
   }
 

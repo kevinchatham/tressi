@@ -37,7 +37,7 @@ export class AppRouterService {
   /** Returns the current URL */
   getCurrentUrl = computed(() => {
     this._navigationTrigger();
-    return window.location.href;
+    return globalThis.location.href;
   });
 
   // has template references!
@@ -95,7 +95,7 @@ export class AppRouterService {
   toLastRoute(): void {
     const lastRoute = this._localStorage.preferences().lastRoute;
     if (lastRoute) {
-      window.location.href = lastRoute;
+      globalThis.location.href = lastRoute;
       return;
     }
     this.toHome();

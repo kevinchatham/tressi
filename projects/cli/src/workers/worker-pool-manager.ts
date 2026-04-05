@@ -57,7 +57,7 @@ export class WorkerPoolManager {
   constructor(private readonly _config: TressiConfig) {
     const cpuCount = os.cpus().length;
     const requestedThreads = _config.options.threads ?? cpuCount;
-    const maxWorkers = requestedThreads > cpuCount ? cpuCount : requestedThreads;
+    const maxWorkers = Math.min(requestedThreads, cpuCount);
 
     this._maxWorkers = maxWorkers;
     this._endpoints = _config.requests;

@@ -83,7 +83,7 @@ export class AgentManager {
       return `${parsedUrl.protocol}//${parsedUrl.host}`;
     } catch {
       // If URL parsing fails, try to extract origin manually
-      const match = url.match(/^https?:\/\/[^/]+/);
+      const match = /^https?:\/\/[^/]+/.exec(url);
       return match ? match[0] : url;
     }
   }
