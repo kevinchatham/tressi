@@ -169,11 +169,11 @@ export class WorkerPoolManager {
     });
 
     worker.on('exit', (code) => {
-      if (code !== 0) {
+      if (code === 0) {
+        this._workerStateManager.setWorkerState(workerId, WorkerState.FINISHED);
+      } else {
         process.stderr.write(`Worker ${workerId} exited with code ${code}\n`);
         this._workerStateManager.setWorkerState(workerId, WorkerState.ERROR);
-      } else {
-        this._workerStateManager.setWorkerState(workerId, WorkerState.FINISHED);
       }
     });
 

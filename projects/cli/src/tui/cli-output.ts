@@ -82,9 +82,6 @@ function printGlobalSummary(summary: TestSummary): void {
     ['Total Requests', globalSummary.totalRequests],
     [chalk.green('Successful'), globalSummary.successfulRequests],
     [chalk.red('Failed'), globalSummary.failedRequests],
-  );
-
-  summaryTable.push(
     ['Min Latency', `${globalSummary.minLatencyMs}ms`],
     ['p50 Latency', `${globalSummary.p50LatencyMs}ms`],
     ['p95 Latency', `${globalSummary.p95LatencyMs}ms`],

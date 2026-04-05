@@ -8,7 +8,7 @@ export class ToastService {
   private readonly _type = signal<ToastType>('info');
   private readonly _isVisible = signal<boolean>(false);
   private readonly _duration = signal<number>(5000);
-  private _timeoutId: number | null = null;
+  private _timeoutId: NodeJS.Timeout | number | null = null;
 
   readonly toastMessage = this._message.asReadonly();
   readonly toastType = this._type.asReadonly();
@@ -26,7 +26,7 @@ export class ToastService {
     this._isVisible.set(true);
 
     // Auto-dismiss after duration
-    this._timeoutId = window.setTimeout(() => {
+    this._timeoutId = globalThis.setTimeout(() => {
       this.dismiss();
     }, this._duration());
   }

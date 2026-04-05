@@ -468,11 +468,14 @@ export class MigrationManager {
    * @returns Formatted string representation
    */
   private _formatValue(val: unknown): string {
-    if (val === undefined) return 'undefined';
-    if (val === null) return 'null';
-    if (typeof val === 'string') return `"${val}"`;
-    if (typeof val === 'object') return JSON.stringify(val);
-    return String(val);
+    if (val === null || val === undefined) {
+      return '';
+    }
+    try {
+      return JSON.stringify(val, null, 2);
+    } catch {
+      return '';
+    }
   }
 
   /**
@@ -514,14 +517,14 @@ export class MigrationManager {
       const oldVal = oldValues[key];
       const newVal = newValues[key];
 
-      if (oldVal !== undefined && newVal !== undefined) {
+      if (oldVal != null && newVal != null) {
         terminal.print(
           `    ${chalk.red('-')} ${key}: ${chalk.red(this._formatValue(oldVal))} → ${chalk.green(this._formatValue(newVal))}`,
         );
-      } else if (oldVal !== undefined) {
-        terminal.print(`    ${chalk.red('-')} ${key}: ${chalk.red(this._formatValue(oldVal))}`);
-      } else {
+      } else if (newVal != null) {
         terminal.print(`    ${chalk.green('+')} ${key}: ${chalk.green(this._formatValue(newVal))}`);
+      } else if (oldVal != null) {
+        terminal.print(`    ${chalk.red('-')} ${key}: ${chalk.red(this._formatValue(oldVal))}`);
       }
     }
   }

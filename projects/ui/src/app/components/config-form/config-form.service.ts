@@ -44,10 +44,10 @@ export class ConfigFormService {
   readonly activeTab = signal<'general' | 'requests'>('general');
 
   loadConfig(config: SaveConfigRequest | null): void {
-    if (config !== null) {
-      this.model.set(config);
-    } else {
+    if (config === null) {
       this.model.set(this._createEmptyConfig());
+    } else {
+      this.model.set(config);
     }
   }
 
@@ -131,7 +131,7 @@ export class ConfigFormService {
     this.model.update((model) => {
       const updatedRequests = [...(model.config.requests ?? [])];
       if (updatedRequests[requestIndex]?.earlyExit) {
-        const currentCodes = updatedRequests[requestIndex].earlyExit!.exitStatusCodes ?? [];
+        const currentCodes = updatedRequests[requestIndex].earlyExit?.exitStatusCodes ?? [];
         updatedRequests[requestIndex] = {
           ...updatedRequests[requestIndex],
           earlyExit: {

@@ -204,7 +204,6 @@ export class EarlyExitCoordinator implements IEarlyExitCoordinator {
       threshold.exitStatusCodes.forEach((statusCode) => {
         if (statusCodeCounts[statusCode] > 0) {
           endpoints.push(request.url);
-          return;
         }
       });
     });

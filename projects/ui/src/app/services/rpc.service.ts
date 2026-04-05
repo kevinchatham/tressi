@@ -23,7 +23,7 @@ export class RPCService {
       if (data.isRunning && 'jobId' in data) {
         return {
           isRunning: true,
-          jobId: data.jobId as string,
+          jobId: data.jobId,
         };
       }
 
