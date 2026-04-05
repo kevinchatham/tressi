@@ -267,7 +267,7 @@ app.post('/echo', async (c) => {
 
 // Redirect endpoints
 app.get('/redirect/:code', (c) => {
-  const code = parseInt(c.req.param('code'), 10);
+  const code = Number.parseInt(c.req.param('code'), 10);
   const url = c.req.query('url');
 
   if (!url) {

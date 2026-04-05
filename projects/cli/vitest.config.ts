@@ -13,7 +13,7 @@ export default defineConfig({
         'schemas/',
       ],
       provider: 'v8',
-      reporter: ['text', 'json', 'html'],
+      reporter: ['text', 'json', 'html', 'lcov'],
       thresholds: {
         global: {
           branches: 80,

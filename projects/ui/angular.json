@@ -85,6 +85,8 @@
           "options": {
             "browsers": ["chromium"],
             "buildTarget": "ui:build:development",
+            "coverage": true,
+            "coverageReporters": ["html", "lcov"],
             "headless": true,
             "tsConfig": "tsconfig.spec.json"
           }
