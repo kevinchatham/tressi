@@ -58,7 +58,7 @@ export class ResponseSamplesComponent {
     if (!statusCodeDistribution) return ['all'];
 
     const codes = Object.keys(statusCodeDistribution)
-      .map((code) => parseInt(code, 10))
+      .map((code) => Number.parseInt(code, 10))
       .sort((a, b) => a - b)
       .map((code) => code.toString());
 
@@ -165,7 +165,7 @@ export class ResponseSamplesComponent {
     if (code === 'all') {
       return 'list_alt';
     }
-    const category = this._getCategory(parseInt(code, 10));
+    const category = this._getCategory(Number.parseInt(code, 10));
     switch (category) {
       case 'success':
         return 'check';
@@ -185,7 +185,7 @@ export class ResponseSamplesComponent {
     if (code === 'all') {
       return 'bg-base-300 text-base-content';
     }
-    const category = this._getCategory(parseInt(code, 10));
+    const category = this._getCategory(Number.parseInt(code, 10));
     switch (category) {
       case 'success':
         return 'bg-success/20 text-success';

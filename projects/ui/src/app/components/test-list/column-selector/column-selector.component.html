@@ -6,6 +6,7 @@
 >
   <app-button
     (click)="onToggleSelector()"
+    (onKeyDown)="onToggleSelector()"
     [ghost]="true"
     [title]="'Customize Columns'"
     [tabindex]="0"
@@ -20,6 +21,7 @@
       <h3 class="text-base-content font-semibold">Customize Columns</h3>
       <app-button
         (click)="onResetColumns()"
+        (onKeyDown)="onResetColumns()"
         [title]="'Reset'"
         [icon]="'reset_focus'"
         [ghost]="true"

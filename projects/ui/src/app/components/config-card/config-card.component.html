@@ -82,6 +82,7 @@
   <div class="border-neutral mt-4 flex justify-end gap-2 border-t pt-4">
     <app-button
       (click)="duplicate.emit(input())"
+      (onKeyDown)="duplicate.emit(input())"
       [ghost]="true"
       [icon]="'copy_all'"
       [title]="'Copy'"
@@ -89,6 +90,7 @@
     <app-export-config-button [config]="input()" />
     <app-button
       (click)="delete.emit(input())"
+      (onKeyDown)="delete.emit(input())"
       [color]="'error'"
       [ghost]="true"
       [title]="'Delete'"
@@ -96,6 +98,7 @@
     />
     <app-button
       (click)="edit.emit(input())"
+      (onKeyDown)="edit.emit(input())"
       [color]="'success'"
       [ghost]="true"
       [icon]="'edit_square'"
@@ -103,6 +106,7 @@
     />
     <app-button
       (click)="navigate.emit(input())"
+      (onKeyDown)="navigate.emit(input())"
       [color]="'primary'"
       [ghost]="true"
       [title]="'Use'"

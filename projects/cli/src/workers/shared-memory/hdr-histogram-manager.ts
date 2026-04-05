@@ -187,7 +187,9 @@ export class HdrHistogramManager implements IHdrHistogramManager {
     const rawBuckets = this._collectRawBuckets(counts);
     if (rawBuckets.length === 0) return [];
 
-    const sortedBuckets = rawBuckets.sort((a, b) => a.lowerBound - b.lowerBound);
+    const sortedBuckets = rawBuckets.toSorted(
+      (a: LatencyHistogramBucket, b: LatencyHistogramBucket) => a.lowerBound - b.lowerBound,
+    );
     const uniqueBuckets = this._mergeOverlappingBuckets(sortedBuckets);
     const mergedBuckets = this._mergeSameFormattedBuckets(uniqueBuckets);
     return this._mergeToMaxBuckets(mergedBuckets, 10);
@@ -212,7 +214,7 @@ export class HdrHistogramManager implements IHdrHistogramManager {
     const uniqueBuckets: Array<LatencyHistogramBucket> = [];
     for (const rb of buckets) {
       if (uniqueBuckets.length > 0) {
-        const last = uniqueBuckets[uniqueBuckets.length - 1];
+        const last = uniqueBuckets.at(-1)!;
         if (rb.lowerBound < last.upperBound) {
           last.count += rb.count;
           last.upperBound = Math.max(last.upperBound, rb.upperBound);
@@ -236,7 +238,7 @@ export class HdrHistogramManager implements IHdrHistogramManager {
     const mergedBuckets: Array<LatencyHistogramBucket> = [];
     for (const ub of buckets) {
       if (mergedBuckets.length > 0) {
-        const last = mergedBuckets[mergedBuckets.length - 1];
+        const last = mergedBuckets.at(-1)!;
         if (
           this._formatBucketLabel(last.lowerBound) === this._formatBucketLabel(ub.lowerBound) ||
           this._formatBucketLabel(last.upperBound) === this._formatBucketLabel(ub.upperBound)
@@ -268,7 +270,7 @@ export class HdrHistogramManager implements IHdrHistogramManager {
       result.push({
         count: groupCount,
         lowerBound: group[0].lowerBound,
-        upperBound: group[group.length - 1].upperBound,
+        upperBound: group.at(-1)!.upperBound,
       });
     }
     return result;

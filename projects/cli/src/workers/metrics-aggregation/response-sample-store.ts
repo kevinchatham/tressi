@@ -3,7 +3,7 @@ import type { ResponseSample } from '@tressi/shared/cli';
 export class ResponseSampleStore {
   // Store for body samples collected during test
   // Map<url, ResponseSample[]>
-  private _samples = new Map<string, Map<string, ResponseSample[]>>();
+  private readonly _samples = new Map<string, Map<string, ResponseSample[]>>();
 
   public getCollectedResponseSamples(runId: string): Map<string, ResponseSample[]> {
     return this._samples.get(runId) || new Map();

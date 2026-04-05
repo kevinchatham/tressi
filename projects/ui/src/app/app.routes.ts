@@ -47,7 +47,7 @@ const configGuard = async (
     // Get the target path from the route or state
     const targetPath = route?.routeConfig?.path || '';
     const fullUrl = state?.url || '';
-    const urlPath = fullUrl.replace(/^\/+|\/+$/g, '');
+    const urlPath = fullUrl.replace(/^(\/+|\/+)$/g, '');
 
     // Determine which path to use for logic
     const pathToCheck = targetPath || urlPath;

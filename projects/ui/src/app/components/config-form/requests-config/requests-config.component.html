@@ -9,6 +9,7 @@
         </h3>
         <app-button
           (click)="addRequest()"
+          (onKeyDown)="addRequest()"
           [color]="'primary'"
           [icon]="'add'"
           [title]="'Add Request'"
@@ -25,6 +26,7 @@
           <ng-template>
             <app-button
               (click)="removeRequest($index)"
+              (onKeyDown)="removeRequest($index)"
               [color]="'error'"
               [disabled]="model().config.requests.length === 1"
               [icon]="'delete'"

@@ -37,10 +37,10 @@ WORKDIR /app
 RUN mkdir -p /home/node/.tressi && chown -R node:node /home/node/.tressi /app
 
 # Copy built artifacts and pruned node_modules from builder
-COPY --chown=node:node --from=builder /app/dist ./dist
-COPY --chown=node:node --from=builder /app/LICENSE ./LICENSE
-COPY --chown=node:node --from=builder /app/node_modules ./node_modules
-COPY --chown=node:node --from=builder /app/package.json ./package.json
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/LICENSE ./LICENSE
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./package.json
 
 # Switch to the non-root user
 USER node

@@ -44,8 +44,8 @@ export class ExportConfigButtonComponent {
     return name
       .toLowerCase()
       .trim()
-      .replace(/[^\w\s-]/g, '') // remove special characters
-      .replace(/[\s_-]+/g, '-') // replace spaces and underscores with hyphens
-      .replace(/^-+|-+$/g, ''); // remove leading/trailing hyphens
+      .replaceAll(/[^\w\s-]/g, '') // remove special characters
+      .replaceAll(/[\s_-]+/g, '-') // replace spaces and underscores with hyphens
+      .replaceAll(/^(-+|-+)$/g, ''); // remove leading/trailing hyphens
   }
 }

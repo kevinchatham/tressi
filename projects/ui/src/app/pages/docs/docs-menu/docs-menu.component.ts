@@ -114,7 +114,10 @@ export class DocsMenuComponent {
   }
 
   formatTitle(title: string): string {
-    return title.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
+    return title
+      .split('-')
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
   }
 
   onSearch(query: string): void {

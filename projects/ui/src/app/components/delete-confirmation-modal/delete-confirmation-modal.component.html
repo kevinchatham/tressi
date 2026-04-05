@@ -1,4 +1,9 @@
-<div class="modal" [class.modal-open]="isOpen()" (click)="handleBackdropClick($event)">
+<div
+  class="modal"
+  [class.modal-open]="isOpen()"
+  (click)="handleBackdropClick($event)"
+  (onKeyDown)="handleBackdropClick($event)"
+>
   <div class="modal-box max-w-md rounded-2xl p-2">
     <!-- Header -->
     <div class="p-4">
@@ -28,8 +33,20 @@
 
     <!-- Footer -->
     <div class="border-base-200 flex justify-end gap-3 border-t p-4">
-      <app-button (click)="onCancel()" [ghost]="true" [title]="'Cancel'" [icon]="'close'" />
-      <app-button (click)="onConfirm()" [title]="'Delete'" [color]="'error'" [icon]="'delete'" />
+      <app-button
+        (click)="onCancel()"
+        (keydown)="onCancel()"
+        [ghost]="true"
+        [title]="'Cancel'"
+        [icon]="'close'"
+      />
+      <app-button
+        (click)="onConfirm()"
+        (keydown)="onConfirm()"
+        [title]="'Delete'"
+        [color]="'error'"
+        [icon]="'delete'"
+      />
     </div>
   </div>
 </div>

@@ -185,7 +185,7 @@ export class DocsComponent {
         const sizeMatch = src.match(/-(\d+)\.[^.]+$/);
 
         if (sizeMatch) {
-          const parsed = parseInt(sizeMatch[1], 10);
+          const parsed = Number.parseInt(sizeMatch[1], 10);
           if (!Number.isNaN(parsed)) {
             size = parsed;
           }

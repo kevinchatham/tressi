@@ -62,16 +62,31 @@ function calculateGlobalAverages(
   return { cpu: cpuSum / snapshots.length, memory: memorySum / snapshots.length };
 }
 
-function calculateEndpointAverages(
-  endpoint: EndpointSummary,
-  endpointSnapshots: EndpointSummary[],
-  endpointSteadyStateSnapshots: EndpointSummary[],
-  snapshots: TestSummary[],
-  lastSnapshot: TestSummary,
-  testStartTime: number,
-  totalDurationSec: number,
-  effectiveEndpointRampUp: number,
-): { avgRps: number; peakRps: number } {
+interface CalculateEndpointAveragesOptions {
+  effectiveEndpointRampUp: number;
+  endpoint: EndpointSummary;
+  endpointSnapshots: EndpointSummary[];
+  endpointSteadyStateSnapshots: EndpointSummary[];
+  lastSnapshot: TestSummary;
+  snapshots: TestSummary[];
+  testStartTime: number;
+  totalDurationSec: number;
+}
+
+function calculateEndpointAverages(options: CalculateEndpointAveragesOptions): {
+  avgRps: number;
+  peakRps: number;
+} {
+  const {
+    endpoint,
+    endpointSnapshots,
+    endpointSteadyStateSnapshots,
+    snapshots,
+    lastSnapshot,
+    testStartTime,
+    totalDurationSec,
+    effectiveEndpointRampUp,
+  } = options;
   let avgRps: number;
   if (endpointSteadyStateSnapshots.length > 1) {
     const firstSteady = endpointSteadyStateSnapshots[0];
@@ -179,16 +194,16 @@ export function transformAggregatedMetricsToTestSummary(snapshots: TestSummary[]
       }
     });
 
-    const { avgRps, peakRps } = calculateEndpointAverages(
+    const { avgRps, peakRps } = calculateEndpointAverages({
+      effectiveEndpointRampUp,
       endpoint,
       endpointSnapshots,
       endpointSteadyStateSnapshots,
-      snapshots,
       lastSnapshot,
+      snapshots,
       testStartTime,
       totalDurationSec,
-      effectiveEndpointRampUp,
-    );
+    });
 
     endpoint.averageRequestsPerSecond = avgRps;
     endpoint.peakRequestsPerSecond = peakRps;

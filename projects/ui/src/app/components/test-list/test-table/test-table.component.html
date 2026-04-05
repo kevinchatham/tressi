@@ -38,6 +38,7 @@
                 [class.cursor-pointer]="column.sortable"
                 [class.pl-6]="column.draggable"
                 (click)="onColumnHeaderClick(column)"
+                (onKeyDown)="onColumnHeaderClick(column)"
               >
                 <span>{{ column.label }}</span>
                 @if (column.sortable && isColumnSorted(column.key)) {
@@ -72,11 +73,16 @@
           data-e2e="test-row"
           class="hover:bg-base-300 bg-base-200 cursor-pointer"
           (click)="onViewTest(test.id)"
+          (onKeyDown)="onViewTest(test.id)"
           [class.bg-base-300]="selectedTests().has(test.id)"
         >
           @for (column of columns(); track column.key) {
             @if (column.key === 'select') {
-              <td (click)="$event.stopPropagation()" class="text-center">
+              <td
+                (click)="$event.stopPropagation()"
+                (keydown)="$event.stopPropagation()"
+                class="text-center"
+              >
                 <input
                   type="checkbox"
                   class="checkbox checkbox-sm mx-auto"
@@ -89,6 +95,7 @@
               <td class="text-center">
                 <app-status-badge
                   (click)="onToggleStatus(test.status, $event)"
+                  (onKeyDown)="onToggleStatus(test.status, $event)"
                   [status]="test.status"
                 />
               </td>

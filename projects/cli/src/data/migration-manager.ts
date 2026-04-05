@@ -10,7 +10,7 @@ import { type ConfigDocument, type TressiConfig, TressiConfigSchema } from '@tre
 import chalk from 'chalk';
 import Table from 'cli-table3';
 import type { Kysely } from 'kysely';
-import ora from 'ora';
+import ora, { type Ora } from 'ora';
 import semver from 'semver';
 
 import pkg from '../../../../package.json';
@@ -102,23 +102,7 @@ export class MigrationManager {
 
     const spinner = ora().start();
 
-    for (const v of pending.db) {
-      const migration = MIGRATIONS[v];
-      spinner.text = `Applying database migration ${chalk.cyan(v)}: ${migration.db.summary}`;
-
-      try {
-        await this._db.transaction().execute(async (trx) => {
-          await migration.db.up(trx);
-          await this._updateVersion(v, trx);
-        });
-        spinner.succeed(`Applied database migration ${chalk.cyan(v)}`);
-        spinner.start();
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Unknown error';
-        spinner.fail(chalk.red(`Failed to apply database migration ${v}: ${message}`));
-        throw error;
-      }
-    }
+    await this._applyDatabaseMigrations(pending.db, spinner);
 
     const configFailures: string[] = [];
     for (const v of pending.config) {
@@ -127,52 +111,13 @@ export class MigrationManager {
     }
 
     const configs = await configStorage.getAll();
-    const outdated: { doc: ConfigDocument; version: string }[] = [];
+    const outdated = this._findOutdatedConfigs(configs, configFailures);
 
-    for (const doc of configs) {
-      try {
-        const configVersion = MigrationManager.getVersion(doc.config.$schema);
-        if (semver.lt(configVersion, pkg.version)) {
-          outdated.push({ doc, version: configVersion });
-        }
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Unknown error';
-        terminal.error(`Configuration "${doc.name}" in database is invalid: ${message}`);
-        configFailures.push(`${doc.name}: ${message}`);
-      }
-    }
-
-    for (const { doc } of outdated) {
-      spinner.text = `Migrating configuration "${chalk.cyan(doc.name)}"...`;
-      try {
-        const { migratedData } = this._migrateConfig(doc.config);
-        await configStorage.edit({
-          config: migratedData,
-          id: doc.id,
-          name: doc.name,
-        });
-        spinner.succeed(`Migrated: ${chalk.cyan(doc.name)}`);
-        spinner.start();
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Unknown error';
-        spinner.fail(chalk.red(`Failed to migrate "${doc.name}": ${message}`));
-        configFailures.push(`${doc.name}: ${message}`);
-        spinner.start();
-      }
-    }
+    this._applyConfigMigrations(outdated, spinner, configFailures);
 
     spinner.stop();
 
-    if (configFailures.length > 0) {
-      const failureList = configFailures.map((f) => `- ${f}`).join('\n');
-      terminal.error(
-        chalk.red(
-          `Configuration migration completed with ${configFailures.length} failure(s):\n${failureList}`,
-        ),
-      );
-    } else {
-      terminal.print(chalk.green('Migration complete.'));
-    }
+    this._reportMigrationResults(configFailures);
   }
 
   /**
@@ -607,6 +552,86 @@ export class MigrationManager {
       return answer.toLowerCase() === 'y';
     } finally {
       rl.close();
+    }
+  }
+
+  private async _applyDatabaseMigrations(pendingDb: string[], spinner: Ora): Promise<void> {
+    for (const v of pendingDb) {
+      const migration = MIGRATIONS[v];
+      spinner.text = `Applying database migration ${chalk.cyan(v)}: ${migration.db.summary}`;
+
+      try {
+        await this._db.transaction().execute(async (trx) => {
+          await migration.db.up(trx);
+          await this._updateVersion(v, trx);
+        });
+        spinner.succeed(`Applied database migration ${chalk.cyan(v)}`);
+        spinner.start();
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        spinner.fail(chalk.red(`Failed to apply database migration ${v}: ${message}`));
+        throw error;
+      }
+    }
+  }
+
+  private _findOutdatedConfigs(
+    configs: ConfigDocument[],
+    failures: string[],
+  ): { doc: ConfigDocument; version: string }[] {
+    const outdated: { doc: ConfigDocument; version: string }[] = [];
+
+    for (const doc of configs) {
+      try {
+        const configVersion = MigrationManager.getVersion(doc.config.$schema);
+        if (semver.lt(configVersion, pkg.version)) {
+          outdated.push({ doc, version: configVersion });
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        terminal.error(`Configuration "${doc.name}" in database is invalid: ${message}`);
+        failures.push(`${doc.name}: ${message}`);
+      }
+    }
+
+    return outdated;
+  }
+
+  private _applyConfigMigrations(
+    outdated: { doc: ConfigDocument; version: string }[],
+    spinner: Ora,
+    failures: string[],
+  ): void {
+    for (const { doc } of outdated) {
+      spinner.text = `Migrating configuration "${chalk.cyan(doc.name)}"...`;
+      try {
+        const { migratedData } = this._migrateConfig(doc.config);
+        configStorage.edit({
+          config: migratedData,
+          id: doc.id,
+          name: doc.name,
+        });
+        spinner.succeed(`Migrated: ${chalk.cyan(doc.name)}`);
+        spinner.start();
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        spinner.fail(chalk.red(`Failed to migrate "${doc.name}": ${message}`));
+        failures.push(`${doc.name}: ${message}`);
+        spinner.start();
+      }
+    }
+  }
+
+  private _reportMigrationResults(failures: string[]): void {
+    if (failures.length > 0) {
+      const failureList = failures.map((f) => `- ${f}`).join('\n');
+      terminal.error(
+        chalk.red(
+          `Configuration migration completed with ${failures.length} failure(s):\n${failureList}`,
+        ),
+      );
+    } else {
+      terminal.print(chalk.green('Migration complete.'));
     }
   }
 }

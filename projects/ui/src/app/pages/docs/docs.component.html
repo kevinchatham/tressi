@@ -2,6 +2,7 @@
   <app-header>
     <app-button
       (click)="appRouter.back()"
+      (onKeyDown)="appRouter.back()"
       [icon]="'arrow_back'"
       [title]="'Back'"
       [ghost]="true"
@@ -12,6 +13,7 @@
 
     <app-button
       (click)="appRouter.toHome()"
+      (onKeyDown)="appRouter.toHome()"
       [color]="'info'"
       [title]="'Dashboard'"
       [icon]="'browse_activity'"

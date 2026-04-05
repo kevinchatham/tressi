@@ -42,8 +42,8 @@ export class RequestExecutor {
         ? JSON.stringify(req.payload)
         : undefined;
       const bytesSent = requestBody ? Buffer.byteLength(requestBody, 'utf8') : 0;
-      const dispatcher =
-        process.env.NODE_ENV !== 'test' ? globalAgentManager.getAgent(req.url) : undefined;
+      const isTest = process.env.NODE_ENV === 'test';
+      const dispatcher = isTest ? undefined : globalAgentManager.getAgent(req.url);
 
       const {
         statusCode,

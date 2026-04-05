@@ -4,7 +4,7 @@
     "declarationMap": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-    "lib": ["ES2022", "ES2020.SharedMemory", "WebWorker"],
+    "lib": ["ES2023", "ES2020.SharedMemory", "WebWorker"],
     "module": "ESNext",
     "moduleResolution": "bundler",
     "noUnusedLocals": true,
@@ -20,7 +20,7 @@
     "skipLibCheck": true,
     "sourceMap": true,
     "strict": true,
-    "target": "ES2022",
+    "target": "ES2023",
     "types": ["node"]
   },
   "exclude": ["node_modules"],

@@ -65,9 +65,12 @@
       <!-- Exit Status Codes -->
       <div>
         <div class="mb-2 flex items-center justify-between">
-          <label class="label-text font-medium">Exit Status Codes</label>
+          <label class="label-text font-medium" for="exit-status-code-input"
+            >Exit Status Codes</label
+          >
           <app-button
             (click)="addExitStatusCode()"
+            (onKeyDown)="addExitStatusCode()"
             [color]="'primary'"
             [icon]="'add'"
             [title]="'Add Code'"
@@ -78,6 +81,7 @@
             <fieldset class="fieldset">
               <div class="flex items-center gap-2">
                 <input
+                  id="exit-status-code-input"
                   type="number"
                   class="input outline-none!"
                   [formField]="form().exitStatusCodes[$index]"
@@ -86,6 +90,7 @@
                 />
                 <app-button
                   (click)="removeExitStatusCode($index)"
+                  (onKeyDown)="removeExitStatusCode($index)"
                   [color]="'error'"
                   [icon]="'delete'"
                   [title]="'Remove Code'"

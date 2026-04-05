@@ -9,6 +9,7 @@
       <div class="mr-2 ml-auto flex items-center">
         <app-button
           (click)="deleteTest(null, $event)"
+          (onKeyDown)="deleteTest(null, $event)"
           [disabled]="hasRunningTestsSelected()"
           [color]="'error'"
           [title]="`Delete ${selectedTestsCount()}`"
@@ -49,7 +50,12 @@
       <app-icon name="warning" class="text-warning mb-4" />
       <h2 class="text-base-content mb-2 text-xl font-semibold">Failed to Load Tests</h2>
       <p class="text-base-content/70 mb-4">{{ errorMessage() }}</p>
-      <app-button (click)="refreshTests()" [title]="'Try Again'" [icon]="'search'" />
+      <app-button
+        (click)="refreshTests()"
+        (keydown)="refreshTests()"
+        [title]="'Try Again'"
+        [icon]="'search'"
+      />
     </div>
   </div>
 }

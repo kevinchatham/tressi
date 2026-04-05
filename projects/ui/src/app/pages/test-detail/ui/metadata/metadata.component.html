@@ -8,6 +8,7 @@
     <ng-template>
       <app-button
         (click)="copyConfig()"
+        (onKeyDown)="copyConfig()"
         [title]="'Copy Config'"
         [icon]="'copy_all'"
         [secondaryIcon]="'check'"

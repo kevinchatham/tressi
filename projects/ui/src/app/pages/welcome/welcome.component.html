@@ -13,12 +13,14 @@
       <div class="flex justify-center gap-4">
         <app-button
           (click)="appRouter.toConfigs()"
+          (onKeyDown)="appRouter.toConfigs()"
           [color]="'primary'"
           [icon]="'rocket'"
           [title]="'Get Started'"
         />
         <app-button
           (click)="appRouter.toDocs('getting-started', 'intro')"
+          (onKeyDown)="appRouter.toDocs('getting-started', 'intro')"
           [color]="'secondary'"
           [icon]="'help_outline'"
           [title]="'Docs'"

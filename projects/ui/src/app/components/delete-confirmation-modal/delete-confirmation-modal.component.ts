@@ -28,7 +28,7 @@ export class DeleteConfirmationModalComponent {
     this.closed.emit();
   }
 
-  handleBackdropClick(event: MouseEvent): void {
+  handleBackdropClick(event: Event): void {
     if (event.target === event.currentTarget) {
       this.closed.emit();
     }

@@ -104,7 +104,7 @@ export class FileUtils {
 
       .replaceAll(/_+/g, '_')
 
-      .replace(/[^a-zA-Z0-9._\-/\\]/g, '_');
+      .replaceAll(/[^a-zA-Z0-9._\-/\\]/g, '_');
 
     // Handle empty result
     if (!safeName) {

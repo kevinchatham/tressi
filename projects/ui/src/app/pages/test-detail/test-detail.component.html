@@ -2,6 +2,7 @@
   <app-header>
     <app-button
       (click)="deleteTest()"
+      (onKeyDown)="deleteTest()"
       [color]="'error'"
       [icon]="'delete'"
       [disabled]="service.test()?.status === 'running'"
@@ -9,7 +10,7 @@
     />
     <div class="dropdown dropdown-center">
       <app-button [title]="'Export'" [color]="'primary'" [tabindex]="0" [icon]="'save_as'" />
-      <ul
+      <menu
         tabindex="0"
         class="dropdown-content bg-base-100 rounded-box ring-base-content/10 z-50 mt-4 w-34 p-2 shadow-lg ring-1"
       >
@@ -40,10 +41,11 @@
             Markdown
           </button>
         </li>
-      </ul>
+      </menu>
     </div>
     <app-button
       (click)="appRouter.toHome()"
+      (onKeyDown)="appRouter.toHome()"
       [color]="'info'"
       [title]="'Dashboard'"
       [icon]="'browse_activity'"
@@ -90,7 +92,7 @@
                 </span>
                 <app-icon name="keyboard_arrow_down" class="text-base-content/30" />
               </div>
-              <ul
+              <menu
                 tabindex="0"
                 class="dropdown-content menu bg-base-100 rounded-box ring-base-content/10 z-50 mt-2 max-w-2xl p-2 shadow-xl ring-1"
               >
@@ -117,7 +119,7 @@
                     </a>
                   </li>
                 }
-              </ul>
+              </menu>
             </div>
           </div>
         </div>

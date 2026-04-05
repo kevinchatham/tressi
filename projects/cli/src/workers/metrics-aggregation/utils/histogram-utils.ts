@@ -147,8 +147,8 @@ function adjustBucketCounts(
 ): void {
   const totalBucketCount = buckets.reduce((sum, b) => sum + b.count, 0);
   if (totalBucketCount < totalCount) {
-    buckets[buckets.length - 1].count += totalCount - totalBucketCount;
-  } else if (buckets[buckets.length - 1].count === 0 && totalCount > 0) {
+    buckets.at(-1)!.count += totalCount - totalBucketCount;
+  } else if (buckets.at(-1)!.count === 0 && totalCount > 0) {
     let largestBucketIndex = 0;
     for (let i = 1; i < buckets.length; i++) {
       if (buckets[i].count > buckets[largestBucketIndex].count) {
@@ -157,7 +157,7 @@ function adjustBucketCounts(
     }
     if (buckets[largestBucketIndex].count > 0) {
       buckets[largestBucketIndex].count--;
-      buckets[buckets.length - 1].count++;
+      buckets.at(-1)!.count++;
     }
   }
 }

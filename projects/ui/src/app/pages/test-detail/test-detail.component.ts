@@ -91,7 +91,7 @@ export class TestDetailComponent {
   }
 
   sanitizeForChartId(url: string): string {
-    return url.replace(/[^a-zA-Z0-9]/g, '_');
+    return url.replaceAll(/[^a-zA-Z0-9]/g, '_');
   }
 
   /**
