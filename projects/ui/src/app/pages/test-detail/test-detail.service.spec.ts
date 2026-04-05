@@ -49,6 +49,7 @@ describe('TestDetailService', () => {
     averageRequestsPerSecond: 100,
     avgProcessMemoryUsageMB: 100,
     avgSystemCpuUsagePercent: 50,
+    earlyExitTriggered: false,
     epochEndedAt: 2000,
     epochStartedAt: 1000,
     errorRate: 0.05,
@@ -91,6 +92,7 @@ describe('TestDetailService', () => {
       metric: {
         global: {
           averageRequestsPerSecond: 100,
+          earlyExitTriggered: false,
           errorRate: 0.05,
           failedRequests: 5,
           maxLatencyMs: 120,
@@ -206,6 +208,7 @@ describe('TestDetailService', () => {
           endpoints: [
             {
               averageRequestsPerSecond: 50,
+              earlyExitTriggered: false,
               epochEndedAt: 2000,
               epochStartedAt: 1000,
               errorRate: 0.04,
@@ -261,6 +264,7 @@ describe('TestDetailService', () => {
           endpoints: [
             {
               averageRequestsPerSecond: 50,
+              earlyExitTriggered: false,
               epochEndedAt: 2000,
               epochStartedAt: 1000,
               errorRate: 0.04,

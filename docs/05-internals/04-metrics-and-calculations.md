@@ -73,7 +73,7 @@ The **Target Achieved** metric quantifies the ratio of delivered throughput to r
 
 - **Steady-State Average**: Target Achieved is calculated using the **steady-state average RPS** instead of Peak RPS. This ensures the metric reflects sustained performance rather than momentary peaks.
 - **Endpoint calculation**: Calculated as `Steady-State Average RPS / Configured RPS` for each endpoint.
-- **Global aggregation**: The global target achievement is the arithmetic mean of all endpoint achievement percentages.
+- **Global aggregation**: The global target achievement is the **weighted average** of all endpoint achievement percentages, weighted by each endpoint's target RPS.
 - **Saturation & Failure Analysis**: Values below 100% indicate that the test has reached a performance ceiling, typically pointing to target system saturation, network bandwidth limits, or runner resource exhaustion (CPU/Memory).
 
 #### Estimating Theoretical Capacity
@@ -107,7 +107,7 @@ System level metrics provide context for performance results and identify local 
 
 - **CPU utilization**: Calculated based on system load average relative to available CPU cores.
 - **Memory footprint**: Tracks the heap usage of the Tressi process throughout the test execution.
-- **Sampling interval**: Resource metrics are sampled every 2 seconds to minimize monitoring overhead.
+- **Sampling interval**: Resource metrics are sampled every 1 second to minimize monitoring overhead.
 
 ### Next Steps
 

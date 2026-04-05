@@ -1,6 +1,7 @@
 import chalk from 'chalk';
 
-import { JsonMigrationManager } from '../data/json-migration-manager';
+import { db } from '../data/database';
+import { MigrationManager } from '../data/migration-manager';
 import { terminal } from '../tui/terminal';
 
 /**
@@ -13,7 +14,7 @@ export class MigrateCommand {
    */
   async execute(configPath: string): Promise<void> {
     try {
-      const migrationManager = new JsonMigrationManager();
+      const migrationManager = new MigrationManager(db);
       await migrationManager.migrateFile(configPath);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';

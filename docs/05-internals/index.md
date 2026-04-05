@@ -6,8 +6,7 @@ Explore the engineering principles and technical implementation details that pow
 - [Shared Memory Architecture](./02-shared-memory.md): Zero copy metrics collection using `SharedArrayBuffer`.
 - [Execution Engine](./03-execution-engine.md): Asynchronous pipelining and rate limiting algorithms.
 - [Metrics & Calculations](./04-metrics-and-calculations.md): HDR Histograms and high precision statistical analysis.
-- [Schema Migrations](./05-schema-migrations.md): Sequential versioning and configuration transformation.
-- [Database Migrations](./06-database-migrations.md): SQLite schema evolution and version tracking.
+- [Migration Architecture](./05-migrations.md): Sequential versioning for JSON config and SQLite schema evolution.
 
 ## Next Section
 

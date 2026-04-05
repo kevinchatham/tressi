@@ -16,6 +16,7 @@ describe('HeroStatsComponent', () => {
     averageRequestsPerSecond: 100,
     avgProcessMemoryUsageMB: 100,
     avgSystemCpuUsagePercent: 50,
+    earlyExitTriggered: false,
     epochEndedAt: 2000,
     epochStartedAt: 1000,
     errorRate: 0.05,

@@ -14,7 +14,7 @@ The `$schema` property enables type safety for IDE edits and UI exports. This pr
 
 ```json
 {
-  "$schema": "https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.19.json"
+  "$schema": "https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.20.json"
 }
 ```
 
@@ -40,7 +40,7 @@ Define specific target behavior within the `requests` array. This provides indep
       "rampUpDurationSec": 0,
       "earlyExit": {
         "enabled": false,
-        "errorRateThreshold": 0,
+        "errorRateThreshold": 5,
         "exitStatusCodes": [],
         "monitoringWindowSeconds": 1
       }
@@ -118,7 +118,7 @@ Endpoint specific configurations take precedence over global `options` for granu
 
 ```json
 {
-  "$schema": "https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.19.json",
+  "$schema": "https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.20.json",
   "requests": [
     {
       "url": "http://localhost:5000/health",
@@ -131,7 +131,7 @@ Endpoint specific configurations take precedence over global `options` for granu
       "rampUpDurationSec": 0,
       "earlyExit": {
         "enabled": false,
-        "errorRateThreshold": 0,
+        "errorRateThreshold": 5,
         "exitStatusCodes": [],
         "monitoringWindowSeconds": 1
       }
@@ -149,7 +149,7 @@ Endpoint specific configurations take precedence over global `options` for granu
       "rampUpDurationSec": 0,
       "earlyExit": {
         "enabled": false,
-        "errorRateThreshold": 0,
+        "errorRateThreshold": 5,
         "exitStatusCodes": [],
         "monitoringWindowSeconds": 1
       }
@@ -165,7 +165,7 @@ Endpoint specific configurations take precedence over global `options` for granu
     "workerMemoryLimit": 128,
     "workerEarlyExit": {
       "enabled": false,
-      "errorRateThreshold": 0,
+      "errorRateThreshold": 5,
       "exitStatusCodes": [],
       "monitoringWindowSeconds": 1
     }

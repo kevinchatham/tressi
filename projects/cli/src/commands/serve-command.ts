@@ -1,5 +1,5 @@
-import { initializeDatabase } from '../data/database';
-import { JsonMigrationManager } from '../data/json-migration-manager';
+import { db, initializeDatabase } from '../data/database';
+import { MigrationManager } from '../data/migration-manager';
 import { TressiServer } from '../server';
 
 /**
@@ -20,8 +20,8 @@ export class ServeCommand {
       await initializeDatabase();
 
       // Run migrations before server starts
-      const migrationManager = new JsonMigrationManager();
-      await migrationManager.run();
+      const migrationManager = new MigrationManager(db);
+      await migrationManager.migrate();
 
       this._server = new TressiServer(options.port);
 

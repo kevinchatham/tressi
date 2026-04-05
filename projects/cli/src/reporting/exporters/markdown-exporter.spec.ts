@@ -56,6 +56,7 @@ describe('MarkdownExporter', () => {
 
   const createEndpoint = (overrides: Partial<EndpointSummary> = {}): EndpointSummary => ({
     averageRequestsPerSecond: 10,
+    earlyExitTriggered: false,
     errorRate: 0,
     failedRequests: 0,
     histogram: createHistogram(),
@@ -100,6 +101,7 @@ describe('MarkdownExporter', () => {
         averageRequestsPerSecond: 1,
         avgProcessMemoryUsageMB: 1,
         avgSystemCpuUsagePercent: 1,
+        earlyExitTriggered: false,
         epochEndedAt: 1700000010000,
         epochStartedAt: 1700000000000,
         errorRate: 0,

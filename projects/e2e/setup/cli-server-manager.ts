@@ -32,6 +32,7 @@ export class CliServerManager {
       cwd: cliDir,
       env: {
         ...process.env,
+        TRESSI_AUTO_MIGRATE: 'true',
         TRESSI_DB_PATH: dbPath,
       },
       stdio: 'pipe',

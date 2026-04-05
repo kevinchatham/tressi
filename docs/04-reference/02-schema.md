@@ -16,7 +16,7 @@ To enable validation and IntelliSense in VS Code or other supported editors, ens
 
 ```json
 {
-  "$schema": "https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.19.json",
+  "$schema": "https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.20.json",
   "requests": [],
   "options": {}
 }

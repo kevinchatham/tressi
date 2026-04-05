@@ -12,6 +12,7 @@ describe('PerformanceSummaryComponent', () => {
     averageRequestsPerSecond: 100,
     avgProcessMemoryUsageMB: 100,
     avgSystemCpuUsagePercent: 50,
+    earlyExitTriggered: false,
     epochEndedAt: 2000,
     epochStartedAt: 1000,
     errorRate: 0.05,
@@ -35,6 +36,7 @@ describe('PerformanceSummaryComponent', () => {
 
   const mockEndpointSummary: EndpointSummary = {
     averageRequestsPerSecond: 50,
+    earlyExitTriggered: false,
     errorRate: 0.04,
     failedRequests: 20,
     histogram: {} as LatencyHistogram,

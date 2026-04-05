@@ -112,6 +112,8 @@ export type EndpointSummary = {
   errorRate: number;
   /** The aggregated histogram of the test */
   histogram: LatencyHistogram;
+  /** Whether early exit was triggered for this endpoint */
+  earlyExitTriggered: boolean;
 };
 
 /**
@@ -162,6 +164,8 @@ export type GlobalSummary = {
   targetAchieved: number;
   /** The aggregated histogram of the test */
   histogram: LatencyHistogram;
+  /** Whether early exit was triggered for the entire test */
+  earlyExitTriggered: boolean;
 };
 
 /**

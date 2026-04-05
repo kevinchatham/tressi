@@ -240,6 +240,7 @@ export class MetricsAggregator implements IMetricsAggregator {
       averageRequestsPerSecond,
       avgProcessMemoryUsageMB: memoryUsageMB,
       avgSystemCpuUsagePercent: cpuUsagePercent,
+      earlyExitTriggered: false,
       epochEndedAt: currentTime,
       epochStartedAt: this._startTime,
       errorRate:
@@ -331,6 +332,7 @@ export class MetricsAggregator implements IMetricsAggregator {
 
     return {
       averageRequestsPerSecond,
+      earlyExitTriggered: false,
       errorRate: endpointTotalRequests > 0 ? currentCounts.failure / endpointTotalRequests : 0,
       failedRequests: currentCounts.failure,
       histogram: convertWorkerHistogramToTestSummaryHistogram(histograms) || EMPTY_HISTOGRAM,

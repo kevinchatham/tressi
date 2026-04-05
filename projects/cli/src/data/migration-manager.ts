@@ -1,52 +1,44 @@
 import * as fs from 'node:fs/promises';
+import { copyFile } from 'node:fs/promises';
+import { homedir } from 'node:os';
 import * as path from 'node:path';
-import * as readline from 'node:readline/promises';
+import { dirname, join } from 'node:path';
+import * as readlineSync from 'node:readline/promises';
 
-import type { VersionedTressiConfig } from '@tressi/shared/cli';
+import type { Database as DatabaseSchema, VersionedTressiConfig } from '@tressi/shared/cli';
 import { type ConfigDocument, type TressiConfig, TressiConfigSchema } from '@tressi/shared/common';
 import chalk from 'chalk';
 import Table from 'cli-table3';
+import type { Kysely } from 'kysely';
 import ora from 'ora';
 import semver from 'semver';
 
 import pkg from '../../../../package.json';
 import { configStorage } from '../collections/config-collection';
 import { terminal } from '../tui/terminal';
-import { JSON_MIGRATIONS } from './migrations';
+import { MIGRATIONS } from './migrations';
 
 /**
- * Represents a single change at a specific JSON path.
+ * Manages database and configuration migrations for the Tressi application.
+ * Handles version tracking, migration execution, and config file updates.
  */
-interface ChangeRecord {
-  newValue: unknown;
-  oldValue: unknown;
-  path: string;
-}
+export class MigrationManager {
+  private _db: Kysely<DatabaseSchema>;
 
-/**
- * Groups changes by their parent path for Before/After display.
- */
-interface ChangesByParent {
-  [parentPath: string]: {
-    oldValues: Record<string, unknown>;
-    newValues: Record<string, unknown>;
-  };
-}
+  constructor(db: Kysely<DatabaseSchema>) {
+    this._db = db;
+  }
 
-/**
- * Manages the detection and execution of schema migrations for stored configurations and files.
- */
-export class JsonMigrationManager {
   /**
-   * Extracts the version string from a schema URL.
-   * @param schemaUrl The URL to extract the version from.
-   * @returns The version string (e.g., '0.0.13') or '0.0.0' if not found.
+   * Extracts the version number from a Tressi schema URL.
+   * @param schemaUrl - The schema URL to parse (e.g., "https://...tressi.schema.v1.2.3.json")
+   * @returns The extracted version string (e.g., "1.2.3")
+   * @throws Error if the schema URL is missing or malformed
    */
   static getVersion(schemaUrl: string | undefined | null): string {
     if (!schemaUrl) {
       throw new Error('Missing required property: "$schema"');
     }
-    // https://raw.githubusercontent.com/kevinchatham/tressi/refs/heads/main/schemas/tressi.schema.v0.0.10.json
     const match = schemaUrl.match(/v?(\d+\.\d+\.\d+)(?:\.json)?$/);
     if (!match) {
       throw new Error(
@@ -57,142 +49,135 @@ export class JsonMigrationManager {
   }
 
   /**
-   * Checks for outdated configurations in the database and prompts the user to migrate them.
+   * Runs all pending database and configuration migrations in a single coordinated operation.
+   * Creates the migrations table if it doesn't exist, displays pending migrations,
+   * prompts for confirmation, and executes all migrations with fail-fast behavior.
+   * @returns Promise that resolves when all migrations are complete, or rejects on failure
+   * @throws Process exit with code 1 if user declines migration or backup creation fails
    */
-  async run(): Promise<void> {
-    const configs = await configStorage.getAll();
-    const currentVersion = pkg.version;
-    const failures: string[] = [];
+  async migrate(): Promise<void> {
+    await this._db.schema
+      .createTable('migrations')
+      .ifNotExists()
+      .addColumn('version', 'text', (col) => col.primaryKey())
+      .addColumn('type', 'text', (col) => col.notNull().defaultTo('db'))
+      .addColumn('applied_at', 'integer', (col) => col.notNull())
+      .execute();
 
-    const outdated: ConfigDocument[] = [];
+    const pending = await this._getPendingMigrations();
+    if (pending.db.length === 0 && pending.config.length === 0) {
+      return;
+    }
+
+    terminal.print(`\n${chalk.bold.blue('📦 Tressi Migration Required')}`);
+    terminal.print(`${chalk.dim('Current Version:')} ${chalk.yellow(pending.currentVersion)}`);
+    terminal.print(`${chalk.dim('Target Version: ')} ${chalk.green(pkg.version)}\n`);
+
+    const table = new Table({
+      colWidths: [15, 15, 60],
+      head: [chalk.cyan('Version'), chalk.cyan('Type'), chalk.cyan('Summary')],
+      wordWrap: true,
+    });
+
+    for (const v of pending.db) {
+      table.push([v, 'db', MIGRATIONS[v].db.summary]);
+    }
+    for (const v of pending.config) {
+      table.push([v, 'config', MIGRATIONS[v].config.summary]);
+    }
+
+    terminal.print(chalk.bold('Pending migrations:'));
+    terminal.print(table.toString());
+
+    const confirmed = await this._promptUser(
+      `\nWould you like to apply these ${pending.db.length + pending.config.length} migration(s)? (y/N): `,
+    );
+
+    if (!confirmed) {
+      terminal.print(chalk.red('\nMigration declined. The application cannot continue.'));
+      process.exit(1);
+    }
+
+    await this._backupDatabase(pending.currentVersion);
+
+    const spinner = ora().start();
+
+    for (const v of pending.db) {
+      const migration = MIGRATIONS[v];
+      spinner.text = `Applying database migration ${chalk.cyan(v)}: ${migration.db.summary}`;
+
+      try {
+        await this._db.transaction().execute(async (trx) => {
+          await migration.db.up(trx);
+          await this._updateVersion(v, trx);
+        });
+        spinner.succeed(`Applied database migration ${chalk.cyan(v)}`);
+        spinner.start();
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        spinner.fail(chalk.red(`Failed to apply database migration ${v}: ${message}`));
+        throw error;
+      }
+    }
+
+    const configFailures: string[] = [];
+    for (const v of pending.config) {
+      spinner.text = `Checking config migrations ${chalk.cyan(v)}...`;
+      spinner.start();
+    }
+
+    const configs = await configStorage.getAll();
+    const outdated: { doc: ConfigDocument; version: string }[] = [];
 
     for (const doc of configs) {
       try {
-        const configVersion = JsonMigrationManager.getVersion(doc.config.$schema);
-        if (semver.lt(configVersion, currentVersion)) {
-          outdated.push(doc);
+        const configVersion = MigrationManager.getVersion(doc.config.$schema);
+        if (semver.lt(configVersion, pkg.version)) {
+          outdated.push({ doc, version: configVersion });
         }
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Unknown error';
         terminal.error(`Configuration "${doc.name}" in database is invalid: ${message}`);
-        failures.push(`${doc.name}: ${message}`);
+        configFailures.push(`${doc.name}: ${message}`);
       }
     }
 
-    if (outdated.length === 0) {
-      if (failures.length > 0) {
-        terminal.error(`Found ${failures.length} invalid configuration(s) in database.`);
-      }
-      return;
-    }
-
-    const previews: {
-      doc: ConfigDocument;
-      configVersion: string;
-      migratedData: TressiConfig;
-      summaries: { version: string; summary: string }[];
-    }[] = [];
-
-    for (const doc of outdated) {
+    for (const { doc } of outdated) {
+      spinner.text = `Migrating configuration "${chalk.cyan(doc.name)}"...`;
       try {
-        const configVersion = JsonMigrationManager.getVersion(doc.config.$schema);
-        const { migratedData, summaries } = await this._migrateConfig(doc.config);
-        previews.push({ configVersion, doc, migratedData, summaries });
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Unknown error';
-        terminal.error(`Could not calculate migration changes for "${doc.name}": ${message}`);
-        failures.push(`${doc.name}: ${message}`);
-      }
-    }
-
-    if (previews.length === 0) {
-      if (failures.length > 0) {
-        terminal.error(
-          `Configuration migration complete with ${failures.length} failure(s):\n${failures.map((f) => `- ${f}`).join('\n')}`,
-        );
-      } else {
-        terminal.error(`No configurations could be migrated.`);
-      }
-      return;
-    }
-
-    terminal.print(`\n${chalk.bold.blue('📄 Tressi Configuration Migration Required')}`);
-    terminal.print(`${chalk.dim('\nCurrent Version:')} ${chalk.yellow(previews[0].configVersion)}`);
-    terminal.print(`${chalk.dim('Target Version: ')} ${chalk.green(currentVersion)}\n`);
-
-    const table = new Table({
-      colWidths: [15, 60],
-      head: [chalk.cyan('Version'), chalk.cyan('Summary')],
-      wordWrap: true,
-    });
-
-    for (const { version, summary } of previews[0].summaries) {
-      table.push([version, summary]);
-    }
-    terminal.print(chalk.bold('Pending configuration migrations:'));
-    terminal.print(table.toString());
-
-    for (const preview of previews) {
-      terminal.print('');
-      terminal.print(
-        `${chalk.bold.yellow(`Changes for "${preview.doc.name}"`)} ${chalk.dim(`(v${preview.configVersion} → v${currentVersion})`)}:`,
-      );
-
-      this._displayDiff(preview.doc.config, preview.migratedData);
-    }
-
-    const confirmed = await this._promptUser(
-      `\nWould you like to migrate ${previews.length} database configuration(s) to version ${currentVersion}? (y/N): `,
-    );
-    if (!confirmed) {
-      terminal.print(
-        chalk.red(
-          '\nConfiguration migration declined. The application cannot continue with outdated configurations.',
-        ),
-      );
-      process.exit(1);
-    }
-
-    const spinner = ora('Starting Configuration migration...').start();
-
-    for (const preview of previews) {
-      spinner.text = `Migrating configuration "${chalk.cyan(preview.doc.name)}"...`;
-      try {
+        const { migratedData } = this._migrateConfig(doc.config);
         await configStorage.edit({
-          config: preview.migratedData,
-          id: preview.doc.id,
-          name: preview.doc.name,
+          config: migratedData,
+          id: doc.id,
+          name: doc.name,
         });
-
-        spinner.succeed(`Successfully migrated: ${chalk.cyan(preview.doc.name)}`);
+        spinner.succeed(`Migrated: ${chalk.cyan(doc.name)}`);
         spinner.start();
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Unknown error';
-        spinner.fail(
-          chalk.red(`Failed to migrate configuration "${preview.doc.name}": ${message}`),
-        );
-        failures.push(`${preview.doc.name}: ${message}`);
+        spinner.fail(chalk.red(`Failed to migrate "${doc.name}": ${message}`));
+        configFailures.push(`${doc.name}: ${message}`);
         spinner.start();
       }
     }
 
     spinner.stop();
 
-    if (failures.length > 0) {
+    if (configFailures.length > 0) {
       terminal.error(
         chalk.red(
-          `Configuration migration complete with ${failures.length} failure(s):\n${failures.map((f) => `- ${f}`).join('\n')}`,
+          `Configuration migration completed with ${configFailures.length} failure(s):\n${configFailures.map((f) => `- ${f}`).join('\n')}`,
         ),
       );
     } else {
-      terminal.print(chalk.green('Configuration migration complete.'));
+      terminal.print(chalk.green('Migration complete.'));
     }
   }
 
   /**
-   * Validates that the configuration file version matches the current Tressi version.
-   * If the version does not match, it exits early with a clear message.
-   * @param filePath Path to the configuration file.
+   * Validates that a configuration file matches the current Tressi version.
+   * @param filePath - Absolute path to the configuration file to validate
+   * @returns Promise that resolves if version matches, exits with error otherwise
    */
   async validateVersion(filePath: string): Promise<void> {
     const absolutePath = path.resolve(filePath);
@@ -201,8 +186,6 @@ export class JsonMigrationManager {
     try {
       await fs.access(absolutePath, fs.constants.R_OK);
     } catch {
-      // If file doesn't exist or isn't accessible, skip validation
-      // The config loader will handle the missing file error
       return;
     }
 
@@ -211,14 +194,12 @@ export class JsonMigrationManager {
       const fileContent = await fs.readFile(absolutePath, 'utf-8');
       config = JSON.parse(fileContent);
     } catch {
-      // If file is not valid JSON, skip validation
-      // The config loader will handle the invalid JSON error
       return;
     }
 
     let configVersion: string;
     try {
-      configVersion = JsonMigrationManager.getVersion(config.$schema);
+      configVersion = MigrationManager.getVersion(config.$schema);
     } catch (error) {
       terminal.error(
         `Configuration file "${filePath}" is invalid: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -239,8 +220,10 @@ export class JsonMigrationManager {
   }
 
   /**
-   * Checks if a configuration file is outdated and prompts the user to migrate it.
-   * @param filePath Path to the configuration file.
+   * Migrates a single configuration file to the current Tressi version.
+   * Creates a backup of the original file before migration.
+   * @param filePath - Absolute path to the configuration file to migrate
+   * @returns Promise that resolves when migration is complete
    */
   async migrateFile(filePath: string): Promise<void> {
     const absolutePath = path.resolve(filePath);
@@ -249,7 +232,6 @@ export class JsonMigrationManager {
     try {
       await fs.access(absolutePath, fs.constants.R_OK | fs.constants.W_OK);
     } catch {
-      // If file doesn't exist or isn't accessible, skip migration check
       return;
     }
 
@@ -259,13 +241,12 @@ export class JsonMigrationManager {
       fileContent = await fs.readFile(absolutePath, 'utf-8');
       config = JSON.parse(fileContent);
     } catch {
-      // If file is not valid JSON, skip migration
       return;
     }
 
     let configVersion: string;
     try {
-      configVersion = JsonMigrationManager.getVersion(config.$schema);
+      configVersion = MigrationManager.getVersion(config.$schema);
     } catch (error) {
       terminal.error(
         `Configuration file "${filePath}" is invalid: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -281,7 +262,7 @@ export class JsonMigrationManager {
       `Configuration file "${filePath}" is using an outdated schema (v${configVersion}).`,
     );
 
-    const { summaries, migratedData } = await this._migrateConfig(config);
+    const { summaries, migratedData } = this._migrateConfig(config);
 
     terminal.print(`\n${chalk.bold.blue('📄 File Migration Required')}`);
     terminal.print(`${chalk.dim('File:           ')} ${chalk.white(filePath)}`);
@@ -317,7 +298,6 @@ export class JsonMigrationManager {
     const spinner = ora(`Migrating "${filePath}"...`).start();
 
     try {
-      // Create backup before overwriting
       const backupPath = `${absolutePath}.bak`;
       await fs.copyFile(absolutePath, backupPath);
       spinner.text = `Created backup at "${chalk.dim(`${filePath}.bak`)}"`;
@@ -334,31 +314,96 @@ export class JsonMigrationManager {
   }
 
   /**
-   * Core migration logic that applies sequential transformations and Zod validation.
-   * @param config The configuration object to migrate.
-   * @returns The migrated configuration object and a list of summaries.
+   * Creates a timestamped backup of the database file.
+   * @param version - The version string to include in the backup filename
+   * @throws Error if backup creation fails
    */
-  private async _migrateConfig(
-    config: VersionedTressiConfig,
-  ): Promise<{ migratedData: TressiConfig; summaries: { version: string; summary: string }[] }> {
+  private async _backupDatabase(version: string): Promise<void> {
+    const rootDir = join(homedir(), '.tressi');
+    const dbPath = process.env['TRESSI_DB_PATH'] || join(rootDir, 'tressi.db');
+    const timestamp = Date.now();
+    const backupPath = join(dirname(dbPath), `tressi-${version}-${timestamp}.db.bak`);
+
+    try {
+      await copyFile(dbPath, backupPath);
+      terminal.print(chalk.dim(`Database backup created: ${backupPath}`));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      terminal.error(chalk.red(`Failed to create database backup: ${message}`));
+      throw new Error(`Database migration halted: Could not create backup. ${message}`);
+    }
+  }
+
+  /**
+   * Determines which migrations need to be applied based on current vs target version.
+   * @returns Object containing current version and arrays of pending db and config migrations
+   */
+  private async _getPendingMigrations(): Promise<{
+    currentVersion: string;
+    db: string[];
+    config: string[];
+  }> {
+    const result = await this._db
+      .selectFrom('migrations')
+      .select('version')
+      .orderBy('version', 'desc')
+      .limit(1)
+      .executeTakeFirst();
+
+    const currentVersion = result?.version || '0.0.0';
+    const targetVersion = pkg.version;
+
+    if (currentVersion === targetVersion) {
+      return { config: [], currentVersion, db: [] };
+    }
+
+    const pendingVersions = Object.keys(MIGRATIONS)
+      .filter((v) => semver.gt(v, currentVersion) && semver.lte(v, targetVersion))
+      .sort(semver.compare);
+
+    return { config: pendingVersions, currentVersion, db: pendingVersions };
+  }
+
+  /**
+   * Records a migration as having been applied in the database.
+   * @param version - The version string of the applied migration
+   * @param type - The type of migration ('db' or 'config')
+   * @param trx - The transaction to execute within
+   */
+  private async _updateVersion(version: string, trx: Kysely<DatabaseSchema>): Promise<void> {
+    await trx
+      .insertInto('migrations')
+      .values({
+        applied_at: Date.now(),
+        version,
+      })
+      .execute();
+  }
+
+  /**
+   * Applies all necessary configuration migrations to bring a config to current version.
+   * @param config - The configuration object to migrate
+   * @returns The migrated configuration data and list of migration summaries applied
+   */
+  private _migrateConfig(config: VersionedTressiConfig): {
+    migratedData: TressiConfig;
+    summaries: { version: string; summary: string }[];
+  } {
     const currentVersion = pkg.version;
     let data: VersionedTressiConfig = { ...config };
-    let v = JsonMigrationManager.getVersion(data.$schema);
+    let v = MigrationManager.getVersion(data.$schema);
     const summaries: { version: string; summary: string }[] = [];
 
-    // 1. Sequential Manual Migrations
-    // The key in JSON_MIGRATIONS is the TARGET version.
-    // We sort all available migration versions and apply those that are greater than the current config version.
-    const availableVersions = Object.keys(JSON_MIGRATIONS).sort(semver.compare);
+    const availableVersions = Object.keys(MIGRATIONS).sort(semver.compare);
 
     for (const targetV of availableVersions) {
       if (semver.gt(targetV, v) && semver.lte(targetV, currentVersion)) {
-        const migration = JSON_MIGRATIONS[targetV];
+        const migration = MIGRATIONS[targetV];
 
-        summaries.push({ summary: migration.summary, version: targetV });
+        summaries.push({ summary: migration.config.summary, version: targetV });
 
-        const nextData = migration.up(data);
-        const migratedV = JsonMigrationManager.getVersion(nextData.$schema);
+        const nextData = migration.config.up(data);
+        const migratedV = MigrationManager.getVersion(nextData.$schema);
 
         if (migratedV !== targetV) {
           throw new Error(
@@ -371,12 +416,8 @@ export class JsonMigrationManager {
       }
     }
 
-    // 2. Final Zod "Default Strategy"
-    // This automatically injects any new fields with .default()
-    // and updates the $schema URL to the latest.
     const migratedData = TressiConfigSchema.parse(data);
 
-    // Check if Zod added any defaults that weren't in the manual migrations
     const zodAddedFields = Object.keys(migratedData).filter((key) => !(key in data));
     if (zodAddedFields.length > 0) {
       summaries.push({
@@ -389,16 +430,17 @@ export class JsonMigrationManager {
   }
 
   /**
-   * Computes the semantic diff between two objects, returning changes grouped by parent path.
+   * Computes semantic differences between two objects, grouping changes by parent path.
+   * @param oldObj - The original object
+   * @param newObj - The modified object
+   * @returns Changes grouped by parent path with old and new values
    */
   private _computeSemanticDiff(oldObj: unknown, newObj: unknown): ChangesByParent {
     const changes: ChangeRecord[] = [];
 
     const traverse = (oldVal: unknown, newVal: unknown, currentPath: string): void => {
-      // Both are null/undefined or same primitive
       if (oldVal === newVal) return;
 
-      // One is null/undefined or one is primitive
       if (oldVal === null || oldVal === undefined || newVal === null || newVal === undefined) {
         if (oldVal !== newVal) {
           changes.push({ newValue: newVal, oldValue: oldVal, path: currentPath });
@@ -406,7 +448,6 @@ export class JsonMigrationManager {
         return;
       }
 
-      // Both are objects but different types
       const oldType = typeof oldVal;
       const newType = typeof newVal;
       if (oldType !== 'object' || newType !== 'object') {
@@ -414,7 +455,6 @@ export class JsonMigrationManager {
         return;
       }
 
-      // Both are arrays
       if (Array.isArray(oldVal) && Array.isArray(newVal)) {
         const maxLen = Math.max(oldVal.length, newVal.length);
         for (let i = 0; i < maxLen; i++) {
@@ -424,7 +464,6 @@ export class JsonMigrationManager {
         return;
       }
 
-      // Both are objects
       const oldObj = oldVal as Record<string, unknown>;
       const newObjVal = newVal as Record<string, unknown>;
       const allKeys = new Set([...Object.keys(oldObj), ...Object.keys(newObjVal)]);
@@ -437,14 +476,10 @@ export class JsonMigrationManager {
 
     traverse(oldObj, newObj, '');
 
-    // Group changes by parent path
     const grouped: ChangesByParent = {};
     for (const change of changes) {
-      // Parse path to get parent path and leaf key
-      // Path can be: $schema, options.foo, requests[0].bar, requests[0].earlyExit.enabled
       const path = change.path;
 
-      // Find the last dot that's NOT inside brackets
       let lastDotOutsideBracket = -1;
       let bracketDepth = 0;
       for (let i = 0; i < path.length; i++) {
@@ -459,7 +494,6 @@ export class JsonMigrationManager {
       let leafKey: string;
 
       if (lastDotOutsideBracket === -1) {
-        // No dot outside brackets - this is a root-level property
         parentPath = '';
         leafKey = path;
       } else {
@@ -479,7 +513,9 @@ export class JsonMigrationManager {
   }
 
   /**
-   * Formats a value for display, handling special types.
+   * Formats a value for display in diff output.
+   * @param val - The value to format
+   * @returns Formatted string representation
    */
   private _formatValue(val: unknown): string {
     if (val === undefined) return 'undefined';
@@ -490,7 +526,9 @@ export class JsonMigrationManager {
   }
 
   /**
-   * Displays a semantic diff with Before/After snippets grouped by parent object.
+   * Displays a semantic diff between two configuration objects in a human-readable format.
+   * @param oldObj - The original configuration object
+   * @param newObj - The migrated configuration object
    */
   private _displayDiff(oldObj: unknown, newObj: unknown): void {
     const grouped = this._computeSemanticDiff(oldObj, newObj);
@@ -501,7 +539,6 @@ export class JsonMigrationManager {
       return;
     }
 
-    // Sort paths for consistent output
     paths.sort((a, b) => a.localeCompare(b));
 
     for (const parentPath of paths) {
@@ -554,19 +591,23 @@ export class JsonMigrationManager {
   }
 
   /**
-   * Prompts the user to confirm the migration.
-   * @param message The prompt message.
-   * @returns A promise that resolves to true if confirmed, false otherwise.
+   * Prompts the user for confirmation in interactive mode.
+   * In non-interactive environments, returns false unless TRESSI_AUTO_MIGRATE is set.
+   * @param message - The prompt message to display
+   * @returns True if user confirmed with 'y', or if auto-migrate is enabled in non-interactive mode
    */
   private async _promptUser(message: string): Promise<boolean> {
     if (!process.stdin.isTTY) {
+      if (process.env['TRESSI_AUTO_MIGRATE'] === 'true') {
+        return true;
+      }
       terminal.error(
-        `\n${chalk.yellow('Non-interactive environment detected. Declining migration and exiting.')}`,
+        chalk.yellow('\nNon-interactive environment detected. Declining migration and exiting.'),
       );
       return false;
     }
 
-    const rl = readline.createInterface({
+    const rl = readlineSync.createInterface({
       input: process.stdin,
       output: process.stdout,
     });
@@ -578,4 +619,17 @@ export class JsonMigrationManager {
       rl.close();
     }
   }
+}
+
+interface ChangeRecord {
+  newValue: unknown;
+  oldValue: unknown;
+  path: string;
+}
+
+interface ChangesByParent {
+  [parentPath: string]: {
+    oldValues: Record<string, unknown>;
+    newValues: Record<string, unknown>;
+  };
 }

@@ -71,6 +71,9 @@
             [showPulse]="service.isRealTime()"
             data-e2e="status-badge"
           />
+          @if (service.selectedSummary()?.earlyExitTriggered) {
+            <app-icon name="warning" class="text-warning" />
+          }
           <div class="flex items-center gap-4">
             <div class="dropdown dropdown-bottom dropdown-end">
               <div

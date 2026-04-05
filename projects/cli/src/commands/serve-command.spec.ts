@@ -3,11 +3,12 @@ import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { ServeCommand } from './serve-command';
 
 vi.mock('../data/database', () => ({
+  db: {},
   initializeDatabase: vi.fn().mockResolvedValue(undefined),
 }));
 
-const mockMigrationManager: { run: Mock<Procedure> } = {
-  run: vi.fn(),
+const mockMigrationManager: { migrate: Mock<Procedure> } = {
+  migrate: vi.fn(),
 };
 
 const mockServer: { start: Mock<Procedure>; stop: Mock<Procedure> } = {
@@ -23,9 +24,9 @@ vi.mock('../server', () => ({
   },
 }));
 
-vi.mock('../data/json-migration-manager', () => ({
-  JsonMigrationManager: class {
-    run = mockMigrationManager.run;
+vi.mock('../data/migration-manager', () => ({
+  MigrationManager: class {
+    migrate = mockMigrationManager.migrate;
   },
 }));
 
@@ -42,17 +43,18 @@ describe('ServeCommand', () => {
 
   it('should execute serve command and start server', async () => {
     const command = new ServeCommand();
-    mockMigrationManager.run.mockResolvedValue({});
+    mockMigrationManager.migrate.mockResolvedValue({});
     mockServer.start.mockResolvedValue({});
 
     await command.execute({ port: 3000 });
 
-    expect(mockMigrationManager.run).toHaveBeenCalled();
+    expect(mockMigrationManager.migrate).toHaveBeenCalled();
     expect(mockServer.start).toHaveBeenCalled();
   });
 
   it('should throw error if server fails to start', async () => {
     const command = new ServeCommand();
+    mockMigrationManager.migrate.mockResolvedValue({});
     mockServer.start.mockRejectedValue(new Error('Server Error'));
 
     await expect(command.execute({})).rejects.toThrow('Failed to start server: Server Error');

@@ -72,6 +72,14 @@ async function executeLoadTest(
   const isCanceled = runner.isCanceled();
   const earlyExitTriggered = runner.getEarlyExitTriggered();
 
+  // Set earlyExitTriggered on summary for persistence
+  if (summary.global) {
+    summary.global.earlyExitTriggered = earlyExitTriggered;
+  }
+  for (const endpoint of summary.endpoints) {
+    endpoint.earlyExitTriggered = earlyExitTriggered;
+  }
+
   // Handle export and printing only for CLI
   if (options.exportPath) {
     await handleCLIExport(summary, options.exportPath, options.silent);

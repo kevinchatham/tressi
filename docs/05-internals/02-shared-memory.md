@@ -40,9 +40,9 @@ Each endpoint is allocated a fixed size counter block:
 | 1      | Failure Count        | Int32      | Total failed requests                  |
 | 2      | Bytes Sent           | Int32      | Cumulative network egress              |
 | 3      | Bytes Received       | Int32      | Cumulative network ingress             |
-| 8      | Sampled Status Codes | Int32[600] | Recent status codes for sampling       |
-| 608    | Status Counters      | Int32[600] | Frequency of status codes (100-699)    |
-| 1208   | Body Sample Indices  | Int32[N]   | Ring buffer for response body sampling |
+| 7      | Sampled Status Codes | Int32[600] | Recent status codes for sampling       |
+| 607    | Status Counters      | Int32[600] | Frequency of status codes (100-699)    |
+| 1207   | Body Sample Indices  | Int32[N]   | Ring buffer for response body sampling |
 
 #### Implementing HDR Histograms
 
