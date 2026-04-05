@@ -50,9 +50,7 @@ export class ConfigsComponent implements OnInit {
   readonly timeService = inject(TimeService);
 
   /** Reactive signals for state management */
-  readonly configsInput = input.required<ConfigDocument[]>({
-    alias: 'configs',
-  });
+  readonly configsInput = input.required<ConfigDocument[]>();
   readonly configs = signal<ConfigDocument[]>([]);
   readonly showDeleteModal = signal<boolean>(false);
   readonly configToDelete = signal<ConfigDocument | null>(null);
@@ -68,11 +66,13 @@ export class ConfigsComponent implements OnInit {
 
   /** Computed signal that filters configs based on search query */
   readonly filteredConfigs = computed(() => {
-    const query = this.searchQuery().toLowerCase().trim();
-    if (!query) return this.configs();
+    const configs = this.configs();
+    if (!configs) return [];
 
-    return this.configs().filter((config) => {
-      // Search in config name
+    const query = this.searchQuery().toLowerCase().trim();
+    if (!query) return configs;
+
+    return configs.filter((config) => {
       if (config.name.toLowerCase().includes(query)) {
         return true;
       }
@@ -83,14 +83,17 @@ export class ConfigsComponent implements OnInit {
 
   /** Computed signal to check if there are no configs to display */
   readonly hasNoConfigs = computed(() => {
-    return this.configs().length === 0;
+    const configs = this.configs();
+    return !configs || configs.length === 0;
   });
 
   constructor() {
     // Sync the input to our local writable signal
     effect(() => {
       const initialConfigs = this.configsInput();
-      untracked(() => this.configs.set(initialConfigs));
+      if (initialConfigs !== undefined) {
+        untracked(() => this.configs.set(initialConfigs));
+      }
     });
   }
 

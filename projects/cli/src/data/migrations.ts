@@ -8,7 +8,7 @@ import { migration_0_0_19 } from './migrations/migration_0_0_19';
 import { migration_0_0_20 } from './migrations/migration_0_0_20';
 import type { Migration } from './migrations/migration-utils';
 
-export type { Migration };
+export type { Migration } from './migrations/migration-utils';
 
 export const MIGRATIONS: Record<string, Migration> = {
   [migration_0_0_13.config.version]: migration_0_0_13,

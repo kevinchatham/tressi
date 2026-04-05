@@ -309,7 +309,7 @@ export class XlsxExporter {
     };
 
     for (const [statusCode, count] of Object.entries(statusCodeMap)) {
-      const code = parseInt(statusCode, 10);
+      const code = Number.parseInt(statusCode, 10);
       const category = `${Math.floor(code / 100)}xx`;
       if (distribution[category] !== undefined) {
         distribution[category] += count;

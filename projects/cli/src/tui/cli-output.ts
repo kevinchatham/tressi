@@ -52,9 +52,11 @@ function printRunConfiguration(options: TressiOptionsConfig, config: TressiConfi
     (sum: number, req: { rps?: number }) => sum + (req.rps || 0),
     0,
   );
-  configTable.push(['Total RPS', `${totalRps}`]);
-  configTable.push(['Duration', `${durationSec}s`]);
-  configTable.push(['Workers', `${threads || 'auto'}`]);
+  configTable.push(
+    ['Total RPS', `${totalRps}`],
+    ['Duration', `${durationSec}s`],
+    ['Workers', `${threads || 'auto'}`],
+  );
 
   if (rampUpDurationSec) {
     configTable.push(['ramp up Time', `${rampUpDurationSec}s`]);

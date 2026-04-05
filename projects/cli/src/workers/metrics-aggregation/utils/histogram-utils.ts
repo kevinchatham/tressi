@@ -37,7 +37,7 @@ export function convertWorkerHistogramToTestSummaryHistogram(
   }
 
   Object.keys(percentiles).forEach((p) => {
-    const percentile = parseFloat(p);
+    const percentile = Number.parseFloat(p);
     let weightedValue = 0;
 
     histograms.forEach((histogram) => {

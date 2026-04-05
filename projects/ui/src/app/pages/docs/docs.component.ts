@@ -4,7 +4,6 @@ import {
   effect,
   inject,
   input,
-  type OnInit,
   SecurityContext,
   signal,
   ViewEncapsulation,
@@ -72,7 +71,7 @@ import { DocsMenuComponent } from './docs-menu/docs-menu.component';
   styleUrl: './docs.component.css',
   templateUrl: './docs.component.html',
 })
-export class DocsComponent implements OnInit {
+export class DocsComponent {
   private readonly _themeService = inject(ThemeService);
   readonly appRouter = inject(AppRouterService);
   readonly markdownSrc = signal<string>('');
@@ -110,8 +109,6 @@ export class DocsComponent implements OnInit {
       }
     });
   }
-
-  ngOnInit(): void {}
 
   loadDocs(slug: string): void {
     this.isTransitioning.set(true);

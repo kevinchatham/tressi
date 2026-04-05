@@ -153,7 +153,11 @@ async function runCLI(): Promise<void> {
   await cli.run();
 }
 
-runCLI().catch((error) => {
-  terminal.error('CLI Error:', error);
-  process.exit(1);
-});
+(async () => {
+  try {
+    await runCLI();
+  } catch (error) {
+    terminal.error('CLI Error:', error);
+    process.exit(1);
+  }
+})();

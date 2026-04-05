@@ -380,7 +380,7 @@ export class MarkdownExporter {
     md += '| Status Code | Count | Percentage |\n';
     md += '|---|---|---|\n';
     const codes = Object.entries(endpoint.statusCodeDistribution).sort(
-      ([a], [b]) => parseInt(a, 10) - parseInt(b, 10),
+      ([a], [b]) => Number.parseInt(a, 10) - Number.parseInt(b, 10),
     );
     for (const [code, count] of codes) {
       const percentage = ((count / endpoint.totalRequests) * 100).toFixed(1);

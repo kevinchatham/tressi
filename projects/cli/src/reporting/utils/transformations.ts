@@ -30,7 +30,7 @@ export function transformAggregatedMetricsToTestSummary(snapshots: TestSummary[]
   }
 
   // The last snapshot contains the final cumulative totals and latencies
-  const lastSnapshot = snapshots[snapshots.length - 1];
+  const lastSnapshot = snapshots.at(-1)!;
 
   // Shallow clone the top level and global/endpoints arrays to avoid mutating the snapshot
   // while avoiding the overhead of structuredClone on every poll.
@@ -75,7 +75,7 @@ export function transformAggregatedMetricsToTestSummary(snapshots: TestSummary[]
   // we only count requests that occurred during the steady-state window.
   if (steadyStateSnapshots.length > 1) {
     const firstSteady = steadyStateSnapshots[0];
-    const lastSteady = steadyStateSnapshots[steadyStateSnapshots.length - 1];
+    const lastSteady = steadyStateSnapshots.at(-1)!;
     const steadyRequests = lastSteady.global.totalRequests - firstSteady.global.totalRequests;
     const steadyDurationMs = lastSteady.global.epochEndedAt - firstSteady.global.epochEndedAt;
     const steadyDurationSec = steadyDurationMs / 1000;
@@ -96,13 +96,19 @@ export function transformAggregatedMetricsToTestSummary(snapshots: TestSummary[]
       globalActiveDurationSec > 0 ? lastSnapshot.global.totalRequests / globalActiveDurationSec : 0;
   }
 
-  // Use only steady-state snapshots for peak RPS
-  finalSummary.global.peakRequestsPerSecond =
-    steadyStateSnapshots.length > 0
-      ? Math.max(...steadyStateSnapshots.map((s) => s.global.peakRequestsPerSecond), 0)
-      : snapshots.length > 0
-        ? Math.max(...snapshots.map((s) => s.global.peakRequestsPerSecond), 0)
-        : 0;
+  if (steadyStateSnapshots.length > 0) {
+    finalSummary.global.peakRequestsPerSecond = Math.max(
+      ...steadyStateSnapshots.map((s) => s.global.peakRequestsPerSecond),
+      0,
+    );
+  } else if (snapshots.length > 0) {
+    finalSummary.global.peakRequestsPerSecond = Math.max(
+      ...snapshots.map((s) => s.global.peakRequestsPerSecond),
+      0,
+    );
+  } else {
+    finalSummary.global.peakRequestsPerSecond = 0;
+  }
 
   // Use only steady-state snapshots for CPU and memory averages
   if (steadyStateSnapshots.length > 0) {
@@ -168,7 +174,7 @@ export function transformAggregatedMetricsToTestSummary(snapshots: TestSummary[]
     // a long ramp-up doesn't dilute the reported throughput unfairly.
     if (endpointSteadyStateSnapshots.length > 1) {
       const firstSteady = endpointSteadyStateSnapshots[0];
-      const lastSteady = endpointSteadyStateSnapshots[endpointSteadyStateSnapshots.length - 1];
+      const lastSteady = endpointSteadyStateSnapshots.at(-1)!;
       const steadyRequests = lastSteady.totalRequests - firstSteady.totalRequests;
 
       // Find the global snapshot that corresponds to the first steady-state endpoint snapshot
@@ -199,12 +205,17 @@ export function transformAggregatedMetricsToTestSummary(snapshots: TestSummary[]
 
     // Use only steady-state snapshots for peak RPS
     // Use peakRequestsPerSecond (the observed peak at that snapshot) not averageRequestsPerSecond
-    endpoint.peakRequestsPerSecond =
-      endpointSteadyStateSnapshots.length > 0
-        ? Math.max(...endpointSteadyStateSnapshots.map((e) => e.peakRequestsPerSecond))
-        : endpointSnapshots.length > 0
-          ? Math.max(...endpointSnapshots.map((e) => e.peakRequestsPerSecond))
-          : 0;
+    if (endpointSteadyStateSnapshots.length > 0) {
+      endpoint.peakRequestsPerSecond = Math.max(
+        ...endpointSteadyStateSnapshots.map((e) => e.peakRequestsPerSecond),
+      );
+    } else if (endpointSnapshots.length > 0) {
+      endpoint.peakRequestsPerSecond = Math.max(
+        ...endpointSnapshots.map((e) => e.peakRequestsPerSecond),
+      );
+    } else {
+      endpoint.peakRequestsPerSecond = 0;
+    }
 
     // Use averageRequestsPerSecond (not peak) to reflect sustained rather than momentary throughput.
     if (requestConfig && requestConfig.rps > 0) {

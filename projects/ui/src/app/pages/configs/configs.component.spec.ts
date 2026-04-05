@@ -121,7 +121,7 @@ describe('ConfigsComponent', () => {
 
     fixture = TestBed.createComponent(ConfigsComponent);
     component = fixture.componentInstance;
-    fixture.componentRef.setInput('configs', mockConfigs);
+    fixture.componentRef.setInput('configsInput', mockConfigs);
     fixture.detectChanges();
   });
 
@@ -170,7 +170,7 @@ describe('ConfigsComponent', () => {
       },
       id: 'multi',
     };
-    fixture.componentRef.setInput('configs', [multiRequestConfig]);
+    fixture.componentRef.setInput('configsInput', [multiRequestConfig]);
     fixture.detectChanges();
 
     component.searchQuery.set('b.com');
@@ -194,7 +194,7 @@ describe('ConfigsComponent', () => {
   });
 
   it('should return true for hasNoConfigs when configs array is empty', () => {
-    fixture.componentRef.setInput('configs', []);
+    fixture.componentRef.setInput('configsInput', []);
     fixture.detectChanges();
     expect(component.hasNoConfigs()).toBe(true);
   });
@@ -516,7 +516,7 @@ describe('ConfigsComponent', () => {
 
       const newFixture = TestBed.createComponent(ConfigsComponent);
       const newComponent = newFixture.componentInstance;
-      newFixture.componentRef.setInput('configs', mockConfigs);
+      newFixture.componentRef.setInput('configsInput', mockConfigs);
       newFixture.detectChanges();
 
       expect(newComponent.showForm()).toBe(true);
@@ -526,7 +526,7 @@ describe('ConfigsComponent', () => {
 
   it('should update configs when input changes', () => {
     const newConfigs = [...mockConfigs, { ...mockConfig, id: 'new-one' }];
-    fixture.componentRef.setInput('configs', newConfigs);
+    fixture.componentRef.setInput('configsInput', newConfigs);
     fixture.detectChanges();
     expect(component.configs()).toEqual(newConfigs);
   });

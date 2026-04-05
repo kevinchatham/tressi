@@ -398,7 +398,7 @@ export class MetricsAggregator implements IMetricsAggregator {
         data.totalBytesReceived += counters.bytesReceived;
 
         Object.entries(counters.statusCodeCounts).forEach(([statusCode, count]) => {
-          const code = parseInt(statusCode, 10);
+          const code = Number.parseInt(statusCode, 10);
           data.endpointStatusCounts[endpointUrl][code] =
             (data.endpointStatusCounts[endpointUrl][code] || 0) + count;
         });

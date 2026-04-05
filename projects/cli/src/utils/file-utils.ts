@@ -87,26 +87,23 @@ export class FileUtils {
       'LPT9',
     ];
 
-    // Characters invalid on Windows: < > : " | ? * \
-    // Characters invalid on macOS/Linux: /
-    // Additional problematic characters: \0 (null)
     let safeName = input
-      // Remove or replace invalid characters
-      // biome-ignore lint/suspicious/noControlCharactersInRegex: windows invalid chars and control chars
-      .replaceAll(/[<>:"|?*\x00-\x1f]/g, '-')
-      .replaceAll(':', '-') // Colons (mainly for Windows)
+      .replaceAll(':', '-')
+      .replaceAll('<', '-')
+      .replaceAll('>', '-')
+      .replaceAll('"', '-')
+      .replaceAll('|', '-')
+      .replaceAll('?', '-')
+      .replaceAll('*', '-')
 
-      // Trim leading/trailing spaces and dots
       .trim()
-      .replace(/^\.+|\.+$/g, '')
+      .replaceAll(/^\.+/g, '')
+      .replaceAll(/\.+$/g, '')
 
-      // Replace multiple spaces/dashes with single underscore
-      .replace(/[\s-]+/g, '_')
+      .replaceAll(/[\s-]+/g, '_')
 
-      // Replace multiple underscores with single underscore
-      .replace(/_+/g, '_')
+      .replaceAll(/_+/g, '_')
 
-      // Remove any remaining invalid characters
       .replace(/[^a-zA-Z0-9._\-/\\]/g, '_');
 
     // Handle empty result

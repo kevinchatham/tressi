@@ -18,7 +18,7 @@ export class Runner extends EventEmitter<IRunnerEvents> {
    * Creates a new CoreRunner instance.
    * @param _config The Tressi configuration
    */
-  constructor(private _config: TressiConfig) {
+  constructor(private readonly _config: TressiConfig) {
     super();
     this._workerPool = new WorkerPoolManager(_config);
   }

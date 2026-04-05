@@ -1,6 +1,8 @@
 import { provideHttpClient } from '@angular/common/http';
 import {
   type ApplicationConfig,
+  inject,
+  provideAppInitializer,
   provideBrowserGlobalErrorListeners,
   provideZonelessChangeDetection,
 } from '@angular/core';
@@ -10,6 +12,12 @@ import { provideServiceWorker } from '@angular/service-worker';
 
 import { AppComponent } from './app/app.component';
 import { routes } from './app/app.routes';
+import { HealthService } from './app/services/health.service';
+
+const healthInitializer = (): Promise<void> => {
+  const healthService = inject(HealthService);
+  return healthService.init();
+};
 
 const appConfig: ApplicationConfig = {
   providers: [
@@ -21,6 +29,7 @@ const appConfig: ApplicationConfig = {
       enabled: true,
       registrationStrategy: 'registerWhenStable:30000',
     }),
+    provideAppInitializer(healthInitializer),
   ],
 };
 

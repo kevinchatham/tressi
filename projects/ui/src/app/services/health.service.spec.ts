@@ -71,7 +71,8 @@ describe('HealthService', () => {
     vi.useRealTimers();
   });
 
-  it('should initialize and perform initial health check', () => {
+  it('should initialize and perform initial health check', async () => {
+    await service.init();
     expect(mockRPC.client.health.$get).toHaveBeenCalled();
   });
 

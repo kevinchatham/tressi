@@ -23,6 +23,7 @@
       "@tressi/shared/common": ["../shared/src/common/index.ts"],
       "@tressi/shared/ui": ["../shared/src/ui/index.ts"]
     },
+    "rootDir": "../..",
     "skipLibCheck": true,
     "strict": true,
     "target": "ES2022"
