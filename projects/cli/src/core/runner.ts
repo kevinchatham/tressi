@@ -10,7 +10,7 @@ import { WorkerPoolManager } from '../workers/worker-pool-manager';
  * This class coordinates between all specialized components and manages the test lifecycle.
  */
 export class Runner extends EventEmitter<IRunnerEvents> {
-  private _workerPool: WorkerPoolManager;
+  private readonly _workerPool: WorkerPoolManager;
   private _startTime: number = 0;
   private _isCanceled: boolean = false;
 

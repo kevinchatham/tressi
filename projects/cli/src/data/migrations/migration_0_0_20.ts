@@ -25,7 +25,7 @@ export const migration_0_0_20: Migration = createMigration(
       const convertMonitoringWindow = (windowMs: unknown): number | undefined => {
         if (typeof windowMs !== 'number') return undefined;
         const converted = Math.round(windowMs / 1000);
-        return converted < 1 ? 1 : converted;
+        return Math.max(1, converted);
       };
 
       const getWorkerEarlyExit = data.options?.workerEarlyExit as
@@ -126,20 +126,21 @@ export const migration_0_0_20: Migration = createMigration(
       };
     },
     dbUp: async (db: Kysely<Database>) => {
-      const tests = await db.selectFrom('tests').selectAll().execute();
-
-      for (const test of tests) {
-        if (!test.summary) continue;
+      const addEarlyExitFieldToSummary = async (row: {
+        id: string;
+        summary?: string | null;
+      }): Promise<void> => {
+        if (!row.summary) return;
 
         try {
-          const summary = JSON.parse(test.summary);
+          const data = JSON.parse(row.summary);
 
-          if (summary.global && !('earlyExitTriggered' in summary.global)) {
-            summary.global.earlyExitTriggered = false;
+          if (data.global && !('earlyExitTriggered' in data.global)) {
+            data.global.earlyExitTriggered = false;
           }
 
-          if (Array.isArray(summary.endpoints)) {
-            for (const endpoint of summary.endpoints) {
+          if (Array.isArray(data.endpoints)) {
+            for (const endpoint of data.endpoints) {
               if (!('earlyExitTriggered' in endpoint)) {
                 endpoint.earlyExitTriggered = false;
               }
@@ -148,28 +149,29 @@ export const migration_0_0_20: Migration = createMigration(
 
           await db
             .updateTable('tests')
-            .set({ summary: JSON.stringify(summary) })
-            .where('id', '=', test.id)
+            .set({ summary: JSON.stringify(data) })
+            .where('id', '=', row.id)
             .execute();
         } catch {
-          // Skip tests with invalid summary JSON
+          // Skip rows with invalid JSON
         }
-      }
+      };
 
-      const metrics = await db.selectFrom('metrics').selectAll().execute();
-
-      for (const metric of metrics) {
-        if (!metric.metric) continue;
+      const addEarlyExitFieldToMetric = async (row: {
+        id: string;
+        metric?: string | null;
+      }): Promise<void> => {
+        if (!row.metric) return;
 
         try {
-          const metricData = JSON.parse(metric.metric);
+          const data = JSON.parse(row.metric);
 
-          if (metricData.global && !('earlyExitTriggered' in metricData.global)) {
-            metricData.global.earlyExitTriggered = false;
+          if (data.global && !('earlyExitTriggered' in data.global)) {
+            data.global.earlyExitTriggered = false;
           }
 
-          if (Array.isArray(metricData.endpoints)) {
-            for (const endpoint of metricData.endpoints) {
+          if (Array.isArray(data.endpoints)) {
+            for (const endpoint of data.endpoints) {
               if (!('earlyExitTriggered' in endpoint)) {
                 endpoint.earlyExitTriggered = false;
               }
@@ -178,12 +180,22 @@ export const migration_0_0_20: Migration = createMigration(
 
           await db
             .updateTable('metrics')
-            .set({ metric: JSON.stringify(metricData) })
-            .where('id', '=', metric.id)
+            .set({ metric: JSON.stringify(data) })
+            .where('id', '=', row.id)
             .execute();
         } catch {
-          // Skip metrics with invalid metric JSON
+          // Skip rows with invalid JSON
         }
+      };
+
+      const tests = await db.selectFrom('tests').selectAll().execute();
+      for (const test of tests) {
+        await addEarlyExitFieldToSummary(test);
+      }
+
+      const metrics = await db.selectFrom('metrics').selectAll().execute();
+      for (const metric of metrics) {
+        await addEarlyExitFieldToMetric(metric);
       }
     },
   },

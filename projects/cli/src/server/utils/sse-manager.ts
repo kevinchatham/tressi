@@ -6,7 +6,7 @@ import type { ServerEventMessage } from '@tressi/shared/common';
  * Handles adding, removing, and broadcasting to connected clients
  */
 export class SSEManager implements ISSEClientManager {
-  private _clients: Set<ReadableStreamDefaultController> = new Set();
+  private readonly _clients: Set<ReadableStreamDefaultController> = new Set();
 
   /**
    * Adds a new Server-Sent Events client connection.

@@ -93,8 +93,8 @@ export class FileUtils {
     let safeName = input
       // Remove or replace invalid characters
       // biome-ignore lint/suspicious/noControlCharactersInRegex: windows invalid chars and control chars
-      .replace(/[<>:"|?*\x00-\x1f]/g, '-')
-      .replace(/:/g, '-') // Colons (mainly for Windows)
+      .replaceAll(/[<>:"|?*\x00-\x1f]/g, '-')
+      .replaceAll(':', '-') // Colons (mainly for Windows)
 
       // Trim leading/trailing spaces and dots
       .trim()

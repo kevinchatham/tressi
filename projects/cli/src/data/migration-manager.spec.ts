@@ -231,7 +231,7 @@ describe('MigrationManager', () => {
 
   describe('MIGRATIONS registry', () => {
     it('should have continuous version range from 0.0.13 to 0.0.20', () => {
-      const versions = Object.keys(MIGRATIONS).sort();
+      const versions = Object.keys(MIGRATIONS).sort((a, b) => a.localeCompare(b));
       const expected = [
         '0.0.13',
         '0.0.14',
@@ -265,7 +265,7 @@ describe('MigrationManager', () => {
       };
 
       let config = initialConfig;
-      for (const version of Object.keys(MIGRATIONS).sort()) {
+      for (const version of Object.keys(MIGRATIONS).sort((a, b) => a.localeCompare(b))) {
         const migration = MIGRATIONS[version];
         const newConfig = migration.config.up(config);
         const newVersion = MigrationManager.getVersion(newConfig.$schema);
@@ -281,7 +281,7 @@ describe('MigrationManager', () => {
       };
 
       let config = initialConfig;
-      for (const version of Object.keys(MIGRATIONS).sort()) {
+      for (const version of Object.keys(MIGRATIONS).sort((a, b) => a.localeCompare(b))) {
         const migration = MIGRATIONS[version];
         config = migration.config.up(config);
       }

@@ -10,10 +10,10 @@ import type { ResponseSampler } from './response-sampler';
  * This class manages HTTP request execution, response processing, and error handling.
  */
 export class RequestExecutor {
-  private _headersPool: Record<string, string>[];
-  private _resultPool: RequestResult[];
-  private _maxPoolSize: number;
-  private _responseSampler: ResponseSampler;
+  private readonly _headersPool: Record<string, string>[];
+  private readonly _resultPool: RequestResult[];
+  private readonly _maxPoolSize: number;
+  private readonly _responseSampler: ResponseSampler;
 
   constructor(responseSampler: ResponseSampler, maxPoolSize: number = 1000) {
     this._responseSampler = responseSampler;
@@ -92,7 +92,7 @@ export class RequestExecutor {
       const contentLength = responseHeaders['content-length'];
       if (contentLength && !responseBodySize) {
         const contentLengthValue = Array.isArray(contentLength) ? contentLength[0] : contentLength;
-        responseBodySize = parseInt(contentLengthValue, 10) || 0;
+        responseBodySize = Number.parseInt(contentLengthValue, 10) || 0;
       }
 
       // Populate result object from pool

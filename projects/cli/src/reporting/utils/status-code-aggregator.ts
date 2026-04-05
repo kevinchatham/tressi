@@ -21,7 +21,7 @@ export function aggregateStatusCodesFromEndpoints(
 
   for (const endpoint of endpoints) {
     for (const [code, count] of Object.entries(endpoint.statusCodeDistribution)) {
-      const codeNum = parseInt(code, 10);
+      const codeNum = Number.parseInt(code, 10);
       statusCodeMap[codeNum] = (statusCodeMap[codeNum] || 0) + count;
     }
   }

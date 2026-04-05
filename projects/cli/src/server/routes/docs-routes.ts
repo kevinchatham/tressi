@@ -34,7 +34,7 @@ async function scanDocs(dir: string): Promise<MarkdownSlugs> {
         .join(' ');
 
       const subDocs = await readdir(fullPath);
-      subDocs.sort();
+      subDocs.sort((a, b) => a.localeCompare(b));
 
       const docs = subDocs
         .filter((file) => file.endsWith('.md'))

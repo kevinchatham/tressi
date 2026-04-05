@@ -23,7 +23,7 @@ import { MIGRATIONS } from './migrations';
  * Handles version tracking, migration execution, and config file updates.
  */
 export class MigrationManager {
-  private _db: Kysely<DatabaseSchema>;
+  private readonly _db: Kysely<DatabaseSchema>;
 
   constructor(db: Kysely<DatabaseSchema>) {
     this._db = db;
@@ -164,9 +164,10 @@ export class MigrationManager {
     spinner.stop();
 
     if (configFailures.length > 0) {
+      const failureList = configFailures.map((f) => `- ${f}`).join('\n');
       terminal.error(
         chalk.red(
-          `Configuration migration completed with ${configFailures.length} failure(s):\n${configFailures.map((f) => `- ${f}`).join('\n')}`,
+          `Configuration migration completed with ${configFailures.length} failure(s):\n${failureList}`,
         ),
       );
     } else {
@@ -208,12 +209,14 @@ export class MigrationManager {
     }
 
     if (configVersion !== currentVersion) {
+      const configVersionText = `v${configVersion}`;
+      const currentVersionText = `v${currentVersion}`;
       terminal.print(`\n${chalk.bold.red('❌ Configuration Version Mismatch')}`);
       terminal.print(`${chalk.dim('File:           ')} ${chalk.white(filePath)}`);
-      terminal.print(`${chalk.dim('Config Version: ')} ${chalk.yellow(`v${configVersion}`)}`);
-      terminal.print(`${chalk.dim('Tressi Version: ')} ${chalk.green(`v${currentVersion}`)}`);
+      terminal.print(`${chalk.dim('Config Version: ')} ${chalk.yellow(configVersionText)}`);
+      terminal.print(`${chalk.dim('Tressi Version: ')} ${chalk.green(currentVersionText)}`);
       terminal.print(
-        `\nTo run this configuration, please use Tressi ${chalk.cyan(`v${configVersion}`)} or update the configuration to ${chalk.cyan(`v${currentVersion}`)}.`,
+        `\nTo run this configuration, please use Tressi ${chalk.cyan(configVersionText)} or update the configuration to ${chalk.cyan(currentVersionText)}.`,
       );
       process.exit(1);
     }
@@ -299,8 +302,9 @@ export class MigrationManager {
 
     try {
       const backupPath = `${absolutePath}.bak`;
+      const backupPathDisplay = `${filePath}.bak`;
       await fs.copyFile(absolutePath, backupPath);
-      spinner.text = `Created backup at "${chalk.dim(`${filePath}.bak`)}"`;
+      spinner.text = `Created backup at "${chalk.dim(backupPathDisplay)}"`;
 
       await fs.writeFile(absolutePath, JSON.stringify(migratedData, null, 2), 'utf-8');
       spinner.succeed(`Successfully migrated "${chalk.cyan(filePath)}".`);
@@ -543,49 +547,35 @@ export class MigrationManager {
 
     for (const parentPath of paths) {
       const { oldValues, newValues } = grouped[parentPath];
-      const allKeys = new Set([...Object.keys(oldValues), ...Object.keys(newValues)]);
-
       const header = parentPath.startsWith('[') ? parentPath : chalk.bold.cyan(parentPath);
-
       terminal.print(`  ${header}:`);
-
-      for (const key of allKeys) {
-        const oldVal = oldValues[key];
-        const newVal = newValues[key];
-
-        if (oldVal !== undefined && newVal !== undefined) {
-          terminal.print(
-            `    ${chalk.red('-')} ${key}: ${chalk.red(this._formatValue(oldVal))} → ${chalk.green(this._formatValue(newVal))}`,
-          );
-        } else if (oldVal !== undefined) {
-          terminal.print(`    ${chalk.red('-')} ${key}: ${chalk.red(this._formatValue(oldVal))}`);
-        } else {
-          terminal.print(
-            `    ${chalk.green('+')} ${key}: ${chalk.green(this._formatValue(newVal))}`,
-          );
-        }
-      }
+      this._printDiffLines(oldValues, newValues);
     }
 
     if (grouped['']) {
       terminal.print(`  ${chalk.bold.cyan('root:')}`);
-
       const rootChanges = grouped[''];
-      for (const key of Object.keys(rootChanges.newValues)) {
-        const oldVal = rootChanges.oldValues[key];
-        const newVal = rootChanges.newValues[key];
+      this._printDiffLines(rootChanges.oldValues, rootChanges.newValues);
+    }
+  }
 
-        if (oldVal !== undefined && newVal !== undefined) {
-          terminal.print(
-            `    ${chalk.red('-')} ${key}: ${chalk.red(this._formatValue(oldVal))} → ${chalk.green(this._formatValue(newVal))}`,
-          );
-        } else if (oldVal !== undefined) {
-          terminal.print(`    ${chalk.red('-')} ${key}: ${chalk.red(this._formatValue(oldVal))}`);
-        } else {
-          terminal.print(
-            `    ${chalk.green('+')} ${key}: ${chalk.green(this._formatValue(newVal))}`,
-          );
-        }
+  private _printDiffLines(
+    oldValues: Record<string, unknown>,
+    newValues: Record<string, unknown>,
+  ): void {
+    const allKeys = new Set([...Object.keys(oldValues), ...Object.keys(newValues)]);
+    for (const key of allKeys) {
+      const oldVal = oldValues[key];
+      const newVal = newValues[key];
+
+      if (oldVal !== undefined && newVal !== undefined) {
+        terminal.print(
+          `    ${chalk.red('-')} ${key}: ${chalk.red(this._formatValue(oldVal))} → ${chalk.green(this._formatValue(newVal))}`,
+        );
+      } else if (oldVal !== undefined) {
+        terminal.print(`    ${chalk.red('-')} ${key}: ${chalk.red(this._formatValue(oldVal))}`);
+      } else {
+        terminal.print(`    ${chalk.green('+')} ${key}: ${chalk.green(this._formatValue(newVal))}`);
       }
     }
   }

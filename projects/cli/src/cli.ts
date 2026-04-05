@@ -12,7 +12,7 @@ import { terminal } from './tui/terminal';
  * The main CLI application for Tressi.
  */
 class TressiCLI {
-  private _program: Command;
+  private readonly _program: Command;
 
   constructor() {
     this._program = new Command();
@@ -56,7 +56,7 @@ class TressiCLI {
       .option('-p, --port <port>', 'Server port (default: 3108)', '3108')
       .action(async (options) => {
         const command = new ServeCommand();
-        const port = parseInt(options.port, 10);
+        const port = Number.parseInt(options.port, 10);
         await command.execute({
           port,
         });
@@ -107,9 +107,10 @@ class TressiCLI {
       },
     });
 
+    const versionText = `Tressi v${pkg.version}`;
     this._program.addHelpText(
       'beforeAll',
-      `${chalk.yellow.bold('⚡')} ${chalk.bold(`Tressi v${pkg.version}`)}\n`,
+      `${chalk.yellow.bold('⚡')} ${chalk.bold(versionText)}\n`,
     );
 
     this._program.addHelpText(

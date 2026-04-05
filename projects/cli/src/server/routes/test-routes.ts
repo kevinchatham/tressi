@@ -191,7 +191,7 @@ const app = new Hono()
         });
       }
 
-      const latestRunningTest = runningTests.sort(
+      const latestRunningTest = [...runningTests].sort(
         (a, b) =>
           (b.summary?.global.epochStartedAt || b.epochCreatedAt || 0) -
           (a.summary?.global.epochStartedAt || a.epochCreatedAt || 0),

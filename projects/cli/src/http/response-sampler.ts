@@ -4,7 +4,7 @@
  * storing every response, which could be memory-intensive.
  */
 export class ResponseSampler {
-  private _responseSamplingSets: Map<string, Set<number>> = new Map();
+  private readonly _responseSamplingSets: Map<string, Set<number>> = new Map();
 
   /**
    * Determines if a response body should be sampled for debugging purposes.

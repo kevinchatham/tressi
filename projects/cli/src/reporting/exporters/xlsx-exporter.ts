@@ -66,7 +66,7 @@ export class XlsxExporter {
     // Aggregate status codes from all endpoints
     for (const endpoint of summary.endpoints) {
       for (const [statusCode, count] of Object.entries(endpoint.statusCodeDistribution)) {
-        const code = parseInt(statusCode, 10);
+        const code = Number.parseInt(statusCode, 10);
         statusCodeMap[code] = (statusCodeMap[code] || 0) + count;
       }
     }
