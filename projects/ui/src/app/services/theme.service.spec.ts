@@ -60,7 +60,11 @@ describe('ThemeService', () => {
       observe = vi.fn();
       disconnect = vi.fn();
     }
-    vi.spyOn(window, 'MutationObserver').mockImplementation(MockMutationObserver as any);
+    vi.spyOn(window, 'MutationObserver').mockImplementation(
+      MockMutationObserver as unknown as new (
+        callback: MutationCallback,
+      ) => MutationObserver,
+    );
 
     TestBed.configureTestingModule({
       providers: [{ provide: LocalStorageService, useValue: mockLocalStorageService }],

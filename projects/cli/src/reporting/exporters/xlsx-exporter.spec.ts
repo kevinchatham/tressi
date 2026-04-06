@@ -1,5 +1,5 @@
 import { writeFile } from 'node:fs/promises';
-import type { EndpointSummary, TestSummary } from '@tressi/shared/common';
+import type { EndpointSummary, GlobalSummary, TestSummary } from '@tressi/shared/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { validateXlsxPath } from '../utils/validation';
@@ -24,7 +24,7 @@ describe('XlsxExporter', () => {
     vi.clearAllMocks();
   });
 
-  const createMockGlobal = (overrides = {}) => ({
+  const createMockGlobal = (overrides: Partial<GlobalSummary> = {}): GlobalSummary => ({
     averageRequestsPerSecond: 100,
     avgProcessMemoryUsageMB: 256,
     avgSystemCpuUsagePercent: 45,

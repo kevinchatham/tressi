@@ -591,10 +591,10 @@ describe('MigrationManager', () => {
       )._promptUser('Continue?');
 
       Object.defineProperty(process.stdin, 'isTTY', { configurable: true, value: originalIsTTY });
-      if (originalAutoMigrate !== undefined) {
-        process.env['TRESSI_AUTO_MIGRATE'] = originalAutoMigrate;
-      } else {
+      if (originalAutoMigrate) {
         delete process.env['TRESSI_AUTO_MIGRATE'];
+      } else {
+        process.env['TRESSI_AUTO_MIGRATE'] = originalAutoMigrate;
       }
 
       expect(result).toBe(true);
@@ -824,7 +824,6 @@ describe('MigrationManager', () => {
         },
       });
 
-      const originalGetVersion = MigrationManager.getVersion;
       vi.spyOn(MigrationManager, 'getVersion').mockImplementation((url) => {
         if (url?.includes('v0.0.12')) return '0.0.12';
         if (url?.includes('v0.0.13')) return '0.0.13';
