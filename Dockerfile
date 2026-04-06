@@ -50,6 +50,7 @@ EXPOSE 3108
 
 # Set environment variables
 ENV NODE_ENV=production
+ENV TRESSI_AUTO_MIGRATE=true
 
 # Set the entrypoint to the Tressi CLI
 ENTRYPOINT ["node", "dist/cli.js"]

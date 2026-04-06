@@ -109,6 +109,27 @@ Tressi maintains data integrity and provides visibility during the migration pro
 - **Atomic Updates**: The use of transactions ensures that the database never remains in a partially migrated state.
 - **Detailed Logging**: The system logs the summary of each migration as it is applied, providing visibility into schema changes.
 
+### Automated Migration in Non-Interactive Environments
+
+By default, Tressi prompts for user confirmation before applying migrations. However, in non-interactive environments (such as Docker containers or CI/CD pipelines), this behavior is automated using the `TRESSI_AUTO_MIGRATE` environment variable.
+
+When `TRESSI_AUTO_MIGRATE=true`, Tressi automatically applies pending migrations without prompting for confirmation. This is useful for:
+
+- **Docker**: Containers run in non-interactive mode by default, so automatic migration ensures the database and configuration are up-to-date on startup.
+- **CI/CD**: Automated pipelines can run Tressi without manual intervention.
+
+To enable automatic migration when running locally via `npx`:
+
+```bash
+TRESSI_AUTO_MIGRATE=true npx tressi serve
+```
+
+To disable automatic migration in Docker (revert to the interactive prompt behavior), set the environment variable to `false`:
+
+```bash
+docker run -e TRESSI_AUTO_MIGRATE=false -p 3108:3108 ghcr.io/kevinchatham/tressi serve
+```
+
 ### Detecting Configuration Versions
 
 Version detection relies on the `$schema` URL in the configuration JSON. The `ConfigMigrationManager` utilizes a regular expression to extract the version string (e.g., `0.0.19`) from the URL.

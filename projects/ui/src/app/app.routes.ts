@@ -10,7 +10,7 @@ import { HealthService } from './services/health.service';
 import { AppRouterService } from './services/router.service';
 
 // Health check guard using the centralized service
-const healthCheckGuard = async (): Promise<boolean> => {
+export const healthCheckGuard = async (): Promise<boolean> => {
   const health = inject(HealthService);
   const appRouter = inject(AppRouterService);
 
@@ -33,7 +33,7 @@ const healthCheckGuard = async (): Promise<boolean> => {
 };
 
 // Configuration guard for welcome and settings routes
-const configGuard = async (
+export const configGuard = async (
   route?: ActivatedRouteSnapshot,
   state?: RouterStateSnapshot,
 ): Promise<boolean> => {

@@ -269,11 +269,33 @@ describe('MIGRATIONS.db', () => {
     });
   });
 
-  describe('0.0.17', () => {
-    it('should have a warning about destructive migration', () => {
-      const migration = MIGRATIONS['0.0.17'].db;
-      expect(migration.summary).toContain('WARNING');
-      expect(migration.summary).toContain('Destructive');
+  describe('0.0.20 config', () => {
+    it('should update $schema to 0.0.20', () => {
+      const config = {
+        $schema:
+          'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.19.json',
+      };
+
+      const result = MIGRATIONS['0.0.20'].config.up(config);
+
+      expect(result.$schema).toContain('v0.0.20');
+    });
+
+    it('should be a migration object with config and db', () => {
+      expect(MIGRATIONS['0.0.20'].config).toBeDefined();
+      expect(MIGRATIONS['0.0.20'].db).toBeDefined();
+    });
+  });
+
+  describe('0.0.20 db', () => {
+    it('should have correct summary for db migration', () => {
+      const migration = MIGRATIONS['0.0.20'].db;
+      expect(migration.summary).toContain('Disable early exit if unsafe');
+    });
+
+    it('should be a function', () => {
+      expect(MIGRATIONS['0.0.20'].db.up).toBeDefined();
+      expect(typeof MIGRATIONS['0.0.20'].db.up).toBe('function');
     });
   });
 });

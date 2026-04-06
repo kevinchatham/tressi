@@ -45,6 +45,18 @@ vi.mock('../utils/error-response-generator', () => ({
   createApiErrorResponse: vi.fn((message, code) => ({ code, message })),
 }));
 
+vi.mock('../../reporting/exporters/markdown-exporter', () => ({
+  MarkdownExporter: vi.fn().mockImplementation(() => ({
+    export: vi.fn().mockResolvedValue('# Test Results\n\nSummary here'),
+  })),
+}));
+
+vi.mock('../../reporting/exporters/xlsx-exporter', () => ({
+  XlsxExporter: vi.fn().mockImplementation(() => ({
+    export: vi.fn().mockResolvedValue(new Uint8Array([1, 2, 3])),
+  })),
+}));
+
 describe('test-routes', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -148,6 +160,48 @@ describe('test-routes', () => {
 
       const res = await app.request('/stop', { method: 'POST' });
       expect(res.status).toBe(500);
+    });
+  });
+
+  describe('GET /:id/export', () => {
+    it('should export test as JSON', async () => {
+      const mockTest = {
+        id: '1',
+        status: 'completed',
+        summary: { endpoints: [], global: {} },
+      };
+      vi.mocked(testStorage.getById).mockResolvedValue(mockTest as unknown as TestDocument);
+
+      const res = await app.request('/1/export?format=json');
+      expect(res.status).toBe(200);
+      expect(res.headers.get('Content-Type')).toBe('application/json');
+    });
+
+    it('should return 404 if test not found', async () => {
+      vi.mocked(testStorage.getById).mockResolvedValue(undefined);
+
+      const res = await app.request('/nonexistent/export?format=json');
+      expect(res.status).toBe(404);
+    });
+
+    it('should return 400 if no summary available', async () => {
+      const mockTest = { id: '1', status: 'completed', summary: undefined };
+      vi.mocked(testStorage.getById).mockResolvedValue(mockTest as unknown as TestDocument);
+
+      const res = await app.request('/1/export?format=json');
+      expect(res.status).toBe(400);
+    });
+
+    it('should return 400 for invalid format', async () => {
+      const mockTest = {
+        id: '1',
+        status: 'completed',
+        summary: { endpoints: [], global: {} },
+      };
+      vi.mocked(testStorage.getById).mockResolvedValue(mockTest as unknown as TestDocument);
+
+      const res = await app.request('/1/export?format=invalid');
+      expect(res.status).toBe(400);
     });
   });
 

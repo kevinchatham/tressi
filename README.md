@@ -43,7 +43,7 @@ tressi serve
 
 ### Docker
 
-You can also run `tressi` using Docker. This is the recommended way for CI/CD environments or if you don't want to install Node.js locally.
+You can also run `tressi` using Docker. This is recommended if you don't want to install Node.js locally.
 
 #### Using Docker Run
 

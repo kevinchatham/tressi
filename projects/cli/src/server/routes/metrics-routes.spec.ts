@@ -55,4 +55,14 @@ describe('metrics-routes', () => {
     expect(data.error.code).toBe('INTERNAL_ERROR');
     expect(data.error.details).toContain('Database connection failed');
   });
+
+  it('GET /stream should return a streaming response', async () => {
+    const app = createMetricsApp(mockSseManager);
+    const res = await app.request('/stream');
+    expect(res.status).toBe(200);
+    expect(res.headers.get('Content-Type')).toBe('text/event-stream');
+    expect(res.headers.get('Cache-Control')).toBe('no-cache');
+    expect(res.headers.get('Connection')).toBe('keep-alive');
+    expect(mockSseManager.addClient).toHaveBeenCalled();
+  });
 });
