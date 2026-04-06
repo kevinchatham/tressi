@@ -1,5 +1,5 @@
 import { type ComponentFixture, TestBed } from '@angular/core/testing';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import {
   type ConfigDocument,
   defaultTressiConfig,
@@ -23,6 +23,7 @@ describe('ConfigsComponent', () => {
     saveConfig: ReturnType<typeof vi.fn>;
   };
   let mockRouter: { url: string };
+  let mockActivatedRoute: { snapshot: { data: { configs: ConfigDocument[] } } };
   let mockAppRouter: {
     updateUrl: ReturnType<typeof vi.fn>;
     toHome: ReturnType<typeof vi.fn>;
@@ -89,6 +90,14 @@ describe('ConfigsComponent', () => {
       url: '/configs',
     };
 
+    mockActivatedRoute = {
+      snapshot: {
+        data: {
+          configs: mockConfigs,
+        },
+      },
+    };
+
     mockAppRouter = {
       isOnDocs: vi.fn().mockReturnValue(false),
       isOnServerUnavailable: vi.fn().mockReturnValue(false),
@@ -113,6 +122,7 @@ describe('ConfigsComponent', () => {
       providers: [
         { provide: ConfigService, useValue: mockConfigService },
         { provide: Router, useValue: mockRouter },
+        { provide: ActivatedRoute, useValue: mockActivatedRoute },
         { provide: AppRouterService, useValue: mockAppRouter },
         { provide: ToastService, useValue: mockToastService },
         { provide: TitleService, useValue: mockTitleService },
@@ -121,7 +131,7 @@ describe('ConfigsComponent', () => {
 
     fixture = TestBed.createComponent(ConfigsComponent);
     component = fixture.componentInstance;
-    fixture.componentRef.setInput('configsInput', mockConfigs);
+    fixture.componentRef.setInput('configs', mockConfigs);
     fixture.detectChanges();
   });
 
@@ -130,7 +140,7 @@ describe('ConfigsComponent', () => {
   });
 
   it('should sync configs from input', () => {
-    expect(component.configs()).toEqual(mockConfigs);
+    expect(component.configsSignal()).toEqual(mockConfigs);
   });
 
   it('should return all configs when search query is empty', () => {
@@ -170,8 +180,7 @@ describe('ConfigsComponent', () => {
       },
       id: 'multi',
     };
-    fixture.componentRef.setInput('configsInput', [multiRequestConfig]);
-    fixture.detectChanges();
+    component.configsSignal.set([multiRequestConfig]);
 
     component.searchQuery.set('b.com');
     expect(component.filteredConfigs().length).toBe(1);
@@ -194,8 +203,7 @@ describe('ConfigsComponent', () => {
   });
 
   it('should return true for hasNoConfigs when configs array is empty', () => {
-    fixture.componentRef.setInput('configsInput', []);
-    fixture.detectChanges();
+    component.configsSignal.set([]);
     expect(component.hasNoConfigs()).toBe(true);
   });
 
@@ -305,8 +313,8 @@ describe('ConfigsComponent', () => {
     it('should remove the config from the list', async () => {
       component.showDeleteConfirm(mockConfig);
       await component.deleteConfig();
-      expect(component.configs().length).toBe(1);
-      expect(component.configs()[0].id).toBe('config-2');
+      expect(component.configsSignal().length).toBe(1);
+      expect(component.configsSignal()[0].id).toBe('config-2');
     });
 
     it('should do nothing if no config is set to delete', async () => {
@@ -353,8 +361,8 @@ describe('ConfigsComponent', () => {
       };
       await component.onConfigSaved(saveRequest);
 
-      expect(component.configs().length).toBe(3);
-      expect(component.configs()[2].id).toBe('new-id');
+      expect(component.configsSignal().length).toBe(3);
+      expect(component.configsSignal()[2].id).toBe('new-id');
     });
 
     it('should update existing config in the list', async () => {
@@ -371,7 +379,7 @@ describe('ConfigsComponent', () => {
       };
       await component.onConfigSaved(saveRequest);
 
-      expect(component.configs()[0].name).toBe('Updated Config');
+      expect(component.configsSignal()[0].name).toBe('Updated Config');
     });
 
     it('should cancel edit after saving', async () => {
@@ -501,7 +509,6 @@ describe('ConfigsComponent', () => {
     });
 
     it('should start create mode when URL includes /create', async () => {
-      // Create a new test bed for this specific case to override the router URL
       await TestBed.resetTestingModule();
       await TestBed.configureTestingModule({
         imports: [ConfigsComponent],
@@ -516,7 +523,7 @@ describe('ConfigsComponent', () => {
 
       const newFixture = TestBed.createComponent(ConfigsComponent);
       const newComponent = newFixture.componentInstance;
-      newFixture.componentRef.setInput('configsInput', mockConfigs);
+      newFixture.componentRef.setInput('configs', mockConfigs);
       newFixture.detectChanges();
 
       expect(newComponent.showForm()).toBe(true);
@@ -526,8 +533,7 @@ describe('ConfigsComponent', () => {
 
   it('should update configs when input changes', () => {
     const newConfigs = [...mockConfigs, { ...mockConfig, id: 'new-one' }];
-    fixture.componentRef.setInput('configsInput', newConfigs);
-    fixture.detectChanges();
-    expect(component.configs()).toEqual(newConfigs);
+    component.configsSignal.set(newConfigs);
+    expect(component.configsSignal()).toEqual(newConfigs);
   });
 });

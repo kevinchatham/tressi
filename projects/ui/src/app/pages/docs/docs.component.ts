@@ -76,7 +76,7 @@ export class DocsComponent {
   readonly appRouter = inject(AppRouterService);
   readonly markdownSrc = signal<string>('');
   readonly error = signal<string | null>(null);
-  readonly availableDocs = input.required<MarkdownSlugs>();
+  readonly availableDocs = input<MarkdownSlugs>();
   readonly section = input<string>();
   readonly filename = input<string>();
   readonly isTransitioning = signal(false);
@@ -96,8 +96,9 @@ export class DocsComponent {
       const filename = this.filename();
       const docs = this.availableDocs();
 
+      if (!docs) return;
+
       if (!section && !filename) {
-        // Default to the first section's index
         const firstSection = Object.values(docs)[0];
         if (firstSection) {
           this.loadDocs(firstSection.path);
@@ -113,15 +114,15 @@ export class DocsComponent {
   loadDocs(slug: string): void {
     this.isTransitioning.set(true);
 
-    // Small delay to allow fade out to start/complete
     setTimeout(() => {
       this.error.set(null);
 
       let realPath = slug;
       const docs = this.availableDocs();
+      if (!docs) return;
+
       this.currentSectionFolder.set(null);
 
-      // Find the real path from the nice slug
       for (const section of Object.values(docs)) {
         // Check if the slug is exactly the section path (e.g. /docs/core-concepts)
         // If so, we want to load the index file for that section

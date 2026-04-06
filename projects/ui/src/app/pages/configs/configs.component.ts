@@ -7,7 +7,6 @@ import {
   input,
   type OnInit,
   signal,
-  untracked,
 } from '@angular/core';
 import { Router } from '@angular/router';
 import type { ConfigDocument, SaveConfigRequest } from '@tressi/shared/common';
@@ -43,15 +42,16 @@ import { ToastService } from '../../services/toast.service';
 export class ConfigsComponent implements OnInit {
   /** Service injection */
   private readonly _configService = inject(ConfigService);
-  private readonly _router = inject(Router);
   private readonly _toastService = inject(ToastService);
+  private readonly _router = inject(Router);
 
   readonly appRouter = inject(AppRouterService);
   readonly timeService = inject(TimeService);
 
-  /** Reactive signals for state management */
-  readonly configsInput = input.required<ConfigDocument[]>();
-  readonly configs = signal<ConfigDocument[]>([]);
+  /** Resolved configs from router */
+  readonly configs = input<ConfigDocument[]>();
+
+  readonly configsSignal = signal<ConfigDocument[]>([]);
   readonly showDeleteModal = signal<boolean>(false);
   readonly configToDelete = signal<ConfigDocument | null>(null);
 
@@ -66,7 +66,7 @@ export class ConfigsComponent implements OnInit {
 
   /** Computed signal that filters configs based on search query */
   readonly filteredConfigs = computed(() => {
-    const configs = this.configs();
+    const configs = this.configsSignal();
     if (!configs) return [];
 
     const query = this.searchQuery().toLowerCase().trim();
@@ -83,25 +83,21 @@ export class ConfigsComponent implements OnInit {
 
   /** Computed signal to check if there are no configs to display */
   readonly hasNoConfigs = computed(() => {
-    const configs = this.configs();
+    const configs = this.configsSignal();
     return !configs || configs.length === 0;
   });
 
   constructor() {
-    // Sync the input to our local writable signal
     effect(() => {
-      const initialConfigs = this.configsInput();
-      if (initialConfigs !== undefined) {
-        untracked(() => this.configs.set(initialConfigs));
+      const resolvedConfigs = this.configs();
+      if (resolvedConfigs !== undefined) {
+        this.configsSignal.set(resolvedConfigs);
       }
     });
   }
 
   ngOnInit(): void {
-    // Check if the current route is the 'create' route
-    const isCreateRoute = this._router.url.includes('/create');
-
-    if (isCreateRoute) {
+    if (this._router.url.includes('/create')) {
       this.startCreate();
     }
   }
@@ -171,7 +167,7 @@ export class ConfigsComponent implements OnInit {
     this.configToDelete.set(null);
 
     // Update configs directly instead of reloading
-    this.configs.update((configs) => configs.filter((c) => c.id !== config.id));
+    this.configsSignal.update((configs) => configs.filter((c) => c.id !== config.id));
   }
 
   /**
@@ -181,7 +177,7 @@ export class ConfigsComponent implements OnInit {
     const savedConfig = await this._configService.saveConfig(event);
 
     // Update configs directly instead of reloading
-    this.configs.update((configs) => {
+    this.configsSignal.update((configs) => {
       const existingIndex = configs.findIndex((c) => c.id === savedConfig.id);
       if (existingIndex >= 0) {
         // Update existing config

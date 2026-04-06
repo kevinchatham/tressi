@@ -17,7 +17,18 @@
       "updateMode": "prefetch"
     }
   ],
-  "dataGroups": [],
+  "dataGroups": [
+    {
+      "cacheConfig": {
+        "maxAge": "0u",
+        "maxSize": 0,
+        "strategy": "freshness",
+        "timeout": "0u"
+      },
+      "name": "api-bypass",
+      "urls": ["/api/**"]
+    }
+  ],
   "index": "/index.html",
   "navigationUrls": ["/**", "!/api/**"]
 }

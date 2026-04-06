@@ -44,7 +44,7 @@ export class TestDetailComponent {
   readonly appRouter = inject(AppRouterService);
   readonly service = inject(TestDetailService);
 
-  readonly data = input.required<TestDetailResolvedData>();
+  readonly data = input<TestDetailResolvedData>();
   readonly testId = input<string>();
   private readonly _testService = inject(TestService);
   private readonly _logService = inject(LogService);
