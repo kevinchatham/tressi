@@ -75,23 +75,21 @@ export class MigrationManager {
     terminal.print(`${chalk.dim('Target Version: ')} ${chalk.green(pkg.version)}\n`);
 
     const table = new Table({
-      colWidths: [15, 15, 60],
-      head: [chalk.cyan('Version'), chalk.cyan('Type'), chalk.cyan('Summary')],
+      colWidths: [15, 65],
+      head: [chalk.cyan('Version'), chalk.cyan('Summary')],
       wordWrap: true,
     });
 
     for (const v of pending.db) {
-      table.push([v, 'db', MIGRATIONS[v].db.summary]);
-    }
-    for (const v of pending.config) {
-      table.push([v, 'config', MIGRATIONS[v].config.summary]);
+      const summary = MIGRATIONS[v].db.summary;
+      table.push([v, summary]);
     }
 
     terminal.print(chalk.bold('Pending migrations:'));
     terminal.print(table.toString());
 
     const confirmed = await this._promptUser(
-      `\nWould you like to apply these ${pending.db.length + pending.config.length} migration(s)? (y/N): `,
+      `\nWould you like to apply these ${pending.db.length} migration(s)? (y/N): `,
     );
 
     if (!confirmed) {

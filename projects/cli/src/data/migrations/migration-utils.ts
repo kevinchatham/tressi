@@ -38,21 +38,12 @@ export function createMigration(
   summary: string,
   { configUp, dbUp }: CreateMigrationOptions,
 ): Migration {
-  return createMigrationWithSummaries(
-    version,
-    { configSummary: summary, dbSummary: summary },
-    { configUp, dbUp },
-  );
-}
-
-interface MigrationSummaries {
-  configSummary: string;
-  dbSummary: string;
+  return createMigrationWithSummaries(version, summary, { configUp, dbUp });
 }
 
 export function createMigrationWithSummaries(
   version: string,
-  { configSummary, dbSummary }: MigrationSummaries,
+  summary: string,
   { configUp, dbUp }: CreateMigrationOptions,
 ): Migration {
   if (configUp === 'noop' && dbUp === 'noop') {
@@ -76,12 +67,12 @@ export function createMigrationWithSummaries(
 
   return {
     config: {
-      summary: configSummary,
+      summary,
       up: configUp,
       version,
     },
     db: {
-      summary: dbSummary,
+      summary,
       up: dbUp,
     },
   };

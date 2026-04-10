@@ -9,11 +9,7 @@ import {
 
 export const migration_0_0_17: Migration = createMigrationWithSummaries(
   '0.0.17',
-  {
-    configSummary: 'Bump early exit monitoring window configurations > 0 and < 1000 to 1000.',
-    dbSummary:
-      'WARNING: Destructive migration. Chart data will be reset to support a more accurate summary-based storage format. Final test summaries will remain.',
-  },
+  'Bump early exit monitoring window: values 1-999 → 1000ms.\n\nDESTRUCTIVE: Chart data will be reset to enable accurate summary-based storage. Test summaries are preserved.',
   {
     configUp: (config: VersionedTressiConfig) => {
       const data = config as TressiConfig;
