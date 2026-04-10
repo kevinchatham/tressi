@@ -24,7 +24,12 @@ export class FormatNumberDirective {
       }
       const sign = numValue < 0 ? '-' : '';
       const absValue = Math.abs(numValue);
-      this._el.nativeElement.textContent = sign + humanNumber(absValue).toLowerCase();
+      this._el.nativeElement.textContent =
+        sign +
+        humanNumber(absValue, (n) => {
+          if (absValue < 999) return n.toFixed(0);
+          else return n.toFixed(1);
+        }).toLowerCase();
     });
   }
 }
