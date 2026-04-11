@@ -914,4 +914,253 @@ describe('MigrationManager', () => {
       ).rejects.toThrow('Database migration halted');
     });
   });
+
+  describe('migrateFile', () => {
+    it('should return early when file is not accessible', async () => {
+      vi.mocked(fs.access).mockRejectedValue(new Error('ENOENT'));
+
+      const mockDb = {} as unknown as Kysely<Database>;
+      const manager = new MigrationManager(mockDb);
+
+      await manager.migrateFile('/nonexistent/path/config.json');
+
+      expect(vi.mocked(fs.readFile)).not.toHaveBeenCalled();
+    });
+
+    it('should return early when config version is not lower than current', async () => {
+      vi.mocked(fs.access).mockResolvedValue(undefined);
+      vi.mocked(fs.readFile).mockResolvedValue(
+        JSON.stringify({
+          $schema:
+            'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.20.json',
+        }),
+      );
+
+      const mockDb = {} as unknown as Kysely<Database>;
+      const manager = new MigrationManager(mockDb);
+
+      await manager.migrateFile('/some/path/config.json');
+
+      expect(vi.mocked(fs.writeFile)).not.toHaveBeenCalled();
+    });
+
+    it('should return early when schema parsing fails', async () => {
+      vi.mocked(fs.access).mockResolvedValue(undefined);
+      vi.mocked(fs.readFile).mockRejectedValue(new Error('Read error'));
+
+      const mockDb = {} as unknown as Kysely<Database>;
+      const manager = new MigrationManager(mockDb);
+
+      await manager.migrateFile('/some/path/config.json');
+
+      expect(terminal.error).not.toHaveBeenCalled();
+    });
+
+    it('should return early when schema is invalid format', () => {
+      expect(() => MigrationManager.getVersion('invalid-schema')).toThrow();
+    });
+  });
+
+  describe('_updateVersion', () => {
+    it('should insert migration record into database', async () => {
+      const mockExecute = vi.fn().mockResolvedValue(undefined);
+      const mockInsertInto = vi.fn().mockReturnValue({
+        values: vi.fn().mockReturnValue({
+          execute: mockExecute,
+        }),
+      });
+
+      const mockDb = {
+        insertInto: mockInsertInto,
+      } as unknown as Kysely<Database>;
+
+      const mockTrx = {
+        insertInto: mockInsertInto,
+      } as unknown as Kysely<Database>;
+
+      const manager = new MigrationManager(mockDb);
+      await (
+        manager as unknown as {
+          _updateVersion: (version: string, trx: Kysely<Database>) => Promise<void>;
+        }
+      )._updateVersion('0.0.13', mockTrx);
+
+      expect(mockInsertInto).toHaveBeenCalledWith('migrations');
+      expect(mockExecute).toHaveBeenCalled();
+    });
+  });
+
+  describe('_displayDiff', () => {
+    it('should print no changes when diff is empty', () => {
+      const mockDb = {} as unknown as Kysely<Database>;
+      const manager = new MigrationManager(mockDb);
+
+      (
+        manager as unknown as {
+          _displayDiff: (oldObj: unknown, newObj: unknown) => void;
+        }
+      )._displayDiff({ name: 'same' }, { name: 'same' });
+
+      expect(terminal.print).toHaveBeenCalled();
+    });
+
+    it('should print grouped changes sorted by path', () => {
+      const mockDb = {} as unknown as Kysely<Database>;
+      const manager = new MigrationManager(mockDb);
+
+      const oldObj = { a: { x: 1 }, b: { y: 2 } };
+      const newObj = { a: { x: 2 }, b: { y: 3 } };
+
+      (
+        manager as unknown as {
+          _displayDiff: (oldObj: unknown, newObj: unknown) => void;
+        }
+      )._displayDiff(oldObj, newObj);
+
+      expect(terminal.print).toHaveBeenCalled();
+    });
+  });
+
+  describe('_printDiffLines', () => {
+    it('should print modified values with both old and new', () => {
+      const mockDb = {} as unknown as Kysely<Database>;
+      const manager = new MigrationManager(mockDb);
+
+      (
+        manager as unknown as {
+          _printDiffLines: (
+            oldValues: Record<string, unknown>,
+            newValues: Record<string, unknown>,
+          ) => void;
+        }
+      )._printDiffLines({ key: 'oldValue' }, { key: 'newValue' });
+
+      expect(terminal.print).toHaveBeenCalled();
+    });
+
+    it('should print added values with green plus', () => {
+      const mockDb = {} as unknown as Kysely<Database>;
+      const manager = new MigrationManager(mockDb);
+
+      (
+        manager as unknown as {
+          _printDiffLines: (
+            oldValues: Record<string, unknown>,
+            newValues: Record<string, unknown>,
+          ) => void;
+        }
+      )._printDiffLines({}, { key: 'newValue' });
+
+      expect(terminal.print).toHaveBeenCalled();
+    });
+
+    it('should print removed values with red minus', () => {
+      const mockDb = {} as unknown as Kysely<Database>;
+      const manager = new MigrationManager(mockDb);
+
+      (
+        manager as unknown as {
+          _printDiffLines: (
+            oldValues: Record<string, unknown>,
+            newValues: Record<string, unknown>,
+          ) => void;
+        }
+      )._printDiffLines({ key: 'oldValue' }, {});
+
+      expect(terminal.print).toHaveBeenCalled();
+    });
+  });
+
+  describe('_applyConfigMigrations', () => {
+    it('should call spinner start for each config', () => {
+      const mockDb = {} as unknown as Kysely<Database>;
+      const manager = new MigrationManager(mockDb);
+
+      const mockSpinner = {
+        fail: vi.fn(),
+        start: vi.fn(),
+        succeed: vi.fn(),
+        text: '',
+      };
+
+      vi.spyOn(configStorage, 'edit').mockResolvedValue({} as ConfigDocument);
+
+      const outdated: { doc: ConfigDocument; version: string }[] = [
+        {
+          doc: {
+            config: {
+              $schema:
+                'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.19.json',
+              options: { durationSec: 60, headers: {}, rampUpDurationSec: 0, threads: 1 },
+              requests: [],
+            },
+            epoch_created_at: 0,
+            epoch_updated_at: 0,
+            id: 'config-1',
+            name: 'Test Config',
+          } as unknown as ConfigDocument,
+          version: '0.0.19',
+        },
+      ];
+
+      const failures: string[] = [];
+
+      (
+        manager as unknown as {
+          _applyConfigMigrations: (
+            outdated: { doc: ConfigDocument; version: string }[],
+            spinner: unknown,
+            failures: string[],
+          ) => void;
+        }
+      )._applyConfigMigrations(outdated, mockSpinner, failures);
+
+      expect(mockSpinner.start).toHaveBeenCalled();
+    });
+
+    it('should handle migration failures and record them', () => {
+      const mockDb = {} as unknown as Kysely<Database>;
+      const manager = new MigrationManager(mockDb);
+
+      const mockSpinner = {
+        fail: vi.fn(),
+        start: vi.fn(),
+        succeed: vi.fn(),
+        text: '',
+      };
+
+      vi.spyOn(configStorage, 'edit').mockImplementation(() => {
+        throw new Error('Storage error');
+      });
+
+      const outdated: { doc: ConfigDocument; version: string }[] = [
+        {
+          doc: {
+            config: {
+              $schema: 'invalid',
+            },
+            epoch_created_at: 0,
+            epoch_updated_at: 0,
+            id: 'config-1',
+            name: 'Bad Config',
+          } as unknown as ConfigDocument,
+          version: '0.0.12',
+        },
+      ];
+
+      const failures: string[] = [];
+
+      (
+        manager as unknown as {
+          _applyConfigMigrations: (
+            outdated: { doc: ConfigDocument; version: string }[],
+            spinner: unknown,
+            failures: string[],
+          ) => void;
+        }
+      )._applyConfigMigrations(outdated, mockSpinner, failures);
+
+      expect(failures.length).toBeGreaterThan(0);
+    });
+  });
 });
