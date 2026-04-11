@@ -60,11 +60,12 @@ export class ImportConfigButtonComponent {
 
   private _generateNameFromFile(fileName: string): string {
     const cleanedName = fileName
-      .replace(/\.(json)$/i, '') // Support json only
-      .replace(/^(tressi|config)[-_]/i, '') // Remove common prefixes with dash or underscore
-      .replace(/[-_](\d+|[a-f0-9]{8,})$/i, '') // Remove trailing IDs (numbers or hex hashes)
-      .replace(/[-_]+/g, ' ') // Replace multiple dashes/underscores with single space
-      .replace(/\s+/g, ' ') // Normalize multiple spaces
+      .replace(/\.(json)$/i, '')
+      .replace(/^(tressi|config)[-_]/i, '')
+      .replace(/[-_](\d+|[a-f0-9]{8,})$/i, '')
+      .replaceAll('-', ' ')
+      .replaceAll('_', ' ')
+      .replaceAll(/ {2,}/g, ' ')
       .trim();
 
     // If the cleaned name is empty, generate a unique name
@@ -73,7 +74,7 @@ export class ImportConfigButtonComponent {
     }
 
     // Convert to title case (capitalize first letter of each word)
-    return cleanedName.replace(/\b\w/g, (char) => char.toUpperCase());
+    return cleanedName.replaceAll(/\b\w/g, (char) => char.toUpperCase());
   }
 
   /**

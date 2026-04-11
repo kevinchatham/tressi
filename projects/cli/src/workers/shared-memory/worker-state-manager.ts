@@ -96,6 +96,7 @@ export class WorkerStateManager implements IWorkerStateManager {
 
       // If notified or timed out, continue loop to check state
       if (waitResult === 'not-equal') {
+        // State changed while waiting, loop will re-check
       }
     }
 

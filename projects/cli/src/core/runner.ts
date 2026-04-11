@@ -10,7 +10,7 @@ import { WorkerPoolManager } from '../workers/worker-pool-manager';
  * This class coordinates between all specialized components and manages the test lifecycle.
  */
 export class Runner extends EventEmitter<IRunnerEvents> {
-  private _workerPool: WorkerPoolManager;
+  private readonly _workerPool: WorkerPoolManager;
   private _startTime: number = 0;
   private _isCanceled: boolean = false;
 
@@ -18,7 +18,7 @@ export class Runner extends EventEmitter<IRunnerEvents> {
    * Creates a new CoreRunner instance.
    * @param _config The Tressi configuration
    */
-  constructor(private _config: TressiConfig) {
+  constructor(private readonly _config: TressiConfig) {
     super();
     this._workerPool = new WorkerPoolManager(_config);
   }
@@ -74,6 +74,14 @@ export class Runner extends EventEmitter<IRunnerEvents> {
    */
   public isCanceled(): boolean {
     return this._isCanceled;
+  }
+
+  /**
+   * Checks if early exit was triggered during the test.
+   * @returns True if early exit occurred, false otherwise
+   */
+  public getEarlyExitTriggered(): boolean {
+    return this._workerPool.getEarlyExitTriggered();
   }
 
   /**

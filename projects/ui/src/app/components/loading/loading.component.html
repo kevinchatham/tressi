@@ -1,14 +1,13 @@
 @if (shouldRender()) {
-  <div
+  <output
     class="loading-overlay"
     data-e2e="loading-overlay"
     [class.opacity-0]="isFadingOut() || !navigating()"
     [class.opacity-100]="!isFadingOut() && navigating()"
-    role="status"
     aria-live="polite"
     [attr.aria-busy]="navigating()"
   >
     <img [src]="logoSrc" alt="Tressi Logo" class="mb-4 size-20" />
     <span class="text-base-content/50 loading loading-infinity size-12"></span>
-  </div>
+  </output>
 }

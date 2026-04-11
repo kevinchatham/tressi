@@ -23,6 +23,7 @@ export interface IJsonMigration {
    * The transformation function to apply to the configuration.
    */
   up: (config: VersionedTressiConfig) => VersionedTressiConfig;
+  version: string;
 }
 
 /**

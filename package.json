@@ -20,7 +20,6 @@
     "fuse.js": "^7.1.0",
     "hdr-histogram-js": "^3.0.1",
     "hono": "^4.10.6",
-    "human-number": "^2.0.8",
     "kysely": "^0.28.9",
     "marked": "^17.0.2",
     "mermaid": "^11.12.2",
@@ -41,7 +40,6 @@
   "description": "Deterministic load testing for API performance validation.",
   "devDependencies": {
     "@biomejs/biome": "2.4.7",
-    "@types/human-number": "^1.0.2",
     "@types/jasmine": "~5.1.0",
     "@types/node": "^20.0.0",
     "@types/prismjs": "^1.26.6",
@@ -100,7 +98,7 @@
   },
   "scripts": {
     "build": "npx rimraf dist && npx rimraf server/dist && npm run cli:build && npm run ui:build && cp -r projects/cli/dist dist",
-    "check": "biome check --write . && prettier --write . --config .prettierrc --ignore-path .prettierignore",
+    "check": "biome check --config-path biome.standalone.json --write . && prettier --write . --config .prettierrc --ignore-path .prettierignore",
     "check:watch": "chokidar \"**/*.{ts,html,css,yml,yaml,json,md}\" -c \"npm run check\" --ignore \"**/{node_modules,dist}/**\"",
     "clean": "npx rimraf --glob \"**/package-lock.json\" \"**/dist\" \"**/node_modules\" \"**/.angular\"",
     "cli:build": "npm run build -w projects/cli",
@@ -120,7 +118,7 @@
     "ui:serve": "npm run serve -w projects/ui"
   },
   "type": "commonjs",
-  "version": "0.0.19",
+  "version": "0.0.20",
   "workspaces": [
     "projects/cli",
     "projects/ui",

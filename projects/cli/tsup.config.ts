@@ -3,7 +3,7 @@ import { defineConfig } from 'tsup';
 export default defineConfig([
   {
     clean: true,
-    dts: true,
+    dts: false,
     entry: ['src/index.ts'],
     format: ['cjs'],
     outDir: 'dist',
@@ -15,6 +15,7 @@ export default defineConfig([
       js: '#!/usr/bin/env node',
     },
     clean: true,
+    dts: false,
     entry: ['src/cli.ts'],
     format: ['cjs'],
     outDir: 'dist',
@@ -23,6 +24,7 @@ export default defineConfig([
   },
   {
     clean: true,
+    dts: false,
     entry: ['src/workers/worker-thread.ts'],
     format: ['cjs'],
     outDir: 'dist/workers',

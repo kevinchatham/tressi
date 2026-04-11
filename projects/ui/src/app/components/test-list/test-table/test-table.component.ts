@@ -157,7 +157,9 @@ export class TestTableComponent {
   onToggleStatus(status: TestStatus, event: Event): void {
     this.tests()
       .filter((t) => t.status === status)
-      .forEach((t) => void this.toggleSelection.emit({ event, testId: t.id }));
+      .forEach((t) => {
+        this.toggleSelection.emit({ event, testId: t.id });
+      });
   }
 
   onHeaderDragDrop(event: CdkDragDrop<ColumnConfig[]>): void {
@@ -184,7 +186,7 @@ export class TestTableComponent {
 
   getSortIcon(columnKey: string): IconName | null {
     const sort = this.currentSort();
-    if (!sort || sort.columnKey !== columnKey) {
+    if (sort?.columnKey !== columnKey) {
       return null; // No icon for unsorted columns (matches original behavior)
     }
     return sort.direction === 'asc' ? 'keyboard_arrow_up' : 'keyboard_arrow_down';

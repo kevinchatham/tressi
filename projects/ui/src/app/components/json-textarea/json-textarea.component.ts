@@ -14,12 +14,12 @@ import { HighlightStyle, syntaxHighlighting } from '@codemirror/language';
 import { languages } from '@codemirror/language-data';
 import { EditorView } from '@codemirror/view';
 import { tags } from '@lezer/highlight';
-
 import { ThemeService } from '../../services/theme.service';
+import { ButtonComponent } from '../button/button.component';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CodeEditor],
+  imports: [CodeEditor, ButtonComponent],
   selector: 'app-json-textarea',
   templateUrl: './json-textarea.component.html',
 })
@@ -29,6 +29,16 @@ export class JsonTextareaComponent<T> implements FormValueControl<T> {
   placeholder = model<string>('');
   disabled = model<boolean>(false);
   valueChange = output<T>();
+
+  copyButton = model<'show' | 'hide' | 'auto'>('auto');
+  copied = signal<boolean>(false);
+
+  showCopyButton = computed(() => {
+    const setting = this.copyButton();
+    if (setting === 'show') return true;
+    if (setting === 'hide') return false;
+    return this.disabled();
+  });
 
   error = signal<string | null>(null);
   private _lastValue = '';
@@ -162,6 +172,16 @@ export class JsonTextareaComponent<T> implements FormValueControl<T> {
       this.valueChange.emit(parsed as T);
     } catch {
       // Should not happen if we validated in handleValueChange
+    }
+  }
+
+  async copyToClipboard(): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(this.displayValue());
+      this.copied.set(true);
+      setTimeout(() => this.copied.set(false), 2000);
+    } catch {
+      // Silently fail - button is non-essential
     }
   }
 }

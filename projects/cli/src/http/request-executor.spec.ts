@@ -27,7 +27,7 @@ function createRequestConfig(overrides: Partial<TressiRequestConfig> = {}): Tres
       enabled: false,
       errorRateThreshold: 0,
       exitStatusCodes: [],
-      monitoringWindowMs: 0,
+      monitoringWindowSeconds: 1,
     },
     headers: {},
     method: 'GET',

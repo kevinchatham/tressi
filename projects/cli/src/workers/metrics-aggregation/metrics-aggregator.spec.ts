@@ -491,10 +491,10 @@ describe('MetricsAggregator', () => {
       // Request diff = 30 - 20 = 10
       // Time diff = 1s
       // Interval RPS = 10 / 1 = 10
-      // Peak RPS should remain 20 (high-water mark)
+      // Peak RPS is now the interval RPS (10), not the high-water mark
 
       const results2 = aggregator.getResults(2, ['url1', 'url2', 'url3']);
-      expect(results2.global.peakRequestsPerSecond).toBe(20);
+      expect(results2.global.peakRequestsPerSecond).toBe(10);
       expect(results2.global.averageRequestsPerSecond).toBe(10); // Still not in steady state because we haven't pushed snapshots to _snapshots yet in this test
 
       vi.useRealTimers();
@@ -564,7 +564,7 @@ describe('MetricsAggregator', () => {
       // Average RPS = 30 / 2 = 15.
       const resSteady2 = aggregator.getResults(1, ['url1']);
       expect(resSteady2.global.averageRequestsPerSecond).toBe(15);
-      expect(resSteady2.global.peakRequestsPerSecond).toBe(20); // Peak was 20 at T=3000
+      expect(resSteady2.global.peakRequestsPerSecond).toBe(10); // Interval RPS at T=4000
 
       vi.useRealTimers();
     });

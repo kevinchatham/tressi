@@ -5,7 +5,7 @@ import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import type { DocSearchResult, MarkdownSlugs } from '@tressi/shared/common';
 import { AppRoutes } from '@tressi/shared/ui';
 import { filter } from 'rxjs';
-import { IconComponent } from 'src/app/components/icon/icon.component';
+import { IconComponent } from '../../../components/icon/icon.component';
 
 import { SearchBarComponent } from '../../../components/search-bar/search-bar.component';
 import { AppRouterService } from '../../../services/router.service';
@@ -18,7 +18,7 @@ import { RPCService } from '../../../services/rpc.service';
   templateUrl: './docs-menu.component.html',
 })
 export class DocsMenuComponent {
-  availableDocs = input.required<MarkdownSlugs>();
+  availableDocs = input<MarkdownSlugs>();
 
   expandedSection = signal<string | null>(null);
   isCollapsed = signal(false);
@@ -46,6 +46,8 @@ export class DocsMenuComponent {
     effect(() => {
       const docs = this.availableDocs();
       const url = this._currentUrl();
+
+      if (!docs) return;
 
       // Find which section contains the current URL
       let matchedSection: string | null = null;
@@ -103,7 +105,10 @@ export class DocsMenuComponent {
   readonly preserveOrder = computed(() => 0);
 
   toggleSection(sectionKey: string): void {
-    const section = this.availableDocs()[sectionKey];
+    const docs = this.availableDocs();
+    if (!docs) return;
+
+    const section = docs[sectionKey];
     if (!section) return;
 
     // Navigate to the section's index (e.g., /docs/getting-started)
@@ -114,7 +119,10 @@ export class DocsMenuComponent {
   }
 
   formatTitle(title: string): string {
-    return title.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
+    return title
+      .split('-')
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
   }
 
   onSearch(query: string): void {

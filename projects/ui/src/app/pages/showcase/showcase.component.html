@@ -12,7 +12,13 @@
           <!-- Normal State -->
           <div class="flex items-center justify-between">
             <span class="text-base-content/70 text-sm">Base</span>
-            <app-button [color]="color" [title]="color" [icon]="'sdk'" (click)="logMessage()" />
+            <app-button
+              [color]="color"
+              [title]="color"
+              [icon]="'sdk'"
+              (click)="logMessage()"
+              (onKeyDown)="logMessage()"
+            />
           </div>
 
           <!-- Disabled State -->
@@ -24,6 +30,7 @@
               [icon]="'sdk'"
               [disabled]="true"
               (click)="logMessage()"
+              (onKeyDown)="logMessage()"
             />
           </div>
 
@@ -36,6 +43,7 @@
               [icon]="'sdk'"
               [ghost]="true"
               (click)="logMessage()"
+              (onKeyDown)="logMessage()"
             />
           </div>
 
@@ -49,6 +57,7 @@
               [ghost]="true"
               [disabled]="true"
               (click)="logMessage()"
+              (onKeyDown)="logMessage()"
             />
           </div>
         </div>

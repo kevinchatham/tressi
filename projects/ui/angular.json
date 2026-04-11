@@ -23,13 +23,7 @@
           },
           "defaultConfiguration": "production",
           "options": {
-            "allowedCommonJsDependencies": [
-              "human-number",
-              "dayjs",
-              "mermaid",
-              "clipboard",
-              "emoji-toolkit"
-            ],
+            "allowedCommonJsDependencies": ["dayjs", "mermaid", "clipboard", "emoji-toolkit"],
             "assets": [
               {
                 "glob": "**/*",
@@ -85,6 +79,8 @@
           "options": {
             "browsers": ["chromium"],
             "buildTarget": "ui:build:development",
+            "coverage": true,
+            "coverageReporters": ["html", "lcov"],
             "headless": true,
             "tsConfig": "tsconfig.spec.json"
           }

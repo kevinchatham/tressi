@@ -55,6 +55,7 @@
             <div>
               <div
                 (click)="toggleSection(section.key)"
+                (onKeyDown)="toggleSection(section.key)"
                 class="mb-2 flex cursor-pointer items-center justify-between font-bold tracking-wider transition-opacity hover:opacity-100"
                 [class.opacity-50]="expandedSection() !== section.key"
                 [class.opacity-100]="expandedSection() === section.key"

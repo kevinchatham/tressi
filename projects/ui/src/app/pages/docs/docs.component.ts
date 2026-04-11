@@ -4,7 +4,6 @@ import {
   effect,
   inject,
   input,
-  type OnInit,
   SecurityContext,
   signal,
   ViewEncapsulation,
@@ -20,11 +19,10 @@ import {
   provideMarkdown,
   SANITIZE,
 } from 'ngx-markdown';
-import { ThemeSwitcherComponent } from 'src/app/components/theme-switcher/theme-switcher.component';
-
 import { ButtonComponent } from '../../components/button/button.component';
 import { HeaderComponent } from '../../components/header/header.component';
 import { IconComponent } from '../../components/icon/icon.component';
+import { ThemeSwitcherComponent } from '../../components/theme-switcher/theme-switcher.component';
 import { AppRouterService } from '../../services/router.service';
 import { ThemeService } from '../../services/theme.service';
 import { DocsMenuComponent } from './docs-menu/docs-menu.component';
@@ -73,12 +71,12 @@ import { DocsMenuComponent } from './docs-menu/docs-menu.component';
   styleUrl: './docs.component.css',
   templateUrl: './docs.component.html',
 })
-export class DocsComponent implements OnInit {
+export class DocsComponent {
   private readonly _themeService = inject(ThemeService);
   readonly appRouter = inject(AppRouterService);
   readonly markdownSrc = signal<string>('');
   readonly error = signal<string | null>(null);
-  readonly availableDocs = input.required<MarkdownSlugs>();
+  readonly availableDocs = input<MarkdownSlugs>();
   readonly section = input<string>();
   readonly filename = input<string>();
   readonly isTransitioning = signal(false);
@@ -98,8 +96,9 @@ export class DocsComponent implements OnInit {
       const filename = this.filename();
       const docs = this.availableDocs();
 
+      if (!docs) return;
+
       if (!section && !filename) {
-        // Default to the first section's index
         const firstSection = Object.values(docs)[0];
         if (firstSection) {
           this.loadDocs(firstSection.path);
@@ -112,20 +111,18 @@ export class DocsComponent implements OnInit {
     });
   }
 
-  ngOnInit(): void {}
-
   loadDocs(slug: string): void {
     this.isTransitioning.set(true);
 
-    // Small delay to allow fade out to start/complete
     setTimeout(() => {
       this.error.set(null);
 
       let realPath = slug;
       const docs = this.availableDocs();
+      if (!docs) return;
+
       this.currentSectionFolder.set(null);
 
-      // Find the real path from the nice slug
       for (const section of Object.values(docs)) {
         // Check if the slug is exactly the section path (e.g. /docs/core-concepts)
         // If so, we want to load the index file for that section
@@ -186,10 +183,10 @@ export class DocsComponent implements OnInit {
 
         // Default size to 350, override if pattern like "-512.png" is found
         let size = 350;
-        const sizeMatch = src.match(/-(\d+)\.[^.]+$/);
+        const sizeMatch = /-(\d+)\.[^.]+$/.exec(src);
 
         if (sizeMatch) {
-          const parsed = parseInt(sizeMatch[1], 10);
+          const parsed = Number.parseInt(sizeMatch[1], 10);
           if (!Number.isNaN(parsed)) {
             size = parsed;
           }

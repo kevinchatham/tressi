@@ -1,4 +1,4 @@
-import { computed, Injectable, inject, type Signal, signal } from '@angular/core';
+import { computed, Injectable, inject, type OnDestroy, type Signal, signal } from '@angular/core';
 import type { ConnectedEventData } from '@tressi/shared/common';
 import { AppRoutes } from '@tressi/shared/ui';
 import type { Subscription } from 'rxjs';
@@ -27,7 +27,7 @@ import { RPCService } from './rpc.service';
  * ```
  */
 @Injectable({ providedIn: 'root' })
-export class HealthService {
+export class HealthService implements OnDestroy {
   private readonly _log = inject(LogService);
   private readonly _appRouter = inject(AppRouterService);
   private readonly _eventService = inject(EventService);
@@ -63,8 +63,15 @@ export class HealthService {
 
   constructor() {
     this._subscribeToConnectedEvents();
-    // Initial check to kickstart health monitoring
-    this.check();
+  }
+
+  /**
+   * Initializes the health service by performing an initial health check.
+   * Should be called via APP_INITIALIZER before the app starts.
+   * @returns Promise that resolves when initialization is complete
+   */
+  async init(): Promise<void> {
+    await this.check();
   }
 
   /**
@@ -142,7 +149,7 @@ export class HealthService {
     this._resetHeartbeatTimeout();
 
     // Only redirect if we are currently on the server unavailable page
-    if (window.location.href.includes(AppRoutes.SERVER_UNAVAILABLE)) {
+    if (globalThis.location.href.includes(AppRoutes.SERVER_UNAVAILABLE)) {
       this._log.info('Server recovered, resuming last session');
       this._appRouter.toLastRoute();
     }

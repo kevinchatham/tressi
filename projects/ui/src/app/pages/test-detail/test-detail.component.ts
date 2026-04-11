@@ -5,7 +5,7 @@ import {
   POLLING_OPTIONS,
   type TestDetailResolvedData,
 } from '@tressi/shared/ui';
-import { ButtonComponent } from 'src/app/components/button/button.component';
+import { ButtonComponent } from '../../components/button/button.component';
 
 import { DeleteConfirmationModalComponent } from '../../components/delete-confirmation-modal/delete-confirmation-modal.component';
 import { HeaderComponent } from '../../components/header/header.component';
@@ -44,7 +44,7 @@ export class TestDetailComponent {
   readonly appRouter = inject(AppRouterService);
   readonly service = inject(TestDetailService);
 
-  readonly data = input.required<TestDetailResolvedData>();
+  readonly data = input<TestDetailResolvedData>();
   readonly testId = input<string>();
   private readonly _testService = inject(TestService);
   private readonly _logService = inject(LogService);
@@ -91,7 +91,7 @@ export class TestDetailComponent {
   }
 
   sanitizeForChartId(url: string): string {
-    return url.replace(/[^a-zA-Z0-9]/g, '_');
+    return url.replaceAll(/[^a-zA-Z0-9]/g, '_');
   }
 
   /**

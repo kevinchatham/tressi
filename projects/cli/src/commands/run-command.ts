@@ -1,6 +1,7 @@
 import { runLoadTest } from '..';
 import { loadConfig } from '../core/config';
-import { JsonMigrationManager } from '../data/json-migration-manager';
+import { db } from '../data/database';
+import { MigrationManager } from '../data/migration-manager';
 
 /**
  * Handles the main 'run' command for executing load tests.
@@ -10,8 +11,7 @@ export class RunCommand {
    * Executes the run command.
    */
   async execute(configPath: string, exportPath?: string, silent?: boolean): Promise<void> {
-    // Validate config version before loading
-    const migrationManager = new JsonMigrationManager();
+    const migrationManager = new MigrationManager(db);
     await migrationManager.validateVersion(configPath);
 
     const { config } = await loadConfig(configPath);

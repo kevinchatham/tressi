@@ -1,14 +1,12 @@
 import type { Database, VersionedTressiConfig } from '@tressi/shared/cli';
 import type { Kysely } from 'kysely';
 import { describe, expect, it, vi } from 'vitest';
-
+import { MIGRATIONS } from './migrations';
 import {
-  DATABASE_MIGRATIONS,
   dropColumnIfExists,
-  JSON_MIGRATIONS,
+  noopConfigMigration,
   noopDatabaseMigration,
-  noopJsonMigration,
-} from './migrations';
+} from './migrations/migration-utils';
 
 describe('noopJsonMigration', () => {
   it('should replace version in $schema URL', () => {
@@ -17,7 +15,7 @@ describe('noopJsonMigration', () => {
         'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.12.json',
     };
 
-    const migration = noopJsonMigration('0.0.15');
+    const migration = noopConfigMigration('0.0.15');
     const result = migration.up(config);
 
     expect(result.$schema).toBe(
@@ -33,7 +31,7 @@ describe('noopJsonMigration', () => {
       someProperty: 'value',
     };
 
-    const migration = noopJsonMigration('0.0.13');
+    const migration = noopConfigMigration('0.0.13');
     const result = migration.up(config);
 
     expect(result.$schema).toContain('v0.0.13');
@@ -53,13 +51,13 @@ describe('noopDatabaseMigration', () => {
   });
 });
 
-describe('JSON_MIGRATIONS', () => {
+describe('MIGRATIONS.config', () => {
   describe('0.0.13, 0.0.14, 0.0.15, 0.0.16, 0.0.18, 0.0.19', () => {
     const noopVersions = ['0.0.13', '0.0.14', '0.0.15', '0.0.16', '0.0.18', '0.0.19'];
 
     noopVersions.forEach((version) => {
       it(`version ${version} should be a noop migration`, () => {
-        const migration = JSON_MIGRATIONS[version];
+        const migration = MIGRATIONS[version].config;
         expect(migration.summary).toBe('version bump');
 
         const config: VersionedTressiConfig = {
@@ -103,7 +101,7 @@ describe('JSON_MIGRATIONS', () => {
         },
       };
 
-      const result = JSON_MIGRATIONS['0.0.17'].up(config);
+      const result = MIGRATIONS['0.0.17'].config.up(config);
       const typed = result as unknown as Config17;
 
       expect(typed.options?.workerEarlyExit?.monitoringWindowMs).toBe(1000);
@@ -120,7 +118,7 @@ describe('JSON_MIGRATIONS', () => {
         },
       };
 
-      const result = JSON_MIGRATIONS['0.0.17'].up(config);
+      const result = MIGRATIONS['0.0.17'].config.up(config);
       const typed = result as unknown as Config17;
 
       expect(typed.options?.workerEarlyExit?.monitoringWindowMs).toBe(0);
@@ -137,7 +135,7 @@ describe('JSON_MIGRATIONS', () => {
         },
       };
 
-      const result = JSON_MIGRATIONS['0.0.17'].up(config);
+      const result = MIGRATIONS['0.0.17'].config.up(config);
       const typed = result as unknown as Config17;
 
       expect(typed.options?.workerEarlyExit?.monitoringWindowMs).toBe(1000);
@@ -154,7 +152,7 @@ describe('JSON_MIGRATIONS', () => {
         },
       };
 
-      const result = JSON_MIGRATIONS['0.0.17'].up(config);
+      const result = MIGRATIONS['0.0.17'].config.up(config);
       const typed = result as unknown as Config17;
 
       expect(typed.options?.workerEarlyExit?.monitoringWindowMs).toBe(5000);
@@ -169,7 +167,7 @@ describe('JSON_MIGRATIONS', () => {
         },
       };
 
-      const result = JSON_MIGRATIONS['0.0.17'].up(config);
+      const result = MIGRATIONS['0.0.17'].config.up(config);
       const typed = result as unknown as Config17;
 
       expect(typed.options?.workerEarlyExit?.monitoringWindowMs).toBeUndefined();
@@ -182,7 +180,7 @@ describe('JSON_MIGRATIONS', () => {
         options: {},
       };
 
-      const result = JSON_MIGRATIONS['0.0.17'].up(config);
+      const result = MIGRATIONS['0.0.17'].config.up(config);
       const typed = result as unknown as Config17;
 
       expect(typed.options?.workerEarlyExit).toBeUndefined();
@@ -203,7 +201,7 @@ describe('JSON_MIGRATIONS', () => {
         ],
       };
 
-      const result = JSON_MIGRATIONS['0.0.17'].up(config);
+      const result = MIGRATIONS['0.0.17'].config.up(config);
       const typed = result as unknown as Config17;
 
       expect(typed.requests?.[0]?.earlyExit?.monitoringWindowMs).toBe(1000);
@@ -221,7 +219,7 @@ describe('JSON_MIGRATIONS', () => {
         ],
       };
 
-      const result = JSON_MIGRATIONS['0.0.17'].up(config);
+      const result = MIGRATIONS['0.0.17'].config.up(config);
       const typed = result as unknown as Config17;
 
       expect(typed.requests?.[0]?.earlyExit).toBeUndefined();
@@ -238,7 +236,7 @@ describe('JSON_MIGRATIONS', () => {
         ],
       };
 
-      const result = JSON_MIGRATIONS['0.0.17'].up(config);
+      const result = MIGRATIONS['0.0.17'].config.up(config);
       const typed = result as unknown as Config17;
 
       expect(typed.requests?.[0]?.earlyExit?.monitoringWindowMs).toBe(1000);
@@ -252,30 +250,52 @@ describe('JSON_MIGRATIONS', () => {
           'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.16.json',
       };
 
-      const result = JSON_MIGRATIONS['0.0.17'].up(config);
+      const result = MIGRATIONS['0.0.17'].config.up(config);
 
       expect(result.$schema).toContain('v0.0.17');
     });
   });
 });
 
-describe('DATABASE_MIGRATIONS', () => {
+describe('MIGRATIONS.db', () => {
   describe('0.0.14, 0.0.15, 0.0.16, 0.0.18, 0.0.19', () => {
     const noopVersions = ['0.0.14', '0.0.15', '0.0.16', '0.0.18', '0.0.19'];
 
     noopVersions.forEach((version) => {
       it(`version ${version} should be a noop migration`, () => {
-        const migration = DATABASE_MIGRATIONS[version];
+        const migration = MIGRATIONS[version].db;
         expect(migration.summary).toBe('version bump');
       });
     });
   });
 
-  describe('0.0.17', () => {
-    it('should have a warning about destructive migration', () => {
-      const migration = DATABASE_MIGRATIONS['0.0.17'];
-      expect(migration.summary).toContain('WARNING');
-      expect(migration.summary).toContain('Destructive');
+  describe('0.0.20 config', () => {
+    it('should update $schema to 0.0.20', () => {
+      const config = {
+        $schema:
+          'https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.19.json',
+      };
+
+      const result = MIGRATIONS['0.0.20'].config.up(config);
+
+      expect(result.$schema).toContain('v0.0.20');
+    });
+
+    it('should be a migration object with config and db', () => {
+      expect(MIGRATIONS['0.0.20'].config).toBeDefined();
+      expect(MIGRATIONS['0.0.20'].db).toBeDefined();
+    });
+  });
+
+  describe('0.0.20 db', () => {
+    it('should have correct summary for db migration', () => {
+      const migration = MIGRATIONS['0.0.20'].db;
+      expect(migration.summary).toContain('Disable early exit if unsafe');
+    });
+
+    it('should be a function', () => {
+      expect(MIGRATIONS['0.0.20'].db.up).toBeDefined();
+      expect(typeof MIGRATIONS['0.0.20'].db.up).toBe('function');
     });
   });
 });
@@ -307,7 +327,6 @@ describe('dropColumnIfExists', () => {
     const mockIfExists = vi.fn().mockReturnValue({ execute: mockExecute });
     const mockDropIndex = vi.fn().mockReturnValue({ ifExists: mockIfExists });
 
-    // Return empty array so column drop is not triggered - only testing index drop path
     const mockDb = {
       execute: vi.fn().mockResolvedValue([]),
       schema: {

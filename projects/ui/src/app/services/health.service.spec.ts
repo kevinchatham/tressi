@@ -71,7 +71,8 @@ describe('HealthService', () => {
     vi.useRealTimers();
   });
 
-  it('should initialize and perform initial health check', () => {
+  it('should initialize and perform initial health check', async () => {
+    await service.init();
     expect(mockRPC.client.health.$get).toHaveBeenCalled();
   });
 
@@ -159,6 +160,40 @@ describe('HealthService', () => {
       vi.advanceTimersByTime(5000); // _heartbeatTimeout
       expect(service.isHealthy()).toBe(false);
       expect(mockRouter.toServerUnavailable).toHaveBeenCalled();
+    });
+  });
+
+  describe('getFormattedLastCheckTime', () => {
+    it('should return Never when no check has been performed', () => {
+      expect(service.getFormattedLastCheckTime()).toBe('Never');
+    });
+
+    it('should return formatted time when check has been performed', () => {
+      connectedSubject.next({ timestamp: Date.now() });
+      expect(service.getFormattedLastCheckTime()).not.toBe('Never');
+    });
+  });
+
+  describe('getRetryMessage', () => {
+    it('should return Connecting... when healthy', async () => {
+      mockRPC.client.health.$get.mockResolvedValue({
+        json: async () => ({ timestamp: Date.now() }),
+        ok: true,
+      });
+      await service.check();
+      expect(service.getRetryMessage()).toBe('Connecting...');
+    });
+
+    it('should return Reconnecting... when unhealthy', async () => {
+      mockRPC.client.health.$get.mockRejectedValue(new Error('Network error'));
+      await service.check();
+      expect(service.getRetryMessage()).toBe('Reconnecting...');
+    });
+  });
+
+  describe('ngOnDestroy', () => {
+    it('should not throw when called', () => {
+      expect(() => service.ngOnDestroy()).not.toThrow();
     });
   });
 });

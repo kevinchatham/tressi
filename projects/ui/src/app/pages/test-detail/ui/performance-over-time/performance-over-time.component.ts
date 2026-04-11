@@ -87,7 +87,7 @@ export class PerformanceOverTimeComponent {
   onPollingIntervalChange(event: Event): void {
     event.stopPropagation();
     const target = event.target as HTMLSelectElement;
-    const value = parseInt(target.value, 10) as PollingInterval;
+    const value = Number.parseInt(target.value, 10) as PollingInterval;
     this.pollingIntervalChange.emit(value);
   }
 

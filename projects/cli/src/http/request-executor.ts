@@ -10,10 +10,10 @@ import type { ResponseSampler } from './response-sampler';
  * This class manages HTTP request execution, response processing, and error handling.
  */
 export class RequestExecutor {
-  private _headersPool: Record<string, string>[];
-  private _resultPool: RequestResult[];
-  private _maxPoolSize: number;
-  private _responseSampler: ResponseSampler;
+  private readonly _headersPool: Record<string, string>[];
+  private readonly _resultPool: RequestResult[];
+  private readonly _maxPoolSize: number;
+  private readonly _responseSampler: ResponseSampler;
 
   constructor(responseSampler: ResponseSampler, maxPoolSize: number = 1000) {
     this._responseSampler = responseSampler;
@@ -37,19 +37,13 @@ export class RequestExecutor {
     const result = this._getResultObject();
 
     try {
-      // Reuse headers object instead of creating new one
       Object.assign(headers, globalHeaders, req.headers);
-
       const requestBody = this._hasValidPayload(req.payload, req.method)
         ? JSON.stringify(req.payload)
         : undefined;
-
-      // Calculate request body size for bandwidth tracking
       const bytesSent = requestBody ? Buffer.byteLength(requestBody, 'utf8') : 0;
-
-      // Use per-endpoint agents in production, global dispatcher in tests
-      const dispatcher =
-        process.env.NODE_ENV !== 'test' ? globalAgentManager.getAgent(req.url) : undefined; // When undefined, undici will use the global dispatcher
+      const isTest = process.env.NODE_ENV === 'test';
+      const dispatcher = isTest ? undefined : globalAgentManager.getAgent(req.url);
 
       const {
         statusCode,
@@ -64,38 +58,14 @@ export class RequestExecutor {
 
       const method = req.method || 'GET';
       const latencyMs = Math.max(0, performance.now() - start);
-
-      // Calculate response body size for bandwidth tracking
-      let responseBodySize = 0;
-      let body: string | undefined;
-
-      // Check if we should sample this status code for this endpoint
-      const shouldSampleBody = this._responseSampler.shouldSampleResponse(
+      const { body, responseBodySize } = await this._handleResponseBody(
+        responseBody,
         method,
         req.url,
         statusCode,
+        responseHeaders,
       );
 
-      // Handle response body sampling
-      if (responseBody && shouldSampleBody) {
-        try {
-          body = await responseBody.text();
-          responseBodySize = Buffer.byteLength(body, 'utf8');
-        } catch (e) {
-          // Ignore body read errors, it might be empty.
-          body = `(Could not read body: ${(e as Error).message}`;
-          responseBodySize = Buffer.byteLength(body, 'utf8');
-        }
-      }
-
-      // Calculate total bytes received from headers if available
-      const contentLength = responseHeaders['content-length'];
-      if (contentLength && !responseBodySize) {
-        const contentLengthValue = Array.isArray(contentLength) ? contentLength[0] : contentLength;
-        responseBodySize = parseInt(contentLengthValue, 10) || 0;
-      }
-
-      // Populate result object from pool
       result.method = method;
       result.url = req.url;
       result.status = statusCode;
@@ -110,12 +80,9 @@ export class RequestExecutor {
       return result;
     } catch (err) {
       const latencyMs = Math.max(0, performance.now() - start);
-
-      // Calculate request body size for bandwidth tracking (even in error case)
       const requestBody = req.payload === undefined ? undefined : JSON.stringify(req.payload);
       const bytesSent = requestBody ? Buffer.byteLength(requestBody, 'utf8') : 0;
 
-      // Populate result object for error case
       result.method = req.method || 'GET';
       result.url = req.url;
       result.status = 0;
@@ -128,10 +95,48 @@ export class RequestExecutor {
 
       return result;
     } finally {
-      // Always release headers object back to pool
       this._releaseHeadersObject(headers);
-      // Note: result object is released by caller after it's processed
     }
+  }
+
+  private async _handleResponseBody(
+    responseBody: { text(): Promise<string> } | null | undefined,
+    method: string,
+    url: string,
+    statusCode: number,
+    responseHeaders: Record<string, string | string[] | undefined>,
+  ): Promise<{ body: string | undefined; responseBodySize: number }> {
+    let responseBodySize = 0;
+    let body: string | undefined;
+
+    if (!responseBody) {
+      const contentLength = responseHeaders['content-length'];
+      if (contentLength) {
+        const contentLengthValue = Array.isArray(contentLength) ? contentLength[0] : contentLength;
+        responseBodySize = Number.parseInt(contentLengthValue, 10) || 0;
+      }
+      return { body: undefined, responseBodySize };
+    }
+
+    const shouldSampleBody = this._responseSampler.shouldSampleResponse(method, url, statusCode);
+    if (!shouldSampleBody) {
+      const contentLength = responseHeaders['content-length'];
+      if (contentLength) {
+        const contentLengthValue = Array.isArray(contentLength) ? contentLength[0] : contentLength;
+        responseBodySize = Number.parseInt(contentLengthValue, 10) || 0;
+      }
+      return { body: undefined, responseBodySize };
+    }
+
+    try {
+      body = await responseBody.text();
+      responseBodySize = Buffer.byteLength(body, 'utf8');
+    } catch (e) {
+      body = `(Could not read body: ${(e as Error).message}`;
+      responseBodySize = Buffer.byteLength(body, 'utf8');
+    }
+
+    return { body, responseBodySize };
   }
 
   /**

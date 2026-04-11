@@ -21,7 +21,7 @@ describe('ConfigFormComponent', () => {
             enabled: false,
             errorRateThreshold: 0.5,
             exitStatusCodes: [],
-            monitoringWindowMs: 1000,
+            monitoringWindowSeconds: 1,
           },
           headers: {},
           method: 'GET',
@@ -69,46 +69,10 @@ describe('ConfigFormComponent', () => {
     expect(component.model().id).toBe('test-id');
   });
 
-  it('should toggle active tab', () => {
+  it('should toggle active tab via service', () => {
     expect(component.activeTab()).toBe('general');
     component.setActiveTab('requests');
     expect(component.activeTab()).toBe('requests');
-  });
-
-  it('should add and remove requests', () => {
-    const initialCount = component.model().config.requests?.length || 0;
-    component.addRequest();
-    expect(component.model().config.requests?.length).toBe(initialCount + 1);
-
-    component.removeRequest(0);
-    expect(component.model().config.requests?.length).toBe(initialCount);
-  });
-
-  it('should add and remove global exit status codes', () => {
-    component.addGlobalExitStatusCode();
-    const codes = component.model().config.options?.workerEarlyExit?.exitStatusCodes;
-    expect(codes).toContain(500);
-
-    const initialLength = codes?.length || 0;
-    component.removeGlobalExitStatusCode(0);
-    expect(component.model().config.options?.workerEarlyExit?.exitStatusCodes?.length).toBe(
-      initialLength - 1,
-    );
-  });
-
-  it('should add and remove request exit status codes', () => {
-    // First ensure we have a request with early exit enabled
-    component.addRequestEarlyExitConfig(0);
-
-    component.addRequestExitStatusCode(0);
-    expect(component.model().config.requests![0].earlyExit?.exitStatusCodes).toContain(500);
-
-    const initialLength =
-      component.model().config.requests![0].earlyExit?.exitStatusCodes?.length || 0;
-    component.removeRequestExitStatusCode(0, 0);
-    expect(component.model().config.requests![0].earlyExit?.exitStatusCodes?.length).toBe(
-      initialLength - 1,
-    );
   });
 
   it('should emit output on submit', () => {
@@ -124,12 +88,5 @@ describe('ConfigFormComponent', () => {
     component.onCancel(event);
     expect(spy).toHaveBeenCalled();
     expect(component.model().name).toBe('Random Name');
-  });
-
-  it('should update model on JSON textarea change', () => {
-    const initialModel = component.model();
-    component.onJsonTextAreaChange();
-    expect(component.model()).not.toBe(initialModel); // Should be a new object reference
-    expect(component.model()).toEqual(initialModel);
   });
 });

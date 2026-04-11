@@ -80,15 +80,11 @@ Migrate a configuration file to the current version.
 
 - `<config>`: Path to the JSON configuration file to migrate.
 
-**Options:**
-
-- `--force`: Bypass confirmation prompts. Ideal for automated pipelines and headless environments.
-
 **Example:**
 
 - **Migrate Local File**:
   ```bash
-  tressi migrate ./old-config.json --force
+  tressi migrate ./old-config.json
   ```
 
 ### Reset Database

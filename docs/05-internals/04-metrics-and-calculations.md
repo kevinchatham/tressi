@@ -60,12 +60,12 @@ Tressi implements High Dynamic Range (HDR) Histograms to track latency across a 
 
 #### Calculating Peak RPS
 
-Tressi calculates Peak Requests Per Second (RPS) using a sliding window to filter transient fluctuations and identify sustained performance limits.
+Tressi calculates Peak Requests Per Second (RPS) as the highest instantaneous RPS observed during steady-state operation.
 
-- **Steady-State Snapshots**: Peak RPS is calculated using only "steady-state" snapshots (snapshots taken after the ramp-up period has concluded). If no steady-state data exists (e.g., early exit during ramp-up), it falls back to all snapshots.
-- **Sliding window**: A sliding window tracks RPS samples collected at 1 second intervals.
-- **Median calculation**: The peak RPS value is derived from the 50th percentile (median) of samples within the window, providing a stable representation of throughput.
-- **Instantaneous delta**: Each sample is calculated by measuring the delta in total requests between polling intervals.
+- **Instantaneous RPS**: Each measurement captures the delta in total requests between polling intervals, divided by the time elapsed.
+- **Per-snapshot peak**: Each snapshot's `peakRequestsPerSecond` reflects the instantaneous RPS for that measurement interval only (no accumulation over time).
+- **Final peak**: The `transformAggregatedMetricsToTestSummary` function derives the final peak by taking the maximum instantaneous RPS across all steady-state snapshots, representing the highest throughput achieved at any point during steady-state.
+- **Steady-State Snapshots**: Peak RPS is determined using only "steady-state" snapshots (snapshots taken after the ramp-up period has concluded). If no steady-state data exists (e.g., early exit during ramp-up), it falls back to all snapshots.
 
 #### Measuring Target Achievement
 
@@ -73,7 +73,7 @@ The **Target Achieved** metric quantifies the ratio of delivered throughput to r
 
 - **Steady-State Average**: Target Achieved is calculated using the **steady-state average RPS** instead of Peak RPS. This ensures the metric reflects sustained performance rather than momentary peaks.
 - **Endpoint calculation**: Calculated as `Steady-State Average RPS / Configured RPS` for each endpoint.
-- **Global aggregation**: The global target achievement is the arithmetic mean of all endpoint achievement percentages.
+- **Global aggregation**: The global target achievement is the **weighted average** of all endpoint achievement percentages, weighted by each endpoint's target RPS.
 - **Saturation & Failure Analysis**: Values below 100% indicate that the test has reached a performance ceiling, typically pointing to target system saturation, network bandwidth limits, or runner resource exhaustion (CPU/Memory).
 
 #### Estimating Theoretical Capacity
@@ -107,7 +107,7 @@ System level metrics provide context for performance results and identify local 
 
 - **CPU utilization**: Calculated based on system load average relative to available CPU cores.
 - **Memory footprint**: Tracks the heap usage of the Tressi process throughout the test execution.
-- **Sampling interval**: Resource metrics are sampled every 2 seconds to minimize monitoring overhead.
+- **Sampling interval**: Resource metrics are sampled every 1 second to minimize monitoring overhead.
 
 ### Next Steps
 

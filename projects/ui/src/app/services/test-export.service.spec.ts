@@ -25,22 +25,19 @@ describe('TestExportService', () => {
 
     mockLog = { error: vi.fn(), info: vi.fn() };
 
-    // Mock URL methods
-    vi.stubGlobal('URL', {
-      createObjectURL: vi.fn().mockReturnValue('blob:url'),
-      revokeObjectURL: vi.fn(),
-    });
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:url');
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
 
     // Mock document.createElement for download link
     const mockAnchor = {
       click: vi.fn(),
       download: '',
       href: '',
+      remove: vi.fn(),
     };
 
     vi.spyOn(document, 'createElement').mockReturnValue(mockAnchor as unknown as HTMLAnchorElement);
     vi.spyOn(document.body, 'appendChild').mockImplementation(() => ({}) as unknown as Node);
-    vi.spyOn(document.body, 'removeChild').mockImplementation(() => ({}) as unknown as Node);
 
     TestBed.configureTestingModule({
       providers: [

@@ -5,7 +5,7 @@ import type { Database as DatabaseSchema } from '@tressi/shared/cli';
 import Database from 'better-sqlite3';
 import { Kysely, SqliteDialect, sql } from 'kysely';
 
-import { DatabaseMigrationManager } from './database-migration-manager';
+import { MigrationManager } from './migration-manager';
 
 const rootDir: string = join(homedir(), '.tressi');
 if (!existsSync(rootDir)) mkdirSync(rootDir, { recursive: true });
@@ -86,6 +86,6 @@ export async function initializeDatabase(): Promise<void> {
     .execute();
 
   // Run database migrations
-  const migrationManager = new DatabaseMigrationManager(db);
-  await migrationManager.run();
+  const migrationManager = new MigrationManager(db);
+  await migrationManager.migrate();
 }

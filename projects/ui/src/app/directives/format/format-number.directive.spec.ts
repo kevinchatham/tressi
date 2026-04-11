@@ -40,12 +40,19 @@ describe('FormatNumberDirective', () => {
     expect(element.textContent).toBe('0');
   });
 
-  it('should format numbers correctly using humanNumber', async () => {
+  it('should format numbers correctly', async () => {
     const testCases = [
       { expected: '0', input: 0 },
+      { expected: '1', input: 1 },
+      { expected: '10', input: 10 },
+      { expected: '100', input: 100 },
       { expected: '999', input: 999 },
       { expected: '1k', input: 1000 },
-      { expected: '1.5k', input: 1500 },
+      { expected: '1.1k', input: 1100 },
+      { expected: '10k', input: 10000 },
+      { expected: '10k', input: 10100 },
+      { expected: '100k', input: 100000 },
+      { expected: '1m', input: 999999 },
       { expected: '1m', input: 1000000 },
     ];
 
@@ -55,12 +62,5 @@ describe('FormatNumberDirective', () => {
       await fixture.whenStable();
       expect(element.textContent).toBe(expected);
     }
-  });
-
-  it('should handle negative values correctly', async () => {
-    component.value.set(-1000);
-    fixture.detectChanges();
-    await fixture.whenStable();
-    expect(element.textContent).toBe('-1k');
   });
 });

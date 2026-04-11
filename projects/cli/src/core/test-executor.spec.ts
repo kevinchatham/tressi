@@ -71,7 +71,7 @@ describe('test-executor', () => {
 
   it('should throw error when threshold is exceeded', async () => {
     const mockConfig = {
-      options: { workerEarlyExit: { enabled: true, errorRateThreshold: 0.3 } },
+      options: { workerEarlyExit: { enabled: true, errorRateThreshold: 30 } },
       requests: [{ url: 'http://test.com' }],
     } as unknown as TressiConfig;
 
@@ -119,10 +119,10 @@ describe('test-executor', () => {
 
   it('should use endpoint-level earlyExit config when provided', async () => {
     const mockConfig = {
-      options: { workerEarlyExit: { enabled: true, errorRateThreshold: 0.1 } },
+      options: { workerEarlyExit: { enabled: true, errorRateThreshold: 10 } },
       requests: [
         {
-          earlyExit: { enabled: true, errorRateThreshold: 0.8 },
+          earlyExit: { enabled: true, errorRateThreshold: 80 },
           url: 'http://test.com',
         },
       ],
@@ -148,7 +148,7 @@ describe('test-executor', () => {
 
   it('should handle non-matching endpoint in threshold check', async () => {
     const mockConfig = {
-      options: { workerEarlyExit: { enabled: true, errorRateThreshold: 0.3 } },
+      options: { workerEarlyExit: { enabled: true, errorRateThreshold: 30 } },
       requests: [{ url: 'http://test.com' }],
     } as unknown as TressiConfig;
 
@@ -199,9 +199,9 @@ describe('checkThresholds', () => {
   it('should return false when error rate is below threshold', () => {
     const summary = {
       configSnapshot: {
-        options: { workerEarlyExit: { enabled: true, errorRateThreshold: 0.5 } },
+        options: { workerEarlyExit: { enabled: true, errorRateThreshold: 50 } },
         requests: [
-          { earlyExit: { enabled: true, errorRateThreshold: 0.3 }, url: 'http://test.com' },
+          { earlyExit: { enabled: true, errorRateThreshold: 30 }, url: 'http://test.com' },
         ],
       },
       endpoints: [
@@ -224,7 +224,7 @@ describe('checkThresholds', () => {
   it('should return true when error rate exceeds threshold', () => {
     const summary = {
       configSnapshot: {
-        options: { workerEarlyExit: { enabled: true, errorRateThreshold: 0.5 } },
+        options: { workerEarlyExit: { enabled: true, errorRateThreshold: 50 } },
         requests: [{ url: 'http://test.com' }],
       },
       endpoints: [
@@ -243,7 +243,7 @@ describe('checkThresholds', () => {
     if (
       earlyExit?.enabled &&
       earlyExit.errorRateThreshold > 0 &&
-      endpoint.errorRate >= earlyExit.errorRateThreshold
+      endpoint.errorRate >= earlyExit.errorRateThreshold / 100
     ) {
       expect(true).toBe(true);
     } else {
@@ -280,7 +280,7 @@ describe('checkThresholds', () => {
   it('should use global exit config when endpoint does not override', () => {
     const summary = {
       configSnapshot: {
-        options: { workerEarlyExit: { enabled: true, errorRateThreshold: 0.2 } },
+        options: { workerEarlyExit: { enabled: true, errorRateThreshold: 20 } },
         requests: [{ url: 'http://test.com' }],
       },
       endpoints: [
@@ -300,7 +300,7 @@ describe('checkThresholds', () => {
         : summary.configSnapshot.options.workerEarlyExit;
 
     expect(earlyExit?.enabled).toBe(true);
-    expect(endpoint.errorRate >= earlyExit!.errorRateThreshold!).toBe(true);
+    expect(endpoint.errorRate >= earlyExit!.errorRateThreshold! / 100).toBe(true);
   });
 });
 

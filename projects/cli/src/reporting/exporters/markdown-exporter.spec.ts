@@ -56,6 +56,7 @@ describe('MarkdownExporter', () => {
 
   const createEndpoint = (overrides: Partial<EndpointSummary> = {}): EndpointSummary => ({
     averageRequestsPerSecond: 10,
+    earlyExitTriggered: false,
     errorRate: 0,
     failedRequests: 0,
     histogram: createHistogram(),
@@ -87,9 +88,9 @@ describe('MarkdownExporter', () => {
           threads: 4,
           workerEarlyExit: {
             enabled: false,
-            errorRateThreshold: 0.05,
+            errorRateThreshold: 5,
             exitStatusCodes: [],
-            monitoringWindowMs: 5000,
+            monitoringWindowSeconds: 5,
           },
           workerMemoryLimit: 512,
         },
@@ -100,6 +101,7 @@ describe('MarkdownExporter', () => {
         averageRequestsPerSecond: 1,
         avgProcessMemoryUsageMB: 1,
         avgSystemCpuUsagePercent: 1,
+        earlyExitTriggered: false,
         epochEndedAt: 1700000010000,
         epochStartedAt: 1700000000000,
         errorRate: 0,
@@ -204,9 +206,9 @@ describe('MarkdownExporter', () => {
           threads: 4,
           workerEarlyExit: {
             enabled: false,
-            errorRateThreshold: 0.05,
+            errorRateThreshold: 5,
             exitStatusCodes: [],
-            monitoringWindowMs: 5000,
+            monitoringWindowSeconds: 5,
           },
           workerMemoryLimit: 512,
         },
@@ -214,9 +216,9 @@ describe('MarkdownExporter', () => {
           {
             earlyExit: {
               enabled: false,
-              errorRateThreshold: 0.05,
+              errorRateThreshold: 5,
               exitStatusCodes: [],
-              monitoringWindowMs: 5000,
+              monitoringWindowSeconds: 5,
             },
             headers: {},
             method: 'GET',
@@ -228,9 +230,9 @@ describe('MarkdownExporter', () => {
           {
             earlyExit: {
               enabled: false,
-              errorRateThreshold: 0.05,
+              errorRateThreshold: 5,
               exitStatusCodes: [],
-              monitoringWindowMs: 5000,
+              monitoringWindowSeconds: 5,
             },
             headers: {},
             method: 'POST',
@@ -265,9 +267,9 @@ describe('MarkdownExporter', () => {
           threads: 4,
           workerEarlyExit: {
             enabled: true,
-            errorRateThreshold: 0.05,
+            errorRateThreshold: 5,
             exitStatusCodes: [500, 502, 503],
-            monitoringWindowMs: 5000,
+            monitoringWindowSeconds: 5,
           },
           workerMemoryLimit: 512,
         },
@@ -275,9 +277,9 @@ describe('MarkdownExporter', () => {
           {
             earlyExit: {
               enabled: false,
-              errorRateThreshold: 0.05,
+              errorRateThreshold: 5,
               exitStatusCodes: [],
-              monitoringWindowMs: 5000,
+              monitoringWindowSeconds: 5,
             },
             headers: {},
             method: 'GET',
@@ -307,9 +309,9 @@ describe('MarkdownExporter', () => {
           threads: 4,
           workerEarlyExit: {
             enabled: false,
-            errorRateThreshold: 0.05,
+            errorRateThreshold: 5,
             exitStatusCodes: [500, 502, 503],
-            monitoringWindowMs: 5000,
+            monitoringWindowSeconds: 5,
           },
           workerMemoryLimit: 512,
         },
@@ -317,9 +319,9 @@ describe('MarkdownExporter', () => {
           {
             earlyExit: {
               enabled: false,
-              errorRateThreshold: 0.05,
+              errorRateThreshold: 5,
               exitStatusCodes: [],
-              monitoringWindowMs: 5000,
+              monitoringWindowSeconds: 5,
             },
             headers: {},
             method: 'GET',
@@ -848,9 +850,9 @@ describe('MarkdownExporter', () => {
           threads: 4,
           workerEarlyExit: {
             enabled: false,
-            errorRateThreshold: 0.05,
+            errorRateThreshold: 5,
             exitStatusCodes: [],
-            monitoringWindowMs: 5000,
+            monitoringWindowSeconds: 5,
           },
           workerMemoryLimit: 512,
         },

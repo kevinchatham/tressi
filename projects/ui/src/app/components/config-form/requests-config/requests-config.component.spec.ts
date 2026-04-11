@@ -5,6 +5,7 @@ import { defaultTressiConfig, type SaveConfigRequest } from '@tressi/shared/comm
 import type { ModifyConfigRequestFormType } from '@tressi/shared/ui';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { ConfigFormService } from '../config-form.service';
 import { RequestsConfigComponent } from './requests-config.component';
 
 describe('RequestsConfigComponent', () => {
@@ -12,6 +13,13 @@ describe('RequestsConfigComponent', () => {
   let fixture: ComponentFixture<RequestsConfigComponent>;
   let mockForm: ModifyConfigRequestFormType;
   let modelSignal: WritableSignal<SaveConfigRequest>;
+  let mockService: {
+    onJsonTextAreaChange: ReturnType<typeof vi.fn>;
+    addRequest: ReturnType<typeof vi.fn>;
+    removeRequest: ReturnType<typeof vi.fn>;
+    addRequestExitStatusCode: ReturnType<typeof vi.fn>;
+    removeRequestExitStatusCode: ReturnType<typeof vi.fn>;
+  };
 
   const mockModel: SaveConfigRequest = {
     config: {
@@ -22,7 +30,7 @@ describe('RequestsConfigComponent', () => {
             enabled: false,
             errorRateThreshold: 0.5,
             exitStatusCodes: [],
-            monitoringWindowMs: 1000,
+            monitoringWindowSeconds: 1,
           },
           headers: {},
           method: 'GET',
@@ -37,8 +45,17 @@ describe('RequestsConfigComponent', () => {
   };
 
   beforeEach(async () => {
+    mockService = {
+      addRequest: vi.fn(),
+      addRequestExitStatusCode: vi.fn(),
+      onJsonTextAreaChange: vi.fn(),
+      removeRequest: vi.fn(),
+      removeRequestExitStatusCode: vi.fn(),
+    };
+
     await TestBed.configureTestingModule({
       imports: [RequestsConfigComponent],
+      providers: [{ provide: ConfigFormService, useValue: mockService }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(RequestsConfigComponent);
@@ -59,7 +76,6 @@ describe('RequestsConfigComponent', () => {
   });
 
   it('should toggle request expansion', () => {
-    // Initially expanded (index 0 is the only request)
     expect(component.isRequestExpanded(0)).toBe(true);
 
     component.toggleRequest(0);
@@ -67,45 +83,6 @@ describe('RequestsConfigComponent', () => {
 
     component.toggleRequest(0);
     expect(component.isRequestExpanded(0)).toBe(true);
-  });
-
-  it('should handle new request addition in ngOnChanges', async () => {
-    const newModel: SaveConfigRequest = {
-      ...mockModel,
-      config: {
-        ...mockModel.config,
-        requests: [
-          ...mockModel.config.requests!,
-          {
-            earlyExit: {
-              enabled: false,
-              errorRateThreshold: 0.5,
-              exitStatusCodes: [],
-              monitoringWindowMs: 1000,
-            },
-            headers: {},
-            method: 'POST',
-            payload: {},
-            rampUpDurationSec: 0,
-            rps: 5,
-            url: 'http://example2.com',
-          },
-        ],
-      },
-    };
-
-    modelSignal.set(newModel);
-    fixture.componentRef.setInput('model', newModel);
-    fixture.detectChanges();
-    component.ngOnChanges();
-
-    // Wait for setTimeout(..., 0) in ngOnChanges
-    await new Promise((resolve) => setTimeout(resolve, 0));
-
-    // The new request (index 1) should be expanded
-    expect(component.isRequestExpanded(1)).toBe(true);
-    // The old request (index 0) should be collapsed by ngOnChanges logic
-    expect(component.isRequestExpanded(0)).toBe(false);
   });
 
   it('should identify methods that support request body', () => {
@@ -116,33 +93,24 @@ describe('RequestsConfigComponent', () => {
     expect(component.supportsRequestBody('DELETE')).toBe(false);
   });
 
-  it('should emit events correctly', () => {
-    const addRequestSpy = vi.spyOn(component.addRequest, 'emit');
-    component.addRequest.emit();
-    expect(addRequestSpy).toHaveBeenCalled();
+  it('should call service methods for add/remove request', () => {
+    component.addRequest();
+    expect(mockService.addRequest).toHaveBeenCalled();
 
-    const removeRequestSpy = vi.spyOn(component.removeRequest, 'emit');
-    component.removeRequest.emit(0);
-    expect(removeRequestSpy).toHaveBeenCalledWith(0);
-
-    const jsonChangeSpy = vi.spyOn(component.jsonTextareaChange, 'emit');
-    component.onJsonTextareaValueChange();
-    expect(jsonChangeSpy).toHaveBeenCalled();
+    component.removeRequest(0);
+    expect(mockService.removeRequest).toHaveBeenCalledWith(0);
   });
 
-  it('should emit early exit events', () => {
-    const addExitSpy = vi.spyOn(component.addRequestExitStatusCode, 'emit');
-    component.addRequestExitStatusCode.emit(0);
-    expect(addExitSpy).toHaveBeenCalledWith(0);
+  it('should call service methods for early exit status codes', () => {
+    component.addRequestExitStatusCode(0);
+    expect(mockService.addRequestExitStatusCode).toHaveBeenCalledWith(0);
 
-    const removeExitSpy = vi.spyOn(component.removeRequestExitStatusCode, 'emit');
-    component.removeRequestExitStatusCode.emit({
-      codeIndex: 1,
-      requestIndex: 0,
-    });
-    expect(removeExitSpy).toHaveBeenCalledWith({
-      codeIndex: 1,
-      requestIndex: 0,
-    });
+    component.removeRequestExitStatusCode(0, 1);
+    expect(mockService.removeRequestExitStatusCode).toHaveBeenCalledWith(0, 1);
+  });
+
+  it('should call onJsonTextareaValueChange on the service', () => {
+    component.onJsonTextareaValueChange();
+    expect(mockService.onJsonTextAreaChange).toHaveBeenCalled();
   });
 });

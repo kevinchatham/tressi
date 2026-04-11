@@ -41,6 +41,7 @@ export type WorkerData = {
   durationSec: number;
   rampUpDurationSec: number;
   assignedEndpoints: TressiRequestConfig[];
+  globalHeaders?: Record<string, string>;
   endpointOffset: number;
   statsBuffer: SharedArrayBuffer;
   histogramBuffer: SharedArrayBuffer;
@@ -59,10 +60,10 @@ export type EarlyExitThresholds = {
       errorRate?: number;
       errorCount?: number;
       exitStatusCodes: Set<number>;
-      monitoringWindowMs: number;
+      monitoringWindowSeconds: number;
     }
   >;
-  monitoringWindowMs: number;
+  monitoringWindowSeconds: number;
 };
 
 /**
@@ -110,6 +111,7 @@ export interface IWorkerStateManager {
 }
 
 export interface IEarlyExitCoordinator {
+  getEarlyExitTriggered(): boolean;
   startMonitoring(): void;
   stopMonitoring(): void;
 }

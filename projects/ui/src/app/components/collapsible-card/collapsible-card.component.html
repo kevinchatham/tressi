@@ -2,6 +2,7 @@
   <div
     class="flex cursor-pointer items-center justify-between transition-all"
     (click)="toggleCollapsed()"
+    (onKeyDown)="toggleCollapsed()"
   >
     <div class="flex min-w-0 items-center gap-2">
       @if (icon()) {
@@ -27,6 +28,7 @@
       }
       <app-button
         (click)="toggleCollapsed()"
+        (onKeyDown)="toggleCollapsed()"
         [title]="collapsed() ? 'Expand' : 'Collapse'"
         [icon]="'keyboard_arrow_up'"
         [secondaryIcon]="'keyboard_arrow_down'"

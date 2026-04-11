@@ -12,10 +12,10 @@ import createApp from './routes';
 import { SSEManager } from './utils/sse-manager';
 
 export class TressiServer {
-  private _app: Hono;
+  private readonly _app: Hono;
   private _server: ReturnType<typeof serve> | null = null;
-  private _port: number;
-  private _sseManager: SSEManager;
+  private readonly _port: number;
+  private readonly _sseManager: SSEManager;
   private _heartbeatInterval: NodeJS.Timeout | null = null;
 
   constructor(port: number = 3108) {
@@ -48,7 +48,8 @@ export class TressiServer {
           const dbPath = process.env['TRESSI_DB_PATH'] || join(homedir(), '.tressi', 'tressi.db');
 
           terminal.print('');
-          terminal.print(`  ${chalk.yellow.bold('⚡')} ${chalk.bold(`Tressi v${pkg.version}`)}`);
+          const versionText = `Tressi v${pkg.version}`;
+          terminal.print(`  ${chalk.yellow.bold('⚡')} ${chalk.bold(versionText)}`);
           terminal.print('');
           terminal.print(`  ${chalk.bold('Local:')} ${chalk.cyan(url)}`);
           terminal.print(`  ${chalk.bold('Store:')} ${chalk.magenta(dbPath)}`);

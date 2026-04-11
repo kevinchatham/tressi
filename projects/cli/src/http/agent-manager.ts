@@ -7,9 +7,9 @@ import { Agent, type Dispatcher } from 'undici';
  * and lifecycle management.
  */
 export class AgentManager {
-  private _agents: Map<string, Dispatcher> = new Map();
-  private _agentConfigs: Map<string, AgentConfig> = new Map();
-  private _defaultConfig: AgentConfig = {
+  private readonly _agents: Map<string, Dispatcher> = new Map();
+  private readonly _agentConfigs: Map<string, AgentConfig> = new Map();
+  private readonly _defaultConfig: AgentConfig = {
     bodyTimeout: 30000,
     connections: 256, // Maximum connections per origin
     headersTimeout: 30000,
@@ -83,7 +83,7 @@ export class AgentManager {
       return `${parsedUrl.protocol}//${parsedUrl.host}`;
     } catch {
       // If URL parsing fails, try to extract origin manually
-      const match = url.match(/^https?:\/\/[^/]+/);
+      const match = /^https?:\/\/[^/]+/.exec(url);
       return match ? match[0] : url;
     }
   }

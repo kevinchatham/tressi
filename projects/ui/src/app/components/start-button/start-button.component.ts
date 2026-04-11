@@ -1,4 +1,13 @@
-import { Component, computed, inject, input, type OnDestroy, output, signal } from '@angular/core';
+import {
+  Component,
+  computed,
+  inject,
+  input,
+  type OnDestroy,
+  type OnInit,
+  output,
+  signal,
+} from '@angular/core';
 import type { ConfigDocument, TestEventData } from '@tressi/shared/common';
 import { Subject, takeUntil } from 'rxjs';
 
@@ -12,7 +21,7 @@ import { ButtonComponent } from '../button/button.component';
   selector: 'app-start-button',
   templateUrl: './start-button.component.html',
 })
-export class StartButtonComponent implements OnDestroy {
+export class StartButtonComponent implements OnDestroy, OnInit {
   /** Service injection */
   private readonly _eventService = inject(EventService);
   private readonly _logService = inject(LogService);
@@ -38,8 +47,11 @@ export class StartButtonComponent implements OnDestroy {
   private readonly _destroy$ = new Subject<void>();
 
   constructor() {
-    this._initializeTestState(); // Initialize state from backend before setting up listeners
     this._setupTestEventsListener();
+  }
+
+  ngOnInit(): void {
+    this._initializeTestState();
   }
 
   ngOnDestroy(): void {

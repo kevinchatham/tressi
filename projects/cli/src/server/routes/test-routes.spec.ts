@@ -1,10 +1,11 @@
-import type { TestDocument } from '@tressi/shared/common';
+import { ServerEvents, type TestDocument } from '@tressi/shared/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { configStorage } from '../../collections/config-collection';
 import { metricStorage } from '../../collections/metrics-collection';
 import { testStorage } from '../../collections/test-collection';
 import { runLoadTestForServer, stopLoadTest } from '../../core/test-executor';
+import { globalEventEmitter } from '../../events/global-event-emitter';
 import app from './test-routes';
 
 vi.mock('../../collections/test-collection', () => ({
@@ -42,6 +43,18 @@ vi.mock('../../events/global-event-emitter', () => ({
 
 vi.mock('../utils/error-response-generator', () => ({
   createApiErrorResponse: vi.fn((message, code) => ({ code, message })),
+}));
+
+vi.mock('../../reporting/exporters/markdown-exporter', () => ({
+  MarkdownExporter: vi.fn().mockImplementation(() => ({
+    export: vi.fn().mockResolvedValue('# Test Results\n\nSummary here'),
+  })),
+}));
+
+vi.mock('../../reporting/exporters/xlsx-exporter', () => ({
+  XlsxExporter: vi.fn().mockImplementation(() => ({
+    export: vi.fn().mockResolvedValue(new Uint8Array([1, 2, 3])),
+  })),
 }));
 
 describe('test-routes', () => {
@@ -150,6 +163,48 @@ describe('test-routes', () => {
     });
   });
 
+  describe('GET /:id/export', () => {
+    it('should export test as JSON', async () => {
+      const mockTest = {
+        id: '1',
+        status: 'completed',
+        summary: { endpoints: [], global: {} },
+      };
+      vi.mocked(testStorage.getById).mockResolvedValue(mockTest as unknown as TestDocument);
+
+      const res = await app.request('/1/export?format=json');
+      expect(res.status).toBe(200);
+      expect(res.headers.get('Content-Type')).toBe('application/json');
+    });
+
+    it('should return 404 if test not found', async () => {
+      vi.mocked(testStorage.getById).mockResolvedValue(undefined);
+
+      const res = await app.request('/nonexistent/export?format=json');
+      expect(res.status).toBe(404);
+    });
+
+    it('should return 400 if no summary available', async () => {
+      const mockTest = { id: '1', status: 'completed', summary: undefined };
+      vi.mocked(testStorage.getById).mockResolvedValue(mockTest as unknown as TestDocument);
+
+      const res = await app.request('/1/export?format=json');
+      expect(res.status).toBe(400);
+    });
+
+    it('should return 400 for invalid format', async () => {
+      const mockTest = {
+        id: '1',
+        status: 'completed',
+        summary: { endpoints: [], global: {} },
+      };
+      vi.mocked(testStorage.getById).mockResolvedValue(mockTest as unknown as TestDocument);
+
+      const res = await app.request('/1/export?format=invalid');
+      expect(res.status).toBe(400);
+    });
+  });
+
   describe('POST /', () => {
     it('should reject when a test is already running', async () => {
       const mockRunningTest = { id: 'running-1', status: 'running' };
@@ -195,6 +250,35 @@ describe('test-routes', () => {
       expect(res.status).toBe(202);
       const json = await res.json();
       expect(json.testId).toBe('test-1');
+    });
+
+    it('should set status to failed when early exit is triggered', async () => {
+      vi.mocked(testStorage.getAll).mockResolvedValue([] as unknown as TestDocument[]);
+      vi.mocked(configStorage.getById).mockResolvedValue({ id: 'config-1' } as unknown as never);
+      vi.mocked(testStorage.create).mockResolvedValue({ id: 'test-1' } as unknown as never);
+      vi.mocked(testStorage.edit).mockResolvedValue(undefined as never);
+      vi.mocked(runLoadTestForServer).mockResolvedValue({
+        earlyExitTriggered: true,
+        isCanceled: false,
+        summary: {},
+      } as unknown as never);
+
+      const res = await app.request('/', {
+        body: JSON.stringify({ configId: 'config-1' }),
+        headers: { 'Content-Type': 'application/json' },
+        method: 'POST',
+      });
+      expect(res.status).toBe(202);
+
+      await vi.waitFor(() => {
+        expect(testStorage.edit).toHaveBeenCalledWith(
+          expect.objectContaining({ status: 'failed' }),
+        );
+        expect(globalEventEmitter.emit).toHaveBeenCalledWith(
+          ServerEvents.TEST.FAILED,
+          expect.any(Object),
+        );
+      });
     });
   });
 });

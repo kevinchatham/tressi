@@ -8,8 +8,8 @@ import {
   output,
   viewChild,
 } from '@angular/core';
+import { formatCompactNumber } from '@tressi/shared/common';
 import type { ChartEventData, LineChartOptions } from '@tressi/shared/ui';
-import humanNumber from 'human-number';
 import { type ApexAxisChartSeries, type ChartComponent, NgApexchartsModule } from 'ng-apexcharts';
 
 import { ChartSyncService } from '../../services/chart-sync.service';
@@ -251,7 +251,7 @@ export class LineChartComponent {
         onDblClick: undefined,
         shape: 'circle',
         showNullDataPoints: true,
-        size: (Array.isArray(data) ? data.length : Object.values(data)[0]?.length || 0) > 1 ? 0 : 4,
+        size: this._getDataLength(data) > 1 ? 0 : 4,
         strokeColors: [themeColors.primary],
         strokeDashArray: 0,
         strokeOpacity: 0.9,
@@ -303,7 +303,7 @@ export class LineChartComponent {
             return date.toLocaleTimeString();
           },
           hideOverlappingLabels: true,
-          show: (Array.isArray(data) ? data.length : Object.values(data)[0]?.length || 0) > 1,
+          show: this._getDataLength(data) > 1,
           style: {
             colors: themeColors.text,
             fontFamily: 'Roboto Mono, monospace',
@@ -432,11 +432,14 @@ export class LineChartComponent {
     if (!chart) return;
 
     // Get data length for change detection
-    const dataLength = Array.isArray(data)
-      ? data.length
-      : typeof data === 'object' && data !== null
-        ? Math.max(...Object.values(data).map((arr) => arr?.length || 0))
-        : 0;
+    let dataLength: number;
+    if (Array.isArray(data)) {
+      dataLength = data.length;
+    } else if (typeof data === 'object' && data !== null) {
+      dataLength = Math.max(...Object.values(data).map((arr) => arr?.length || 0));
+    } else {
+      dataLength = 0;
+    }
 
     // Early exit if data hasn't changed
     if (dataLength === this._lastDataLength && dataLength > 0) {
@@ -484,7 +487,7 @@ export class LineChartComponent {
 
   private _getYAxisFormatter(): (value: number) => string {
     return (value: number): string => {
-      return humanNumber(Math.round(value));
+      return formatCompactNumber(Math.round(value));
     };
   }
 
@@ -531,5 +534,12 @@ export class LineChartComponent {
 
       // Skip originalReset - we've handled it manually
     };
+  }
+
+  private _getDataLength(data: number[] | { [seriesName: string]: number[] }): number {
+    if (Array.isArray(data)) {
+      return data.length;
+    }
+    return Object.values(data)[0]?.length || 0;
   }
 }

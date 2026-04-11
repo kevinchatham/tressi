@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { BUTTON_COLORS } from '@tressi/shared/ui';
-import { ButtonComponent } from 'src/app/components/button/button.component';
-import { ThemeSwitcherComponent } from 'src/app/components/theme-switcher/theme-switcher.component';
+import { ButtonComponent } from '../../components/button/button.component';
+import { ThemeSwitcherComponent } from '../../components/theme-switcher/theme-switcher.component';
 
 @Component({
   imports: [ButtonComponent, ThemeSwitcherComponent],

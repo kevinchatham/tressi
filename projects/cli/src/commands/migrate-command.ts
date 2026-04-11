@@ -1,6 +1,7 @@
 import chalk from 'chalk';
 
-import { JsonMigrationManager } from '../data/json-migration-manager';
+import { db } from '../data/database';
+import { MigrationManager } from '../data/migration-manager';
 import { terminal } from '../tui/terminal';
 
 /**
@@ -10,12 +11,11 @@ export class MigrateCommand {
   /**
    * Executes the migrate command.
    * @param configPath Path to the configuration file to migrate.
-   * @param force If true, bypass confirmation prompts.
    */
-  async execute(configPath: string, force: boolean = false): Promise<void> {
+  async execute(configPath: string): Promise<void> {
     try {
-      const migrationManager = new JsonMigrationManager();
-      await migrationManager.migrateFile(configPath, force);
+      const migrationManager = new MigrationManager(db);
+      await migrationManager.migrateFile(configPath);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
       terminal.error(chalk.red(`\nFailed to execute migrate command: ${message}`));

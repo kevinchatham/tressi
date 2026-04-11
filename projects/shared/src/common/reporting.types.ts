@@ -91,7 +91,7 @@ export type EndpointSummary = {
   p99LatencyMs: number;
   /** Average requests per second achieved for this endpoint. */
   averageRequestsPerSecond: number;
-  /** Last one sec requests per second achieved for this endpoint. */
+  /** Instantaneous requests per second during this measurement interval. */
   peakRequestsPerSecond: number;
   /** Percentage of configured RPS achieved, derived from actualRps */
   targetAchieved: number;
@@ -112,6 +112,8 @@ export type EndpointSummary = {
   errorRate: number;
   /** The aggregated histogram of the test */
   histogram: LatencyHistogram;
+  /** Whether early exit was triggered for this endpoint */
+  earlyExitTriggered: boolean;
 };
 
 /**
@@ -146,7 +148,7 @@ export type GlobalSummary = {
   errorRate: number;
   /** Average requests per second achieved for this endpoint. */
   averageRequestsPerSecond: number;
-  /** Last one sec requests per second achieved for this endpoint. */
+  /** Instantaneous requests per second during this measurement interval. */
   peakRequestsPerSecond: number;
   /** Total number of bytes sent across all requests. */
   networkBytesSent: number;
@@ -162,6 +164,8 @@ export type GlobalSummary = {
   targetAchieved: number;
   /** The aggregated histogram of the test */
   histogram: LatencyHistogram;
+  /** Whether early exit was triggered for the entire test */
+  earlyExitTriggered: boolean;
 };
 
 /**

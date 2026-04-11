@@ -22,10 +22,11 @@
             type="number"
             class="input outline-none!"
             [formField]="form().errorRateThreshold"
-            placeholder="0.0 - 1.0"
-            step="0.01"
+            placeholder="1 - 100"
+            step="1"
+            appPreventNumberScroll
           />
-          <p class="label ml-2 py-0 text-xs opacity-60">Range: 0.0 - 1.0</p>
+          <p class="label ml-2 py-0 text-xs opacity-60">Range: 1 - 100</p>
           @if (form().errorRateThreshold().touched() && form().errorRateThreshold().invalid()) {
             <p class="label text-error ml-2">
               @for (error of form().errorRateThreshold().errors(); track error) {
@@ -43,15 +44,17 @@
           <input
             type="number"
             class="input outline-none!"
-            [formField]="form().monitoringWindowMs"
-            placeholder="Monitoring duration in milliseconds"
+            [formField]="form().monitoringWindowSeconds"
+            placeholder="Monitoring duration in seconds"
+            step="1"
+            appPreventNumberScroll
           />
-          <p class="label ml-2 py-0 text-xs opacity-60">
-            Duration to monitor for errors (milliseconds)
-          </p>
-          @if (form().monitoringWindowMs().touched() && form().monitoringWindowMs().invalid()) {
+          <p class="label ml-2 py-0 text-xs opacity-60">Duration to monitor for errors (seconds)</p>
+          @if (
+            form().monitoringWindowSeconds().touched() && form().monitoringWindowSeconds().invalid()
+          ) {
             <p class="label text-error ml-2">
-              @for (error of form().monitoringWindowMs().errors(); track error) {
+              @for (error of form().monitoringWindowSeconds().errors(); track error) {
                 {{ error.message }}
               }
             </p>
@@ -62,9 +65,12 @@
       <!-- Exit Status Codes -->
       <div>
         <div class="mb-2 flex items-center justify-between">
-          <label class="label-text font-medium">Exit Status Codes</label>
+          <label class="label-text font-medium" for="exit-status-code-input"
+            >Exit Status Codes</label
+          >
           <app-button
-            (click)="addExitStatusCode.emit()"
+            (click)="addExitStatusCode()"
+            (onKeyDown)="addExitStatusCode()"
             [color]="'primary'"
             [icon]="'add'"
             [title]="'Add Code'"
@@ -75,13 +81,16 @@
             <fieldset class="fieldset">
               <div class="flex items-center gap-2">
                 <input
+                  id="exit-status-code-input"
                   type="number"
                   class="input outline-none!"
                   [formField]="form().exitStatusCodes[$index]"
                   placeholder="HTTP status code"
+                  appPreventNumberScroll
                 />
                 <app-button
-                  (click)="removeExitStatusCode.emit($index)"
+                  (click)="removeExitStatusCode($index)"
+                  (onKeyDown)="removeExitStatusCode($index)"
                   [color]="'error'"
                   [icon]="'delete'"
                   [title]="'Remove Code'"

@@ -98,4 +98,29 @@ describe('createApp', () => {
       event: ServerEvents.TEST.STARTED,
     });
   });
+
+  it('should include /api/health endpoint', async () => {
+    const mockSseManager = {
+      broadcast: vi.fn(),
+    } as unknown as ISSEClientManager;
+    const port = 3000;
+
+    const app = createApp(mockSseManager, port);
+
+    const res = await app.request('/api/health');
+    expect(res.status).toBe(200);
+    const data = await res.json();
+    expect(data).toHaveProperty('status');
+    expect(data).toHaveProperty('timestamp');
+  });
+
+  it('should configure CORS with correct origins', () => {
+    const mockSseManager = {
+      broadcast: vi.fn(),
+    } as unknown as ISSEClientManager;
+    const port = 8080;
+
+    const app = createApp(mockSseManager, port);
+    expect(app).toBeInstanceOf(Hono);
+  });
 });

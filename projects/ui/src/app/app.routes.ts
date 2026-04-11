@@ -10,7 +10,7 @@ import { HealthService } from './services/health.service';
 import { AppRouterService } from './services/router.service';
 
 // Health check guard using the centralized service
-const healthCheckGuard = async (): Promise<boolean> => {
+export const healthCheckGuard = async (): Promise<boolean> => {
   const health = inject(HealthService);
   const appRouter = inject(AppRouterService);
 
@@ -33,7 +33,7 @@ const healthCheckGuard = async (): Promise<boolean> => {
 };
 
 // Configuration guard for welcome and settings routes
-const configGuard = async (
+export const configGuard = async (
   route?: ActivatedRouteSnapshot,
   state?: RouterStateSnapshot,
 ): Promise<boolean> => {
@@ -47,7 +47,7 @@ const configGuard = async (
     // Get the target path from the route or state
     const targetPath = route?.routeConfig?.path || '';
     const fullUrl = state?.url || '';
-    const urlPath = fullUrl.replace(/^\/+|\/+$/g, '');
+    const urlPath = fullUrl.replaceAll(/(^\/+)|(\/+$)/g, '');
 
     // Determine which path to use for logic
     const pathToCheck = targetPath || urlPath;
@@ -55,23 +55,21 @@ const configGuard = async (
     if (hasConfigs) {
       // When configs exist, redirect away from welcome to dashboard
       if (pathToCheck === AppRoutes.WELCOME || pathToCheck === AppRoutes.HOME) {
-        await appRouter.toDashboard();
+        appRouter.toDashboard();
         return false;
       } else {
         return true;
       }
     } else {
-      // No configs exist, only allow welcome or settings
       if (
         pathToCheck === AppRoutes.WELCOME ||
         pathToCheck === 'settings' ||
         pathToCheck === AppRoutes.HOME
       ) {
         return true;
-      } else {
-        await appRouter.toWelcome();
-        return false;
       }
+      appRouter.toWelcome();
+      return false;
     }
   } catch {
     // On error, allow navigation to handle the issue

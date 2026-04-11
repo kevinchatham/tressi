@@ -43,21 +43,21 @@ import type { WorkerStateManager } from './shared-memory/worker-state-manager';
  * Each worker is assigned a subset of endpoints using round-robin distribution.
  */
 export class WorkerPoolManager {
-  private _workers: Worker[] = [];
-  private _metricsAggregator: MetricsAggregator;
-  private _earlyExitCoordinator: EarlyExitCoordinator;
-  private _maxWorkers: number;
-  private _workerStateManager: WorkerStateManager;
-  private _endpointStateManager: EndpointStateManager;
-  private _endpoints: TressiRequestConfig[];
+  private readonly _workers: Worker[] = [];
+  private readonly _metricsAggregator: MetricsAggregator;
+  private readonly _earlyExitCoordinator: EarlyExitCoordinator;
+  private readonly _maxWorkers: number;
+  private readonly _workerStateManager: WorkerStateManager;
+  private readonly _endpointStateManager: EndpointStateManager;
+  private readonly _endpoints: TressiRequestConfig[];
   private _workerAssignments: TressiRequestConfig[][] = [];
-  private _hdrHistogramManagers: HdrHistogramManager[] = [];
-  private _statsCounterManagers: StatsCounterManager[] = [];
+  private readonly _hdrHistogramManagers: HdrHistogramManager[] = [];
+  private readonly _statsCounterManagers: StatsCounterManager[] = [];
   private readonly _runId = `ephemeral-${randomUUID()}`;
-  constructor(private _config: TressiConfig) {
+  constructor(private readonly _config: TressiConfig) {
     const cpuCount = os.cpus().length;
     const requestedThreads = _config.options.threads ?? cpuCount;
-    const maxWorkers = requestedThreads > cpuCount ? cpuCount : requestedThreads;
+    const maxWorkers = Math.min(requestedThreads, cpuCount);
 
     this._maxWorkers = maxWorkers;
     this._endpoints = _config.requests;
@@ -122,6 +122,7 @@ export class WorkerPoolManager {
           durationSec: this._config.options.durationSec || 10,
           endpointOffset,
           endpointStateBuffer: this._endpointStateManager.getSharedBuffer(),
+          globalHeaders: this._config.options.headers,
           histogramBuffer: this._hdrHistogramManagers[i].getSharedBuffer(),
           memoryLimit: this._config.options.workerMemoryLimit,
           rampUpDurationSec: this._config.options.rampUpDurationSec || 0,
@@ -168,11 +169,11 @@ export class WorkerPoolManager {
     });
 
     worker.on('exit', (code) => {
-      if (code !== 0) {
+      if (code === 0) {
+        this._workerStateManager.setWorkerState(workerId, WorkerState.FINISHED);
+      } else {
         process.stderr.write(`Worker ${workerId} exited with code ${code}\n`);
         this._workerStateManager.setWorkerState(workerId, WorkerState.ERROR);
-      } else {
-        this._workerStateManager.setWorkerState(workerId, WorkerState.FINISHED);
       }
     });
 
@@ -328,6 +329,14 @@ export class WorkerPoolManager {
    */
   public getTestSummary(): TestSummary {
     return this._metricsAggregator.getTestSummary();
+  }
+
+  /**
+   * Gets whether early exit was triggered during the test.
+   * @returns True if early exit occurred, false otherwise
+   */
+  public getEarlyExitTriggered(): boolean {
+    return this._earlyExitCoordinator.getEarlyExitTriggered();
   }
 
   /**

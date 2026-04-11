@@ -1,8 +1,15 @@
 @if (isTestRunning()) {
-  <app-button (click)="stop()" [title]="'Stop Test'" [color]="'error'" [icon]="'close'" />
+  <app-button
+    (click)="stop()"
+    (onKeyDown)="stop()"
+    [title]="'Stop Test'"
+    [color]="'error'"
+    [icon]="'close'"
+  />
 } @else {
   <app-button
     (click)="start()"
+    (onKeyDown)="start()"
     [title]="'Start Test'"
     [color]="'primary'"
     [icon]="'dynamic_form'"

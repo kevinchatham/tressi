@@ -1,13 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { JsonMigrationManager } from '../data/json-migration-manager';
+
+import { MigrationManager } from '../data/migration-manager';
 import * as terminalModule from '../tui/terminal';
 import { MigrateCommand } from './migrate-command';
 
-vi.mock('../data/json-migration-manager', () => {
-  const JsonMigrationManagerMock = vi.fn();
-  JsonMigrationManagerMock.prototype.migrateFile = vi.fn();
-  return { JsonMigrationManager: JsonMigrationManagerMock };
-});
+vi.mock('../data/database', () => ({
+  db: {},
+}));
 
 describe('MigrateCommand', () => {
   let terminalErrorSpy: ReturnType<typeof vi.spyOn>;
@@ -18,6 +17,8 @@ describe('MigrateCommand', () => {
     terminalErrorSpy = vi.spyOn(terminalModule.terminal, 'error');
     terminalPrintSpy = vi.spyOn(terminalModule.terminal, 'print');
     processExitSpy = vi.spyOn(process, 'exit').mockImplementation((() => {}) as () => never);
+
+    vi.spyOn(MigrationManager.prototype, 'migrateFile').mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -30,39 +31,23 @@ describe('MigrateCommand', () => {
     );
   });
 
-  it('should call migrateFile with the correct arguments', async () => {
-    const command = new MigrateCommand();
-    const configPath = './test-config.json';
-    const force = true;
+  it('should call migrateFile with the config path', async () => {
+    const migrateFileSpy = vi.spyOn(MigrationManager.prototype, 'migrateFile');
 
-    await command.execute(configPath, force);
-
-    const migrationManagerInstance = vi.mocked(JsonMigrationManager).mock
-      .instances[0] as unknown as { migrateFile: ReturnType<typeof vi.fn> };
-    expect(migrationManagerInstance.migrateFile).toHaveBeenCalledWith(configPath, force);
-  });
-
-  it('should call migrateFile with default force value (false)', async () => {
     const command = new MigrateCommand();
     const configPath = './test-config.json';
 
     await command.execute(configPath);
 
-    const migrationManagerInstance = vi.mocked(JsonMigrationManager).mock
-      .instances[0] as unknown as { migrateFile: ReturnType<typeof vi.fn> };
-    expect(migrationManagerInstance.migrateFile).toHaveBeenCalledWith(configPath, false);
+    expect(migrateFileSpy).toHaveBeenCalledWith(configPath);
   });
 
   it('should handle generic errors and exit with code 1', async () => {
+    const error = new Error('Something went wrong');
+    vi.spyOn(MigrationManager.prototype, 'migrateFile').mockRejectedValue(error);
+
     const command = new MigrateCommand();
     const configPath = './test-config.json';
-    const error = new Error('Something went wrong');
-
-    vi.mocked(JsonMigrationManager).mockImplementation(function (this: unknown) {
-      (this as { migrateFile: ReturnType<typeof vi.fn> }).migrateFile = vi
-        .fn()
-        .mockRejectedValue(error);
-    });
 
     await command.execute(configPath);
 
@@ -71,15 +56,11 @@ describe('MigrateCommand', () => {
   });
 
   it('should display ENOENT hint for file not found errors', async () => {
+    const error = new Error('ENOENT: no such file or directory');
+    vi.spyOn(MigrationManager.prototype, 'migrateFile').mockRejectedValue(error);
+
     const command = new MigrateCommand();
     const configPath = './nonexistent.json';
-    const error = new Error('ENOENT: no such file or directory');
-
-    vi.mocked(JsonMigrationManager).mockImplementation(function (this: unknown) {
-      (this as { migrateFile: ReturnType<typeof vi.fn> }).migrateFile = vi
-        .fn()
-        .mockRejectedValue(error);
-    });
 
     await command.execute(configPath);
 
@@ -91,15 +72,11 @@ describe('MigrateCommand', () => {
   });
 
   it('should display JSON syntax error hint for SyntaxError', async () => {
+    const error = new SyntaxError('Unexpected token');
+    vi.spyOn(MigrationManager.prototype, 'migrateFile').mockRejectedValue(error);
+
     const command = new MigrateCommand();
     const configPath = './invalid-config.json';
-    const error = new SyntaxError('Unexpected token');
-
-    vi.mocked(JsonMigrationManager).mockImplementation(function (this: unknown) {
-      (this as { migrateFile: ReturnType<typeof vi.fn> }).migrateFile = vi
-        .fn()
-        .mockRejectedValue(error);
-    });
 
     await command.execute(configPath);
 
@@ -109,15 +86,11 @@ describe('MigrateCommand', () => {
   });
 
   it('should display permission hint for EACCES errors', async () => {
+    const error = new Error('EACCES: permission denied');
+    vi.spyOn(MigrationManager.prototype, 'migrateFile').mockRejectedValue(error);
+
     const command = new MigrateCommand();
     const configPath = './protected.json';
-    const error = new Error('EACCES: permission denied');
-
-    vi.mocked(JsonMigrationManager).mockImplementation(function (this: unknown) {
-      (this as { migrateFile: ReturnType<typeof vi.fn> }).migrateFile = vi
-        .fn()
-        .mockRejectedValue(error);
-    });
 
     await command.execute(configPath);
 
@@ -127,15 +100,11 @@ describe('MigrateCommand', () => {
   });
 
   it('should display permission hint for EPERM errors', async () => {
+    const error = new Error('EPERM: operation not permitted');
+    vi.spyOn(MigrationManager.prototype, 'migrateFile').mockRejectedValue(error);
+
     const command = new MigrateCommand();
     const configPath = './protected.json';
-    const error = new Error('EPERM: operation not permitted');
-
-    vi.mocked(JsonMigrationManager).mockImplementation(function (this: unknown) {
-      (this as { migrateFile: ReturnType<typeof vi.fn> }).migrateFile = vi
-        .fn()
-        .mockRejectedValue(error);
-    });
 
     await command.execute(configPath);
 
@@ -145,15 +114,11 @@ describe('MigrateCommand', () => {
   });
 
   it('should handle unknown errors (non-Error objects)', async () => {
+    const error = 'Unknown error string';
+    vi.spyOn(MigrationManager.prototype, 'migrateFile').mockRejectedValue(error);
+
     const command = new MigrateCommand();
     const configPath = './config.json';
-    const error = 'Unknown error string';
-
-    vi.mocked(JsonMigrationManager).mockImplementation(function (this: unknown) {
-      (this as { migrateFile: ReturnType<typeof vi.fn> }).migrateFile = vi
-        .fn()
-        .mockRejectedValue(error);
-    });
 
     await command.execute(configPath);
 

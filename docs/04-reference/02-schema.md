@@ -16,7 +16,7 @@ To enable validation and IntelliSense in VS Code or other supported editors, ens
 
 ```json
 {
-  "$schema": "https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.19.json",
+  "$schema": "https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v0.0.20.json",
   "requests": [],
   "options": {}
 }
@@ -34,14 +34,14 @@ To enable validation and IntelliSense in VS Code or other supported editors, ens
 
 Configure overall test runner behavior using the `options` object.
 
-| Property            | Type    | Description                                                                  |
-| ------------------- | ------- | ---------------------------------------------------------------------------- |
-| `durationSec`       | integer | Total test duration in seconds. Min: `10`. Default: `10`.                    |
-| `rampUpDurationSec` | integer | Global ramp up time in seconds for all endpoints. Default: `0`.              |
-| `headers`           | object  | Global headers sent with every request. Default: `{"User-Agent": "Tressi"}`. |
-| `threads`           | integer | Number of worker threads. Default: `2`.                                      |
-| `workerMemoryLimit` | integer | Memory allocation per worker in MB. Min: `16`, Max: `512`. Default: `128`.   |
-| `workerEarlyExit`   | object  | Default [Early Exit Configuration](#early-exit) for workers.                 |
+| Property            | Type    | Description                                                                |
+| ------------------- | ------- | -------------------------------------------------------------------------- |
+| `durationSec`       | integer | Total test duration in seconds. Min: `10`. Default: `10`.                  |
+| `rampUpDurationSec` | integer | Global ramp up time in seconds for all endpoints. Default: `0`.            |
+| `headers`           | object  | Global headers sent with every request. Default: `{}`.                     |
+| `threads`           | integer | Number of worker threads. Default: `2`.                                    |
+| `workerMemoryLimit` | integer | Memory allocation per worker in MB. Min: `16`, Max: `512`. Default: `128`. |
+| `workerEarlyExit`   | object  | Default [Early Exit Configuration](#early-exit) for workers.               |
 
 ### Request Endpoints
 
@@ -63,12 +63,12 @@ Set thresholds to stop tests automatically when performance or stability degrade
 
 When `enabled` is `true`, both `errorRateThreshold` (must be > 0) AND at least one `exitStatusCodes` must be provided.
 
-| Property             | Type    | Description                                                                |
-| -------------------- | ------- | -------------------------------------------------------------------------- |
-| `enabled`            | boolean | Enables or disables early exit monitoring.                                 |
-| `errorRateThreshold` | number  | Error rate (0.0 to 1.0) that triggers a test stop. Must be > 0 if enabled. |
-| `exitStatusCodes`    | array   | List of HTTP status codes (100-599) that trigger an immediate stop.        |
-| `monitoringWindowMs` | integer | Rolling time window in milliseconds for calculating the error rate.        |
+| Property                  | Type    | Description                                                                     |
+| ------------------------- | ------- | ------------------------------------------------------------------------------- |
+| `enabled`                 | boolean | Enables or disables early exit monitoring.                                      |
+| `errorRateThreshold`      | number  | Error rate threshold (1-100) that triggers a test stop. Must be > 0 if enabled. |
+| `exitStatusCodes`         | array   | List of HTTP status codes (100-599) that trigger an immediate stop.             |
+| `monitoringWindowSeconds` | integer | Rolling time window in seconds for calculating the error rate.                  |
 
 ### Next Steps
 

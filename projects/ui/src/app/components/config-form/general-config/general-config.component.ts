@@ -1,11 +1,12 @@
-import { Component, input, output, signal } from '@angular/core';
+import { Component, inject, input, signal } from '@angular/core';
 import { FormField } from '@angular/forms/signals';
 import type { SaveConfigRequest } from '@tressi/shared/common';
 import type { ModifyConfigRequestFormType } from '@tressi/shared/ui';
-
+import { PreventNumberScrollDirective } from '../../../directives/prevent-number-scroll.directive';
 import { CollapsibleCardComponent } from '../../collapsible-card/collapsible-card.component';
 import { IconComponent } from '../../icon/icon.component';
 import { JsonTextareaComponent } from '../../json-textarea/json-textarea.component';
+import { ConfigFormService } from '../config-form.service';
 import { EarlyExitConfigComponent } from '../early-exit-config/early-exit-config.component';
 
 @Component({
@@ -15,34 +16,31 @@ import { EarlyExitConfigComponent } from '../early-exit-config/early-exit-config
     JsonTextareaComponent,
     CollapsibleCardComponent,
     FormField,
+    PreventNumberScrollDirective,
   ],
   selector: 'app-general-config',
   templateUrl: './general-config.component.html',
 })
 export class GeneralConfigComponent {
-  /** Form instance from parent */
+  private readonly _service = inject(ConfigFormService);
+
   readonly form = input.required<ModifyConfigRequestFormType>();
 
-  /** Config model from parent */
   readonly model = input.required<SaveConfigRequest>();
 
-  /** Event to add an exit status code */
-  readonly addExitStatusCode = output<void>();
-
-  /** Event to remove an exit status code */
-  readonly removeExitStatusCode = output<number>();
-
-  /** Event emitted when JSON textarea value changes */
-  readonly jsonTextareaChange = output<void>();
-
-  /** Collapsed state for engine settings */
   readonly engineSettingsCollapsed = signal(true);
 
-  /** Collapsed state for global defaults */
   readonly globalDefaultsCollapsed = signal(true);
 
-  /** Handle JSON textarea value changes */
   onJsonTextareaValueChange(): void {
-    this.jsonTextareaChange.emit();
+    this._service.onJsonTextAreaChange();
+  }
+
+  addExitStatusCode(): void {
+    this._service.addGlobalExitStatusCode();
+  }
+
+  removeExitStatusCode(index: number): void {
+    this._service.removeGlobalExitStatusCode(index);
   }
 }

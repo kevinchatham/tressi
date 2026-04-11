@@ -44,20 +44,18 @@ export class MetricsAggregator implements IMetricsAggregator {
     success: 0,
     timestamp: 0,
   };
-  private _snapshots: TestSummary[] = [];
-  private _responseSampleStore = new ResponseSampleStore();
-  private _globalPeakRps = 0;
-  private _endpointPeakRps: Record<string, number> = {};
+  private readonly _snapshots: TestSummary[] = [];
+  private readonly _responseSampleStore = new ResponseSampleStore();
 
   public get endTime(): number {
     return this._endTime;
   }
 
   constructor(
-    private _hdrHistogramManagers: IHdrHistogramManager[],
-    private _statsCounterManagers: IStatsCounterManager[],
-    private _endpointMethodMap: Record<string, string> = {},
-    private _runId: string,
+    private readonly _hdrHistogramManagers: IHdrHistogramManager[],
+    private readonly _statsCounterManagers: IStatsCounterManager[],
+    private readonly _endpointMethodMap: Record<string, string> = {},
+    private readonly _runId: string,
   ) {}
 
   setTestId(testId: string): void {
@@ -71,8 +69,6 @@ export class MetricsAggregator implements IMetricsAggregator {
       success: 0,
       timestamp: startTime,
     };
-    this._globalPeakRps = 0;
-    this._endpointPeakRps = {};
   }
 
   public setEndTime(endTime: number): void {
@@ -166,6 +162,119 @@ export class MetricsAggregator implements IMetricsAggregator {
     };
   }
 
+  private _calculateGlobalRps(aggregatedData: AggregatedWorkerData, currentTime: number): number {
+    if (
+      this._previousGlobalCounts.timestamp > 0 &&
+      currentTime > this._previousGlobalCounts.timestamp
+    ) {
+      const timeDiffMs = currentTime - this._previousGlobalCounts.timestamp;
+      const timeDiffSec = timeDiffMs / 1000;
+      const requestDiff =
+        aggregatedData.totalRequests -
+        (this._previousGlobalCounts.success + this._previousGlobalCounts.failure);
+      return timeDiffSec > 0 ? requestDiff / timeDiffSec : 0;
+    }
+    return 0;
+  }
+
+  private _calculateMaxEndpointRampUpSec(): number {
+    const globalRampUpSec = this._config?.options?.rampUpDurationSec ?? 0;
+    return (
+      this._config?.requests?.reduce((max, req) => {
+        const effective =
+          req.rampUpDurationSec !== undefined && req.rampUpDurationSec > 0
+            ? req.rampUpDurationSec
+            : globalRampUpSec;
+        return Math.max(max, effective);
+      }, globalRampUpSec) ?? globalRampUpSec
+    );
+  }
+
+  private _calculateGlobalSteadyStateRps(
+    aggregatedData: AggregatedWorkerData,
+    currentTime: number,
+    currentGlobalRps: number,
+  ): number {
+    const maxEndpointRampUpSec = this._calculateMaxEndpointRampUpSec();
+    const steadyStateStartTime = this._startTime + maxEndpointRampUpSec * 1000;
+
+    if (currentTime <= steadyStateStartTime) {
+      return currentGlobalRps;
+    }
+
+    const firstSteadySnapshot = this._snapshots.find(
+      (s) => s.global.epochEndedAt >= steadyStateStartTime,
+    );
+    if (!firstSteadySnapshot) {
+      return currentGlobalRps;
+    }
+
+    const steadyRequests = aggregatedData.totalRequests - firstSteadySnapshot.global.totalRequests;
+    const steadyDuration = (currentTime - firstSteadySnapshot.global.epochEndedAt) / 1000;
+    return steadyDuration > 0 ? steadyRequests / steadyDuration : currentGlobalRps;
+  }
+
+  private _calculateEndpointRps(
+    url: string,
+    aggregatedData: AggregatedWorkerData,
+    currentTime: number,
+  ): number {
+    const previousCounts = this._previousEndpointCounts[url];
+    const currentCounts = aggregatedData.currentEndpointCounts[url] || { failure: 0, success: 0 };
+
+    if (
+      !previousCounts ||
+      previousCounts.timestamp <= 0 ||
+      currentTime <= previousCounts.timestamp
+    ) {
+      return 0;
+    }
+
+    const timeDiffMs = currentTime - previousCounts.timestamp;
+    const timeDiffSec = timeDiffMs / 1000;
+    const requestDiff =
+      currentCounts.success +
+      currentCounts.failure -
+      (previousCounts.success + previousCounts.failure);
+    return timeDiffSec > 0 ? requestDiff / timeDiffSec : 0;
+  }
+
+  private _calculateEndpointSteadyStateRps(
+    url: string,
+    aggregatedData: AggregatedWorkerData,
+    currentTime: number,
+    currentRps: number,
+  ): number {
+    const globalRampUpSec = this._config?.options?.rampUpDurationSec ?? 0;
+    const requestConfig = this._config?.requests.find((req) => req.url === url);
+    const endpointRampUp = requestConfig?.rampUpDurationSec;
+    const effectiveEndpointRampUp =
+      endpointRampUp !== undefined && endpointRampUp > 0 ? endpointRampUp : globalRampUpSec;
+    const endpointSteadyStateTime = this._startTime + effectiveEndpointRampUp * 1000;
+
+    if (currentTime <= endpointSteadyStateTime) {
+      return currentRps;
+    }
+
+    const firstSteadySnapshot = this._snapshots.find(
+      (s) => s.global.epochEndedAt >= endpointSteadyStateTime,
+    );
+    if (!firstSteadySnapshot) {
+      return currentRps;
+    }
+
+    const firstSteadyEndpoint = firstSteadySnapshot.endpoints.find((e) => e.url === url);
+    if (!firstSteadyEndpoint) {
+      return currentRps;
+    }
+
+    const endpointTotalRequests =
+      aggregatedData.endpointHistograms[url]?.reduce((sum, h) => sum + h.totalCount, 0) ?? 0;
+    const steadyRequests = endpointTotalRequests - firstSteadyEndpoint.totalRequests;
+    const steadyDuration = (currentTime - firstSteadySnapshot.global.epochEndedAt) / 1000;
+    return steadyDuration > 0 ? steadyRequests / steadyDuration : currentRps;
+  }
+
   private _calculateGlobalSummary(
     aggregatedData: AggregatedWorkerData,
     currentTime: number,
@@ -176,51 +285,12 @@ export class MetricsAggregator implements IMetricsAggregator {
       aggregatedData.endpointHistograms,
     );
 
-    let currentGlobalRps = 0;
-    if (
-      this._previousGlobalCounts.timestamp > 0 &&
-      currentTime > this._previousGlobalCounts.timestamp
-    ) {
-      const timeDiffMs = currentTime - this._previousGlobalCounts.timestamp;
-      const timeDiffSec = timeDiffMs / 1000;
-      const requestDiff =
-        aggregatedData.totalRequests -
-        (this._previousGlobalCounts.success + this._previousGlobalCounts.failure);
-      currentGlobalRps = timeDiffSec > 0 ? requestDiff / timeDiffSec : 0;
-    }
-
-    // Update high-water mark for peak RPS
-    this._globalPeakRps = Math.max(this._globalPeakRps, currentGlobalRps);
-
-    // Calculate cumulative average RPS from the start of steady state
-    const globalRampUpSec = this._config?.options?.rampUpDurationSec ?? 0;
-    const maxEndpointRampUpSec =
-      this._config?.requests?.reduce((max, req) => {
-        const effective =
-          req.rampUpDurationSec !== undefined && req.rampUpDurationSec > 0
-            ? req.rampUpDurationSec
-            : globalRampUpSec;
-        return Math.max(max, effective);
-      }, globalRampUpSec) ?? globalRampUpSec;
-
-    const steadyStateStartTime = this._startTime + maxEndpointRampUpSec * 1000;
-    let averageRequestsPerSecond = currentGlobalRps;
-
-    if (currentTime > steadyStateStartTime) {
-      const firstSteadySnapshot = this._snapshots.find(
-        (s) => s.global.epochEndedAt >= steadyStateStartTime,
-      );
-      if (firstSteadySnapshot) {
-        const steadyRequests =
-          aggregatedData.totalRequests - firstSteadySnapshot.global.totalRequests;
-        const steadyDuration = (currentTime - firstSteadySnapshot.global.epochEndedAt) / 1000;
-        averageRequestsPerSecond =
-          steadyDuration > 0 ? steadyRequests / steadyDuration : currentGlobalRps;
-      } else {
-        // If no steady state snapshot yet, we are just starting steady state.
-        averageRequestsPerSecond = currentGlobalRps;
-      }
-    }
+    const currentGlobalRps = this._calculateGlobalRps(aggregatedData, currentTime);
+    const averageRequestsPerSecond = this._calculateGlobalSteadyStateRps(
+      aggregatedData,
+      currentTime,
+      currentGlobalRps,
+    );
 
     const cpuUsagePercent = this._getCurrentCpuUsagePercent();
     const memoryUsageMB = this._getCurrentMemoryUsageMB();
@@ -247,6 +317,7 @@ export class MetricsAggregator implements IMetricsAggregator {
       averageRequestsPerSecond,
       avgProcessMemoryUsageMB: memoryUsageMB,
       avgSystemCpuUsagePercent: cpuUsagePercent,
+      earlyExitTriggered: false,
       epochEndedAt: currentTime,
       epochStartedAt: this._startTime,
       errorRate:
@@ -265,7 +336,7 @@ export class MetricsAggregator implements IMetricsAggregator {
       p50LatencyMs: globalStats.p50Latency,
       p95LatencyMs: globalStats.p95Latency,
       p99LatencyMs: globalStats.p99Latency,
-      peakRequestsPerSecond: this._globalPeakRps,
+      peakRequestsPerSecond: currentGlobalRps,
       successfulRequests: aggregatedData.totalSuccess,
       targetAchieved: globalTargetAchieved,
       totalEndpoints: endpoints.length,
@@ -289,61 +360,25 @@ export class MetricsAggregator implements IMetricsAggregator {
       success: 0,
     };
 
-    const previousCounts = this._previousEndpointCounts[url];
-
-    let currentRequestsPerSecond = 0;
-    if (previousCounts && previousCounts.timestamp > 0 && currentTime > previousCounts.timestamp) {
-      const timeDiffMs = currentTime - previousCounts.timestamp;
-      const timeDiffSec = timeDiffMs / 1000;
-      const requestDiff =
-        currentCounts.success +
-        currentCounts.failure -
-        (previousCounts.success + previousCounts.failure);
-      currentRequestsPerSecond = timeDiffSec > 0 ? requestDiff / timeDiffSec : 0;
-    }
-
-    // Update high-water mark for peak RPS
-    this._endpointPeakRps[url] = Math.max(
-      this._endpointPeakRps[url] || 0,
-      currentRequestsPerSecond,
+    const currentRps = this._calculateEndpointRps(url, aggregatedData, currentTime);
+    const averageRequestsPerSecond = this._calculateEndpointSteadyStateRps(
+      url,
+      aggregatedData,
+      currentTime,
+      currentRps,
     );
 
-    // Calculate cumulative average RPS from the start of steady state
-    const globalRampUpSec = this._config?.options?.rampUpDurationSec ?? 0;
     const requestConfig = this._config?.requests.find((req) => req.url === url);
-    const endpointRampUp = requestConfig?.rampUpDurationSec;
-    const effectiveEndpointRampUp =
-      endpointRampUp !== undefined && endpointRampUp > 0 ? endpointRampUp : globalRampUpSec;
-    const endpointSteadyStateTime = this._startTime + effectiveEndpointRampUp * 1000;
-
-    let averageRequestsPerSecond = currentRequestsPerSecond;
-
-    if (currentTime > endpointSteadyStateTime) {
-      const firstSteadySnapshot = this._snapshots.find(
-        (s) => s.global.epochEndedAt >= endpointSteadyStateTime,
-      );
-      if (firstSteadySnapshot) {
-        const firstSteadyEndpoint = firstSteadySnapshot.endpoints.find((e) => e.url === url);
-        if (firstSteadyEndpoint) {
-          const steadyRequests = endpointTotalRequests - firstSteadyEndpoint.totalRequests;
-          const steadyDuration = (currentTime - firstSteadySnapshot.global.epochEndedAt) / 1000;
-          averageRequestsPerSecond =
-            steadyDuration > 0 ? steadyRequests / steadyDuration : currentRequestsPerSecond;
-        }
-      }
-    }
-
     let targetAchieved = 0;
-    if (this._config) {
-      if (requestConfig && requestConfig.rps > 0) {
-        targetAchieved = averageRequestsPerSecond / requestConfig.rps;
-      }
+    if (this._config && requestConfig && requestConfig.rps > 0) {
+      targetAchieved = averageRequestsPerSecond / requestConfig.rps;
     }
 
     const theoreticalMaxRps = endpointStats.p50Latency > 0 ? 1000 / endpointStats.p50Latency : 0;
 
     return {
       averageRequestsPerSecond,
+      earlyExitTriggered: false,
       errorRate: endpointTotalRequests > 0 ? currentCounts.failure / endpointTotalRequests : 0,
       failedRequests: currentCounts.failure,
       histogram: convertWorkerHistogramToTestSummaryHistogram(histograms) || EMPTY_HISTOGRAM,
@@ -353,7 +388,7 @@ export class MetricsAggregator implements IMetricsAggregator {
       p50LatencyMs: endpointStats.p50Latency,
       p95LatencyMs: endpointStats.p95Latency,
       p99LatencyMs: endpointStats.p99Latency,
-      peakRequestsPerSecond: this._endpointPeakRps[url],
+      peakRequestsPerSecond: currentRps,
       responseSamples:
         this._responseSampleStore.getCollectedResponseSamples(this._runId).get(url) || [],
       statusCodeDistribution: statusCounts,
@@ -409,7 +444,7 @@ export class MetricsAggregator implements IMetricsAggregator {
         data.totalBytesReceived += counters.bytesReceived;
 
         Object.entries(counters.statusCodeCounts).forEach(([statusCode, count]) => {
-          const code = parseInt(statusCode, 10);
+          const code = Number.parseInt(statusCode, 10);
           data.endpointStatusCounts[endpointUrl][code] =
             (data.endpointStatusCounts[endpointUrl][code] || 0) + count;
         });

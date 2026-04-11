@@ -179,13 +179,13 @@ export class TestListColumnsService {
    */
   toggleSort(columnKey: string): void {
     const current = this._sortConfig();
-    if (!current || current.columnKey !== columnKey) {
-      this._sortConfig.set({ columnKey, direction: 'asc' });
-    } else {
+    if (current?.columnKey === columnKey) {
       this._sortConfig.set({
         columnKey,
         direction: current.direction === 'asc' ? 'desc' : 'asc',
       });
+    } else {
+      this._sortConfig.set({ columnKey, direction: 'asc' });
     }
   }
 

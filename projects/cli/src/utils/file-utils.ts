@@ -87,27 +87,24 @@ export class FileUtils {
       'LPT9',
     ];
 
-    // Characters invalid on Windows: < > : " | ? * \
-    // Characters invalid on macOS/Linux: /
-    // Additional problematic characters: \0 (null)
     let safeName = input
-      // Remove or replace invalid characters
-      // biome-ignore lint/suspicious/noControlCharactersInRegex: windows invalid chars and control chars
-      .replace(/[<>:"|?*\x00-\x1f]/g, '-')
-      .replace(/:/g, '-') // Colons (mainly for Windows)
+      .replaceAll(':', '-')
+      .replaceAll('<', '-')
+      .replaceAll('>', '-')
+      .replaceAll('"', '-')
+      .replaceAll('|', '-')
+      .replaceAll('?', '-')
+      .replaceAll('*', '-')
 
-      // Trim leading/trailing spaces and dots
       .trim()
-      .replace(/^\.+|\.+$/g, '')
+      .replaceAll(/^\.+/g, '')
+      .replaceAll(/\.+$/g, '')
 
-      // Replace multiple spaces/dashes with single underscore
-      .replace(/[\s-]+/g, '_')
+      .replaceAll(/[\s-]+/g, '_')
 
-      // Replace multiple underscores with single underscore
-      .replace(/_+/g, '_')
+      .replaceAll(/_+/g, '_')
 
-      // Remove any remaining invalid characters
-      .replace(/[^a-zA-Z0-9._\-/\\]/g, '_');
+      .replaceAll(/[^a-zA-Z0-9._\-/\\]/g, '_');
 
     // Handle empty result
     if (!safeName) {
@@ -148,13 +145,12 @@ export class FileUtils {
 
     // Find the project root (projects/cli) by looking for src or dist in the path
     // This handles cases where this file is in a subdirectory like src/utils
-    let projectRoot = currentDir;
+    let projectRoot: string;
     if (currentDir.includes('/src')) {
       projectRoot = currentDir.split('/src')[0];
     } else if (currentDir.includes('/dist')) {
       projectRoot = currentDir.split('/dist')[0];
     } else {
-      // Fallback to one level up if we can't find src or dist
       projectRoot = path.resolve(currentDir, '..');
     }
 

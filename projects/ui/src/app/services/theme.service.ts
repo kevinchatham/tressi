@@ -213,7 +213,7 @@ export class ThemeService {
   }
 
   setTheme(theme: Theme): void {
-    document.documentElement.setAttribute('data-theme', theme);
+    document.documentElement.dataset['theme'] = theme;
     const preferences = this._localStorageService.preferences();
     this._localStorageService.savePreferences({
       ...preferences,
@@ -224,7 +224,7 @@ export class ThemeService {
 
   loadInitialTheme(): void {
     const preferences = this._localStorageService.preferences();
-    document.documentElement.setAttribute('data-theme', preferences.selectedTheme);
+    document.documentElement.dataset['theme'] = preferences.selectedTheme;
     this._extractTheme();
   }
 }

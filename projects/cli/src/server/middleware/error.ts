@@ -20,22 +20,28 @@ export function createErrorHandler(): MiddlewareHandler {
         },
       };
 
-      // Determine status code
-      let status: 400 | 401 | 403 | 404 | 409 | 422 | 500 = 500;
-      if (error instanceof Error) {
-        if ('status' in error && typeof error.status === 'number') {
-          const statusNum = error.status;
-          if ([400, 401, 403, 404, 409, 422, 500].includes(statusNum)) {
-            status = statusNum as 400 | 401 | 403 | 404 | 409 | 422 | 500;
-          }
-        } else if (error.message.includes('not found') || error.message.includes('Not found')) {
-          status = 404;
-        }
-      }
+      const status = determineErrorStatus(error);
 
       return c.json(errorResponse, status);
     }
   };
+}
+
+function determineErrorStatus(error: unknown): 400 | 401 | 403 | 404 | 409 | 422 | 500 {
+  if (!(error instanceof Error)) return 500;
+
+  if ('status' in error && typeof error.status === 'number') {
+    const statusNum = error.status;
+    if ([400, 401, 403, 404, 409, 422, 500].includes(statusNum)) {
+      return statusNum as 400 | 401 | 403 | 404 | 409 | 422 | 500;
+    }
+  }
+
+  if (error.message.includes('not found') || error.message.includes('Not found')) {
+    return 404;
+  }
+
+  return 500;
 }
 
 /**

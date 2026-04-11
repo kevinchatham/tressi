@@ -96,9 +96,9 @@ test.describe('CLI Integration', () => {
     errorReq.rps = 10;
     errorReq.earlyExit = {
       enabled: true,
-      errorRateThreshold: 0.1,
+      errorRateThreshold: 10,
       exitStatusCodes: [500],
-      monitoringWindowMs: 1000,
+      monitoringWindowSeconds: 1,
     };
 
     config.requests = [healthReq, errorReq];

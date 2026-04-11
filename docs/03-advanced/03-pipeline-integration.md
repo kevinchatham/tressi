@@ -28,7 +28,7 @@ Tressi uses standard POSIX exit codes to signal the outcome of a test run to the
 - **Exit Code 1**: Indicates a failure condition. This occurs when:
   - The configuration file is invalid or missing.
   - A runtime error occurs (e.g., worker thread failure).
-  - **Early Exit**: Configured error thresholds (rate, count, or status codes) are exceeded, causing the test to terminate prematurely.
+  - **Early Exit**: Configured error thresholds (rate or status codes) are exceeded, causing the test to terminate prematurely.
 
 ### Artifact Management
 

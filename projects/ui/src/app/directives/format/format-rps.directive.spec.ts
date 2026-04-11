@@ -62,6 +62,21 @@ describe('FormatRpsDirective', () => {
     }
   });
 
+  it('should display decimal values with 1 decimal places when less than 1', async () => {
+    const testCases = [
+      { expected: '0.1/s', input: 0.1 },
+      { expected: '0.2/s', input: 0.25 },
+      { expected: '0.9/s', input: 0.99 },
+    ];
+
+    for (const { input, expected } of testCases) {
+      component.rps.set(input);
+      fixture.detectChanges();
+      await fixture.whenStable();
+      expect(element.textContent).toBe(expected);
+    }
+  });
+
   it('should handle negative values correctly', async () => {
     component.rps.set(-1000);
     fixture.detectChanges();

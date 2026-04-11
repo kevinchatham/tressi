@@ -4,23 +4,23 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { db, initializeDatabase } from './database';
 
-const { DatabaseMigrationManager, constructorSpy } = vi.hoisted(() => {
+const { constructorSpy } = vi.hoisted(() => {
   class MockMigrationManager {
-    run = vi.fn().mockResolvedValue(undefined);
+    migrate = vi.fn().mockResolvedValue(undefined);
   }
   const constructorSpy = vi.fn(MockMigrationManager);
-  return { constructorSpy, DatabaseMigrationManager: constructorSpy };
+  return { constructorSpy };
 });
 
-vi.mock('./database-migration-manager', () => ({
-  DatabaseMigrationManager,
+vi.mock('./migration-manager', () => ({
+  MigrationManager: constructorSpy,
 }));
 
 describe('initializeDatabase', () => {
   it('should initialize database tables and run migrations', async () => {
     await initializeDatabase();
 
-    // Verify that DatabaseMigrationManager was instantiated and run
+    // Verify that MigrationManager was instantiated and migrate was called
     expect(constructorSpy).toHaveBeenCalled();
   });
 

@@ -315,92 +315,9 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
     const { columnKey, direction } = sortConfig;
 
     sorted.sort((a, b) => {
-      let valueA: string | number;
-      let valueB: string | number;
+      const valueA = this._extractSortValue(a, columnKey);
+      const valueB = this._extractSortValue(b, columnKey);
 
-      // Handle different column keys and extract values
-      switch (columnKey) {
-        case 'startTime':
-          valueA = a.summary?.global.epochStartedAt || a.epochCreatedAt || 0;
-          valueB = b.summary?.global.epochStartedAt || b.epochCreatedAt || 0;
-          break;
-        case 'endTime':
-          valueA = a.summary?.global.epochEndedAt || 0;
-          valueB = b.summary?.global.epochEndedAt || 0;
-          break;
-        case 'duration':
-          // Use summary duration if available, otherwise calculate from embedded summary timestamps
-          valueA =
-            a.summary?.global.finalDurationSec ||
-            (a.summary?.global.epochEndedAt && a.summary?.global.epochStartedAt
-              ? (a.summary.global.epochEndedAt - a.summary.global.epochStartedAt) / 1000
-              : 0);
-          valueB =
-            b.summary?.global.finalDurationSec ||
-            (b.summary?.global.epochEndedAt && b.summary?.global.epochStartedAt
-              ? (b.summary.global.epochEndedAt - b.summary.global.epochStartedAt) / 1000
-              : 0);
-          break;
-        case 'totalRequests':
-          valueA = a.summary?.global.totalRequests || 0;
-          valueB = b.summary?.global.totalRequests || 0;
-          break;
-        case 'errorRate':
-          valueA = a.summary
-            ? a.summary.global.failedRequests / a.summary.global.totalRequests
-            : a.status === 'failed'
-              ? 1
-              : 0;
-          valueB = b.summary
-            ? b.summary.global.failedRequests / b.summary.global.totalRequests
-            : b.status === 'failed'
-              ? 1
-              : 0;
-          break;
-        case 'successfulRequests':
-          valueA = a.summary?.global.successfulRequests || 0;
-          valueB = b.summary?.global.successfulRequests || 0;
-          break;
-        case 'failedRequests':
-          valueA = a.summary?.global.failedRequests || 0;
-          valueB = b.summary?.global.failedRequests || 0;
-          break;
-        case 'p50LatencyMs':
-          valueA = a.summary?.global.p50LatencyMs || 0;
-          valueB = b.summary?.global.p50LatencyMs || 0;
-          break;
-        case 'p95LatencyMs':
-          valueA = a.summary?.global.p95LatencyMs || 0;
-          valueB = b.summary?.global.p95LatencyMs || 0;
-          break;
-        case 'p99LatencyMs':
-          valueA = a.summary?.global.p99LatencyMs || 0;
-          valueB = b.summary?.global.p99LatencyMs || 0;
-          break;
-        case 'minLatencyMs':
-          valueA = a.summary?.global.minLatencyMs || 0;
-          valueB = b.summary?.global.minLatencyMs || 0;
-          break;
-        case 'maxLatencyMs':
-          valueA = a.summary?.global.maxLatencyMs || 0;
-          valueB = b.summary?.global.maxLatencyMs || 0;
-          break;
-        case 'id':
-          valueA = a.id;
-          valueB = b.id;
-          break;
-        case 'tressiVersion':
-          valueA = a.summary?.tressiVersion || '';
-          valueB = b.summary?.tressiVersion || '';
-          break;
-        default:
-          // For any other columns, use string comparison
-          valueA = '';
-          valueB = '';
-          break;
-      }
-
-      // Handle string vs number comparison
       let comparison = 0;
       if (typeof valueA === 'number' && typeof valueB === 'number') {
         comparison = valueA - valueB;
@@ -412,5 +329,61 @@ export class TestListComponent implements OnChanges, OnInit, OnDestroy {
     });
 
     return sorted;
+  }
+
+  private _extractSortValue(test: TestDocument, columnKey: string): string | number {
+    const summary = test.summary;
+    switch (columnKey) {
+      case 'startTime':
+        return summary?.global.epochStartedAt || test.epochCreatedAt || 0;
+      case 'endTime':
+        return summary?.global.epochEndedAt || 0;
+      case 'duration':
+        return this._extractDurationValue(summary);
+      case 'totalRequests':
+        return summary?.global.totalRequests || 0;
+      case 'errorRate':
+        return this._extractErrorRateValue(test, summary);
+      case 'successfulRequests':
+        return summary?.global.successfulRequests || 0;
+      case 'failedRequests':
+        return summary?.global.failedRequests || 0;
+      case 'p50LatencyMs':
+        return summary?.global.p50LatencyMs || 0;
+      case 'p95LatencyMs':
+        return summary?.global.p95LatencyMs || 0;
+      case 'p99LatencyMs':
+        return summary?.global.p99LatencyMs || 0;
+      case 'minLatencyMs':
+        return summary?.global.minLatencyMs || 0;
+      case 'maxLatencyMs':
+        return summary?.global.maxLatencyMs || 0;
+      case 'id':
+        return test.id;
+      case 'tressiVersion':
+        return summary?.tressiVersion || '';
+      default:
+        return '';
+    }
+  }
+
+  private _extractDurationValue(summary: TestSummary | null | undefined): number {
+    if (summary?.global.finalDurationSec) {
+      return summary.global.finalDurationSec;
+    }
+    if (summary?.global.epochEndedAt && summary?.global.epochStartedAt) {
+      return (summary.global.epochEndedAt - summary.global.epochStartedAt) / 1000;
+    }
+    return 0;
+  }
+
+  private _extractErrorRateValue(
+    test: TestDocument,
+    summary: TestSummary | null | undefined,
+  ): number {
+    if (summary) {
+      return summary.global.failedRequests / summary.global.totalRequests;
+    }
+    return test.status === 'failed' ? 1 : 0;
   }
 }

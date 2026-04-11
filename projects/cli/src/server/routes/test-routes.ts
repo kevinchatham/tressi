@@ -1,7 +1,12 @@
 /** biome-ignore-all lint/nursery/useExplicitType: hono */
 
 import { sValidator } from '@hono/standard-validator';
-import { type DeleteTestResponse, ServerEvents, type TestEventData } from '@tressi/shared/common';
+import {
+  type DeleteTestResponse,
+  ServerEvents,
+  type TestEventData,
+  type TestStatus,
+} from '@tressi/shared/common';
 import { Hono } from 'hono';
 import z from 'zod';
 
@@ -14,6 +19,20 @@ import { JsonExporter } from '../../reporting/exporters/json-exporter';
 import { MarkdownExporter } from '../../reporting/exporters/markdown-exporter';
 import { XlsxExporter } from '../../reporting/exporters/xlsx-exporter';
 import { createApiErrorResponse } from '../utils/error-response-generator';
+
+function getTestStatus(isCanceled: boolean, earlyExitTriggered: boolean): TestStatus {
+  if (isCanceled) return 'cancelled';
+  if (earlyExitTriggered) return 'failed';
+  return 'completed';
+}
+
+type TestEventName = (typeof ServerEvents.TEST)[keyof typeof ServerEvents.TEST];
+
+function getTestCompletedEvent(isCanceled: boolean, earlyExitTriggered: boolean): TestEventName {
+  if (isCanceled) return ServerEvents.TEST.CANCELLED;
+  if (earlyExitTriggered) return ServerEvents.TEST.FAILED;
+  return ServerEvents.TEST.COMPLETED;
+}
 
 /**
  * Unified test management routes for handling both realtime test execution and persistent storage.
@@ -84,9 +103,9 @@ const app = new Hono()
         (async (): Promise<void> => {
           try {
             // runLoadTestForServer now returns the summary (looks up config from testId)
-            const { summary, isCanceled } = await runLoadTestForServer(id);
+            const { summary, isCanceled, earlyExitTriggered } = await runLoadTestForServer(id);
 
-            const status = isCanceled ? 'cancelled' : 'completed';
+            const status = getTestStatus(isCanceled ?? false, earlyExitTriggered ?? false);
 
             // Update test to completed status WITH embedded summary
             // The summary now contains epochStartedAt and epochEndedAt
@@ -104,10 +123,11 @@ const app = new Hono()
               testId: id,
               timestamp: Date.now(),
             };
-            globalEventEmitter.emit(
-              isCanceled ? ServerEvents.TEST.CANCELLED : ServerEvents.TEST.COMPLETED,
-              completedEvent,
+            const completedEventType = getTestCompletedEvent(
+              isCanceled ?? false,
+              earlyExitTriggered ?? false,
             );
+            globalEventEmitter.emit(completedEventType, completedEvent);
           } catch (error) {
             // Update test to failed status - summary is null for failures
             await testStorage.edit({
@@ -187,7 +207,7 @@ const app = new Hono()
         });
       }
 
-      const latestRunningTest = runningTests.sort(
+      const latestRunningTest = [...runningTests].sort(
         (a, b) =>
           (b.summary?.global.epochStartedAt || b.epochCreatedAt || 0) -
           (a.summary?.global.epochStartedAt || a.epochCreatedAt || 0),

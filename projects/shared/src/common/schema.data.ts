@@ -6,7 +6,7 @@ import type { TressiConfig, TressiRequestConfig } from './config.types';
 
 export const schemaDefault = `https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v${pkg.version}.json`;
 
-export const headerDefaults = { 'User-Agent': 'Tressi' };
+export const headerDefaults = {};
 
 /**
  * Available HTTP methods for Tressi requests
@@ -15,9 +15,9 @@ export const httpMethodDefaults = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'] as c
 
 export const earlyExitDefaults = {
   enabled: false,
-  errorRateThreshold: 0,
-  exitStatusCodes: [],
-  monitoringWindowMs: 1000,
+  errorRateThreshold: 1,
+  exitStatusCodes: [500],
+  monitoringWindowSeconds: 1,
 };
 
 export const requestDefaults = {
@@ -45,16 +45,16 @@ export const optionsDefaults = {
 export const EarlyExitConfigSchema = z
   .object({
     enabled: z.boolean().describe('Enable early exit for this endpoint'),
-    errorRateThreshold: z.number().min(0).max(1).describe('Error rate threshold (0.0-1.0)'),
+    errorRateThreshold: z.number().min(1).max(100).describe('Error rate threshold (1-100)'),
     exitStatusCodes: z
-      .array(z.number().int().positive().min(100).max(599))
+      .array(z.number().int().min(100).max(599))
       .describe('HTTP status codes that trigger immediate endpoint stop'),
-    monitoringWindowMs: z
+    monitoringWindowSeconds: z
       .number()
       .int()
       .positive()
-      .min(1000)
-      .describe('Time window in milliseconds for threshold calculation'),
+      .min(1)
+      .describe('Time window in seconds for threshold calculation'),
   })
   .default(earlyExitDefaults);
 
@@ -111,7 +111,6 @@ export const TressiOptionsConfigSchema = z
     durationSec: z
       .number()
       .int()
-      .positive()
       .min(10)
       .default(10)
       .describe('The total duration of the test in seconds. Defaults to 10.'),
@@ -121,7 +120,7 @@ export const TressiOptionsConfigSchema = z
     rampUpDurationSec: z
       .number()
       .int()
-      .nonnegative()
+      .min(0)
       .describe('The time in seconds to ramp up to the target RPS. Defaults to 0.'),
     threads: z
       .number()
@@ -144,7 +143,7 @@ export const TressiOptionsConfigSchema = z
           code: 'custom',
           input: ctx.value,
           message:
-            'Global Early Exit: An error rate threshold and at least one exit status code must be provided when enabled',
+            'An error rate threshold and at least one exit status code must be provided when enabled',
           path: ['workerEarlyExit'],
         });
       }
@@ -169,7 +168,7 @@ export const TressiConfigSchema = z
       ctx.issues.push({
         code: 'custom',
         input: ctx.value,
-        message: 'Ramp Up: Duration cannot exceed half of the test duration',
+        message: 'Duration cannot exceed half of the test duration',
         path: ['options', 'rampUpDurationSec'],
       });
     }
@@ -179,7 +178,7 @@ export const TressiConfigSchema = z
         ctx.issues.push({
           code: 'custom',
           input: ctx.value,
-          message: 'Ramp Up: Duration cannot exceed half of the test duration',
+          message: 'Duration cannot exceed half of the test duration',
           path: ['requests', index, 'rampUpDurationSec'],
         });
       }
@@ -196,7 +195,7 @@ export const TressiConfigSchema = z
           code: 'custom',
           input: ctx.value,
           message:
-            'Ramp Up: All requests must have a target greater than or equal to 5 when Ramp Up Duration is greater than 0',
+            'All requests must have a target greater than or equal to 5 when Ramp Up Duration is greater than 0',
           path: ['options', 'rampUpDurationSec'],
         });
       }

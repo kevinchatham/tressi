@@ -215,7 +215,7 @@ export class MarkdownExporter {
     md += `| Ramp Up Duration | ${config.options?.rampUpDurationSec ?? 0}s |\n`;
 
     if (config.options?.workerEarlyExit?.enabled) {
-      md += `| Early Exit | Enabled (Threshold: ${config.options.workerEarlyExit.errorRateThreshold * 100}%) |\n`;
+      md += `| Early Exit | Enabled (Threshold: ${config.options.workerEarlyExit.errorRateThreshold}%) |\n`;
     } else {
       md += '| Early Exit | Disabled |\n';
     }
@@ -247,7 +247,7 @@ export class MarkdownExporter {
       const k = 1024;
       const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
       const i = Math.floor(Math.log(bytes) / Math.log(k));
-      return `${parseFloat((bytes / k ** i).toFixed(2))} ${sizes[i]}`;
+      return `${Number.parseFloat((bytes / k ** i).toFixed(2))} ${sizes[i]}`;
     };
 
     md += '| Stat | Value |\n| --- | --- |\n';
@@ -307,7 +307,7 @@ export class MarkdownExporter {
     // Individual status codes if there are any
     const individualCodes = Object.entries(statusCodeMap)
       .filter(([_code, count]) => count > 0)
-      .sort(([a], [b]) => parseInt(a, 10) - parseInt(b, 10));
+      .sort(([a], [b]) => Number.parseInt(a, 10) - Number.parseInt(b, 10));
 
     if (individualCodes.length > 0) {
       md += '### Individual Status Codes\n\n';
@@ -327,8 +327,15 @@ export class MarkdownExporter {
     md +=
       '> *A comprehensive summary of request outcomes and performance metrics for each endpoint.*\n\n';
 
-    // First table - Request counts and rates
-    md += '### Request Counts and Rates\n\n';
+    md += this._formatRequestCountsTable(endpoints);
+    md += this._formatLatencyTable(endpoints);
+    md += this._formatPerEndpointDetails(endpoints);
+
+    return md;
+  }
+
+  private _formatRequestCountsTable(endpoints: EndpointSummary[]): string {
+    let md = '### Request Counts and Rates\n\n';
     md +=
       '| Endpoint | Total | Success | Failed | Error Rate | Avg RPS | Peak RPS | Target Achieved |\n';
     md += '|---|---|---|---|---|---|---|---|\n';
@@ -338,9 +345,11 @@ export class MarkdownExporter {
       md += `| ${endpoint.method} ${endpoint.url} | ${endpoint.totalRequests} | ${endpoint.successfulRequests} | ${endpoint.failedRequests} | ${errorRate}% | ${endpoint.averageRequestsPerSecond.toFixed(2)} | ${endpoint.peakRequestsPerSecond.toFixed(2)} | ${targetAchieved}% |\n`;
     }
     md += '\n';
+    return md;
+  }
 
-    // Second table - Enhanced latency details with histogram data
-    md += '### Endpoint Latency Details\n\n';
+  private _formatLatencyTable(endpoints: EndpointSummary[]): string {
+    let md = '### Endpoint Latency Details\n\n';
     md += '| Endpoint | Min | P1 | P5 | P10 | P25 | P50 | P75 | P90 | P95 | P99 | Max |\n';
     md += '|---|---|---|---|---|---|---|---|---|---|---|---|\n';
     for (const endpoint of endpoints) {
@@ -348,73 +357,79 @@ export class MarkdownExporter {
         const h = endpoint.histogram;
         md += `| ${endpoint.method} ${endpoint.url} | ${h.min.toFixed(2)}ms | ${h.percentiles[1].toFixed(2)}ms | ${h.percentiles[5].toFixed(2)}ms | ${h.percentiles[10].toFixed(2)}ms | ${h.percentiles[25].toFixed(2)}ms | ${h.percentiles[50].toFixed(2)}ms | ${h.percentiles[75].toFixed(2)}ms | ${h.percentiles[90].toFixed(2)}ms | ${h.percentiles[95].toFixed(2)}ms | ${h.percentiles[99].toFixed(2)}ms | ${h.max.toFixed(2)}ms |\n`;
       } else {
-        // Fallback if no histogram data
         md += `| ${endpoint.method} ${endpoint.url} | ${endpoint.minLatencyMs.toFixed(2)}ms | - | - | - | - | ${endpoint.p50LatencyMs.toFixed(2)}ms | - | - | ${endpoint.p95LatencyMs.toFixed(2)}ms | ${endpoint.p99LatencyMs.toFixed(2)}ms | ${endpoint.maxLatencyMs.toFixed(2)}ms |\n`;
       }
     }
+    return md;
+  }
 
-    // Third section - Per-endpoint status codes and samples
-    md += '\n### Per-Endpoint Details\n\n';
+  private _formatPerEndpointDetails(endpoints: EndpointSummary[]): string {
+    let md = '\n### Per-Endpoint Details\n\n';
     for (const endpoint of endpoints) {
       md += `#### ${endpoint.method} ${endpoint.url}\n\n`;
-
-      // Status code distribution for this endpoint
-      md += '**Status Code Distribution:**\n\n';
-      md += '| Status Code | Count | Percentage |\n';
-      md += '|---|---|---|\n';
-      const codes = Object.entries(endpoint.statusCodeDistribution).sort(
-        ([a], [b]) => parseInt(a, 10) - parseInt(b, 10),
-      );
-      for (const [code, count] of codes) {
-        const percentage = ((count / endpoint.totalRequests) * 100).toFixed(1);
-        md += `| ${code} | ${count.toLocaleString()} | ${percentage}% |\n`;
-      }
-      md += '\n';
-
-      // Histogram for this endpoint
-      if (endpoint.histogram && endpoint.histogram.totalCount > 0) {
-        md += '<details>\n';
-        md += '<summary>View Latency Histogram</summary>\n\n';
-        md += '```\n';
-        md += this._generateAsciiHistogram(endpoint.histogram.buckets);
-        md += '```\n\n';
-        md += '</details>\n\n';
-      }
-
-      // Samples for this endpoint
-      if (endpoint.responseSamples && endpoint.responseSamples.length > 0) {
-        md += '<details>\n';
-        md += '<summary>View Response Samples</summary>\n\n';
-
-        // Group samples by status code
-        const uniqueSamples = new Map<number, (typeof endpoint.responseSamples)[0]>();
-        for (const sample of endpoint.responseSamples) {
-          if (!uniqueSamples.has(sample.statusCode)) {
-            uniqueSamples.set(sample.statusCode, sample);
-          }
-        }
-
-        Array.from(uniqueSamples.values())
-          .sort((a, b) => a.statusCode - b.statusCode)
-          .forEach((sample) => {
-            md += `**Status ${sample.statusCode}**\n\n`;
-            if (Object.keys(sample.headers).length > 0) {
-              md += '<details>\n<summary>Headers</summary>\n\n';
-              md += '```json\n';
-              md += `${JSON.stringify(sample.headers, null, 2)}\n`;
-              md += '```\n\n';
-              md += '</details>\n\n';
-            }
-            md += '```\n';
-            md += `${sample.body || '(No body captured)'}`;
-            md += '\n```\n\n';
-          });
-
-        md += '</details>\n\n';
-      }
+      md += this._formatStatusCodeDistribution(endpoint);
+      md += this._formatEndpointHistogram(endpoint);
+      md += this._formatEndpointSamples(endpoint);
       md += '---\n\n';
     }
+    return md;
+  }
 
+  private _formatStatusCodeDistribution(endpoint: EndpointSummary): string {
+    let md = '**Status Code Distribution:**\n\n';
+    md += '| Status Code | Count | Percentage |\n';
+    md += '|---|---|---|\n';
+    const codes = Object.entries(endpoint.statusCodeDistribution).sort(
+      ([a], [b]) => Number.parseInt(a, 10) - Number.parseInt(b, 10),
+    );
+    for (const [code, count] of codes) {
+      const percentage = ((count / endpoint.totalRequests) * 100).toFixed(1);
+      md += `| ${code} | ${count.toLocaleString()} | ${percentage}% |\n`;
+    }
+    md += '\n';
+    return md;
+  }
+
+  private _formatEndpointHistogram(endpoint: EndpointSummary): string {
+    if (!endpoint.histogram || endpoint.histogram.totalCount <= 0) return '';
+    let md = '<details>\n';
+    md += '<summary>View Latency Histogram</summary>\n\n';
+    md += '```\n';
+    md += this._generateAsciiHistogram(endpoint.histogram.buckets);
+    md += '```\n\n';
+    md += '</details>\n\n';
+    return md;
+  }
+
+  private _formatEndpointSamples(endpoint: EndpointSummary): string {
+    if (!endpoint.responseSamples || endpoint.responseSamples.length === 0) return '';
+    let md = '<details>\n';
+    md += '<summary>View Response Samples</summary>\n\n';
+
+    const uniqueSamples = new Map<number, (typeof endpoint.responseSamples)[0]>();
+    for (const sample of endpoint.responseSamples) {
+      if (!uniqueSamples.has(sample.statusCode)) {
+        uniqueSamples.set(sample.statusCode, sample);
+      }
+    }
+
+    Array.from(uniqueSamples.values())
+      .sort((a, b) => a.statusCode - b.statusCode)
+      .forEach((sample) => {
+        md += `**Status ${sample.statusCode}**\n\n`;
+        if (Object.keys(sample.headers).length > 0) {
+          md += '<details>\n<summary>Headers</summary>\n\n';
+          md += '```json\n';
+          md += `${JSON.stringify(sample.headers, null, 2)}\n`;
+          md += '```\n\n';
+          md += '</details>\n\n';
+        }
+        md += '```\n';
+        md += `${sample.body || '(No body captured)'}`;
+        md += '\n```\n\n';
+      });
+
+    md += '</details>\n\n';
     return md;
   }
 }

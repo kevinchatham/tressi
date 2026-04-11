@@ -18,7 +18,7 @@ export class LocalStorageService {
   private readonly _storageKey = 'tressi-user-preferences';
 
   private readonly _defaultPreferences = computed<UserPreferences>(() => {
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const prefersDark = globalThis.matchMedia('(prefers-color-scheme: dark)').matches;
     return {
       columnPreferences: DEFAULT_COLUMN_CONFIGS,
       lastRoute: null,

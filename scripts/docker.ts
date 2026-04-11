@@ -50,7 +50,7 @@ async function askCommand(): Promise<string> {
     rl.question(chalk.yellow('\nWhat would you like to do? '), (answer) => {
       rl.close();
       console.clear();
-      const index = parseInt(answer, 10) - 1;
+      const index = Number.parseInt(answer, 10) - 1;
       if (options[index]) {
         resolve(options[index]);
       } else if (commands[answer.toLowerCase()]) {

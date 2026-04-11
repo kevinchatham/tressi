@@ -44,13 +44,17 @@
  * MISCELLANEOUS:
  * - GET /rate-limit - 30% chance of returning 429 rate limit error
  * - GET /error-50-percent - 50% chance of returning 500 error
- * - GET /chaos - Randomly misbehaves (latency, errors, malformed data, drops)
+ * - GET /chaos - List available chaos patterns
+ * - GET /chaos/:pattern - Chaos injection patterns:
+ *   - api-gateway: Simulates gateway with 3 downstream services (5% failure rate)
+ *   - db-heavy: Simulates N+1 query problem with 10 sequential queries (2% failure rate)
+ *   - connection-exhaustion: Connection pool with 5 max connections (30% failure when exhausted)
  * - GET / - Root endpoint with available endpoints documentation
  */
 /** biome-ignore-all lint/suspicious/noConsole: default */
 import { type ServerType, serve } from '@hono/node-server';
 import { type OptionValues, program } from 'commander';
-import { Hono } from 'hono';
+import { type Context, Hono } from 'hono';
 import { compress } from 'hono/compress';
 import { logger } from 'hono/logger';
 import type { BlankEnv, BlankSchema } from 'hono/types';
@@ -59,12 +63,12 @@ import type { ContentfulStatusCode } from 'hono/utils/http-status';
 const app: Hono<BlankEnv, BlankSchema, '/'> = new Hono();
 
 program
-  .option('-p, --port <number>', 'Port to run the server on', (val) => parseInt(val, 10))
+  .option('-p, --port <number>', 'Port to run the server on', (val) => Number.parseInt(val, 10))
   .option('-s, --silent', 'Disable logging', false)
   .parse(process.argv);
 
 const options: OptionValues = program.opts();
-const PORT: number = parseInt(options.port || 5000, 10);
+const PORT: number = Number.parseInt(options.port || 5000, 10);
 const SILENT = options.silent as boolean;
 
 // Middleware
@@ -77,15 +81,33 @@ app.use('*', compress());
 let requestCount = 0;
 const startTime: number = Date.now();
 
+function gaussianRandom(): number {
+  let u = 0,
+    v = 0;
+  while (u === 0) u = Math.random();
+  while (v === 0) v = Math.random();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+
+function logNormalLatency(p50: number, p95: number): number {
+  const mu = Math.log(p50);
+  const sigma = (Math.log(p95) - Math.log(p50)) / 1.6449;
+  return Math.floor(Math.exp(mu + sigma * gaussianRandom()));
+}
+
 // Middleware to track requests
 app.use('*', async (_c, next) => {
   requestCount++;
   await next();
 });
 
+const activeConnections: Set<string> = new Set();
+const MAX_CONNECTIONS = 5;
+
 // Health check endpoint
 app.get('/health', (c) => {
   return c.json({
+    headers: Object.fromEntries(c.req.raw.headers),
     requests: requestCount,
     status: 'healthy',
     timestamp: new Date().toISOString(),
@@ -95,7 +117,7 @@ app.get('/health', (c) => {
 
 // Status code endpoints
 app.get('/status/:code', (c) => {
-  const code = parseInt(c.req.param('code'), 10);
+  const code = Number.parseInt(c.req.param('code'), 10);
 
   if (Number.isNaN(code) || code < 100 || code > 599) {
     return c.json(
@@ -162,7 +184,7 @@ app.get('/service-unavailable', (c) =>
 
 // Delay endpoint
 app.get('/delay/:ms', async (c) => {
-  const delay = parseInt(c.req.param('ms'), 10);
+  const delay = Number.parseInt(c.req.param('ms'), 10);
 
   if (Number.isNaN(delay) || delay < 0) {
     return c.json({ error: 'Invalid delay parameter' }, 400);
@@ -266,7 +288,7 @@ app.post('/echo', async (c) => {
 
 // Redirect endpoints
 app.get('/redirect/:code', (c) => {
-  const code = parseInt(c.req.param('code'), 10);
+  const code = Number.parseInt(c.req.param('code'), 10);
   const url = c.req.query('url');
 
   if (!url) {
@@ -294,7 +316,7 @@ app.get('/redirect/:code', (c) => {
 
 // Payload endpoint
 app.get('/payload/:size', (c) => {
-  const sizeKB = parseInt(c.req.param('size'), 10);
+  const sizeKB = Number.parseInt(c.req.param('size'), 10);
 
   if (Number.isNaN(sizeKB) || sizeKB < 1 || sizeKB > 100) {
     return c.json(
@@ -394,51 +416,154 @@ app.get('/error-50-percent', (c) => {
   }
 });
 
-// Chaos endpoint simulation
-app.get('/chaos', async (c) => {
-  const random = Math.random();
+async function handleApiGateway(c: Context): Promise<Response> {
+  const start = Date.now();
 
-  // 1% chance of connection drop (no response)
-  if (random < 0.01) {
-    if (!SILENT) {
-      console.log('Chaos: Dropping connection');
-    }
-
-    return new Promise(() => {});
+  if (!SILENT) {
+    console.log('Chaos: Simulating API gateway with 3 downstream services');
   }
 
-  // 2% chance of random delay (up to 10s)
-  if (random < 0.03) {
-    const delay = Math.random() * 10_000;
-    if (!SILENT) {
-      console.log(`Chaos: Delaying response by ${delay.toFixed(0)}ms`);
-    }
-    await new Promise((r) => setTimeout(r, delay));
-  }
+  const downstreamLatencies = await Promise.all([
+    new Promise<number>((resolve) => setTimeout(resolve, logNormalLatency(30, 100))),
+    new Promise<number>((resolve) => setTimeout(resolve, logNormalLatency(50, 200))),
+    new Promise<number>((resolve) => setTimeout(resolve, logNormalLatency(20, 80))),
+  ]);
 
-  // 2% chance of server error
-  if (random < 0.05) {
-    if (!SILENT) {
-      console.log('Chaos: Returning 500 error');
-    }
-    return c.json({ error: 'Chaos Error', message: 'Random failure' }, 500);
-  }
+  const totalLatency = Date.now() - start;
+  const shouldFail = Math.random() < 0.05;
 
-  // 1% chance of malformed JSON
-  if (random < 0.06) {
-    if (!SILENT) {
-      console.log('Chaos: Returning malformed JSON');
-    }
-    return new Response('{ "malformed": ', {
-      headers: { 'Content-Type': 'application/json' },
-    });
+  if (shouldFail) {
+    return c.json(
+      {
+        downstreamLatencies,
+        error: 'Gateway Timeout',
+        message: 'One or more downstream services failed',
+        timestamp: new Date().toISOString(),
+        totalLatency,
+      },
+      504,
+    );
   }
 
   return c.json({
-    message: 'You survived the chaos',
+    downstreamLatencies,
+    message: 'Gateway request successful',
+    services: ['users', 'products', 'orders'],
+    status: 'success',
+    timestamp: new Date().toISOString(),
+    totalLatency,
+  });
+}
+
+async function handleDbHeavy(c: Context): Promise<Response> {
+  const start = Date.now();
+  const queryCount = 10;
+  const queryTimes: number[] = [];
+
+  if (!SILENT) {
+    console.log(`Chaos: Simulating N+1 query problem with ${queryCount} queries`);
+  }
+
+  for (let i = 0; i < queryCount; i++) {
+    const queryStart = Date.now();
+    await new Promise((resolve) => setTimeout(resolve, logNormalLatency(5, 15)));
+    queryTimes.push(Date.now() - queryStart);
+  }
+
+  const totalLatency = Date.now() - start;
+  const shouldFail = Math.random() < 0.02;
+
+  if (shouldFail) {
+    return c.json(
+      {
+        error: 'Database Connection Lost',
+        message: 'Simulated DB failure',
+        queryCount,
+        queryTimes,
+        timestamp: new Date().toISOString(),
+        totalLatency,
+      },
+      503,
+    );
+  }
+
+  return c.json({
+    message: 'Database queries completed',
+    queryCount,
+    queryTimes,
+    status: 'success',
+    timestamp: new Date().toISOString(),
+    totalLatency,
+  });
+}
+
+async function handleConnectionExhaustion(c: Context): Promise<Response> {
+  if (activeConnections.size >= MAX_CONNECTIONS) {
+    if (!SILENT) {
+      console.log('Chaos: Connection pool exhausted');
+    }
+    return c.json(
+      {
+        activeConnections: activeConnections.size,
+        error: 'Connection pool exhausted',
+        maxConnections: MAX_CONNECTIONS,
+        timestamp: new Date().toISOString(),
+      },
+      503,
+    );
+  }
+
+  const connId = Math.random().toString(36).slice(2);
+  activeConnections.add(connId);
+
+  if (!SILENT) {
+    console.log(`Chaos: Connection acquired (${activeConnections.size}/${MAX_CONNECTIONS})`);
+  }
+
+  const holdTime = 2000 + Math.random() * 3000;
+  setTimeout(() => {
+    activeConnections.delete(connId);
+    if (!SILENT) {
+      console.log(`Chaos: Connection released (${activeConnections.size}/${MAX_CONNECTIONS})`);
+    }
+  }, holdTime);
+
+  return c.json({
+    activeConnections: activeConnections.size,
+    connectionId: connId,
+    holdTime,
+    maxConnections: MAX_CONNECTIONS,
     status: 'success',
     timestamp: new Date().toISOString(),
   });
+}
+
+app.get('/chaos', async (c) => {
+  return c.json({
+    availablePatterns: ['api-gateway', 'db-heavy', 'connection-exhaustion'],
+    message: 'Specify a pattern: /chaos/:pattern',
+  });
+});
+
+app.get('/chaos/:pattern', async (c) => {
+  const pattern = c.req.param('pattern');
+
+  switch (pattern) {
+    case 'api-gateway':
+      return handleApiGateway(c);
+    case 'db-heavy':
+      return handleDbHeavy(c);
+    case 'connection-exhaustion':
+      return handleConnectionExhaustion(c);
+    default:
+      return c.json(
+        {
+          availablePatterns: ['api-gateway', 'db-heavy', 'connection-exhaustion'],
+          error: 'Unknown pattern',
+        },
+        400,
+      );
+  }
 });
 
 // Headers endpoint
@@ -613,7 +738,7 @@ if (!SILENT) {
 
 const server: ServerType = serve({
   fetch: app.fetch,
-  port: PORT as number,
+  port: PORT,
 });
 
 // Graceful shutdown

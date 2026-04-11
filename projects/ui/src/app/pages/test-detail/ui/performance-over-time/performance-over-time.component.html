@@ -13,6 +13,7 @@
             <app-button
               class="mr-2"
               (click)="onRefresh($event)"
+              (onKeyDown)="onRefresh($event)"
               title="Refresh Data"
               [icon]="'autorenew'"
               [ghost]="true"

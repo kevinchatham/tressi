@@ -12,11 +12,11 @@ This document covers:
 
 ![Early Exit Configuration](./images/0.0.13-early-exit-350.png)
 
-The `errorRateThreshold` (0.0 to 1.0) defines the percentage of failed requests allowed before an endpoint is stopped.
+The `errorRateThreshold` (1-100) defines the percentage of failed requests allowed before an endpoint is stopped.
 
 - **Validation**: When `enabled` is `true`, `errorRateThreshold` must be greater than `0`.
-- **Critical APIs**: Set a low threshold (e.g., `0.01` for 1%) for sensitive endpoints where any failure indicates a major issue.
-- **Resilient APIs**: Use a higher threshold (e.g., `0.10` for 10%) for services that typically experience transient errors under load.
+- **Critical APIs**: Set a low threshold (e.g., `1` for 1%) for sensitive endpoints where any failure indicates a major issue.
+- **Resilient APIs**: Use a higher threshold (e.g., `10` for 10%) for services that typically experience transient errors under load.
 
 ### Defining Exit Status Codes
 
@@ -33,12 +33,12 @@ Commonly used codes:
 
 ### Adjusting Evaluation Intervals
 
-The `monitoringWindowMs` determines how often thresholds are evaluated.
+The `monitoringWindowSeconds` determines how often thresholds are evaluated.
 
-- **Short Windows (e.g., 1000ms)**: Provide rapid response to failures but may be susceptible to transient network errors.
-- **Long Windows (e.g., 10000ms)**: Offer greater stability and prevent premature termination from temporary spikes.
+- **Short Windows (e.g., 1s)**: Provide rapid response to failures but may be susceptible to transient network errors.
+- **Long Windows (e.g., 10s)**: Offer greater stability and prevent premature termination from temporary spikes.
 
-> The default value is `1000ms`
+> The default value is `1s`
 
 ### Configuration Precedence
 
@@ -46,6 +46,15 @@ Early Exit can be configured globally or per endpoint. Request level configurati
 
 - **Global Configuration**: Defined in `options.workerEarlyExit`.
 - **Endpoint Configuration**: Defined in `requests[].earlyExit`.
+
+### Test Results
+
+When a test completes, the `earlyExitTriggered` field in the test summary indicates whether early exit was triggered:
+
+- **`summary.global.earlyExitTriggered`**: Set to `true` if the entire test was stopped early due to early exit conditions.
+- **`summary.endpoints[].earlyExitTriggered`**: Set to `true` if a specific endpoint was stopped early due to early exit conditions.
+
+In the Tressi UI, a warning icon appears next to the status badge when viewing a test where early exit was triggered.
 
 ### Next Steps
 

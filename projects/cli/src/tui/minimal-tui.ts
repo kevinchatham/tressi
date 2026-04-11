@@ -8,10 +8,10 @@ import type { Runner } from '../core/runner';
  * Enhanced minimal UI for Tressi load testing
  */
 export class MinimalTUI {
-  private _spinner: ReturnType<typeof ora>;
+  private readonly _spinner: ReturnType<typeof ora>;
   private _interval: NodeJS.Timeout | undefined;
-  private _config: TressiConfig;
-  private _silent: boolean;
+  private readonly _config: TressiConfig;
+  private readonly _silent: boolean;
 
   constructor(config: TressiConfig, silent?: boolean) {
     this._config = config;

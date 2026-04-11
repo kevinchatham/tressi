@@ -4,6 +4,7 @@ import type {
   LoadTestResult,
   TestSummary,
   TressiConfig,
+  TressiEarlyExitConfig,
 } from '@tressi/shared/common';
 import chalk from 'chalk';
 import ora from 'ora';
@@ -70,6 +71,15 @@ async function executeLoadTest(
   // Generate summary
   const summary = runner.getTestSummary();
   const isCanceled = runner.isCanceled();
+  const earlyExitTriggered = runner.getEarlyExitTriggered();
+
+  // Set earlyExitTriggered on summary for persistence
+  if (summary.global) {
+    summary.global.earlyExitTriggered = earlyExitTriggered;
+  }
+  for (const endpoint of summary.endpoints) {
+    endpoint.earlyExitTriggered = earlyExitTriggered;
+  }
 
   // Handle export and printing only for CLI
   if (options.exportPath) {
@@ -87,7 +97,7 @@ async function executeLoadTest(
     throw new Error('Test failed: One or more error thresholds were exceeded.');
   }
 
-  return { isCanceled, summary };
+  return { earlyExitTriggered, isCanceled, summary };
 }
 
 /**
@@ -101,27 +111,41 @@ function checkThresholds(summary: TestSummary): boolean {
     const requestConfig = configSnapshot.requests.find((r) => r.url === endpoint.url);
     if (!requestConfig) continue;
 
-    // Determine effective early exit config for this endpoint
-    const earlyExit =
-      requestConfig.earlyExit !== undefined ? requestConfig.earlyExit : globalExitConfig;
+    const earlyExit = requestConfig.earlyExit ?? globalExitConfig;
 
-    if (earlyExit?.enabled) {
-      // Check error rate threshold
-      if (earlyExit.errorRateThreshold > 0 && endpoint.errorRate >= earlyExit.errorRateThreshold) {
-        return true;
-      }
+    if (!earlyExit?.enabled) continue;
 
-      // Check status code thresholds
-      if (earlyExit.exitStatusCodes && earlyExit.exitStatusCodes.length > 0) {
-        for (const code of earlyExit.exitStatusCodes) {
-          if (endpoint.statusCodeDistribution[code] > 0) {
-            return true;
-          }
-        }
-      }
-    }
+    if (checkErrorRateThreshold(endpoint, earlyExit)) return true;
+    if (checkStatusCodeThresholds(endpoint, earlyExit)) return true;
   }
 
+  return false;
+}
+
+function checkErrorRateThreshold(
+  endpoint: TestSummary['endpoints'][number],
+  earlyExit: TressiEarlyExitConfig,
+): boolean {
+  if (
+    earlyExit.errorRateThreshold > 0 &&
+    endpoint.errorRate >= earlyExit.errorRateThreshold / 100
+  ) {
+    return true;
+  }
+  return false;
+}
+
+function checkStatusCodeThresholds(
+  endpoint: TestSummary['endpoints'][number],
+  earlyExit: TressiEarlyExitConfig,
+): boolean {
+  if (!earlyExit.exitStatusCodes || earlyExit.exitStatusCodes.length === 0) return false;
+
+  for (const code of earlyExit.exitStatusCodes) {
+    if (endpoint.statusCodeDistribution[code] > 0) {
+      return true;
+    }
+  }
   return false;
 }
 

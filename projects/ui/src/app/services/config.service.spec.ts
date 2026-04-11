@@ -60,6 +60,15 @@ describe('ConfigService', () => {
       expect(result).toEqual(mockConfigs);
       expect(mockRPC.client.config.$get).toHaveBeenCalled();
     });
+
+    it('should handle getAll failure', async () => {
+      mockRPC.client.config.$get.mockResolvedValue({
+        ok: false,
+        statusText: 'Internal Server Error',
+      });
+
+      await expect(service.getAll()).rejects.toThrow();
+    });
   });
 
   describe('getOne', () => {
@@ -80,6 +89,15 @@ describe('ConfigService', () => {
       expect(mockRPC.client.config[':id'].$get).toHaveBeenCalledWith({
         param: { id: '123' },
       });
+    });
+
+    it('should handle getOne not found', async () => {
+      mockRPC.client.config[':id'].$get.mockResolvedValue({
+        ok: false,
+        statusText: 'Not Found',
+      });
+
+      await expect(service.getOne('nonexistent')).rejects.toThrow();
     });
   });
 
@@ -106,12 +124,39 @@ describe('ConfigService', () => {
         json: saveRequest,
       });
     });
+
+    it('should handle save failure', async () => {
+      const saveRequest = {
+        name: 'New Config',
+        requests: [],
+      } as unknown as SaveConfigRequest;
+
+      mockRPC.client.config.$post.mockResolvedValue({
+        ok: false,
+        statusText: 'Bad Request',
+      });
+
+      await expect(service.saveConfig(saveRequest)).rejects.toThrow();
+    });
   });
 
   describe('deleteConfig', () => {
     it('should delete a configuration by id', async () => {
       mockRPC.client.config[':id'].$delete.mockResolvedValue({
         ok: true,
+      });
+
+      await service.deleteConfig('delete-me');
+
+      expect(mockRPC.client.config[':id'].$delete).toHaveBeenCalledWith({
+        param: { id: 'delete-me' },
+      });
+    });
+
+    it('should call delete endpoint even when response is not ok', async () => {
+      mockRPC.client.config[':id'].$delete.mockResolvedValue({
+        ok: false,
+        statusText: 'Conflict',
       });
 
       await service.deleteConfig('delete-me');
