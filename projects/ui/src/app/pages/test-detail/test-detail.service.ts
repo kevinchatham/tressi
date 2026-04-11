@@ -115,6 +115,10 @@ export class TestDetailService implements OnDestroy {
     this.test.set(data.test);
     this.metrics.set(data.metrics);
 
+    if (data.test.summary?.endpoints?.length === 1) {
+      this.selectedEndpoint.set(data.test.summary.endpoints[0].url);
+    }
+
     if (data.test.summary?.global) {
       this.testTimeRange.set({
         max: data.test.summary.global.epochEndedAt,

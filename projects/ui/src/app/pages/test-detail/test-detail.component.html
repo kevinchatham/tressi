@@ -90,33 +90,35 @@
                 </span>
                 <app-icon name="keyboard_arrow_down" class="text-base-content/30" />
               </button>
-              <menu
+              <ul
                 class="dropdown-content menu bg-base-100 rounded-box ring-base-content/10 z-50 mt-2 max-w-2xl p-2 shadow-xl ring-1"
               >
                 <li>
-                  <a
+                  <button
+                    type="button"
                     (click)="onEndpointChangeValue('global')"
                     [class.active]="service.selectedEndpoint() === 'global'"
                     class="flex items-center gap-2"
                   >
                     <app-icon name="analytics" />
                     <span>Global Metrics</span>
-                  </a>
+                  </button>
                 </li>
                 <div class="divider my-1"></div>
                 @for (endpoint of service.test()?.summary?.endpoints || []; track endpoint.url) {
                   <li>
-                    <a
+                    <button
+                      type="button"
                       (click)="onEndpointChangeValue(endpoint.url)"
                       [class.active]="service.selectedEndpoint() === endpoint.url"
                       class="flex max-w-2xl items-center gap-2"
                     >
                       <app-icon name="lan" />
                       <span class="min-w-0 truncate">{{ endpoint.url }}</span>
-                    </a>
+                    </button>
                   </li>
                 }
-              </menu>
+              </ul>
             </div>
           </div>
         </div>
