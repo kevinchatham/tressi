@@ -1,5 +1,5 @@
 import { Directive, ElementRef, effect, inject, input } from '@angular/core';
-import humanNumber from 'human-number';
+import { formatCompactNumber } from '@tressi/shared/common';
 
 @Directive({
   selector: '[appFormatNumber]',
@@ -22,14 +22,8 @@ export class FormatNumberDirective {
         this._el.nativeElement.textContent = '0';
         return;
       }
-      const sign = numValue < 0 ? '-' : '';
       const absValue = Math.abs(numValue);
-      this._el.nativeElement.textContent =
-        sign +
-        humanNumber(absValue, (n) => {
-          if (absValue < 999) return n.toFixed(0);
-          else return n.toFixed(1);
-        }).toLowerCase();
+      this._el.nativeElement.textContent = formatCompactNumber(absValue);
     });
   }
 }

@@ -23,13 +23,7 @@
           },
           "defaultConfiguration": "production",
           "options": {
-            "allowedCommonJsDependencies": [
-              "human-number",
-              "dayjs",
-              "mermaid",
-              "clipboard",
-              "emoji-toolkit"
-            ],
+            "allowedCommonJsDependencies": ["dayjs", "mermaid", "clipboard", "emoji-toolkit"],
             "assets": [
               {
                 "glob": "**/*",

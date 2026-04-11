@@ -3,6 +3,7 @@ export * from './collection.types';
 export * from './config.types';
 export * from './docs.types';
 export * from './event.types';
+export * from './number.utils';
 export * from './reporting.types';
 export * from './schema.data';
 export * from './test.types';

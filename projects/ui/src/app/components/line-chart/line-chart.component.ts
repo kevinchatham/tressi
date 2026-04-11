@@ -8,8 +8,8 @@ import {
   output,
   viewChild,
 } from '@angular/core';
+import { formatCompactNumber } from '@tressi/shared/common';
 import type { ChartEventData, LineChartOptions } from '@tressi/shared/ui';
-import humanNumber from 'human-number';
 import { type ApexAxisChartSeries, type ChartComponent, NgApexchartsModule } from 'ng-apexcharts';
 
 import { ChartSyncService } from '../../services/chart-sync.service';
@@ -487,7 +487,7 @@ export class LineChartComponent {
 
   private _getYAxisFormatter(): (value: number) => string {
     return (value: number): string => {
-      return humanNumber(Math.round(value));
+      return formatCompactNumber(Math.round(value));
     };
   }
 

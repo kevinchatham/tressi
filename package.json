@@ -20,7 +20,6 @@
     "fuse.js": "^7.1.0",
     "hdr-histogram-js": "^3.0.1",
     "hono": "^4.10.6",
-    "human-number": "^2.0.8",
     "kysely": "^0.28.9",
     "marked": "^17.0.2",
     "mermaid": "^11.12.2",
@@ -41,7 +40,6 @@
   "description": "Deterministic load testing for API performance validation.",
   "devDependencies": {
     "@biomejs/biome": "2.4.7",
-    "@types/human-number": "^1.0.2",
     "@types/jasmine": "~5.1.0",
     "@types/node": "^20.0.0",
     "@types/prismjs": "^1.26.6",
