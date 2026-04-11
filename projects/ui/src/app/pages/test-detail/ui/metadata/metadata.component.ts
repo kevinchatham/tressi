@@ -1,7 +1,6 @@
 import { Component, inject, input, output, signal } from '@angular/core';
 import type { TestDocument } from '@tressi/shared/common';
 
-import { ButtonComponent } from '../../../../components/button/button.component';
 import { CollapsibleCardComponent } from '../../../../components/collapsible-card/collapsible-card.component';
 import { IconComponent } from '../../../../components/icon/icon.component';
 import { JsonTextareaComponent } from '../../../../components/json-textarea/json-textarea.component';
@@ -9,13 +8,7 @@ import { FormatDateDirective } from '../../../../directives/format/format-date.d
 import { ToastService } from '../../../../services/toast.service';
 
 @Component({
-  imports: [
-    ButtonComponent,
-    CollapsibleCardComponent,
-    IconComponent,
-    JsonTextareaComponent,
-    FormatDateDirective,
-  ],
+  imports: [CollapsibleCardComponent, IconComponent, JsonTextareaComponent, FormatDateDirective],
   selector: 'app-metadata',
   templateUrl: './metadata.component.html',
 })

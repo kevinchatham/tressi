@@ -4,19 +4,6 @@
     [collapsed]="collapsed()"
     (collapsedChange)="onCollapsedChange($event)"
   >
-    <!-- Header controls projection -->
-    <ng-template>
-      <app-button
-        (click)="copyConfig()"
-        (onKeyDown)="copyConfig()"
-        [title]="'Copy Config'"
-        [icon]="'copy_all'"
-        [secondaryIcon]="'check'"
-        [toggled]="copied()"
-        [ghost]="true"
-      />
-    </ng-template>
-
     <!-- Main content projection -->
     <div class="mt-4 flex flex-col gap-8">
       <!-- Timing Section -->

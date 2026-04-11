@@ -192,4 +192,75 @@ describe('JsonTextareaComponent', () => {
       expect(theme.length).toBeGreaterThan(0);
     });
   });
+
+  describe('showCopyButton', () => {
+    it('should show button when copyButton is set to show', () => {
+      component.copyButton.set('show');
+      expect(component.showCopyButton()).toBe(true);
+    });
+
+    it('should hide button when copyButton is set to hide', () => {
+      component.copyButton.set('hide');
+      expect(component.showCopyButton()).toBe(false);
+    });
+
+    it('should show button when disabled (auto mode)', () => {
+      component.copyButton.set('auto');
+      component.disabled.set(true);
+      expect(component.showCopyButton()).toBe(true);
+    });
+
+    it('should hide button when not disabled (auto mode)', () => {
+      component.copyButton.set('auto');
+      component.disabled.set(false);
+      expect(component.showCopyButton()).toBe(false);
+    });
+  });
+
+  describe('copyToClipboard', () => {
+    beforeEach(() => {
+      vi.spyOn(navigator.clipboard, 'writeText').mockResolvedValue(undefined);
+    });
+
+    it('should copy displayValue to clipboard', async () => {
+      const testValue = { foo: 'bar' };
+      component.value.set(testValue);
+
+      await component.copyToClipboard();
+
+      expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
+        JSON.stringify(testValue, null, 2),
+      );
+    });
+
+    it('should set copied signal to true on success', async () => {
+      component.value.set({ test: true });
+
+      await component.copyToClipboard();
+
+      expect(component.copied()).toBe(true);
+    });
+
+    it('should reset copied signal after 2 seconds', async () => {
+      vi.useFakeTimers();
+      component.value.set({ test: true });
+
+      await component.copyToClipboard();
+      expect(component.copied()).toBe(true);
+
+      vi.advanceTimersByTime(2000);
+      expect(component.copied()).toBe(false);
+
+      vi.useRealTimers();
+    });
+
+    it('should silently fail if clipboard write fails', async () => {
+      vi.spyOn(navigator.clipboard, 'writeText').mockRejectedValue(new Error('fail'));
+      component.value.set({ test: true });
+
+      await component.copyToClipboard();
+
+      expect(component.copied()).toBe(false);
+    });
+  });
 });
