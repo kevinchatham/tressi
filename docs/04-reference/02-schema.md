@@ -34,14 +34,14 @@ To enable validation and IntelliSense in VS Code or other supported editors, ens
 
 Configure overall test runner behavior using the `options` object.
 
-| Property            | Type    | Description                                                                  |
-| ------------------- | ------- | ---------------------------------------------------------------------------- |
-| `durationSec`       | integer | Total test duration in seconds. Min: `10`. Default: `10`.                    |
-| `rampUpDurationSec` | integer | Global ramp up time in seconds for all endpoints. Default: `0`.              |
-| `headers`           | object  | Global headers sent with every request. Default: `{"User-Agent": "Tressi"}`. |
-| `threads`           | integer | Number of worker threads. Default: `2`.                                      |
-| `workerMemoryLimit` | integer | Memory allocation per worker in MB. Min: `16`, Max: `512`. Default: `128`.   |
-| `workerEarlyExit`   | object  | Default [Early Exit Configuration](#early-exit) for workers.                 |
+| Property            | Type    | Description                                                                |
+| ------------------- | ------- | -------------------------------------------------------------------------- |
+| `durationSec`       | integer | Total test duration in seconds. Min: `10`. Default: `10`.                  |
+| `rampUpDurationSec` | integer | Global ramp up time in seconds for all endpoints. Default: `0`.            |
+| `headers`           | object  | Global headers sent with every request. Default: `{}`.                     |
+| `threads`           | integer | Number of worker threads. Default: `2`.                                    |
+| `workerMemoryLimit` | integer | Memory allocation per worker in MB. Min: `16`, Max: `512`. Default: `128`. |
+| `workerEarlyExit`   | object  | Default [Early Exit Configuration](#early-exit) for workers.               |
 
 ### Request Endpoints
 

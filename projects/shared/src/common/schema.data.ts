@@ -6,7 +6,7 @@ import type { TressiConfig, TressiRequestConfig } from './config.types';
 
 export const schemaDefault = `https://raw.githubusercontent.com/kevinchatham/tressi/main/schemas/tressi.schema.v${pkg.version}.json`;
 
-export const headerDefaults = { 'User-Agent': 'Tressi' };
+export const headerDefaults = {};
 
 /**
  * Available HTTP methods for Tressi requests
